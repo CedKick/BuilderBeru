@@ -18,8 +18,23 @@ const SUB_STAT_POOL = [
 const MAIN_STAT_BASE = {
   hp_flat: 50, hp_pct: 5, atk_flat: 5, atk_pct: 5,
   def_flat: 3, def_pct: 5, spd_flat: 3, crit_rate: 3, crit_dmg: 5, res_flat: 3,
+  int_flat: 3, int_pct: 3,
+  fire_dmg_pct: 3, water_dmg_pct: 3, shadow_dmg_pct: 3, light_dmg_pct: 3, earth_dmg_pct: 3,
 };
 
+// Slot-specific main stat pools (mirrors ARTIFACT_SLOTS in equipmentData.js)
+const SLOT_MAIN_STATS = {
+  casque:   ['hp_flat', 'hp_pct', 'int_flat', 'int_pct', 'atk_flat', 'atk_pct', 'def_flat', 'def_pct'],
+  plastron: ['atk_flat', 'atk_pct', 'int_flat', 'int_pct'],
+  gants:    ['crit_rate', 'crit_dmg'],
+  bottes:   ['crit_dmg', 'crit_rate', 'spd_flat'],
+  collier:  ['hp_pct', 'atk_pct', 'def_pct', 'int_pct', 'fire_dmg_pct', 'water_dmg_pct', 'shadow_dmg_pct', 'light_dmg_pct', 'earth_dmg_pct'],
+  bracelet: ['atk_pct', 'def_pct', 'int_pct'],
+  anneau:   ['crit_rate', 'crit_dmg', 'res_flat'],
+  boucles:  ['hp_pct', 'atk_pct', 'def_pct', 'int_pct'],
+};
+
+// Fallback global pool (only used if slot is unknown)
 const ENCHANT_MAIN_STAT_POOL = [
   'hp_flat', 'hp_pct', 'atk_flat', 'atk_pct',
   'crit_rate', 'crit_dmg', 'res_flat',
@@ -118,9 +133,12 @@ export default async function handler(req, res) {
     let newMainStat = artifact.mainStat;
     let newMainValue = artifact.mainValue;
     if (fullReroll && !mainLocked) {
+      // Use slot-specific pool (artifact.slot or artifact.slotId or equipped slot)
+      const slotId = artifact.slot || artifact.slotId || (location.type === 'equipped' ? location.slotId : null);
+      const slotPool = (slotId && SLOT_MAIN_STATS[slotId]) || ENCHANT_MAIN_STAT_POOL;
       // Exclude current mainStat AND all locked sub IDs (no duplicates allowed)
       const lockedSubIds = new Set(lockedSubs.map(s => s.id));
-      const mainPool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat && !lockedSubIds.has(s));
+      const mainPool = slotPool.filter(s => s !== artifact.mainStat && !lockedSubIds.has(s));
       if (mainPool.length > 0) {
         newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
         newMainValue = MAIN_STAT_BASE[newMainStat] || artifact.mainValue;
@@ -134,6 +152,12 @@ export default async function handler(req, res) {
       newEnchants.subs[s.id] = lockedSet.has(s.id) ? (oldEnchants.subs?.[s.id] || 0) : 0;
     }
 
+    // Rebuild statLocks: keep locks on stats that were locked, clear the rest
+    const newStatLocks = { main: mainLocked, subs: {} };
+    for (const s of lockedSubs) {
+      newStatLocks.subs[s.id] = true;
+    }
+
     const rerolled = {
       ...artifact,
       level: 0,
@@ -142,6 +166,7 @@ export default async function handler(req, res) {
       mainValue: newMainValue,
       subs: newSubs,
       enchants: newEnchants,
+      statLocks: newStatLocks,
     };
 
     // Deduct alkahest (lock-aware cost)

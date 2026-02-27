@@ -568,12 +568,17 @@ export function rerollArtifactMainStat(artifact) {
  * No duplicates between main and subs.
  */
 export function rerollArtifactFull(artifact, lockedStats = new Set()) {
-  // Main stat: keep if locked, otherwise reroll
+  // Main stat: keep if locked, otherwise reroll from slot-specific pool
   let newMainStat = artifact.mainStat;
   let newMainValue = artifact.mainValue;
   if (!lockedStats.has('main')) {
-    const mainPool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat);
-    newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
+    const slotId = artifact.slot || artifact.slotId;
+    const slotPool = (slotId && ARTIFACT_SLOTS[slotId]?.mainStats) || ENCHANT_MAIN_STAT_POOL;
+    const lockedSubIds = new Set(artifact.subs.filter(s => lockedStats.has(s.id)).map(s => s.id));
+    const mainPool = slotPool.filter(s => s !== artifact.mainStat && !lockedSubIds.has(s));
+    if (mainPool.length > 0) {
+      newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
+    }
     const def = MAIN_STAT_VALUES[newMainStat];
     newMainValue = def ? def.base : artifact.mainValue;
   }
@@ -609,8 +614,14 @@ export function rerollArtifactFull(artifact, lockedStats = new Set()) {
     newMainValue = def ? def.base : newMainValue;
   }
 
+  // Preserve statLocks for locked stats, clear for rerolled ones
+  const newStatLocks = { main: lockedStats.has('main'), subs: {} };
+  for (const s of lockedSubs) {
+    newStatLocks.subs[s.id] = true;
+  }
+
   return {
-    artifact: { ...artifact, level: 0, mainStat: newMainStat, mainValue: newMainValue, subs, enchants: newEnchants, statLocks: undefined },
+    artifact: { ...artifact, level: 0, mainStat: newMainStat, mainValue: newMainValue, subs, enchants: newEnchants, statLocks: newStatLocks },
     oldMainStat: artifact.mainStat,
     newMainStat,
   };
