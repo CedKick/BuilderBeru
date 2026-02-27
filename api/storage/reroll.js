@@ -108,7 +108,6 @@ export default async function handler(req, res) {
     }
 
     if (!artifact) return res.status(404).json({ error: 'Artifact not found' });
-    if (artifact.locked) return res.status(400).json({ error: 'Artifact is locked' });
 
     const lockedSet = new Set(lockedStats);
     const mainLocked = lockedSet.has('main');
@@ -138,6 +137,7 @@ export default async function handler(req, res) {
     const rerolled = {
       ...artifact,
       level: 0,
+      locked: false,
       mainStat: newMainStat,
       mainValue: newMainValue,
       subs: newSubs,

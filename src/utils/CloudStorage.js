@@ -128,6 +128,7 @@ class CloudStorageManager {
     this._readyPromise = null;
     this._readyResolve = null;
     this._pendingData = new Map(); // key → fresh data (backup when localStorage fails)
+    this._restoring = false;       // true during initialSync cloud restore (allows writes through interceptor)
     this._lastSyncHash = {};       // key → hash of last synced data (dirty detection)
     // Restore persisted hashes from localStorage (survive page reload)
     for (const key of CLOUD_KEYS) {
@@ -301,7 +302,8 @@ class CloudStorageManager {
       return;
     }
 
-    // Merge cloud data into localStorage
+    // Merge cloud data into localStorage (allow writes through interceptor)
+    this._restoring = true;
     for (const [key, entry] of Object.entries(cloudEntries)) {
       // Track cloud sizes + timestamps for anti-corruption checks
       const cloudJson = JSON.stringify(entry.data);
@@ -363,6 +365,8 @@ class CloudStorageManager {
         }
       }
     }
+
+    this._restoring = false;
 
     // Push all tracked local keys to cloud (in case cloud is behind)
     // But NOT during a login — we just pulled cloud data, don't push back stale local
@@ -614,6 +618,12 @@ class CloudStorageManager {
     const self = this;
 
     localStorage.setItem = function (key, value) {
+      // Block cloud key writes before initialSync completes — prevents stale defaults
+      // from overwriting cloud-restored data. Exception: writes during restore phase.
+      if (CLOUD_KEYS.includes(key) && !self._initialized && !self._restoring) {
+        return;
+      }
+
       // Store in pendingData for reliable cloud sync (before localStorage attempt)
       if (CLOUD_KEYS.includes(key) && self._initialized) {
         try { self._pendingData.set(key, JSON.parse(value)); } catch {}
