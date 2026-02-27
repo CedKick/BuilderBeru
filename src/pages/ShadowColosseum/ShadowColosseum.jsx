@@ -762,10 +762,10 @@ export default function ShadowColosseum() {
       setScrollAtBottom(window.innerHeight + window.scrollY >= document.body.scrollHeight - 50);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
-    // Delayed initial check — DOM may not have full height on first render
-    const t1 = setTimeout(onScroll, 300);
-    const t2 = setTimeout(onScroll, 800);
-    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(t1); clearTimeout(t2); };
+    // ResizeObserver — recalc when body height changes (content loading, sections expanding)
+    const ro = new ResizeObserver(onScroll);
+    ro.observe(document.body);
+    return () => { window.removeEventListener('scroll', onScroll); ro.disconnect(); };
   }, []);
 
   // Fetch faction members when entering the members view
