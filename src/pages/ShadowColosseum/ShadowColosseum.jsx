@@ -164,6 +164,16 @@ const FarmTimer = ({ stageId, lootMult, factionBuffs, lootBoostMs }) => {
   );
 };
 
+// Compact number formatter for stats display (hover shows exact value)
+const fmtStat = (n) => {
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return (n / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (abs >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (abs >= 1e4) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(Math.round(n));
+};
+const fmtExact = (n) => Math.round(n).toLocaleString('fr-FR').replace(/\u202F/g, ' ');
+
 // Unified lookup helpers — works for both shadow chibis and hunters
 const getChibiData = (id) => CHIBIS[id] || HUNTERS[id] || null;
 const getChibiSprite = (id) => SPRITES[id] || (HUNTERS[id] && HUNTERS[id].sprite) || '';
@@ -5303,7 +5313,7 @@ export default function ShadowColosseum() {
                               <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
                               <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
                               <span className="text-gray-400">Lv{level}</span>
-                              <span className="hidden sm:inline text-amber-400 font-bold ml-auto text-normal-responsive">iLv{iLvl}</span>
+                              <span className="hidden sm:inline text-amber-400 font-bold ml-auto text-normal-responsive" title={`iLevel: ${fmtExact(iLvl)}`}>iLv{fmtStat(iLvl)}</span>
                             </div>
                           </div>
                           {_weapon && (
@@ -5318,8 +5328,8 @@ export default function ShadowColosseum() {
                           )}
                         </div>
                         <div className="mt-1.5 grid grid-cols-2 sm:grid-cols-3 gap-x-2 sm:gap-x-3 gap-y-0.5 text-normal-responsive text-gray-400">
-                          <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
-                          <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
+                          <span title={`PV: ${fmtExact(s.hp)}`}>PV:{fmtStat(s.hp)}</span><span title={`ATK: ${fmtExact(s.atk)}`}>ATK:{fmtStat(s.atk)}</span><span title={`DEF: ${fmtExact(s.def)}`}>DEF:{fmtStat(s.def)}</span>
+                          <span title={`SPD: ${fmtExact(s.spd)}`}>SPD:{fmtStat(s.spd)}</span><span title={`CRT: ${fmtExact(s.crit)}%`}>CRT:{fmtStat(s.crit)}%</span><span title={`RES: ${fmtExact(s.res)}%`}>RES:{fmtStat(s.res)}%</span>
                         </div>
                         {level < MAX_LEVEL && (
                           <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -5420,7 +5430,7 @@ export default function ShadowColosseum() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1 text-xs font-bold">
                               <span className="truncate">{c.name}</span>
-                              <span className="hidden sm:inline text-amber-400 text-small-responsive ml-auto font-bold">iLv{iLvl}</span>
+                              <span className="hidden sm:inline text-amber-400 text-small-responsive ml-auto font-bold" title={`iLevel: ${fmtExact(iLvl)}`}>iLv{fmtStat(iLvl)}</span>
                             </div>
                             <div className="flex items-center gap-1 text-small-responsive">
                               <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
@@ -5446,12 +5456,14 @@ export default function ShadowColosseum() {
                           )}
                         </div>
                         <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 text-normal-responsive text-gray-400">
-                          <span>PV:{s.hp}</span>
+                          <span title={`PV: ${fmtExact(s.hp)}`}>PV:{fmtStat(s.hp)}</span>
                           {(c.class === 'mage' || c.class === 'support' || c.class === 'tank')
-                            ? <span className="text-violet-400">INT:{s.mana}</span>
-                            : <span>ATK:{s.atk}</span>}
-                          <span>DEF:{s.def}</span>
-                          <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
+                            ? <span className="text-violet-400" title={`INT: ${fmtExact(s.mana)}`}>INT:{fmtStat(s.mana)}</span>
+                            : <span title={`ATK: ${fmtExact(s.atk)}`}>ATK:{fmtStat(s.atk)}</span>}
+                          <span title={`DEF: ${fmtExact(s.def)}`}>DEF:{fmtStat(s.def)}</span>
+                          <span title={`SPD: ${fmtExact(s.spd)}`}>SPD:{fmtStat(s.spd)}</span>
+                          <span title={`CRT: ${fmtExact(s.crit)}%`}>CRT:{fmtStat(s.crit)}%</span>
+                          <span title={`RES: ${fmtExact(s.res)}%`}>RES:{fmtStat(s.res)}%</span>
                         </div>
                         {level < MAX_LEVEL && (
                           <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -5801,31 +5813,6 @@ export default function ShadowColosseum() {
             </motion.div>
           )}
 
-          {/* Floating scroll arrows — right side */}
-          <div className="fixed right-3 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-40">
-            <button
-              onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
-              disabled={scrollAtTop}
-              className={`w-11 h-11 flex items-center justify-center rounded-xl border backdrop-blur-sm transition-all ${
-                scrollAtTop
-                  ? 'border-gray-700/20 bg-gray-900/30 text-gray-700 cursor-default'
-                  : 'border-purple-500/40 bg-gray-900/70 text-purple-300 hover:border-purple-400/60 hover:text-purple-200 hover:bg-gray-800/80 active:scale-90'
-              }`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polyline points="18 15 12 9 6 15"/></svg>
-            </button>
-            <button
-              onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
-              disabled={scrollAtBottom}
-              className={`w-11 h-11 flex items-center justify-center rounded-xl border backdrop-blur-sm transition-all ${
-                scrollAtBottom
-                  ? 'border-gray-700/20 bg-gray-900/30 text-gray-700 cursor-default'
-                  : 'border-purple-500/40 bg-gray-900/70 text-purple-300 hover:border-purple-400/60 hover:text-purple-200 hover:bg-gray-800/80 active:scale-90'
-              }`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-          </div>
         </div>
       )}
 
@@ -12881,6 +12868,24 @@ export default function ShadowColosseum() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Floating scroll arrows — right side, always visible */}
+      <div style={{ position: 'fixed', right: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 12, zIndex: 9999 }}>
+        <button
+          onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
+          disabled={scrollAtTop}
+          style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, border: scrollAtTop ? '1px solid rgba(107,114,128,0.2)' : '1px solid rgba(168,85,247,0.4)', background: scrollAtTop ? 'rgba(17,24,39,0.3)' : 'rgba(17,24,39,0.7)', color: scrollAtTop ? 'rgba(107,114,128,0.5)' : 'rgba(216,180,254,1)', cursor: scrollAtTop ? 'default' : 'pointer', backdropFilter: 'blur(8px)', transition: 'all 0.2s' }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+        <button
+          onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
+          disabled={scrollAtBottom}
+          style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, border: scrollAtBottom ? '1px solid rgba(107,114,128,0.2)' : '1px solid rgba(168,85,247,0.4)', background: scrollAtBottom ? 'rgba(17,24,39,0.3)' : 'rgba(17,24,39,0.7)', color: scrollAtBottom ? 'rgba(107,114,128,0.5)' : 'rgba(216,180,254,1)', cursor: scrollAtBottom ? 'default' : 'pointer', backdropFilter: 'blur(8px)', transition: 'all 0.2s' }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
     </div>
   );
 }
