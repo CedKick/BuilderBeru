@@ -34,15 +34,15 @@ export default defineConfig({
       },
       output: {
         manualChunks(id) {
-          // React core
+          // React core + bindings that need React at init
           if (id.includes('node_modules/react-dom') ||
               id.includes('node_modules/react-router') ||
-              id.includes('node_modules/react/')) return 'react-vendor';
+              id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-i18next')) return 'react-vendor';
           // Animation
           if (id.includes('node_modules/framer-motion')) return 'framer-motion';
           // i18n framework
-          if (id.includes('node_modules/i18next') ||
-              id.includes('node_modules/react-i18next')) return 'i18n';
+          if (id.includes('node_modules/i18next')) return 'i18n';
           // Translation JSON files (~584KB)
           if (id.includes('/i18n/') && id.endsWith('.json')) return 'translations';
           // Charts
