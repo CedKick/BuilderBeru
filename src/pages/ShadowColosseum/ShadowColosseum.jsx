@@ -664,6 +664,8 @@ export default function ShadowColosseum() {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [chibisCollapsed, setChibisCollapsed] = useState(false);
   const [huntersCollapsed, setHuntersCollapsed] = useState(false);
+  const [scrollAtTop, setScrollAtTop] = useState(true);
+  const [scrollAtBottom, setScrollAtBottom] = useState(false);
   const [activeArc, setActiveArc] = useState(1); // 1 or 2 — tab switcher
   // Faction buffs (fetched from server)
   const [factionBuffs, setFactionBuffs] = useState(null); // { loot_sulfuras: 3, stats_hp: 5, ... } or null if not in faction
@@ -688,6 +690,17 @@ export default function ShadowColosseum() {
     }
   };
   useEffect(() => { if (view !== 'arc2_story') stopStoryMusic(); }, [view]);
+
+  // Track scroll position for floating arrows
+  useEffect(() => {
+    const onScroll = () => {
+      setScrollAtTop(window.scrollY < 50);
+      setScrollAtBottom(window.innerHeight + window.scrollY >= document.body.scrollHeight - 50);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Fetch faction members when entering the members view
   useEffect(() => {
@@ -5471,18 +5484,6 @@ export default function ShadowColosseum() {
                   );
                 })}
               </div>}
-              {!huntersCollapsed && sortedHunters.length > 2 && (
-                <div className="flex justify-center gap-3 mb-2">
-                  <button onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
-                    className="px-3 py-1.5 rounded-lg bg-gray-800/60 border border-gray-700/40 text-gray-400 text-xs hover:text-white hover:border-gray-500/60 transition-all">
-                    {'\u25B2'} Haut
-                  </button>
-                  <button onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
-                    className="px-3 py-1.5 rounded-lg bg-gray-800/60 border border-gray-700/40 text-gray-400 text-xs hover:text-white hover:border-gray-500/60 transition-all">
-                    {'\u25BC'} Bas
-                  </button>
-                </div>
-              )}
               {!huntersCollapsed && <div className="text-small-responsive text-gray-600 text-center mb-3 italic">Les hunters gagnent de l'XP et montent en niveau dans les Raids.</div>}
             </>
             );
@@ -5799,6 +5800,32 @@ export default function ShadowColosseum() {
               )}
             </motion.div>
           )}
+
+          {/* Floating scroll arrows — right side */}
+          <div className="fixed right-3 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-40">
+            <button
+              onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
+              disabled={scrollAtTop}
+              className={`w-11 h-11 flex items-center justify-center rounded-xl border backdrop-blur-sm transition-all ${
+                scrollAtTop
+                  ? 'border-gray-700/20 bg-gray-900/30 text-gray-700 cursor-default'
+                  : 'border-purple-500/40 bg-gray-900/70 text-purple-300 hover:border-purple-400/60 hover:text-purple-200 hover:bg-gray-800/80 active:scale-90'
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+            <button
+              onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
+              disabled={scrollAtBottom}
+              className={`w-11 h-11 flex items-center justify-center rounded-xl border backdrop-blur-sm transition-all ${
+                scrollAtBottom
+                  ? 'border-gray-700/20 bg-gray-900/30 text-gray-700 cursor-default'
+                  : 'border-purple-500/40 bg-gray-900/70 text-purple-300 hover:border-purple-400/60 hover:text-purple-200 hover:bg-gray-800/80 active:scale-90'
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
         </div>
       )}
 
