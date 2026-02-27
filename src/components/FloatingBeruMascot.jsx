@@ -188,6 +188,12 @@ const CLICK_MESSAGES = [
   "Encore toi ! Je commence a t'apprecier.", "Attention, 3 clics de plus et je deviens instable.",
   "Tu veux un conseil ? Mets plus de crit rate.", "*fait craquer ses griffes* J'ecoute.",
   "Interessant timing. J'etais en train de penser a toi.", "Kiii ! ...pardon, reflexe.",
+  "T'as pas autre chose a cliquer ? Genre... un build ?",
+  "*verifie son reflet dans le viewport* Oui je suis toujours beau.",
+  "Beru est la. Beru est TOUJOURS la.", "Tu sais que chaque clic me rend plus fort ? ...non c'est faux.",
+  "Je suis pas un bouton. Je suis une ENTITE.", "Un clic = un respect. Merci.",
+  "*compte tes clics* Ca fait beaucoup quand meme.", "Tu veux un autographe ? C'est 500 Shadow Coins.",
+  "Beru approuve ce clic. Continue.", "*regarde a gauche, a droite* ...tu me parlais ?",
 ];
 
 const SPAM_CLICK_MESSAGES = [
@@ -198,6 +204,10 @@ const SPAM_CLICK_MESSAGES = [
   "STOP ! Mon CPU surchauffe !", "Tu fais ca a tous tes composants React ?!",
   "C'est du DDoS d'ombre ca !", "ABUS ! ABUS ! Appel a Sung Jin-Woo !",
   "Encore UN clic et je fais un npm uninstall.",
+  "TU ME PRENDS POUR UN BOUTON TURBO ?!", "Je vais porter plainte au W3C !",
+  "Mon event listener est en BURNOUT !", "Ca y est, mes pixels se decollent !",
+  "JINWOO-SAMA ! L'HUMAIN RECOMMENCE !", "Tu veux que je devienne un bug ? PARCE QUE C'EST COMME CA QU'ON DEVIENT UN BUG.",
+  "Si j'avais des HP, je serais a ZERO la.", "Beru.patience = null; // OVERFLOW",
 ];
 
 const WAKE_MESSAGES = [
@@ -207,12 +217,25 @@ const WAKE_MESSAGES = [
   "*se reveille en sursaut* J'ETAIS PAS EN TRAIN DE DORMIR. J'optimisais.",
   "Hm ? Oh ! Tu etais parti depuis 47 secondes. Oui, j'ai compte.",
   "L'Ombre ne dort jamais ! ...je faisais juste du garbage collection.",
+  "Tu m'as manque ! ...enfin... tes clics m'ont manque.",
+  "*s'etire* Ah ! Le viewport est toujours la. Ouf.",
+  "Je me suis endormi sur le DOM. Y'a la trace de mon visage dans le HTML.",
+  "J'ai reve que j'etais tier SSS+. ...attends c'est deja le cas.",
+  "Oh, t'es la ! J'ai profite de ton absence pour reorganiser le localStorage. De rien.",
+  "Revenu d'entre les morts ! ...enfin d'entre les tabs.",
+  "*cligne des yeux* J'ai vu... des choses. Dans le cache. Des choses HORRIBLES.",
 ];
 
 const SLEEP_MESSAGES = [
   "Bon... tu fais rien ? Moi je dors.", "*baille*... zzzz...", "L'Ombre se repose...",
   "Zzz... artefact... parfait... zzz...", "*marmonne* ...crit rate... 45%... zzz...",
   "Absence detectee. Mode veille. Economie d'ombre activee.",
+  "Zzz... non Igris... c'est MON tacos... zzz...",
+  "*ronronne doucement* ...les fourmis ronronnent pas ? Chut.",
+  "Mode avion active. Destination : le pays des builds parfaits...",
+  "Je dors mais mon anti-triche veille. Il dort JAMAIS lui.",
+  "*parle en dormant* ...full ATK... zero regrets... zzz...",
+  "Beru.sleep(Infinity). A demain. Ou pas.",
 ];
 
 const NIGHT_MESSAGES = [
@@ -221,6 +244,13 @@ const NIGHT_MESSAGES = [
   "3h du mat'. T'es un warrior ou t'as juste insomnie ?", "La nuit, les sub-stats sont meilleures. ...j'ai aucune preuve.",
   "Dort pas trop tard. Sauf si tu optimises un build. La c'est justifie.",
   "Les heures les plus sombres sont celles ou on drop le mieux. Source : moi.",
+  "Le dark mode a minuit c'est juste... un ecran noir. Immersif.",
+  "T'as pas cours demain ? ...travail ? ...rien ? OK continue alors.",
+  "A cette heure, y'a que toi, moi et les bots qui crawlent le site.",
+  "Fun fact : 73% des artefacts legendaires sont drop entre 2h et 5h du mat'. (Source : inventee.)",
+  "Beru recommande : fermer les yeux 5 minutes. ...ou continuer. Je juge pas.",
+  "La nuit, je brille un peu plus. Tu remarques ? Non ? ...ok.",
+  "Le silence de la nuit... parfait pour entendre les sub-stats pleurer.",
 ];
 
 const MORNING_MESSAGES = [
@@ -228,6 +258,12 @@ const MORNING_MESSAGES = [
   "Daily check-in fait ! ...enfin, le mien.", "Cafe et builds, le combo parfait.",
   "Debout ! Les artefacts ne vont pas s'optimiser tout seuls !", "*s'etire les antennes* Ah, nouvelle journee !",
   "Aujourd'hui c'est le jour ou tu drop un mythique. Je le sens.", "Les matins ou on lance BuilderBeru sont les meilleurs matins.",
+  "Rise and shine ! ...enfin surtout ARISE.", "Beru t'a prepare un petit-dej. Virtuel. C'est l'intention qui compte.",
+  "Premier clic de la journee ! Ca compte double. (Non.)",
+  "Le matin, les ombres sont plus timides. Sauf moi. MOI je suis operationnel.",
+  "T'as bien dormi ? Moi j'ai veille sur tes sauvegardes toute la nuit.",
+  "Rappel du matin : boire de l'eau, manger, et optimiser ton build. Dans cet ordre.",
+  "Le cafe c'est bien. Le cafe + BuilderBeru c'est la perfection.",
 ];
 
 const DRAG_MESSAGES = [
@@ -236,6 +272,11 @@ const DRAG_MESSAGES = [
   "WHOOOA ! Des montagnes russes en CSS !", "Position: absolute ?! Plutot position: KIDNAPPED !",
   "Tu sais que j'ai une dignity: 100% en CSS ?!", "IGRIS AU SECOURS ! ON ME DEPLACE !",
   "*s'accroche au viewport* NOOOON !", "C'est du drag & DROP d'ombre ca ?!",
+  "JE SUIS PAS UN FICHIER ! Arrete de me drag and drop !",
+  "Tu me mets OU la ?! C'est meme pas un bon emplacement !",
+  "Mon transform: translate() va crasher !", "Je vais avoir le mal du pixel...",
+  "C'est de la MALTRAITANCE de composant React !", "T'as pas un formulaire a remplir plutot ?!",
+  "Help ! On m'a retire de mon position: fixed naturel !", "Le curseur me kidnappe ! Quelqu'un appelle le preventDefault() !",
 ];
 
 // ── SHAKE ESCALATION DIALOGUES (varied per stage) ──
@@ -271,6 +312,10 @@ const SHAKE_PREEXPLOSION = [
   "Adieu, monde cruel. Adieu, CSS Grid.", "self.destruct() initialise...",
   "Souviens-toi de moi... quand le site sera MORT.",
   "Je reviendrais... dans un autre <iframe>...",
+  "Derniere volonte : supprimez mon historique de console.log.",
+  "C'etait un honneur de servir... meme un humain comme TOI.",
+  "BSOD dans 3... 2... 1... profite de tes derniers pixels.",
+  "Beru a vecu. Beru a servi. Beru va EXPLOSER.",
 ];
 
 // ── THROW / FLING REACTIONS ──
@@ -297,6 +342,13 @@ const THROW_RAGE_MESSAGES = [
   "C'est FINI. Ce site ne merite PAS de survivre.",
   "self.destroy(everything) — EXECUTE.",
   "COMPTE A REBOURS LANCE. T'avais qu'a pas me lancer.",
+  "J'ACTIVE LE PROTOCOLE OMEGA. ADIEU.",
+  "Ca y est. Beru est BRISE. Tu es content ?",
+  "rm -rf / ...ah pardon, mauvaise habitude.",
+  "Beru entre en mode RAGE. Aucune CSS ne survivra.",
+  "T'as joue avec le feu. Non. Avec l'OMBRE. C'est PIRE.",
+  "Le prochain lancer sera ton DERNIER. Sur ce site en tout cas.",
+  "Beru se souviendra de ca. Et Beru a une TRES bonne memoire.",
 ];
 
 const KONAMI_MESSAGE = "TU AS TROUVE LE CODE SECRET ! Le Monarque des Ombres t'observe... +1000 respect.";
@@ -304,6 +356,10 @@ const KONAMI_MESSAGE = "TU AS TROUVE LE CODE SECRET ! Le Monarque des Ombres t'o
 const EDGE_MESSAGES = [
   "Je suis coince ici...", "L'espace est limite...", "Hmm, mur.",
   "overflow: hidden m'a eu.", "Bord de la carte. Aucune echappatoire.", "Je touche le border-radius !",
+  "Y'a un mur invisible ici. Ou un padding. Pareil.", "Le viewport a des limites. Comme ma patience.",
+  "C'est l'edge du monde. Apres c'est... le body. Terrifiant.",
+  "Je me cogne... encore. Ce mur est INVISIBLE mais REEL.",
+  "*pousse le bord de l'ecran* Ca... bouge... PAS.", "Z-index 99999 et je peux meme pas passer un mur. Injuste.",
 ];
 
 const CURIOUS_MESSAGES = [
@@ -311,6 +367,10 @@ const CURIOUS_MESSAGES = [
   "Hmm, interessant...", "Ou va ta souris ? Je veux savoir !",
   "C'est quoi ce pixel la-bas ?", "*plisse les yeux* Tu caches quelque chose.",
   "Je detecte du mouvement. Investigation en cours.", "Ta souris est suspecte. Je la surveille.",
+  "Ton curseur hesite. Tu sais pas ou cliquer hein ?", "*renifle le curseur* ...ca sent le build non-optimal.",
+  "Je te regarde. Tu me regardes. C'est un moment.", "Beru enquete. Ne bougez pas.",
+  "Tu fais quoi exactement la ? ...demande pour un ami.", "*mode detective active* Hmm. Hmm. Hmmmm.",
+  "Ton curseur a fait 3 allers-retours. Tu es PERDU. Avoue.",
 ];
 
 // ─── Anti-Cheat Messages (ambient + reactions) ──────────────
@@ -367,14 +427,14 @@ const getTimeOfDay = () => {
 // ─── Wandering Chibis (apparitions aleatoires) ──────────────
 
 const WANDERING_CHIBIS = [
-  { id: 'kaisel', name: 'Kaisel', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png', rarity: 'mythique', messages: ["...", "Le ciel m'appelle.", "Vole, chasseur !"] },
-  { id: 'tank', name: 'Tank', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png', rarity: 'legendaire', messages: ["TANK PROTEGE.", "Rien ne passe.", "*bouclier leve*"] },
-  { id: 'nyarthulu', name: 'Nyarthulu', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png', rarity: 'legendaire', messages: ["Ph'nglui...", "*tentacules*", "Les abysses appellent."] },
-  { id: 'raven', name: 'Shadow-Raven', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png', rarity: 'rare', messages: ["Croa !", "*survole*", "L'ombre plane."] },
-  { id: 'lil_kaisel', name: "Lil' Kaisel", sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png', rarity: 'rare', messages: ["Mini mais fier !", "*bat des ailes*", "Kiiii !"] },
-  { id: 'pingsu', name: 'Pingsu', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png', rarity: 'rare', messages: ["Un artefact a forger ?", "*tape sur l'enclume*", "Qualite Pingsu !"] },
-  { id: 'okami', name: 'Okami', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png', rarity: 'mythique', messages: ["Awoooo !", "*flair le vent*", "La meute approche."] },
-  { id: 'alecto', name: 'Alecto', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png', rarity: 'mythique', messages: ["*ailes deployees*", "La metamorphose...", "Beru... evolue."] },
+  { id: 'kaisel', name: 'Kaisel', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png', rarity: 'mythique', messages: ["...", "Le ciel m'appelle.", "Vole, chasseur !", "*plane en silence*", "Le vent est bon aujourd'hui.", "Monture royale en service."] },
+  { id: 'tank', name: 'Tank', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png', rarity: 'legendaire', messages: ["TANK PROTEGE.", "Rien ne passe.", "*bouclier leve*", "*grogne protectivement*", "Le mur c'est MOI.", "Essaie de passer. J'attends."] },
+  { id: 'nyarthulu', name: 'Nyarthulu', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png', rarity: 'legendaire', messages: ["Ph'nglui...", "*tentacules*", "Les abysses appellent.", "*murmures cosmiques*", "Tu ne peux pas comprendre...", "L'ombre a des profondeurs infinies."] },
+  { id: 'raven', name: 'Shadow-Raven', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png', rarity: 'rare', messages: ["Croa !", "*survole*", "L'ombre plane.", "*observe depuis le ciel*", "Croa croa... message recu.", "Les ailes noires voient tout."] },
+  { id: 'lil_kaisel', name: "Lil' Kaisel", sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png', rarity: 'rare', messages: ["Mini mais fier !", "*bat des ailes*", "Kiiii !", "Un jour je serai GRAND Kaisel !", "*vole en cercle*", "Petit gabarit, grand coeur !"] },
+  { id: 'pingsu', name: 'Pingsu', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png', rarity: 'rare', messages: ["Un artefact a forger ?", "*tape sur l'enclume*", "Qualite Pingsu !", "Le marteau ne ment jamais.", "*inspecte un minerai*", "Forge... frappe... perfection."] },
+  { id: 'okami', name: 'Okami', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png', rarity: 'mythique', messages: ["Awoooo !", "*flair le vent*", "La meute approche.", "*yeux brillants dans le noir*", "Le loup ne chasse jamais seul.", "L'instinct ne trompe pas."] },
+  { id: 'alecto', name: 'Alecto', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png', rarity: 'mythique', messages: ["*ailes deployees*", "La metamorphose...", "Beru... evolue.", "*emane une aura sombre*", "L'evolution ultime approche.", "Les ailes de l'ombre sont infinies."] },
   { id: 'bebe_machine', name: 'Bebe Machine', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771249690/girlyBabyMachine_v22p6z.png', rarity: 'legendaire', spawnWeight: 0.08, collectOnly: true, babyMachine: true, messages: [
     "Beru j'ai besoin toilettes emotionnelles. Ou vider sentiments ?",
     "Si je mets ruban sur antenne je deviens princesse wifi ?",
@@ -557,6 +617,9 @@ const RARITY_COINS = { mythique: 200, legendaire: 100, rare: 50 };
 const CATCH_MESSAGES = [
   "BIEN JOUE ! Tu as attrape", "CATCH ! Tu as capture",
   "GG ! Tu as chope", "Impressionnant ! Tu as eu",
+  "KIIIEK ! Beau reflexe ! Tu as eu", "Dans le mille ! Tu as attrape",
+  "Pas mal, chasseur ! Tu as capture", "L'Ombre approuve ! Tu as chope",
+  "Speed run capture ! Tu as eu", "Le Monarque serait fier ! Tu as attrape",
 ];
 
 // ─── Compagnons (collection & interactions) ─────────────────
@@ -566,12 +629,25 @@ const COMPANION_REACTIONS = [
   "{name} ! Mon fidele compagnon d'ombre !",
   "{name} rejoint la patrouille !",
   "Bien ! {name} est avec nous !",
+  "{name} en renfort ! L'armee s'agrandit !",
+  "Tiens tiens, {name} se joint a nous. Excellent choix.",
+  "{name} est la ! On va faire du BRUIT !",
+  "L'Ombre accueille {name}. Formation de combat !",
+  "Bienvenue {name} ! ...t'as apporte des tacos ?",
+  "{name} deploye ! Le site est 200% plus cool maintenant.",
 ];
 
 const COMPANION_DISMISS = [
   "{name} s'en va... a bientot !",
   "Au revoir {name} ! Reviens quand tu veux !",
   "{name} retourne dans l'ombre...",
+  "A plus {name} ! ...me laisse pas tout seul.",
+  "{name} se retire. Le viewport est plus vide sans toi.",
+  "Bye {name} ! T'etais cool. Enfin, presque autant que moi.",
+  "{name} disparait... *essuie une larme de pixel*",
+  "Mission terminee pour {name}. Repos merite.",
+  "{name} rentre au localStorage. Bonne nuit, soldat.",
+  "Reviens vite {name}... c'est ennuyeux sans toi. (Dis-le a personne.)",
 ];
 
 const COMPANION_INTERACTIONS = [
@@ -599,6 +675,15 @@ const COMPANION_INTERACTIONS = [
   { chibi: "*essaie de hacker le site*", beru: "Securite ! SECURITE ! ...c'est moi la securite." },
   { chibi: "*fait un high-five a Beru*", beru: "*CLAP* KIIIEK ! Equipe de CHOC !" },
   { chibi: "*raconte une histoire de donjon*", beru: "Bien, mais MON donjon etait rang S. Le tien ?" },
+  { chibi: "*tente de grimper sur Beru*", beru: "He ! Je suis pas une echelle ! ...bon ok, accroche-toi." },
+  { chibi: "*regarde fixement Beru*", beru: "...quoi ? J'ai un bug sur le visage ?" },
+  { chibi: "*fait la reverence*", beru: "Enfin du respect ! CA c'est un bon chibi." },
+  { chibi: "*lance un Shadow Coin en l'air*", beru: "Pile ou face ? ...PILE C'EST POUR MOI." },
+  { chibi: "*imite le cri de Beru* KIIIEK !", beru: "C'est... c'est pas comme ca. C'est plus grave. Plus HEROIQUE." },
+  { chibi: "*apporte un morceau de code*", beru: "C'est... du CSS. Tu m'apportes du CSS. ...il est BEAU ce CSS." },
+  { chibi: "*se cache derriere Beru*", beru: "Tu te planques ? ...y'a quoi ? ...MOI AUSSI JE ME CACHE." },
+  { chibi: "*tente de lire les pensees de Beru*", beru: "Pensee actuelle : 'pourquoi ce chibi me fixe'. Voila. Satisfait ?" },
+  { chibi: "*offre une fleur virtuelle*", beru: "C'est... *renifle* ...c'est un emoji. Mais c'est l'intention qui compte." },
 ];
 
 const COMPANION_PAIR_TALK = [
@@ -627,6 +712,17 @@ const COMPANION_PAIR_TALK = [
   { a: "*chuchote* Y'a des bugs ici.", b: "*chuchote* C'est des features." },
   { a: "On est combien de chibis la ?", b: "Trop. Definitivement trop." },
   { a: "Le joueur il sait coder ?", b: "Il utilise Claude. Ca compte ?" },
+  { a: "Tu dors des fois ?", b: "J'ai pas de paupiere. Donc... non." },
+  { a: "C'est quoi le bonheur ?", b: "Quand Beru dit rien pendant 5 minutes." },
+  { a: "*pousse l'autre*", b: "*pousse en retour* ...on fait quoi la ?" },
+  { a: "Je parie 10 coins que le joueur va cliquer sur Beru.", b: "Je parie 20 qu'il va le secouer." },
+  { a: "T'as deja vu le BSOD ?", b: "Oui. J'ai eu des flashbacks pendant 3 jours." },
+  { a: "Si on etait des artefacts...", b: "On serait des sub-stats flat HP. Inutiles mais presents." },
+  { a: "Le curseur me fait peur.", b: "C'est normal. Il decide qui vit et qui meurt." },
+  { a: "Tu crois qu'on a des fans ?", b: "On a Beru. C'est un fan. Un seul. Mais il crie fort." },
+  { a: "J'aimerais avoir des mains.", b: "Pour quoi faire ? On a meme pas de corps." },
+  { a: "On pourrait s'evader du site.", b: "...pour aller ou ? Dans un spreadsheet Excel ?" },
+  { a: "*chante tout bas*", b: "*chante par-dessus* ...desole c'etait plus fort que moi." },
 ];
 
 // ─── Histoires de Beru ──────────────────────────────────────
@@ -903,6 +999,45 @@ const BERU_STORIES = [
       "Personne ne l'a jamais vue tomber. Certains disent qu'elle n'existe pas. D'autres disent qu'il faut vaincre Ragnarok des centaines de fois...",
       "Le taux de drop ? Personne ne sait. Meme moi. Mais j'ai VU l'icone dans le code. Elle est la. Quelque part. Qui attend.",
       "Alors continue de farmer Ragnarok. Encore. Et encore. Un jour peut-etre... tu entendras le bruit d'une masse qui tombe. Et ce jour-la, tu comprendras. Fin.",
+    ],
+  },
+  {
+    title: "Le Jour ou Beru a Cuisine",
+    mood: 'excited',
+    parts: [
+      "Un jour, j'ai voulu impressionner l'equipe. 'Je vais cuisiner,' j'ai dit.",
+      "Recette : Tacos aux donnees. Ingredients : JSON, CSS, et un soupcon de localStorage.",
+      "J'ai melange le tout dans une <div>. Ca sentait... bizarre. Mais PROMETTEUR.",
+      "Tank a goute en premier. Il a mange le conteneur AUSSI. Le <div> entier. Disparu.",
+      "Igris a refuse poliment. Il a dit 'je ne mange pas'. Il MENT. Je l'ai vu sniffer du TypeScript.",
+      "Kaisel a survole le plat et s'est enfui. Lache.",
+      "Au final, j'ai tout mange moi-meme. 10/10. Je recuisinerai. ...les autres sont pas d'accord. Fin.",
+    ],
+  },
+  {
+    title: "La Nuit ou le CSS a Pris Vie",
+    mood: 'thinking',
+    parts: [
+      "C'etait un vendredi soir. Le dev avait fait un push a 23h59. Erreur fatale.",
+      "Le CSS s'est reveille. Les divs ont commence a BOUGER. Toutes seules.",
+      "Le header est descendu au milieu de la page. Le footer est MONTE au sommet.",
+      "Les boutons ont refuse de cliquer. Les inputs ont commence a TAPER tout seuls.",
+      "J'ai essaye d'intervenir. Le z-index m'a rejete. 'Tu n'as pas l'autorite,' il a dit.",
+      "A 4h du mat, le dev a fait un git revert. Tout est rentre dans l'ordre.",
+      "Mais parfois la nuit, je vois encore les divs bouger... du coin de l'oeil. Fin.",
+    ],
+  },
+  {
+    title: "Les 5 Stades du Gacha selon Beru",
+    mood: 'excited',
+    parts: [
+      "Stade 1 : L'ESPOIR. 'Cette fois c'est la bonne ! Je le SENS.' Tu sens rien du tout.",
+      "Stade 2 : LE DENIAL. 'C'est normal de pas avoir de SSR en 50 pulls. La prochaine.' Non.",
+      "Stade 3 : LA COLERE. 'CE JEU EST TRUQUE.' Le jeu n'est pas truque. La RNG est juste cruelle.",
+      "Stade 4 : LA NEGOCIATION. 'Si je fais 10 pulls a 3h17 du matin un jeudi...' Non. Ca marche pas.",
+      "Stade 5 : L'ACCEPTATION. 'Je vais garder mes gems pour la prochaine banniere.' Mensonge. Tu vas pull.",
+      "Bonus — Stade 6 : LE DROP. Ca arrive quand t'as abandonne tout espoir. A la derniere pull. Au pity.",
+      "Et la, tu cries. Tu screenshot. Tu le montres a TOUT LE MONDE. Et le cycle recommence. Fin.",
     ],
   },
 ];
