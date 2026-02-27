@@ -12872,18 +12872,28 @@ export default function ShadowColosseum() {
 
       {/* Floating scroll arrows — rendered via portal on body */}
       {createPortal(
-        <div style={{ position: 'fixed', right: 24, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 14, zIndex: 99999, pointerEvents: 'auto' }}>
+        <div style={{ position: 'fixed', right: 'calc(50% - 350px)', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 10, zIndex: 99999, pointerEvents: 'auto' }}>
           <button
-            onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
-            style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 14, border: scrollAtTop ? '1px solid rgba(75,85,99,0.25)' : '2px solid rgba(168,85,247,0.5)', background: scrollAtTop ? 'rgba(17,24,39,0.4)' : 'rgba(17,24,39,0.85)', color: scrollAtTop ? 'rgba(75,85,99,0.4)' : 'rgba(216,180,254,1)', cursor: scrollAtTop ? 'default' : 'pointer', backdropFilter: 'blur(12px)', transition: 'all 0.2s', boxShadow: scrollAtTop ? 'none' : '0 0 12px rgba(168,85,247,0.2)' }}
+            onClick={() => { if (!scrollAtTop) { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
+            style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtTop ? 'default' : 'pointer', transition: 'opacity 0.2s', opacity: 1, padding: 0 }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="18 15 12 9 6 15"/></svg>
+            <svg viewBox="0 0 24 24" style={{ width: 28, height: 28 }}>
+              {scrollAtTop
+                ? <polygon points="12,4 3,20 21,20" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"/>
+                : <polygon points="12,4 3,20 21,20" fill="white"/>
+              }
+            </svg>
           </button>
           <button
-            onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
-            style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 14, border: scrollAtBottom ? '1px solid rgba(75,85,99,0.25)' : '2px solid rgba(168,85,247,0.5)', background: scrollAtBottom ? 'rgba(17,24,39,0.4)' : 'rgba(17,24,39,0.85)', color: scrollAtBottom ? 'rgba(75,85,99,0.4)' : 'rgba(216,180,254,1)', cursor: scrollAtBottom ? 'default' : 'pointer', backdropFilter: 'blur(12px)', transition: 'all 0.2s', boxShadow: scrollAtBottom ? 'none' : '0 0 12px rgba(168,85,247,0.2)' }}
+            onClick={() => { if (!scrollAtBottom) { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
+            style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtBottom ? 'default' : 'pointer', transition: 'opacity 0.2s', opacity: 1, padding: 0 }}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="6 9 12 15 18 9"/></svg>
+            <svg viewBox="0 0 24 24" style={{ width: 28, height: 28 }}>
+              {scrollAtBottom
+                ? <polygon points="3,4 21,4 12,20" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2"/>
+                : <polygon points="3,4 21,4 12,20" fill="white"/>
+              }
+            </svg>
           </button>
         </div>,
         document.body
