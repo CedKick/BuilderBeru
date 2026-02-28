@@ -156,25 +156,23 @@ class CloudStorageManager {
   save(key, data) {
     const json = JSON.stringify(data);
 
-    // If a restore guard is active, block stale writes entirely.
-    // This prevents _pendingData from getting stale data that would trigger a sync loop.
-    if (CLOUD_KEYS.includes(key) && this._autoRestoredSizes[key]) {
-      if (json.length < this._autoRestoredSizes[key] * 0.5) {
-        return; // Stale data — skip _pendingData, localStorage, and sync schedule
-      }
-      // Data is correct size — React has caught up, clear guard
-      delete this._autoRestoredSizes[key];
-    }
-
-    // Store in pendingData BEFORE localStorage attempt — ensures cloud sync has fresh data
     if (CLOUD_KEYS.includes(key)) {
-      this._pendingData.set(key, data);
-    }
+      // Anti-corruption: NEVER save data much smaller than what's in the cloud.
+      // This permanently blocks stale React state from contaminating _pendingData,
+      // localStorage, and sync schedule — regardless of _autoRestoredSizes timing.
+      const cloudSize = this._cloudSizes[key] || 0;
+      if (cloudSize > 200 && json.length < cloudSize * 0.3) {
+        return;
+      }
 
-    // Before initialSync completes, don't write cloud keys to localStorage
-    // (initialSync will restore the correct cloud data — writing now would overwrite it)
-    if (!this._initialized && CLOUD_KEYS.includes(key)) {
-      return;
+      // Before initialSync completes, don't write cloud keys at all.
+      // (initialSync will restore correct data — writing now contaminates _pendingData)
+      if (!this._initialized) {
+        return;
+      }
+
+      // All safety checks passed — store in pendingData
+      this._pendingData.set(key, data);
     }
 
     // Try localStorage (optional cache)
@@ -686,16 +684,13 @@ class CloudStorageManager {
         return;
       }
 
-      // After auto-restore: block stale React writes that are much smaller than restored data.
-      // Once React catches up (writes correct-size data), the guard is cleared.
-      if (CLOUD_KEYS.includes(key) && self._autoRestoredSizes[key] && !self._restoring) {
-        const restoredSize = self._autoRestoredSizes[key];
-        if (value.length < restoredSize * 0.5) {
-          console.log(`[CloudStorage] Blocked stale write for "${key}" (${value.length}B vs restored ${restoredSize}B)`);
+      // Anti-corruption: NEVER write data much smaller than cloud (permanent guard).
+      // This catches stale writes from any source — React state, debounced closures, etc.
+      if (CLOUD_KEYS.includes(key) && self._initialized && !self._restoring) {
+        const cloudSize = self._cloudSizes[key] || 0;
+        if (cloudSize > 200 && value.length < cloudSize * 0.3) {
           return;
         }
-        // Write is correct size — React has caught up, clear the guard
-        delete self._autoRestoredSizes[key];
       }
 
       // Store in pendingData for reliable cloud sync (before localStorage attempt)
