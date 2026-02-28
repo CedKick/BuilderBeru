@@ -156,6 +156,16 @@ class CloudStorageManager {
   save(key, data) {
     const json = JSON.stringify(data);
 
+    // If a restore guard is active, block stale writes entirely.
+    // This prevents _pendingData from getting stale data that would trigger a sync loop.
+    if (CLOUD_KEYS.includes(key) && this._autoRestoredSizes[key]) {
+      if (json.length < this._autoRestoredSizes[key] * 0.5) {
+        return; // Stale data — skip _pendingData, localStorage, and sync schedule
+      }
+      // Data is correct size — React has caught up, clear guard
+      delete this._autoRestoredSizes[key];
+    }
+
     // Store in pendingData BEFORE localStorage attempt — ensures cloud sync has fresh data
     if (CLOUD_KEYS.includes(key)) {
       this._pendingData.set(key, data);
@@ -396,6 +406,7 @@ class CloudStorageManager {
 
     // Notify React components that cloud data has been restored to localStorage
     try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
+    // Guards stay active until React writes correct-size data (no timeout — prevents sync loops)
   }
 
   /**
@@ -432,6 +443,7 @@ class CloudStorageManager {
         console.log(`[CloudStorage] Auto-restored "${key}" from cloud (${cloudJson.length}B)`);
         // Notify React components to re-read localStorage
         try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
+        // Guard stays active until React writes correct-size data (no timeout — timeout-based clearing causes loops)
       }
     } catch (err) {
       console.warn(`[CloudStorage] Auto-restore failed for "${key}":`, err.message);
@@ -455,6 +467,13 @@ class CloudStorageManager {
   /** Push a specific key to cloud NOW. Uses _pendingData (freshest) or falls back to localStorage. */
   async syncKey(key) {
     try {
+      // Skip sync entirely if waiting for React to catch up after cloud restore
+      if (this._autoRestoredSizes[key]) {
+        this._pendingData.delete(key);
+        this._setSyncStatus(key, 'synced');
+        return true;
+      }
+
       this._setSyncStatus(key, 'syncing');
 
       // Prefer pending data (freshest), fall back to localStorage
