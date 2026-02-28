@@ -465,13 +465,6 @@ class CloudStorageManager {
   /** Push a specific key to cloud NOW. Uses _pendingData (freshest) or falls back to localStorage. */
   async syncKey(key) {
     try {
-      // Skip sync entirely if waiting for React to catch up after cloud restore
-      if (this._autoRestoredSizes[key]) {
-        this._pendingData.delete(key);
-        this._setSyncStatus(key, 'synced');
-        return true;
-      }
-
       this._setSyncStatus(key, 'syncing');
 
       // Prefer pending data (freshest), fall back to localStorage
