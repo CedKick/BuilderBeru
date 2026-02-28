@@ -293,10 +293,10 @@ export const ALKAHEST_PLAYER_MULT = { 1: 1.0, 2: 1.4, 3: 2.0, 4: 2.5, 5: 2.8 };
 // Boss must be below 75% HP for any alkahest reward
 // Thresholds checked from top to bottom (victory first, then by HP)
 export const ALKAHEST_HP_THRESHOLDS = [
-  { maxHpPct: 0,  base: [10, 12] },  // Boss killed
-  { maxHpPct: 50, base: [5, 9]   },  // Below 50%
-  { maxHpPct: 70, base: [3, 5]   },  // Below 70%
-  { maxHpPct: 75, base: [1, 2]   },  // Below 75% (minimum)
+  { maxHpPct: 0,  base: [30, 36] },  // Boss killed (×3)
+  { maxHpPct: 50, base: [15, 27] },  // Below 50% (×3)
+  { maxHpPct: 70, base: [9, 15]  },  // Below 70% (×3)
+  { maxHpPct: 75, base: [3, 6]   },  // Below 75% (×3)
 ];
 
 /**

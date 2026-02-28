@@ -150,14 +150,26 @@ export default function FactionHub() {
   };
 
   const FACTION_BUFFS = {
-    loot_sulfuras: { name: 'Loot Sulfuras', description: '+5% drop rate Sulfuras par niv', maxLevel: 10, costPerLevel: 100, icon: '🔥' },
-    loot_raeshalare: { name: 'Loot Raeshalare', description: '+5% drop rate Raeshalare par niv', maxLevel: 10, costPerLevel: 100, icon: '🏹' },
-    loot_katana_z: { name: 'Loot Katana Z', description: '+5% drop rate Katana Z par niv', maxLevel: 10, costPerLevel: 100, icon: '⚡' },
-    loot_katana_v: { name: 'Loot Katana V', description: '+5% drop rate Katana V par niv', maxLevel: 10, costPerLevel: 100, icon: '🌊' },
-    loot_guldan: { name: "Loot Gul'dan", description: "+5% drop rate Baton de Gul'dan par niv", maxLevel: 10, costPerLevel: 100, icon: '🪄' },
-    stats_hp: { name: 'HP Bonus', description: '+1% HP par niveau', maxLevel: 20, costPerLevel: 150, icon: '❤️' },
-    stats_atk: { name: 'ATK Bonus', description: '+1% ATK par niveau', maxLevel: 20, costPerLevel: 150, icon: '⚔️' },
-    stats_def: { name: 'DEF Bonus', description: '+1% DEF par niveau', maxLevel: 20, costPerLevel: 150, icon: '🛡️' },
+    loot_sulfuras: { name: 'Loot Sulfuras', description: '+5% drop rate Sulfuras par niv', maxLevel: 50, baseLevels: 10, baseCost: 100, icon: '🔥' },
+    loot_raeshalare: { name: 'Loot Raeshalare', description: '+5% drop rate Raeshalare par niv', maxLevel: 50, baseLevels: 10, baseCost: 100, icon: '🏹' },
+    loot_katana_z: { name: 'Loot Katana Z', description: '+5% drop rate Katana Z par niv', maxLevel: 50, baseLevels: 10, baseCost: 100, icon: '⚡' },
+    loot_katana_v: { name: 'Loot Katana V', description: '+5% drop rate Katana V par niv', maxLevel: 50, baseLevels: 10, baseCost: 100, icon: '🌊' },
+    loot_guldan: { name: "Loot Gul'dan", description: "+5% drop rate Baton de Gul'dan par niv", maxLevel: 50, baseLevels: 10, baseCost: 100, icon: '🪄' },
+    stats_hp: { name: 'HP Bonus', description: '+1% HP par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150, icon: '❤️' },
+    stats_atk: { name: 'ATK Bonus', description: '+1% ATK par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150, icon: '⚔️' },
+    stats_def: { name: 'DEF Bonus', description: '+1% DEF par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150, icon: '🛡️' },
+    dmg_fire: { name: 'Degats Feu', description: '+1% degats Feu par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150, icon: '🔥' },
+    dmg_water: { name: 'Degats Eau', description: '+1% degats Eau par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150, icon: '💧' },
+    dmg_light: { name: 'Degats Lumiere', description: '+1% degats Lumiere par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150, icon: '✨' },
+    dmg_shadow: { name: 'Degats Dark', description: '+1% degats Dark par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150, icon: '🌑' },
+    dmg_earth: { name: 'Degats Terre', description: '+1% degats Terre par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150, icon: '🪨' },
+  };
+
+  const getCostForLevel = (buffId, targetLevel) => {
+    const buff = FACTION_BUFFS[buffId];
+    if (!buff) return Infinity;
+    if (targetLevel <= buff.baseLevels) return buff.baseCost;
+    return 500 + (targetLevel - buff.baseLevels - 1) * 250;
   };
 
   // ─── Load faction status ─────────────────────────────────────
@@ -262,9 +274,10 @@ export default function FactionHub() {
       return;
     }
 
+    const cost = getCostForLevel(buffId, currentLevel + 1);
     const pointsAvailable = factionData.pointsAvailable;
-    if (pointsAvailable < buffConfig.costPerLevel) {
-      alert(`Pas assez de points (requis: ${buffConfig.costPerLevel})`);
+    if (pointsAvailable < cost) {
+      alert(`Pas assez de points (requis: ${cost})`);
       return;
     }
 
@@ -539,6 +552,7 @@ export default function FactionHub() {
               currentLevels={factionData.buffs}
               onUpgrade={upgradeBuff}
               pointsAvailable={factionData.pointsAvailable}
+              getCostForLevel={getCostForLevel}
             />
           )}
 
@@ -955,7 +969,7 @@ function TabButton({ active, onClick, icon, label }) {
 // BUFFS TAB
 // ═══════════════════════════════════════════════════════════════
 
-function BuffsTab({ buffs, currentLevels, onUpgrade, pointsAvailable }) {
+function BuffsTab({ buffs, currentLevels, onUpgrade, pointsAvailable, getCostForLevel }) {
   return (
     <motion.div
       key="buffs"
@@ -967,7 +981,8 @@ function BuffsTab({ buffs, currentLevels, onUpgrade, pointsAvailable }) {
       {Object.entries(buffs).map(([buffId, buffConfig]) => {
         const currentLevel = currentLevels[buffId] || 0;
         const isMaxLevel = currentLevel >= buffConfig.maxLevel;
-        const canAfford = pointsAvailable >= buffConfig.costPerLevel;
+        const nextCost = getCostForLevel(buffId, currentLevel + 1);
+        const canAfford = pointsAvailable >= nextCost;
 
         return (
           <div
@@ -1018,7 +1033,7 @@ function BuffsTab({ buffs, currentLevels, onUpgrade, pointsAvailable }) {
                   <Crown size={14} /> Niveau Max
                 </span>
               ) : (
-                <span>Améliorer ({buffConfig.costPerLevel} pts)</span>
+                <span>Améliorer ({nextCost} pts)</span>
               )}
             </button>
           </div>

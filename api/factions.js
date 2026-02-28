@@ -26,15 +26,27 @@ export const FACTIONS = {
 };
 
 export const FACTION_BUFFS = {
-  loot_sulfuras: { name: 'Loot Sulfuras', description: '+% drop rate Sulfuras', maxLevel: 10, costPerLevel: 100 },
-  loot_raeshalare: { name: 'Loot Raeshalare', description: '+% drop rate Raeshalare', maxLevel: 10, costPerLevel: 100 },
-  loot_katana_z: { name: 'Loot Katana Z', description: '+% drop rate Katana Z', maxLevel: 10, costPerLevel: 100 },
-  loot_katana_v: { name: 'Loot Katana V', description: '+5% drop rate Katana V par niv', maxLevel: 10, costPerLevel: 100 },
-  loot_guldan: { name: "Loot Gul'dan", description: "+5% drop rate Baton de Gul'dan par niv", maxLevel: 10, costPerLevel: 100 },
-  stats_hp: { name: 'HP Bonus', description: '+1% HP par niveau', maxLevel: 20, costPerLevel: 150 },
-  stats_atk: { name: 'ATK Bonus', description: '+1% ATK par niveau', maxLevel: 20, costPerLevel: 150 },
-  stats_def: { name: 'DEF Bonus', description: '+1% DEF par niveau', maxLevel: 20, costPerLevel: 150 },
+  loot_sulfuras: { name: 'Loot Sulfuras', description: '+% drop rate Sulfuras', maxLevel: 50, baseLevels: 10, baseCost: 100 },
+  loot_raeshalare: { name: 'Loot Raeshalare', description: '+% drop rate Raeshalare', maxLevel: 50, baseLevels: 10, baseCost: 100 },
+  loot_katana_z: { name: 'Loot Katana Z', description: '+% drop rate Katana Z', maxLevel: 50, baseLevels: 10, baseCost: 100 },
+  loot_katana_v: { name: 'Loot Katana V', description: '+5% drop rate Katana V par niv', maxLevel: 50, baseLevels: 10, baseCost: 100 },
+  loot_guldan: { name: "Loot Gul'dan", description: "+5% drop rate Baton de Gul'dan par niv", maxLevel: 50, baseLevels: 10, baseCost: 100 },
+  stats_hp: { name: 'HP Bonus', description: '+1% HP par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150 },
+  stats_atk: { name: 'ATK Bonus', description: '+1% ATK par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150 },
+  stats_def: { name: 'DEF Bonus', description: '+1% DEF par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150 },
+  dmg_fire: { name: 'Degats Feu', description: '+1% degats Feu par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150 },
+  dmg_water: { name: 'Degats Eau', description: '+1% degats Eau par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150 },
+  dmg_light: { name: 'Degats Lumiere', description: '+1% degats Lumiere par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150 },
+  dmg_shadow: { name: 'Degats Dark', description: '+1% degats Dark par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150 },
+  dmg_earth: { name: 'Degats Terre', description: '+1% degats Terre par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150 },
 };
+
+export function getCostForLevel(buffId, targetLevel) {
+  const buff = FACTION_BUFFS[buffId];
+  if (!buff) return Infinity;
+  if (targetLevel <= buff.baseLevels) return buff.baseCost;
+  return 500 + (targetLevel - buff.baseLevels - 1) * 250;
+}
 
 export const FACTION_CHANGE_COST = 5000; // Shadow Coins cost to change faction
 
@@ -304,10 +316,6 @@ async function handleUpgradeBuff(req, res) {
   const player = playerData.rows[0];
   const pointsAvailable = player.contribution_points - player.points_spent;
 
-  if (pointsAvailable < buffConfig.costPerLevel) {
-    return res.status(400).json({ success: false, message: 'Not enough points' });
-  }
-
   // Get current buff level
   const buffData = await query(
     'SELECT level FROM faction_buffs WHERE faction = $1 AND buff_id = $2',
@@ -317,6 +325,11 @@ async function handleUpgradeBuff(req, res) {
   const currentLevel = buffData.rows[0]?.level || 0;
   if (currentLevel >= buffConfig.maxLevel) {
     return res.status(400).json({ success: false, message: 'Buff already at max level' });
+  }
+
+  const cost = getCostForLevel(buffId, currentLevel + 1);
+  if (pointsAvailable < cost) {
+    return res.status(400).json({ success: false, message: 'Not enough points' });
   }
 
   // Upgrade buff (UPSERT: handles buffs added after initial DB init)
@@ -331,13 +344,13 @@ async function handleUpgradeBuff(req, res) {
   // Deduct points
   await query(
     'UPDATE player_factions SET points_spent = points_spent + $1 WHERE username = $2',
-    [buffConfig.costPerLevel, user.username]
+    [cost, user.username]
   );
 
   return res.json({
     success: true,
     newLevel: currentLevel + 1,
-    pointsSpent: buffConfig.costPerLevel,
+    pointsSpent: cost,
     message: `${buffConfig.name} upgraded to level ${currentLevel + 1}!`,
   });
 }

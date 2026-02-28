@@ -1978,6 +1978,12 @@ export default function ShadowColosseum() {
       result = { ...result, damage: Math.floor(result.damage * (1 + (hp.value || 10) / 100)) };
     }
 
+    // Faction elemental damage buff (+1% per level)
+    if (result.damage > 0 && fighter.element) {
+      const elemBuff = getFactionStatMult('dmg_' + fighter.element);
+      if (elemBuff > 1) result = { ...result, damage: Math.floor(result.damage * elemBuff) };
+    }
+
     // Megumin manaRestore: restore X% of max mana after attack
     if (skill.manaRestore && fighter.maxMana > 0) {
       const restored = Math.floor(fighter.maxMana * skill.manaRestore / 100);
@@ -2437,6 +2443,13 @@ export default function ShadowColosseum() {
       skinDrop = rolledSkin;
     }
 
+    // Alkahest drops (10 rolls, 1% base → 10% at star 10)
+    let alkahestDropped = 0;
+    const alkDropRate = 0.01 + Math.min(star, 10) * 0.009;
+    for (let i = 0; i < 10; i++) {
+      if (Math.random() < alkDropRate) alkahestDropped++;
+    }
+
     setData(prev => {
       const d = JSON.parse(JSON.stringify(prev));
       // XP to all team members
@@ -2506,10 +2519,13 @@ export default function ShadowColosseum() {
           skinDrop.autoUnlockedHunter = true;
         }
       }
+      // Alkahest
+      d.alkahest = (d.alkahest || 0) + alkahestDropped;
       // Store result for display
       d._arc2Result = {
         coins, xp: Math.floor(stage.xp * rMult.xp), art: droppedArt, star, stageName: stage.name,
         accountXpGain, hammerDrop: hammerDrop || extraHammer, hunterDrops, setUltimeDrops, weaponDrop, skinDrop,
+        alkahestDropped,
       };
       return d;
     });
@@ -3519,6 +3535,12 @@ export default function ShadowColosseum() {
       pRes = { ...pRes, damage: Math.floor(pRes.damage * (1 + (hp.value || 10) / 100)) };
     }
 
+    // Faction elemental damage buff (+1% per level)
+    if (pRes.damage > 0 && player.element) {
+      const elemBuff = getFactionStatMult('dmg_' + player.element);
+      if (elemBuff > 1) pRes = { ...pRes, damage: Math.floor(pRes.damage * elemBuff) };
+    }
+
     // Megumin manaRestore: restore X% of max mana after attack
     if (playerSkill.manaRestore && player.maxMana > 0) {
       const restored = Math.floor(player.maxMana * playerSkill.manaRestore / 100);
@@ -4005,6 +4027,13 @@ export default function ShadowColosseum() {
     }
     if (stage.id === 'archdemon' && Math.random() < 0.003) fragmentDrop = 'fragment_guldan';
 
+    // Alkahest drops (10 rolls, 1% base → 10% at star 10)
+    let alkahestDropped = 0;
+    const alkDropRate = 0.01 + Math.min(currentStar, 10) * 0.009;
+    for (let i = 0; i < 10; i++) {
+      if (Math.random() < alkDropRate) alkahestDropped++;
+    }
+
     // Pacte des Ombres artifact drop — Zephyr Ultime at star >= 10 (1/250)
     let pacteDrop = null;
     if (stage.id === 'zephyr' && currentStar >= 10 && Math.random() < 1 / 250) {
@@ -4062,6 +4091,7 @@ export default function ShadowColosseum() {
         monarchDropLog: newMonarchLog,
         archDemonKills: newArchDemonKills,
         archDemonDropLog: newArchDemonLog,
+        alkahest: (prev.alkahest || 0) + alkahestDropped,
         weaponCollection: (() => {
           if (!weaponDrop) return prev.weaponCollection;
           const wc = { ...prev.weaponCollection };
@@ -4084,7 +4114,7 @@ export default function ShadowColosseum() {
       };
     });
     if (newAllocations > 0) setPendingAlloc(newAllocations);
-    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrops, setUltimeDrops, hammerDrop: hammerDrop || extraHammer, weaponDrop, fragmentDrop, guaranteedArtifact, pacteDrop, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
+    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrops, setUltimeDrops, hammerDrop: hammerDrop || extraHammer, weaponDrop, fragmentDrop, guaranteedArtifact, pacteDrop, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations, alkahestDropped });
 
     // Weapon drop reveal + Beru reaction
     if (weaponDrop) {
@@ -7223,6 +7253,12 @@ export default function ShadowColosseum() {
                           {r.skinDrop.autoUnlockedHunter && <div className="text-green-400 text-small-responsive">+ Hunter d{'\u00e9'}bloqu{'\u00e9'} !</div>}
                         </div>
                       </div>
+                    </div>
+                  )}
+                  {r.alkahestDropped > 0 && (
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-gray-400">Alkahest</span>
+                      <span className="text-cyan-400 font-bold text-xs">{'\uD83E\uDDEA'} +{r.alkahestDropped}</span>
                     </div>
                   )}
                 </div>
@@ -11631,6 +11667,16 @@ export default function ShadowColosseum() {
                     <span className="text-xl">{HAMMERS[result.fragmentDrop]?.icon || '\u2728'}</span>
                     <span className="text-sm font-bold text-red-300">{HAMMERS[result.fragmentDrop]?.name || 'Fragment'}</span>
                     <span className="text-xs text-red-400">+1 ({data.fragments[result.fragmentDrop] || 0}/10)</span>
+                  </div>
+                </motion.div>
+              )}
+              {result.alkahestDropped > 0 && (
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.08 }}
+                  className="bg-gradient-to-r from-cyan-600/15 to-teal-600/15 border border-cyan-500/30 rounded-xl p-2 mb-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-xl">{'\uD83E\uDDEA'}</span>
+                    <span className="text-sm font-bold text-cyan-300">Alkahest</span>
+                    <span className="text-xs text-cyan-400">+{result.alkahestDropped}</span>
                   </div>
                 </motion.div>
               )}

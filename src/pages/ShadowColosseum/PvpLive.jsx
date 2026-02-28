@@ -72,9 +72,9 @@ const TURN_TIME = 30;     // 30s per turn
 
 // Rewards
 const REWARDS = {
-  win:  { hammers: 1000, alkahest: 100 },
-  lose: { hammers: 500,  alkahest: 50 },
-  dailyCap: { hammers: 20000, alkahest: 1000 },
+  win:  { hammers: 1000, alkahest: 300 },
+  lose: { hammers: 500,  alkahest: 150 },
+  dailyCap: { hammers: 20000, alkahest: 3000 },
   postCapDivisor: 10,
 };
 

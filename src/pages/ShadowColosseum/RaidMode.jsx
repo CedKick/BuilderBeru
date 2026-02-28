@@ -861,7 +861,7 @@ export default function RaidMode() {
       }
 
       // Alkahest drops — tier-based rolls (5% chance each), scaled by lootMult
-      const ALKAHEST_ROLLS_BY_TIER = { 1: 10, 2: 15, 3: 20, 4: 30, 5: 40, 6: 50 };
+      const ALKAHEST_ROLLS_BY_TIER = { 1: 30, 2: 45, 3: 60, 4: 90, 5: 120, 6: 150 };
       const alkRolls = Math.floor((ALKAHEST_ROLLS_BY_TIER[tier] || 10) * lootMult);
       let alkahestDropped = 0;
       if (rc >= 3) {
