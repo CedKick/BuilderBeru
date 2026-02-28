@@ -481,7 +481,21 @@ class CloudStorageManager {
         return false;
       }
 
-      // Trim bloated fields before sync (drop logs, orphan rerollCounts)
+      // Anti-corruption check on RAW data (BEFORE trimming).
+      // _trimData can legitimately shrink shadow_colosseum_data by >70% (drop log capping,
+      // orphan rerollCounts cleanup). Comparing trimmed size vs cloud caused false positives
+      // and infinite restore loops.
+      const rawJson = JSON.stringify(rawData);
+      const cloudSize = this._cloudSizes[key] || 0;
+      if (cloudSize > 200 && rawJson.length < cloudSize * 0.3) {
+        console.log(`[CloudStorage] Local "${key}" too small (${rawJson.length}B vs cloud ${cloudSize}B) — auto-restoring from cloud`);
+        this._pendingData.delete(key);
+        this._autoRestoredSizes[key] = cloudSize;
+        this._autoRestoreFromCloud(key);
+        return true;
+      }
+
+      // Trim bloated fields before sync (drop logs capped to 100, orphan rerollCounts removed)
       const data = _trimData(key, rawData);
 
       // Dirty check: skip sync if data hasn't changed since last successful sync
@@ -491,18 +505,6 @@ class CloudStorageManager {
         this._pendingData.delete(key);
         this._setSyncStatus(key, 'synced');
         return true; // Already synced, skip
-      }
-
-      // Anti-corruption: if local is much smaller than cloud, skip push and auto-restore from cloud
-      const localSize = jsonStr.length;
-      const cloudSize = this._cloudSizes[key] || 0;
-      if (cloudSize > 200 && localSize < cloudSize * 0.3) {
-        console.log(`[CloudStorage] Local "${key}" too small (${localSize}B vs cloud ${cloudSize}B) — auto-restoring from cloud`);
-        this._pendingData.delete(key);
-        // Set guard BEFORE async restore — blocks stale React writes immediately
-        this._autoRestoredSizes[key] = cloudSize;
-        this._autoRestoreFromCloud(key); // async, no await — runs in background
-        return true;
       }
 
       const deviceId = getDeviceId();
