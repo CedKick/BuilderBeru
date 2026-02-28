@@ -129,6 +129,7 @@ class CloudStorageManager {
     this._readyResolve = null;
     this._pendingData = new Map(); // key → fresh data (backup when localStorage fails)
     this._restoring = false;       // true during initialSync cloud restore (allows writes through interceptor)
+    this._autoRestoreInProgress = new Set(); // keys currently being auto-restored (prevent loops)
     this._lastSyncHash = {};       // key → hash of last synced data (dirty detection)
     // Restore persisted hashes from localStorage (survive page reload)
     for (const key of CLOUD_KEYS) {
@@ -401,6 +402,37 @@ class CloudStorageManager {
     await this.initialSync();
   }
 
+  /**
+   * Auto-restore a key from cloud when local data is detected as corrupted/stale.
+   * Prevents loops with _autoRestoreInProgress guard.
+   */
+  async _autoRestoreFromCloud(key) {
+    if (this._autoRestoreInProgress.has(key)) return;
+    this._autoRestoreInProgress.add(key);
+    try {
+      console.log(`[CloudStorage] Auto-restoring "${key}" from cloud...`);
+      const cloudData = await this.loadCloud(key);
+      if (cloudData) {
+        const cloudJson = JSON.stringify(cloudData);
+        this._restoring = true;
+        try { localStorage.setItem(key, cloudJson); } catch {}
+        this._restoring = false;
+        this._cloudSizes[key] = cloudJson.length;
+        this._lastSyncHash[key] = _computeHash(cloudJson);
+        try { localStorage.setItem(HASH_PREFIX + key, this._lastSyncHash[key]); } catch {}
+        this._pendingData.delete(key);
+        this._setSyncStatus(key, 'synced');
+        console.log(`[CloudStorage] Auto-restored "${key}" from cloud (${cloudJson.length}B)`);
+        // Notify React components to re-read localStorage
+        try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
+      }
+    } catch (err) {
+      console.warn(`[CloudStorage] Auto-restore failed for "${key}":`, err.message);
+    } finally {
+      this._autoRestoreInProgress.delete(key);
+    }
+  }
+
   /** Initialize the database schema (call once on first deploy) */
   async initSchema() {
     try {
@@ -437,14 +469,13 @@ class CloudStorageManager {
         return true; // Already synced, skip
       }
 
-      // Anti-corruption: if local is much smaller than cloud, skip push silently
-      // Cloud data is preserved — local just hasn't caught up yet (device change, cache clear)
+      // Anti-corruption: if local is much smaller than cloud, skip push and auto-restore from cloud
       const localSize = jsonStr.length;
       const cloudSize = this._cloudSizes[key] || 0;
       if (cloudSize > 200 && localSize < cloudSize * 0.3) {
-        console.log(`[CloudStorage] Skipping sync for "${key}": local (${localSize}B) behind cloud (${cloudSize}B) — cloud preserved`);
+        console.log(`[CloudStorage] Local "${key}" too small (${localSize}B vs cloud ${cloudSize}B) — auto-restoring from cloud`);
         this._pendingData.delete(key);
-        this._setSyncStatus(key, 'synced');
+        this._autoRestoreFromCloud(key); // async, no await — runs in background
         return true;
       }
 
@@ -485,10 +516,11 @@ class CloudStorageManager {
       }
 
       if (resp.status === 409) {
-        // Server blocked: data corruption or stale timestamp
+        // Server blocked: data corruption or stale timestamp — auto-restore from cloud
         const errJson = await resp.json().catch(() => ({}));
-        console.warn(`[CloudStorage] Server BLOCKED sync for "${key}":`, errJson.reason || errJson.error);
-        this._setSyncStatus(key, 'error');
+        console.warn(`[CloudStorage] Server BLOCKED sync for "${key}":`, errJson.reason || errJson.error, '— auto-restoring');
+        this._pendingData.delete(key);
+        this._autoRestoreFromCloud(key); // async, no await — runs in background
         return false;
       }
 
