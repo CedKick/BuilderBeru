@@ -130,6 +130,7 @@ class CloudStorageManager {
     this._pendingData = new Map(); // key → fresh data (backup when localStorage fails)
     this._restoring = false;       // true during initialSync cloud restore (allows writes through interceptor)
     this._autoRestoreInProgress = new Set(); // keys currently being auto-restored (prevent loops)
+    this._autoRestoredSizes = {};            // key → restored size (block stale writes after restore)
     this._lastSyncHash = {};       // key → hash of last synced data (dirty detection)
     // Restore persisted hashes from localStorage (survive page reload)
     for (const key of CLOUD_KEYS) {
@@ -422,6 +423,8 @@ class CloudStorageManager {
         try { localStorage.setItem(HASH_PREFIX + key, this._lastSyncHash[key]); } catch {}
         this._pendingData.delete(key);
         this._setSyncStatus(key, 'synced');
+        // Guard: block stale React writes from overwriting restored data
+        this._autoRestoredSizes[key] = cloudJson.length;
         console.log(`[CloudStorage] Auto-restored "${key}" from cloud (${cloudJson.length}B)`);
         // Notify React components to re-read localStorage
         try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
@@ -654,6 +657,18 @@ class CloudStorageManager {
       // from overwriting cloud-restored data. Exception: writes during restore phase.
       if (CLOUD_KEYS.includes(key) && !self._initialized && !self._restoring) {
         return;
+      }
+
+      // After auto-restore: block stale React writes that are much smaller than restored data.
+      // Once React catches up (writes correct-size data), the guard is cleared.
+      if (CLOUD_KEYS.includes(key) && self._autoRestoredSizes[key] && !self._restoring) {
+        const restoredSize = self._autoRestoredSizes[key];
+        if (value.length < restoredSize * 0.5) {
+          console.log(`[CloudStorage] Blocked stale write for "${key}" (${value.length}B vs restored ${restoredSize}B)`);
+          return;
+        }
+        // Write is correct size — React has caught up, clear the guard
+        delete self._autoRestoredSizes[key];
       }
 
       // Store in pendingData for reliable cloud sync (before localStorage attempt)
