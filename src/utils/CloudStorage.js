@@ -324,6 +324,8 @@ class CloudStorageManager {
         try {
           localStorage.setItem(key, cloudJson);
         } catch { /* ignore quota errors during sync */ }
+        // Guard: block stale React writes until component re-reads
+        this._autoRestoredSizes[key] = cloudJson.length;
       } else {
         // Normal reload: if local data is suspiciously smaller than cloud,
         // cloud wins (likely corruption from cache clear)
@@ -334,6 +336,8 @@ class CloudStorageManager {
           try {
             localStorage.setItem(key, cloudJson);
           } catch { /* ignore quota errors */ }
+          // Guard: block stale React writes until component re-reads
+          this._autoRestoredSizes[key] = cloudJson.length;
         } else if (key === 'shadow_colosseum_data') {
           // Always protect server-deposited fields (alkahest, rerollCounts)
           // These can be written by game-server while client has stale local data
@@ -478,6 +482,8 @@ class CloudStorageManager {
       if (cloudSize > 200 && localSize < cloudSize * 0.3) {
         console.log(`[CloudStorage] Local "${key}" too small (${localSize}B vs cloud ${cloudSize}B) — auto-restoring from cloud`);
         this._pendingData.delete(key);
+        // Set guard BEFORE async restore — blocks stale React writes immediately
+        this._autoRestoredSizes[key] = cloudSize;
         this._autoRestoreFromCloud(key); // async, no await — runs in background
         return true;
       }
@@ -523,6 +529,8 @@ class CloudStorageManager {
         const errJson = await resp.json().catch(() => ({}));
         console.warn(`[CloudStorage] Server BLOCKED sync for "${key}":`, errJson.reason || errJson.error, '— auto-restoring');
         this._pendingData.delete(key);
+        // Set guard BEFORE async restore — blocks stale React writes immediately
+        this._autoRestoredSizes[key] = this._cloudSizes[key] || localSize * 3;
         this._autoRestoreFromCloud(key); // async, no await — runs in background
         return false;
       }
