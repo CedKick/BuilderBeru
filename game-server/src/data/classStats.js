@@ -30,15 +30,15 @@ export const CLASS_STATS = {
   dps_cac: {
     label: 'Warrior',
     hp: 22000,
-    mana: 100,       // Rage: max 100, starts at 0, builds from basic attacks
-    atk: 850,
+    mana: 100,        // Rage: max 100, starts at 0, builds from basic attacks
+    atk: 2550,        // x3 DPS buff
     def: 150,
     spd: 200,
     crit: 32,
     res: 20,
     aggroMult: 1.0,
     color: '#ef4444',
-    useRage: true,
+    useRage: true,    // Uses rage resource (red bar, no passive regen)
   },
   dps_range: {
     label: 'Archer',

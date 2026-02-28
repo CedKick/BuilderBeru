@@ -22,7 +22,7 @@ export class Player {
     this.maxHp = stats.maxHp;
     this.hp = stats.hp;
     this.maxMana = stats.maxMana;
-    this.useRage = playerClass === 'dps_cac';
+    this.useRage = !!(CLASS_STATS[playerClass]?.useRage);
     this.mana = this.useRage ? 0 : stats.mana;  // Rage starts at 0
     this.atk = stats.atk;
     this.def = stats.def;
