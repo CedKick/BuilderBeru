@@ -40,12 +40,20 @@ const ELEMENT_COLORS = {
   light: { bg: 'bg-yellow-900/30', border: 'border-yellow-500/50', text: 'text-yellow-300', ring: 'ring-yellow-300' },
 };
 
+// Extract level number from chibiLevels (can be a number or {xp, level} object)
+function getLevel(coloData, hunterId) {
+  const raw = coloData.chibiLevels?.[hunterId];
+  if (!raw) return 1;
+  if (typeof raw === 'object') return raw.level || 1;
+  return raw || 1;
+}
+
 // Compute full stats for a hunter (including artifacts, weapons, talents, account bonuses)
 function computeHunterFullStats(hunterId, coloData, raidData) {
   const h = HUNTERS[hunterId];
   if (!h) return null;
 
-  const level = coloData.chibiLevels?.[hunterId] || 1;
+  const level = getLevel(coloData, hunterId);
   const stars = getHunterStars(raidData, hunterId);
   const allocated = coloData.statPoints?.[hunterId] || {};
 
@@ -102,10 +110,11 @@ export default function Expedition() {
   const sortedHunters = useMemo(() => {
     const elementOrder = { fire: 0, water: 1, shadow: 2, light: 3 };
     return Object.entries(hunterPool)
-      .map(([id, stars]) => {
+      .map(([id, poolData]) => {
         const h = HUNTERS[id];
         if (!h) return null;
-        const level = coloData.chibiLevels?.[id] || 1;
+        const level = getLevel(coloData, id);
+        const stars = poolData.stars || 0;
         return { id, stars, name: h.name, element: h.element, rarity: h.rarity, class: h.class, sprite: h.sprite, level };
       })
       .filter(Boolean)
