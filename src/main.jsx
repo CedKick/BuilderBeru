@@ -98,6 +98,7 @@ const MailInbox = React.lazy(() => import('./pages/MailInbox.jsx'));
 const AdminMailSender = React.lazy(() => import('./pages/AdminMailSender.jsx'));
 const AdminPanel = React.lazy(() => import('./pages/AdminPanel.jsx'));
 const FactionHub = React.lazy(() => import('./pages/FactionHub.jsx'));
+const Expedition = React.lazy(() => import('./pages/Expedition/Expedition.jsx'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -143,6 +144,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/admin/mail" element={<AdminMailSender />} />
               <Route path="/admin/panel" element={<AdminPanel />} />
               <Route path="/faction" element={<FactionHub />} />
+              <Route path="/expedition" element={<Expedition />} />
               <Route path="/training-dummy" element={<TrainingDummy />} />
             </Routes>
           </Suspense>

@@ -197,6 +197,13 @@ export default function BuilderMenu({ isOpen, onClose }) {
           isNew: true
         },
         {
+          path: '/expedition',
+          label: 'Expedition I',
+          icon: Swords,
+          color: 'amber',
+          isNew: true
+        },
+        {
           path: '/training-dummy',
           label: 'Mannequin d\'Entraînement',
           icon: Target,

@@ -93,9 +93,12 @@
 // Spectator Client
 // ═══════════════════════════════════════════════════════════
 
+// Detect base path (works behind /expedition/ proxy or standalone)
+const basePath = location.pathname.replace(/\/spectator\.?h?t?m?l?$/, '').replace(/\/$/, '');
+const wsPath = basePath ? `${basePath}/ws` : '/ws';
 const WS_URL = location.protocol === 'https:'
-  ? `wss://${location.host}/ws`
-  : `ws://${location.host}/ws`;
+  ? `wss://${location.host}${wsPath}`
+  : `ws://${location.host}${wsPath}`;
 
 // ── State ──
 let state = null;
