@@ -231,15 +231,6 @@ export class CombatEngine {
         this._placeHealZone(player, skill, angle);
         break;
 
-      case 'charged_attack': {
-        // Berserker: use mid-level charge power (level 2 = powerLevels[2])
-        if (skill.manaCost > 0 && !player.useMana(skill.manaCost)) return;
-        player.cooldowns.secondary = 1.5; // Short cooldown between charges
-        const chargedSkill = { ...skill, power: skill.powerLevels?.[2] ?? skill.powerBase ?? skill.power };
-        this._coneAttack(player, chargedSkill, angle);
-        break;
-      }
-
       default:
         // Attack-type secondary (charged shot, heavy strike, etc.)
         if (skill.manaCost > 0 && !player.useMana(skill.manaCost)) return;
@@ -256,6 +247,64 @@ export class CombatEngine {
     player.blocking = false;
   }
 
+  // ── Berserker Charged Attack (hold/release) ──────────────────
+  startCharge(player, skillSlot, angle) {
+    if (player.dodging || !player.alive) return;
+    if (player.charging) return; // Already charging
+
+    const skillKey = skillSlot || 'skillB';
+    if (player.cooldowns[skillKey] > 0) return;
+
+    const skill = player.skills[skillKey];
+    if (!skill || skill.type !== 'charged_attack') return;
+
+    player.charging = {
+      skill: skillKey,
+      startTime: Date.now(),
+      angle,
+      maxChargeTime: skill.chargeTime || 4.0,
+    };
+
+    this.gs.addEvent({ type: 'charge_start', source: player.id });
+  }
+
+  releaseCharge(player, angle) {
+    if (!player.charging) return;
+
+    const skillKey = player.charging.skill;
+    const skill = player.skills[skillKey];
+    if (!skill) { player.charging = null; return; }
+
+    // Calculate charge duration
+    const chargeDuration = Math.min(
+      (Date.now() - player.charging.startTime) / 1000,
+      player.charging.maxChargeTime
+    );
+
+    // Determine charge level (0-3) based on duration
+    const maxTime = skill.chargeTime || 4.0;
+    const levels = skill.chargeLevels || 4;
+    const chargeLevel = Math.min(levels - 1, Math.floor(chargeDuration / maxTime * levels));
+
+    const power = skill.powerLevels?.[chargeLevel] ?? skill.powerBase ?? 200;
+    const releaseAngle = angle ?? player.charging.angle;
+
+    player.charging = null;
+    player.cooldowns[skillKey] = skill.cooldown || 1.0;
+    player.aimAngle = releaseAngle;
+
+    // Fire the charged cone attack
+    const chargedSkill = { ...skill, power };
+    this._coneAttack(player, chargedSkill, releaseAngle);
+
+    this.gs.addEvent({
+      type: 'charge_release',
+      source: player.id,
+      chargeLevel,
+      power,
+    });
+  }
+
   useSkill(player, skillSlot, angle) {
     if (player.dodging) return;
 
@@ -264,6 +313,13 @@ export class CombatEngine {
 
     const skill = player.skills[skillKey];
     if (!skill) return;
+
+    // Charged attack: handled via startCharge/releaseCharge, skip normal useSkill
+    if (skill.type === 'charged_attack') {
+      this.startCharge(player, skillSlot, angle);
+      return;
+    }
+
     if (skill.manaCost > 0 && !player.useMana(skill.manaCost)) return;
 
     player.cooldowns[skillKey] = skill.cooldown;
@@ -333,6 +389,7 @@ export class CombatEngine {
   dodge(player, angle) {
     if (player.dodging || player.dodgeCooldown > 0) return;
     if (player.blocking) player.blocking = false;
+    if (player.charging) player.charging = null; // Cancel charge on dodge
 
     player.dodging = true;
     player.dodgeTimer = 0;

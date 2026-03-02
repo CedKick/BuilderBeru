@@ -199,6 +199,14 @@ export class GameLoop {
           this.combat.useSkill(player, input.skill, input.angle);
           break;
 
+        case 'charge_start':
+          this.combat.startCharge(player, input.skill, input.angle);
+          break;
+
+        case 'charge_release':
+          this.combat.releaseCharge(player, input.angle);
+          break;
+
         case 'dodge':
           this.combat.dodge(player, input.angle);
           break;
@@ -433,7 +441,11 @@ export class GameLoop {
         invulnerable: p.invulnerable,
         aimAngle: p.aimAngle,
         buffs: p.buffs.map(b => ({ type: b.type, stacks: b.stacks, dur: +b.dur.toFixed(1) })),
-        casting: p.casting ? { skill: p.casting.skill, timer: +p.casting.timer.toFixed(1) } : null,
+        casting: p.casting ? { skill: p.casting.skill, timer: +p.casting.timer.toFixed(1), type: p.casting.type } : null,
+        charging: p.charging ? {
+          skill: p.charging.skill,
+          progress: Math.min(1, (Date.now() - p.charging.startTime) / 1000 / (p.charging.maxChargeTime || 4)),
+        } : null,
         comboStep: p.comboStep || 0,
         cooldowns: {
           basic: +p.cooldowns.basic.toFixed(1),

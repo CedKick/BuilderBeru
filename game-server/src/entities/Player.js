@@ -70,6 +70,7 @@ export class Player {
     this.dodgeDir = { x: 0, y: 0 };
     this.blocking = false;
     this.casting = null;        // { skill, timer, angle }
+    this.charging = null;       // { skill: 'skillB', startTime, angle } for charged_attack
     this.invulnerable = false;
     this.invulnTimer = 0;
 
@@ -213,6 +214,7 @@ export class Player {
     this.dodging = false;
     this.blocking = false;
     this.casting = null;
+    this.charging = null;
   }
 
   clampPosition() {

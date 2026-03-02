@@ -665,6 +665,32 @@
     let tankBlockLoaded = false;
     tankBlockImg.onload = () => { tankBlockLoaded = true; };
 
+    // Berserker sprites
+    const bersIdleImg = new Image();
+    bersIdleImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772017150/Berserker_ocle6n.png';
+    let bersIdleLoaded = false;
+    bersIdleImg.onload = () => { bersIdleLoaded = true; };
+
+    const bersAtkImg = new Image();
+    bersAtkImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772017149/attackAfterChargingBerserker_ftmncy.png';
+    let bersAtkLoaded = false;
+    bersAtkImg.onload = () => { bersAtkLoaded = true; };
+
+    const bersChargeImg = new Image();
+    bersChargeImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772017150/ChargingAttackBerserker_ow4wsu.png';
+    let bersChargeLoaded = false;
+    bersChargeImg.onload = () => { bersChargeLoaded = true; };
+
+    const bersWhirlImg = new Image();
+    bersWhirlImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772017526/TourbilolBerserk_fgtdmk.png';
+    let bersWhirlLoaded = false;
+    bersWhirlImg.onload = () => { bersWhirlLoaded = true; };
+
+    const bersBuffGlowImg = new Image();
+    bersBuffGlowImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772017149/lueurBuff_pzdlpj.png';
+    let bersBuffGlowLoaded = false;
+    bersBuffGlowImg.onload = () => { bersBuffGlowLoaded = true; };
+
     // ── Add (Tentacle) Sprite ──
     const addImg = new Image();
     addImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771729827/tentaculeManaya_dkn8yg.png';
@@ -2426,7 +2452,12 @@
         send({ type: 'input', input: { type: 'dodge', angle: dodgeAngle } });
       }
       if (key === 'a') send({ type: 'input', input: { type: 'skill', skill: 'skillA', angle: mouseAngle } });
-      if (key === 'e') send({ type: 'input', input: { type: 'skill', skill: 'skillB', angle: mouseAngle } });
+      if (key === 'e' && !e.repeat) {
+        // Send both: charge_start (for berserker) + regular skill (for other classes)
+        // Server ignores charge_start if class doesn't have charged_attack
+        send({ type: 'input', input: { type: 'charge_start', skill: 'skillB', angle: mouseAngle } });
+        send({ type: 'input', input: { type: 'skill', skill: 'skillB', angle: mouseAngle } });
+      }
       if (key === 'r') send({ type: 'input', input: { type: 'skill', skill: 'ultimate', angle: mouseAngle } });
       if (key === '1') send({ type: 'input', input: { type: 'summon', slot: 0 } });
       if (key === '2') send({ type: 'input', input: { type: 'summon', slot: 1 } });
@@ -2434,7 +2465,13 @@
     });
     document.addEventListener('keyup', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-      keys[e.key.toLowerCase()] = false; sendMovement();
+      const key = e.key.toLowerCase();
+      keys[key] = false;
+      if (key === 'e') {
+        // Release charged attack
+        send({ type: 'input', input: { type: 'charge_release', angle: mouseAngle } });
+      }
+      sendMovement();
     });
     canvas.addEventListener('mousemove', (e) => {
       if (!gameState || !myId) return;
@@ -3107,7 +3144,11 @@
 
       // Draw sprite (per-class sprites)
       let spriteImg = null;
-      let isTank = p.class === 'tank';
+      const isTank = p.class === 'tank';
+      const isBerserker = p.class === 'berserker';
+      const hasRageBuff = isBerserker && (p.buffs || []).some(b => b.type === 'atk_up');
+      const isChanneling = p.casting && (p.casting.skill === 'ultimate' || p.casting.type === 'whirlwind');
+
       if (isTank) {
         if (p.blocking && tankBlockLoaded) {
           spriteImg = tankBlockImg;
@@ -3115,6 +3156,16 @@
           spriteImg = tankAtkImg;
         } else {
           spriteImg = tankIdleLoaded ? tankIdleImg : null;
+        }
+      } else if (isBerserker) {
+        if (isChanneling && bersWhirlLoaded) {
+          spriteImg = bersWhirlImg;
+        } else if (p.charging && bersChargeLoaded) {
+          spriteImg = bersChargeImg;
+        } else if (isAttacking && bersAtkLoaded) {
+          spriteImg = bersAtkImg;
+        } else {
+          spriteImg = bersIdleLoaded ? bersIdleImg : null;
         }
       } else {
         spriteImg = isAttacking && playerAtkLoaded ? playerAtkImg : (playerIdleLoaded ? playerIdleImg : null);
@@ -3126,17 +3177,14 @@
         if (p.dodging) ctx.globalAlpha = 0.5;
         const sprSize = isAttacking && !p.blocking ? PLAYER_SPRITE_SIZE * 1.15 : PLAYER_SPRITE_SIZE;
         // Berserker: stronger red rage aura
-        const isBerserker = p.class === 'berserker';
-        const hasRageBuff = isBerserker && (p.buffs || []).some(b => b.type === 'atk_up');
         ctx.shadowColor = color;
         ctx.shadowBlur = isBerserker ? (hasRageBuff ? 35 : 22) : (isMe ? 10 : 5);
         ctx.drawImage(spriteImg, -sprSize/2, -sprSize/2, sprSize, sprSize);
-        // Berserker: red tint overlay
-        if (isBerserker) {
-          ctx.globalCompositeOperation = 'source-atop';
-          ctx.fillStyle = hasRageBuff ? 'rgba(220,38,38,0.55)' : 'rgba(220,38,38,0.3)';
-          ctx.fillRect(-sprSize/2, -sprSize/2, sprSize, sprSize);
-          ctx.globalCompositeOperation = 'source-over';
+        // Berserker buff glow overlay
+        if (isBerserker && hasRageBuff && bersBuffGlowLoaded) {
+          ctx.globalAlpha = 0.6;
+          ctx.drawImage(bersBuffGlowImg, -sprSize * 0.75, -sprSize * 0.75, sprSize * 1.5, sprSize * 1.5);
+          ctx.globalAlpha = 1;
         }
         ctx.shadowBlur = 0;
         ctx.restore();
@@ -3160,6 +3208,39 @@
       ctx.moveTo(p.x + Math.cos(p.aimAngle) * 20, p.y + Math.sin(p.aimAngle) * 20);
       ctx.lineTo(p.x + Math.cos(p.aimAngle) * 40, p.y + Math.sin(p.aimAngle) * 40);
       ctx.stroke();
+
+      // Berserker charge bar (below player)
+      if (p.charging && p.charging.progress !== undefined) {
+        const barW = 40, barH = 6;
+        const barX = p.x - barW / 2, barY = p.y + 28;
+        const pct = Math.min(1, p.charging.progress);
+        // Level thresholds: 0-25% = Lv0, 25-50% = Lv1, 50-75% = Lv2, 75-100% = Lv3
+        const lvl = Math.min(3, Math.floor(pct * 4));
+        const lvlColors = ['#f59e0b', '#ef4444', '#dc2626', '#ff0000'];
+        // Background
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
+        // Fill
+        ctx.fillStyle = lvlColors[lvl];
+        ctx.fillRect(barX, barY, barW * pct, barH);
+        // Level markers
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        for (let i = 1; i < 4; i++) {
+          ctx.fillRect(barX + barW * i / 4 - 0.5, barY, 1, barH);
+        }
+        // Level text
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 8px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Lv' + lvl, p.x, barY + barH + 9);
+        // Pulsing glow at max charge
+        if (pct >= 1) {
+          const pulse = 0.3 + Math.sin(Date.now() / 100) * 0.2;
+          ctx.strokeStyle = 'rgba(255, 0, 0, ' + pulse + ')';
+          ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 30, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
 
       // Small HP bar above OTHER players
       if (!isMe) {
