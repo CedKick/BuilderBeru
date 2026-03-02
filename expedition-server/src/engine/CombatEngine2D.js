@@ -347,6 +347,7 @@ export class CombatEngine2D {
           const actualDmg = target.takeDamage(damage);
           this.events.push({
             type: 'boss_attack',
+            source: boss.id,
             target: target.id,
             amount: actualDmg,
           });
@@ -391,7 +392,7 @@ export class CombatEngine2D {
           if (dist <= pattern.range && c.x >= boss.x - pattern.range) {
             const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
             const actualDmg = c.takeDamage(damage);
-            this.events.push({ type: 'pattern_damage', target: c.id, amount: actualDmg, pattern: pattern.name });
+            this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
             if (!c.alive) this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
           }
         }
@@ -404,7 +405,7 @@ export class CombatEngine2D {
           if (Math.abs(boss.x - c.x) <= pattern.range) {
             const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
             const actualDmg = c.takeDamage(damage);
-            this.events.push({ type: 'pattern_damage', target: c.id, amount: actualDmg, pattern: pattern.name });
+            this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
             if (!c.alive) this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
           }
         }
@@ -419,7 +420,7 @@ export class CombatEngine2D {
         for (const c of targets) {
           const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
           const actualDmg = c.takeDamage(damage);
-          this.events.push({ type: 'pattern_damage', target: c.id, amount: actualDmg, pattern: pattern.name });
+          this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
           if (!c.alive) this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
         }
         break;
@@ -430,7 +431,7 @@ export class CombatEngine2D {
         for (const c of aliveChars) {
           const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
           const actualDmg = c.takeDamage(damage);
-          this.events.push({ type: 'pattern_damage', target: c.id, amount: actualDmg, pattern: pattern.name });
+          this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
           if (!c.alive) this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
         }
         // Boss heals if specified

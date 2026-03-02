@@ -37,10 +37,82 @@
     .status-wiped { background: #991b1b; color: white; }
 
     #canvas-container {
-      position: fixed; top: 60px; left: 0; right: 0; bottom: 120px;
+      position: fixed; top: 60px; left: 0; right: 280px; bottom: 120px;
+      transition: right 0.3s ease;
     }
+    #canvas-container.full-width { right: 0; }
     canvas { width: 100%; height: 100%; display: block; }
 
+    /* ── Stats Panel ── */
+    #stats-panel {
+      position: fixed; top: 60px; right: 0; bottom: 120px;
+      width: 280px; background: rgba(15, 15, 30, 0.98);
+      border-left: 1px solid #333;
+      display: flex; flex-direction: column;
+      z-index: 10;
+      transition: transform 0.3s ease;
+    }
+    #stats-panel.hidden { transform: translateX(100%); }
+
+    #toggle-stats {
+      position: fixed; top: 68px; z-index: 20;
+      background: rgba(168, 85, 247, 0.3); border: 1px solid #a855f7;
+      color: #e0e0e0; padding: 4px 10px; border-radius: 6px;
+      cursor: pointer; font-size: 12px;
+      transition: right 0.3s ease;
+    }
+    #toggle-stats.panel-open { right: 286px; }
+    #toggle-stats.panel-closed { right: 8px; }
+
+    .stats-tabs {
+      display: flex; border-bottom: 1px solid #333;
+    }
+    .stats-tab {
+      flex: 1; padding: 8px 4px; text-align: center;
+      font-size: 12px; font-weight: bold; cursor: pointer;
+      background: transparent; border: none; color: #888;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .stats-tab.active { color: #a855f7; border-bottom-color: #a855f7; }
+    .stats-tab:hover { color: #c084fc; }
+
+    .stats-list {
+      flex: 1; overflow-y: auto; padding: 6px 8px;
+    }
+    .stats-list::-webkit-scrollbar { width: 4px; }
+    .stats-list::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+    .stat-entry {
+      display: flex; align-items: center; gap: 6px;
+      padding: 3px 0; font-size: 11px;
+    }
+    .stat-rank {
+      width: 16px; text-align: right; color: #555; font-size: 10px;
+    }
+    .stat-sprite {
+      width: 20px; height: 20px; border-radius: 3px;
+      object-fit: cover; background: #1a1a2e;
+    }
+    .stat-name {
+      flex: 1; min-width: 0; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
+      color: #ccc; font-size: 11px;
+    }
+    .stat-bar-container {
+      width: 60px; height: 10px; background: #1a1a2e;
+      border-radius: 3px; overflow: hidden;
+    }
+    .stat-bar {
+      height: 100%; border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    .stat-value {
+      width: 48px; text-align: right; font-weight: bold;
+      font-size: 11px; color: #fff;
+    }
+
+    /* ── Event Feed ── */
     #event-feed {
       position: fixed; bottom: 0; left: 0; right: 0;
       height: 120px; background: rgba(15, 15, 30, 0.95);
@@ -60,7 +132,7 @@
     .event-buff { color: #60a5fa; }
 
     #connection-status {
-      position: fixed; top: 70px; right: 10px;
+      position: fixed; top: 70px; left: 10px;
       font-size: 12px; padding: 4px 8px; border-radius: 8px;
       z-index: 20;
     }
@@ -81,14 +153,84 @@
   </div>
 
   <div id="connection-status" class="disconnected">Deconnecte</div>
+  <button id="toggle-stats" class="panel-open">Stats &#9664;</button>
 
   <div id="canvas-container">
     <canvas id="game-canvas"></canvas>
   </div>
 
+  <div id="stats-panel">
+    <div class="stats-tabs">
+      <button class="stats-tab active" data-tab="dps">DPS</button>
+      <button class="stats-tab" data-tab="heals">Heals</button>
+      <button class="stats-tab" data-tab="received">Recus</button>
+    </div>
+    <div class="stats-list" id="stats-list"></div>
+  </div>
+
   <div id="event-feed"></div>
 
 <script>
+// ═══════════════════════════════════════════════════════════
+// HUNTER SPRITES (from raidData.js S object)
+// ═══════════════════════════════════════════════════════════
+const HUNTER_SPRITES = {
+  // FIRE (12)
+  h_megumin:   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771533719/Megumin_yymsbq.png',
+  h_yuqi:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
+  h_kanae:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606320/icons/build-18.png',
+  h_stark:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
+  h_fern:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+  h_reed:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042084/Reed_portrait_ldj0p5.png',
+  h_choi:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606289/icons/build-6.png',
+  h_emma:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606292/icons/build-7.png',
+  h_esil:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606294/icons/build-8.png',
+  h_gina:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606297/icons/build-9.png',
+  h_yoo:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606370/icons/build-37.png',
+  h_song:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606359/icons/build-34.png',
+  // WATER (12)
+  h_shuhua:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',
+  h_chae_in:   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606282/icons/build-3.png',
+  h_frieren:   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+  h_alicia:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606278/icons/build.png',
+  h_meilin:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606335/icons/build-24.png',
+  h_seo:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606349/icons/build-30.png',
+  h_seorin:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606352/icons/build-31.png',
+  h_anna:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606280/icons/build-2.png',
+  h_han_song:  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606306/icons/build-13.png',
+  h_lee_johee: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606330/icons/build-22.png',
+  h_nam:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606342/icons/build-27.png',
+  h_meri:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
+  // SHADOW (12)
+  h_ilhwan:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+  h_minnie:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/Minnie_bcfolv.png',
+  h_charlotte: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606287/icons/build-5.png',
+  h_harper:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606309/icons/build-14.png',
+  h_isla:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606317/icons/build-17.png',
+  h_lim:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606332/icons/build-23.png',
+  h_lee_bora:  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606327/icons/build-21.png',
+  h_silverbaek:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606357/icons/build-33.png',
+  h_sian:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042083/Igris_portrait_xqbgqf.png',
+  h_son:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
+  h_hwang:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606314/icons/build-16.png',
+  h_kang:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606322/icons/build-19.png',
+  // COLLAB
+  h_daijin:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771602808/Daijin_p1pvcs.png',
+  h_pod042:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771604133/Pod042_rlmzhk.png',
+  h_kurisu:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771653556/Kurisu_Makise_bgr1ft.png',
+  h_mayuri:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771655865/Mayuri_pdutiq.png',
+  h_mikasa:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771655466/Mikasa_axfrpp.png',
+  h_kaneki:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771655666/Kaneki_aobcre.png',
+  h_saber:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771655017/Saber_xg6thi.png',
+  h_guts:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771654575/Guts_y7usbq.png',
+  h_sukuna:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771728787/Sukuna_rcgrdk.png',
+  h_gojo:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771729193/GojoSatoru_ty0ahp.png',
+  h_a9:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771654101/A9_tky2tw.png',
+  h_2b:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771499926/2B_vly2pt.png',
+  h_pascal:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771500784/Pascal_xfuwum.png',
+  h_a2:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771503623/A2_a0cyk9.png',
+};
+
 // ═══════════════════════════════════════════════════════════
 // Spectator Client
 // ═══════════════════════════════════════════════════════════
@@ -104,7 +246,52 @@ const WS_URL = location.protocol === 'https:'
 let state = null;
 let events = [];
 const MAX_EVENTS = 50;
-const floatingNumbers = [];  // { x, y, text, color, life }
+const floatingNumbers = [];  // { x, y, text, color, life, size }
+
+// ── Sprite Cache ──
+const spriteCache = {};
+const spriteLoading = new Set();
+
+function preloadSprite(hunterId) {
+  if (spriteCache[hunterId] || spriteLoading.has(hunterId)) return;
+  const url = HUNTER_SPRITES[hunterId];
+  if (!url) return;
+  spriteLoading.add(hunterId);
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => { spriteCache[hunterId] = img; spriteLoading.delete(hunterId); };
+  img.onerror = () => { spriteLoading.delete(hunterId); };
+  img.src = url;
+}
+
+// Preload all sprites upfront
+for (const id of Object.keys(HUNTER_SPRITES)) preloadSprite(id);
+
+// ── Animation States ──
+const animStates = {}; // { [entityId]: { type, timer } }
+
+function triggerAnim(entityId, type, duration) {
+  animStates[entityId] = { type, timer: duration };
+}
+
+// ── Combat Stats Tracking ──
+const combatStats = {}; // { [charId]: { name, hunterId, element, dmgDealt, dmgReceived, healsGiven, healsReceived, kills, crits } }
+let activeStatsTab = 'dps';
+
+function ensureStats(id) {
+  if (!combatStats[id]) {
+    const char = state?.characters?.find(c => c.id === id);
+    combatStats[id] = {
+      name: char?.name || id.split('_').slice(1).join(' '),
+      hunterId: char?.hunterId || null,
+      element: char?.element || null,
+      dmgDealt: 0, dmgReceived: 0,
+      healsGiven: 0, healsReceived: 0,
+      kills: 0, crits: 0,
+    };
+  }
+  return combatStats[id];
+}
 
 // ── Canvas ──
 const canvas = document.getElementById('game-canvas');
@@ -131,6 +318,29 @@ const ROLE_SHAPES = {
   backline_dps: 'diamond',
   backline_heal: 'circle',
 };
+
+// ── Stats Panel Toggle ──
+let statsPanelOpen = true;
+const toggleBtn = document.getElementById('toggle-stats');
+toggleBtn.addEventListener('click', () => {
+  statsPanelOpen = !statsPanelOpen;
+  document.getElementById('stats-panel').classList.toggle('hidden', !statsPanelOpen);
+  document.getElementById('canvas-container').classList.toggle('full-width', !statsPanelOpen);
+  toggleBtn.className = statsPanelOpen ? 'panel-open' : 'panel-closed';
+  toggleBtn.innerHTML = statsPanelOpen ? 'Stats &#9664;' : '&#9654; Stats';
+  toggleBtn.id = 'toggle-stats';
+  setTimeout(resizeCanvas, 310);
+});
+
+// ── Stats Tabs ──
+document.querySelectorAll('.stats-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    activeStatsTab = tab.dataset.tab;
+    renderStatsPanel();
+  });
+});
 
 // ── WebSocket ──
 let ws = null;
@@ -166,6 +376,16 @@ function handleMessage(msg) {
     case 'expedition_state':
       state = msg;
       updateHeader(msg);
+      // Preload any new sprites we haven't seen
+      for (const c of msg.characters || []) {
+        if (c.hunterId) preloadSprite(c.hunterId);
+        // Update name/hunterId in combatStats if we have entries
+        if (combatStats[c.id]) {
+          combatStats[c.id].name = c.name;
+          combatStats[c.id].hunterId = c.hunterId;
+          combatStats[c.id].element = c.element;
+        }
+      }
       break;
 
     case 'events_batch':
@@ -216,24 +436,50 @@ function handleMessage(msg) {
 function handleEvent(ev) {
   switch (ev.type) {
     case 'damage':
-    case 'skill_damage':
-      addFloating(ev.target, `-${ev.amount}`, ev.crit ? '#fbbf24' : '#ef4444');
+    case 'skill_damage': {
+      const size = ev.crit ? 20 : 16;
+      const color = ev.crit ? '#fbbf24' : '#ef4444';
+      const text = ev.crit ? `CRIT ${ev.amount}` : `-${ev.amount}`;
+      addFloating(ev.target, text, color, size);
+      triggerAnim(ev.target, 'hit', 0.15);
+      triggerAnim(ev.source, 'attack', 0.2);
+      // Stats
+      const src = ensureStats(ev.source);
+      src.dmgDealt += ev.amount;
+      if (ev.crit) src.crits++;
+      const tgt = ensureStats(ev.target);
+      tgt.dmgReceived += ev.amount;
       break;
+    }
     case 'mob_attack':
     case 'boss_attack':
-    case 'pattern_damage':
-      addFloating(ev.target, `-${ev.amount}`, '#ff6b6b');
+    case 'pattern_damage': {
+      addFloating(ev.target, `-${ev.amount}`, '#ff6b6b', 16);
+      triggerAnim(ev.target, 'hit', 0.15);
+      const tgt = ensureStats(ev.target);
+      tgt.dmgReceived += ev.amount;
       break;
-    case 'heal':
-      addFloating(ev.target, `+${ev.amount}`, '#22c55e');
+    }
+    case 'heal': {
+      addFloating(ev.target, `+${ev.amount}`, '#22c55e', 16);
+      triggerAnim(ev.target, 'heal', 0.3);
       addEvent('heal', `${ev.source.split('_').slice(1).join(' ')} soigne ${ev.target.split('_').slice(1).join(' ')} (+${ev.amount})`);
+      const src = ensureStats(ev.source);
+      src.healsGiven += ev.amount;
+      const tgt = ensureStats(ev.target);
+      tgt.healsReceived += ev.amount;
       break;
+    }
     case 'death':
-      addEvent('death', `${ev.characterId} est mort!`);
+      addEvent('death', `${ev.characterId.split('_').slice(1).join(' ')} est mort!`);
+      triggerAnim(ev.characterId, 'death', 1.0);
       break;
-    case 'kill':
+    case 'kill': {
       addEvent('kill', `${ev.killer.split('_').slice(1).join(' ')} tue ${ev.targetName}!`);
+      const src = ensureStats(ev.killer);
+      src.kills++;
       break;
+    }
     case 'boss_pattern':
       addEvent('boss', `[${ev.name}] telegraph ${ev.telegraphTime}s!`);
       break;
@@ -250,15 +496,15 @@ function handleEvent(ev) {
 }
 
 // ── Floating damage numbers ──
-function addFloating(targetId, text, color) {
+function addFloating(targetId, text, color, size) {
   if (!state) return;
   const entity = findEntity(targetId);
   if (!entity) return;
   floatingNumbers.push({
-    x: entity.x, y: -20 - Math.random() * 30,
-    text, color,
-    life: 1.5,
-    vy: -40,
+    x: entity.x, y: -30 - Math.random() * 20,
+    text, color, size: size || 16,
+    life: 2.0,
+    vy: -50,
   });
 }
 
@@ -309,18 +555,104 @@ function formatTime(seconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+function formatNumber(n) {
+  if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1) + 'B';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATS PANEL RENDERING
+// ═══════════════════════════════════════════════════════════
+
+const TAB_COLORS = { dps: '#ef4444', heals: '#22c55e', received: '#f59e0b' };
+
+let statsRenderTimer = null;
+function scheduleStatsRender() {
+  if (statsRenderTimer) return;
+  statsRenderTimer = setTimeout(() => { statsRenderTimer = null; renderStatsPanel(); }, 500);
+}
+
+function renderStatsPanel() {
+  if (!statsPanelOpen) return;
+  const list = document.getElementById('stats-list');
+
+  // Only include player characters (not mobs/boss)
+  const entries = Object.entries(combatStats)
+    .filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'));
+
+  let sorted;
+  let valueKey;
+  switch (activeStatsTab) {
+    case 'dps':
+      valueKey = 'dmgDealt';
+      sorted = entries.sort((a, b) => b[1].dmgDealt - a[1].dmgDealt);
+      break;
+    case 'heals':
+      valueKey = 'healsGiven';
+      sorted = entries.sort((a, b) => b[1].healsGiven - a[1].healsGiven);
+      break;
+    case 'received':
+      valueKey = 'dmgReceived';
+      sorted = entries.sort((a, b) => b[1].dmgReceived - a[1].dmgReceived);
+      break;
+  }
+
+  const maxVal = sorted.length > 0 ? sorted[0][1][valueKey] : 1;
+  const barColor = TAB_COLORS[activeStatsTab];
+
+  let html = '';
+  for (let i = 0; i < sorted.length; i++) {
+    const [id, s] = sorted[i];
+    const val = s[valueKey];
+    if (val === 0) continue;
+    const pct = maxVal > 0 ? (val / maxVal * 100) : 0;
+    const spriteUrl = s.hunterId ? HUNTER_SPRITES[s.hunterId] : null;
+    const elemColor = ELEMENT_COLORS[s.element] || '#888';
+
+    html += `<div class="stat-entry">
+      <span class="stat-rank">${i + 1}</span>
+      ${spriteUrl
+        ? `<img class="stat-sprite" src="${spriteUrl}" alt="">`
+        : `<span class="stat-sprite" style="background:${elemColor}"></span>`}
+      <span class="stat-name" style="color:${elemColor}">${s.name}</span>
+      <div class="stat-bar-container">
+        <div class="stat-bar" style="width:${pct}%;background:${barColor}"></div>
+      </div>
+      <span class="stat-value">${formatNumber(val)}</span>
+    </div>`;
+  }
+
+  list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de donnees</div>';
+}
+
 // ═══════════════════════════════════════════════════════════
 // RENDERING
 // ═══════════════════════════════════════════════════════════
 
 const GROUND_Y_RATIO = 0.7;  // Ground at 70% of canvas height
 const SCALE = 0.5;           // World to screen scale
+const CHAR_SIZE = 40;        // Character sprite size
+const MOB_SIZE_BASIC = 14;
+const MOB_SIZE_ELITE = 22;
+const BOSS_SIZE = 50;
+
+let lastTime = performance.now();
 
 function render() {
   requestAnimationFrame(render);
-  const dt = 1 / 60;
+  const now = performance.now();
+  const dt = (now - lastTime) / 1000;
+  lastTime = now;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Update animation states
+  for (const id in animStates) {
+    animStates[id].timer -= dt;
+    if (animStates[id].timer <= 0) delete animStates[id];
+  }
 
   if (!state) {
     ctx.fillStyle = '#555';
@@ -367,20 +699,18 @@ function render() {
   if (state.status === 'campfire') {
     const fireX = canvas.width / 2;
     const fireY = groundY - 20;
-    // Fire glow
-    const glowGrad = ctx.createRadialGradient(fireX, fireY, 5, fireX, fireY, 80);
-    glowGrad.addColorStop(0, 'rgba(255, 150, 50, 0.4)');
+    const glowGrad = ctx.createRadialGradient(fireX, fireY, 5, fireX, fireY, 100);
+    glowGrad.addColorStop(0, 'rgba(255, 150, 50, 0.5)');
     glowGrad.addColorStop(1, 'rgba(255, 150, 50, 0)');
     ctx.fillStyle = glowGrad;
-    ctx.fillRect(fireX - 80, fireY - 80, 160, 160);
-    // Fire
+    ctx.fillRect(fireX - 100, fireY - 100, 200, 200);
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
-    ctx.arc(fireX, fireY, 8 + Math.sin(Date.now() / 100) * 3, 0, Math.PI * 2);
+    ctx.arc(fireX, fireY, 10 + Math.sin(Date.now() / 100) * 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ef4444';
     ctx.beginPath();
-    ctx.arc(fireX, fireY - 5, 5 + Math.cos(Date.now() / 80) * 2, 0, Math.PI * 2);
+    ctx.arc(fireX, fireY - 6, 6 + Math.cos(Date.now() / 80) * 3, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -388,69 +718,241 @@ function render() {
   for (const mob of (state.mobs || [])) {
     if (!mob.alive) continue;
     const sx = mob.x * SCALE - cameraX;
-    const sy = groundY - 20;
-    const size = mob.elite ? 18 : 12;
+    const sy = groundY;
+    const size = mob.elite ? MOB_SIZE_ELITE : MOB_SIZE_BASIC;
+    const anim = animStates[mob.id];
+
+    ctx.save();
+    if (anim?.type === 'hit') {
+      ctx.globalAlpha = 0.6;
+    }
 
     ctx.fillStyle = mob.caster ? '#9333ea' : mob.elite ? '#991b1b' : '#dc2626';
     ctx.fillRect(sx - size / 2, sy - size, size, size);
 
+    // Mob eyes
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(sx - size / 4 - 1, sy - size * 0.7, 2, 2);
+    ctx.fillRect(sx + size / 4 - 1, sy - size * 0.7, 2, 2);
+
+    ctx.restore();
+
     // HP bar
-    drawHpBar(sx, sy - size - 8, size + 4, 3, mob.hp / mob.maxHp, '#dc2626');
+    drawHpBar(sx, sy - size - 6, size + 6, 3, mob.hp / mob.maxHp);
 
     // Name
     ctx.fillStyle = '#aaa';
     ctx.font = '9px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(mob.name, sx, sy - size - 12);
+    ctx.fillText(mob.name, sx, sy - size - 10);
   }
 
   // ── Draw Boss ──
   if (state.boss) {
     const b = state.boss;
     const sx = b.x * SCALE - cameraX;
-    const sy = groundY - 30;
-    const size = 40;
+    const sy = groundY;
+    const anim = animStates[b.id];
+
+    ctx.save();
+    if (anim?.type === 'hit') {
+      ctx.globalAlpha = 0.7;
+    }
 
     // Boss body
     ctx.fillStyle = b.enraged ? '#ff0000' : '#7c2d12';
-    ctx.fillRect(sx - size / 2, sy - size, size, size);
+    ctx.fillRect(sx - BOSS_SIZE / 2, sy - BOSS_SIZE, BOSS_SIZE, BOSS_SIZE);
 
     // Boss crown
     ctx.fillStyle = '#eab308';
-    ctx.fillRect(sx - 8, sy - size - 8, 16, 6);
+    ctx.beginPath();
+    ctx.moveTo(sx - 12, sy - BOSS_SIZE);
+    ctx.lineTo(sx - 8, sy - BOSS_SIZE - 10);
+    ctx.lineTo(sx - 4, sy - BOSS_SIZE - 4);
+    ctx.lineTo(sx, sy - BOSS_SIZE - 12);
+    ctx.lineTo(sx + 4, sy - BOSS_SIZE - 4);
+    ctx.lineTo(sx + 8, sy - BOSS_SIZE - 10);
+    ctx.lineTo(sx + 12, sy - BOSS_SIZE);
+    ctx.closePath();
+    ctx.fill();
+
+    // Boss eyes (red glow)
+    ctx.fillStyle = b.enraged ? '#fff' : '#ef4444';
+    ctx.beginPath();
+    ctx.arc(sx - 10, sy - BOSS_SIZE * 0.6, 4, 0, Math.PI * 2);
+    ctx.arc(sx + 10, sy - BOSS_SIZE * 0.6, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
 
     // HP bar (big)
-    drawHpBar(sx, sy - size - 20, 60, 6, b.hp / b.maxHp, '#dc2626');
+    drawHpBar(sx, sy - BOSS_SIZE - 20, 120, 8, b.hp / b.maxHp);
 
     // Name + HP%
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 12px sans-serif';
+    ctx.font = 'bold 13px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(b.name, sx, sy - size - 24);
-    ctx.font = '10px sans-serif';
-    ctx.fillText(`${Math.floor(b.hp / b.maxHp * 100)}%`, sx, sy - size - 14);
+    ctx.fillText(b.name, sx, sy - BOSS_SIZE - 28);
+    ctx.font = '11px sans-serif';
+    ctx.fillStyle = '#ccc';
+    ctx.fillText(`${Math.floor(b.hp / b.maxHp * 100)}%`, sx, sy - BOSS_SIZE - 10);
 
     // Telegraph indicator
     if (b.patternPhase === 'telegraph' && b.currentPattern) {
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-      ctx.fillRect(sx - 100, sy - size - 5, 200, size + 10);
+      const pulse = Math.sin(Date.now() / 150) * 0.15 + 0.25;
+      ctx.fillStyle = `rgba(255, 0, 0, ${pulse})`;
+      ctx.fillRect(sx - 120, sy - BOSS_SIZE - 5, 240, BOSS_SIZE + 10);
       ctx.fillStyle = '#ff4444';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillText(`⚠ ${b.currentPattern}`, sx, sy - size + 15);
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(`!! ${b.currentPattern} !!`, sx, sy - BOSS_SIZE + 20);
     }
   }
 
   // ── Draw Characters ──
   for (const char of (state.characters || [])) {
-    if (!char.alive) continue;
     const sx = char.x * SCALE - cameraX;
-    const sy = groundY - 15;
-    const size = 10;
+    const sy = groundY;
+    const anim = animStates[char.id];
 
+    // Dead characters: ghost
+    if (!char.alive) {
+      if (anim?.type !== 'death') continue; // Only show during death anim
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, anim.timer / 1.0) * 0.5;
+      const deathOffset = (1.0 - anim.timer) * 15;
+      drawCharacter(char, sx, sy + deathOffset);
+      ctx.restore();
+      continue;
+    }
+
+    ctx.save();
+
+    // Animation effects
+    if (anim?.type === 'attack') {
+      const scale = 1 + 0.15 * (anim.timer / 0.2);
+      ctx.translate(sx, sy - CHAR_SIZE / 2);
+      ctx.scale(scale, scale);
+      ctx.translate(-sx, -(sy - CHAR_SIZE / 2));
+    }
+
+    if (anim?.type === 'hit') {
+      // Red flash overlay
+      ctx.globalAlpha = 0.7;
+    }
+
+    if (anim?.type === 'heal') {
+      // Green glow
+      const glowAlpha = anim.timer / 0.3 * 0.4;
+      const glow = ctx.createRadialGradient(sx, sy - CHAR_SIZE / 2, 5, sx, sy - CHAR_SIZE / 2, 30);
+      glow.addColorStop(0, `rgba(34, 197, 94, ${glowAlpha})`);
+      glow.addColorStop(1, 'rgba(34, 197, 94, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(sx - 30, sy - CHAR_SIZE - 10, 60, CHAR_SIZE + 20);
+    }
+
+    drawCharacter(char, sx, sy);
+
+    ctx.restore();
+
+    // HP bar below character
+    drawHpBar(sx, sy + 2, 36, 4, char.hp / char.maxHp);
+
+    // Mana bar (thin, blue) below HP
+    if (char.maxMana) {
+      const manaRatio = (char.mana || 0) / char.maxMana;
+      const barX = sx - 18;
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(barX, sy + 7, 36, 2);
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillRect(barX, sy + 7, 36 * Math.max(0, manaRatio), 2);
+    }
+
+    // Name above character
+    const elemColor = ELEMENT_COLORS[char.element] || '#888';
+    ctx.fillStyle = elemColor;
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(char.name, sx, sy - CHAR_SIZE - 4);
+  }
+
+  // ── Floating Numbers ──
+  for (let i = floatingNumbers.length - 1; i >= 0; i--) {
+    const f = floatingNumbers[i];
+    f.life -= dt;
+    f.y += f.vy * dt;
+    f.vy *= 0.97; // ease out
+    if (f.life <= 0) { floatingNumbers.splice(i, 1); continue; }
+
+    const sx = f.x * SCALE - cameraX;
+    const sy = GROUND_Y_RATIO * canvas.height + f.y;
+    const alpha = Math.min(1, f.life / 0.5);
+
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = f.color;
+    ctx.font = `bold ${f.size}px sans-serif`;
+    ctx.textAlign = 'center';
+    // Shadow for readability
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(f.text, sx, sy);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+
+  // ── Phase overlay text ──
+  if (state.status === 'march') {
+    ctx.fillStyle = 'rgba(37, 99, 235, 0.12)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#60a5fa';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 6;
+    ctx.fillText('En marche...', canvas.width / 2, 50);
+    ctx.shadowBlur = 0;
+  }
+  if (state.status === 'loot_roll') {
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#c084fc';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 6;
+    ctx.fillText('Distribution du loot...', canvas.width / 2, 50);
+    ctx.shadowBlur = 0;
+  }
+
+  // Schedule stats panel render (throttled)
+  scheduleStatsRender();
+}
+
+function drawCharacter(char, sx, sy) {
+  const sprite = char.hunterId ? spriteCache[char.hunterId] : null;
+
+  if (sprite?.complete) {
+    // Draw sprite with rounded clip
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(sx, sy - CHAR_SIZE / 2, CHAR_SIZE / 2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(sprite, sx - CHAR_SIZE / 2, sy - CHAR_SIZE, CHAR_SIZE, CHAR_SIZE);
+    ctx.restore();
+
+    // Border ring (element color)
+    const elemColor = ELEMENT_COLORS[char.element] || '#888';
+    ctx.strokeStyle = elemColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(sx, sy - CHAR_SIZE / 2, CHAR_SIZE / 2, 0, Math.PI * 2);
+    ctx.stroke();
+  } else {
+    // Fallback: colored shapes
     const color = ELEMENT_COLORS[char.element] || '#888';
+    const size = 14;
     ctx.fillStyle = color;
 
-    // Shape based on role
     switch (ROLE_SHAPES[char.role]) {
       case 'circle':
         ctx.beginPath();
@@ -474,57 +976,20 @@ function render() {
         ctx.closePath();
         ctx.fill();
         break;
-      default: // square
+      default:
         ctx.fillRect(sx - size / 2, sy - size, size, size);
     }
-
-    // HP bar
-    drawHpBar(sx, sy - size - 6, 14, 2, char.hp / char.maxHp, color);
-  }
-
-  // ── Floating Numbers ──
-  for (let i = floatingNumbers.length - 1; i >= 0; i--) {
-    const f = floatingNumbers[i];
-    f.life -= dt;
-    f.y += f.vy * dt;
-    if (f.life <= 0) { floatingNumbers.splice(i, 1); continue; }
-
-    const sx = f.x * SCALE - cameraX;
-    const sy = GROUND_Y_RATIO * canvas.height + f.y;
-    const alpha = Math.min(1, f.life / 0.5);
-
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = f.color;
-    ctx.font = 'bold 14px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(f.text, sx, sy);
-    ctx.globalAlpha = 1;
-  }
-
-  // ── Phase overlay text ──
-  if (state.status === 'march') {
-    ctx.fillStyle = 'rgba(37, 99, 235, 0.15)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#60a5fa';
-    ctx.font = 'bold 20px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('En marche...', canvas.width / 2, 40);
-  }
-  if (state.status === 'loot_roll') {
-    ctx.fillStyle = 'rgba(168, 85, 247, 0.1)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#c084fc';
-    ctx.font = 'bold 20px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Distribution du loot...', canvas.width / 2, 40);
   }
 }
 
-function drawHpBar(x, y, width, height, ratio, color) {
+function drawHpBar(x, y, width, height, ratio) {
   const barX = x - width / 2;
-  ctx.fillStyle = '#333';
-  ctx.fillRect(barX, y, width, height);
-  ctx.fillStyle = ratio > 0.5 ? '#22c55e' : ratio > 0.25 ? '#f59e0b' : '#ef4444';
+  // Background
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.fillRect(barX - 1, y - 1, width + 2, height + 2);
+  // Bar
+  const color = ratio > 0.6 ? '#22c55e' : ratio > 0.3 ? '#f59e0b' : '#ef4444';
+  ctx.fillStyle = color;
   ctx.fillRect(barX, y, width * Math.max(0, ratio), height);
 }
 

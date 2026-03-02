@@ -500,7 +500,7 @@ export class ExpeditionEngine {
       bossesKilled: this.bossesKilled,
       phaseTimer: Math.max(0, Math.floor(this.phaseTimer)),
       characters: this.characters.map(c => ({
-        id: c.id, name: c.name, hp: c.hp, maxHp: c.maxHp,
+        id: c.id, name: c.name, hunterId: c.hunterId, hp: c.hp, maxHp: c.maxHp,
         x: Math.floor(c.x), alive: c.alive, role: c.role,
         element: c.element, username: c.username,
       })),
