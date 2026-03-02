@@ -15,6 +15,7 @@ export class ExpeditionBoss {
 
     // Position (starts on the right side)
     this.x = COMBAT.WORLD_WIDTH - 200;
+    this.y = 0;  // Boss at center ground
 
     // State
     this.alive = true;
@@ -169,6 +170,7 @@ export class ExpeditionBoss {
       atk: this.atk,
       def: this.def,
       x: this.x,
+      y: this.y,
       alive: this.alive,
       enraged: this.enraged,
       enrageTimer: Math.max(0, Math.floor(this.enrageTimer)),

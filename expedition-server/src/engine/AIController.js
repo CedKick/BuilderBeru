@@ -189,21 +189,51 @@ export class AIController {
     const alive = characters.filter(c => c.alive);
     if (!alive.length) return;
 
-    // Sort by role priority: frontline first, backline last
-    const rolePriority = { frontline: 0, frontline_dps: 1, backline_dps: 2, backline_heal: 3 };
-    alive.sort((a, b) => (rolePriority[a.role] || 1) - (rolePriority[b.role] || 1));
+    // Group by role
+    const groups = { frontline: [], frontline_dps: [], backline_dps: [], backline_heal: [] };
+    for (const c of alive) {
+      (groups[c.role] || groups.frontline_dps).push(c);
+    }
 
-    // Assign initial X positions
+    const jitter = COMBAT.LANE_Y_JITTER || 15;
+    const laneY = COMBAT.LANE_Y || { frontline: 0, frontline_dps: -20, backline_dps: -50, backline_heal: -70 };
+
+    // Frontline (tanks): spread from FRONTLINE_BASE_X
     let x = COMBAT.FRONTLINE_BASE_X;
-    for (const char of alive) {
-      if (char.role === 'backline_dps' || char.role === 'backline_heal') {
-        char.targetX = COMBAT.FRONTLINE_BASE_X + COMBAT.BACKLINE_OFFSET + (Math.random() * 60 - 30);
-      } else {
-        char.targetX = x;
-        x += COMBAT.FORMATION_SPACING;
-      }
-      // Set initial position if not yet positioned
-      if (char.x === 0) char.x = char.targetX;
+    for (const c of groups.frontline) {
+      c.targetX = x;
+      c.y = laneY.frontline + (Math.random() * 2 - 1) * jitter;
+      x += COMBAT.FORMATION_SPACING;
+    }
+
+    // Frontline DPS: right behind tanks
+    x = COMBAT.FRONTLINE_BASE_X - 60;
+    for (const c of groups.frontline_dps) {
+      c.targetX = x;
+      c.y = laneY.frontline_dps + (Math.random() * 2 - 1) * jitter;
+      x += COMBAT.FORMATION_SPACING;
+    }
+
+    // Backline DPS: spread across backline area with proper spacing
+    const backlineStartX = COMBAT.FRONTLINE_BASE_X + COMBAT.BACKLINE_OFFSET;
+    x = backlineStartX;
+    for (const c of groups.backline_dps) {
+      c.targetX = x;
+      c.y = laneY.backline_dps + (Math.random() * 2 - 1) * jitter;
+      x += Math.max(COMBAT.FORMATION_SPACING, 40);
+    }
+
+    // Backline Heal: furthest back, well spaced
+    x = backlineStartX - 80;
+    for (const c of groups.backline_heal) {
+      c.targetX = x;
+      c.y = laneY.backline_heal + (Math.random() * 2 - 1) * jitter;
+      x += COMBAT.FORMATION_SPACING + 10;
+    }
+
+    // Set initial position if not yet positioned
+    for (const c of alive) {
+      if (c.x === 0) c.x = c.targetX;
     }
   }
 

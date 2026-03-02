@@ -45,6 +45,15 @@ export const COMBAT = {
   FRONTLINE_BASE_X: 600,    // Where frontliners start
   BACKLINE_OFFSET: -300,    // Backline is 300px behind frontline
 
+  // Vertical lanes (Y) — visual depth separation by role
+  LANE_Y: {
+    frontline:      0,      // Tanks at center ground
+    frontline_dps: -20,     // Fighters slightly above
+    backline_dps:  -50,     // Mages further up
+    backline_heal: -70,     // Healers at the very back
+  },
+  LANE_Y_JITTER: 15,        // +/- random Y per character within lane
+
   // Auto-attack intervals (seconds)
   MELEE_ATTACK_INTERVAL: 1.0,
   RANGED_ATTACK_INTERVAL: 1.5,

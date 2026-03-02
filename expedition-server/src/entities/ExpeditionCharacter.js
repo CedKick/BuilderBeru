@@ -54,8 +54,9 @@ export class ExpeditionCharacter {
       cooldown: 0,  // Current cooldown remaining (seconds)
     }));
 
-    // Position (1D: X axis only)
+    // Position (2D)
     this.x = 0;
+    this.y = 0;
     this.targetX = 0;
 
     // State
@@ -194,6 +195,7 @@ export class ExpeditionCharacter {
       spd: this.spd,
       crit: this.crit,
       x: this.x,
+      y: this.y,
       alive: this.alive,
       diedThisCombat: this.diedThisCombat,
       buffs: this.buffs,
@@ -215,6 +217,7 @@ export class ExpeditionCharacter {
     char.spd = data.spd;
     char.crit = data.crit;
     char.x = data.x;
+    char.y = data.y || 0;
     char.alive = data.alive;
     char.diedThisCombat = data.diedThisCombat;
     char.buffs = data.buffs || [];

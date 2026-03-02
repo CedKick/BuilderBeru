@@ -37,15 +37,16 @@
     .status-wiped { background: #991b1b; color: white; }
 
     #canvas-container {
-      position: fixed; top: 60px; left: 0; right: 280px; bottom: 120px;
+      position: fixed; top: 60px; left: 0; right: 280px; bottom: 150px;
       transition: right 0.3s ease;
     }
     #canvas-container.full-width { right: 0; }
-    canvas { width: 100%; height: 100%; display: block; }
+    canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+    canvas:active { cursor: grabbing; }
 
     /* ── Stats Panel ── */
     #stats-panel {
-      position: fixed; top: 60px; right: 0; bottom: 120px;
+      position: fixed; top: 60px; right: 0; bottom: 150px;
       width: 280px; background: rgba(15, 15, 30, 0.98);
       border-left: 1px solid #333;
       display: flex; flex-direction: column;
@@ -137,24 +138,48 @@
     .crit-stat-label { color: #888; }
     .crit-stat-val { color: #f97316; font-weight: bold; text-align: right; }
 
-    /* ── Event Feed ── */
-    #event-feed {
+    /* ── Combat Log (Warlogs-style) ── */
+    #combat-log {
       position: fixed; bottom: 0; left: 0; right: 0;
-      height: 120px; background: rgba(15, 15, 30, 0.95);
+      height: 150px; background: rgba(10, 10, 20, 0.97);
       border-top: 1px solid #333;
-      overflow-y: auto; padding: 8px 16px;
-      font-size: 13px; line-height: 1.6;
+      display: flex; flex-direction: column;
+      z-index: 10;
     }
-    .event { opacity: 0.9; }
-    .event-damage { color: #ef4444; }
-    .event-heal { color: #22c55e; }
-    .event-kill { color: #f59e0b; }
-    .event-death { color: #dc2626; font-weight: bold; }
-    .event-boss { color: #a855f7; font-weight: bold; }
-    .event-loot { color: #eab308; }
-    .event-rez { color: #38bdf8; }
-    .event-info { color: #888; }
-    .event-buff { color: #60a5fa; }
+    .log-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 4px 12px; border-bottom: 1px solid #222;
+      background: rgba(20, 20, 35, 0.9);
+    }
+    .log-filters { display: flex; gap: 4px; }
+    .log-filter {
+      padding: 2px 8px; border-radius: 10px; font-size: 10px;
+      border: 1px solid #333; background: transparent; color: #888;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .log-filter.active { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; color: #c084fc; }
+    .log-filter:hover { color: #ccc; }
+    .log-counter { font-size: 10px; color: #555; }
+    #log-entries {
+      flex: 1; overflow-y: auto; padding: 4px 12px;
+      font-size: 12px; line-height: 1.5;
+    }
+    #log-entries::-webkit-scrollbar { width: 4px; }
+    #log-entries::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    .log-entry { display: flex; gap: 6px; align-items: baseline; opacity: 0.9; }
+    .log-time { color: #555; font-size: 10px; min-width: 36px; font-family: monospace; }
+    .log-icon { font-size: 12px; }
+    .log-text { flex: 1; }
+    .log-crit { background: #fbbf24; color: #000; font-size: 9px; padding: 0 4px; border-radius: 3px; font-weight: bold; }
+    .log-damage .log-text { color: #ef4444; }
+    .log-heal .log-text { color: #22c55e; }
+    .log-kill .log-text { color: #f59e0b; }
+    .log-death .log-text { color: #dc2626; font-weight: bold; }
+    .log-boss .log-text { color: #a855f7; font-weight: bold; }
+    .log-loot .log-text { color: #eab308; }
+    .log-rez .log-text { color: #38bdf8; }
+    .log-info .log-text { color: #888; }
+    .log-buff .log-text { color: #60a5fa; }
 
     #connection-status {
       position: fixed; top: 70px; left: 10px;
@@ -198,14 +223,26 @@
     </div>
   </div>
 
-  <div id="event-feed"></div>
+  <div id="combat-log">
+    <div class="log-header">
+      <div class="log-filters">
+        <button class="log-filter active" data-filter="all">Tout</button>
+        <button class="log-filter" data-filter="damage">Degats</button>
+        <button class="log-filter" data-filter="heal">Soins</button>
+        <button class="log-filter" data-filter="kill">Kills</button>
+        <button class="log-filter" data-filter="boss">Boss</button>
+        <button class="log-filter" data-filter="loot">Loot</button>
+      </div>
+      <span class="log-counter" id="log-counter">0 events</span>
+    </div>
+    <div id="log-entries"></div>
+  </div>
 
 <script>
 // ═══════════════════════════════════════════════════════════
 // HUNTER SPRITES (from raidData.js S object)
 // ═══════════════════════════════════════════════════════════
 const HUNTER_SPRITES = {
-  // FIRE (12)
   h_megumin:   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771533719/Megumin_yymsbq.png',
   h_yuqi:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
   h_kanae:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606320/icons/build-18.png',
@@ -218,7 +255,6 @@ const HUNTER_SPRITES = {
   h_gina:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606297/icons/build-9.png',
   h_yoo:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606370/icons/build-37.png',
   h_song:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606359/icons/build-34.png',
-  // WATER (12)
   h_shuhua:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',
   h_chae_in:   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606282/icons/build-3.png',
   h_frieren:   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
@@ -231,7 +267,6 @@ const HUNTER_SPRITES = {
   h_lee_johee: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606330/icons/build-22.png',
   h_nam:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606342/icons/build-27.png',
   h_meri:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
-  // SHADOW (12)
   h_ilhwan:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
   h_minnie:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/Minnie_bcfolv.png',
   h_charlotte: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606287/icons/build-5.png',
@@ -244,7 +279,6 @@ const HUNTER_SPRITES = {
   h_son:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
   h_hwang:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606314/icons/build-16.png',
   h_kang:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606322/icons/build-19.png',
-  // COLLAB
   h_daijin:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771602808/Daijin_p1pvcs.png',
   h_pod042:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771604133/Pod042_rlmzhk.png',
   h_kurisu:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771653556/Kurisu_Makise_bgr1ft.png',
@@ -260,10 +294,6 @@ const HUNTER_SPRITES = {
   h_pascal:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771500784/Pascal_xfuwum.png',
   h_a2:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771503623/A2_a0cyk9.png',
 };
-
-// ═══════════════════════════════════════════════════════════
-// MOB SPRITES (trashmobs, mapped by template key)
-// ═══════════════════════════════════════════════════════════
 const MOB_SPRITES = {
   slime:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772485630/spipida_qwwhgo.png',
   goblin:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772485626/Druggy_n7qfpx.png',
@@ -271,55 +301,67 @@ const MOB_SPRITES = {
   golem:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772485625/icymonkey_g81bbx.png',
   orc:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772485625/Mordcha_pmigkp.png',
 };
-
-// ═══════════════════════════════════════════════════════════
-// BOSS SPRITES (10 boss skins, mapped by boss index)
-// ═══════════════════════════════════════════════════════════
 const BOSS_SPRITES = [
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480449/RockyFire_jshtga.png',     // 0: RockyFire
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480448/Glurayan_jwetj6.png',      // 1: Glurayan
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480448/WinBobby_kohy0o.png',      // 2: WinBobby
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Shinryuu_w4iatd.png',      // 3: Shinryuu
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480448/Damonesk_y0vdqc.png',      // 4: Damonesk
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Fayarnus_mzf5t9.png',      // 5: Fayarnus
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Klytoris_lvhiuu.png',      // 6: Klytoris
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Mordecouye_lfdfyt.png',    // 7: Mordecouye
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Randomhero_kbrcr7.png',    // 8: Randomhero
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Shyy_glbmyr.png',          // 9: Shyy
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480449/RockyFire_jshtga.png',
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480448/Glurayan_jwetj6.png',
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480448/WinBobby_kohy0o.png',
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Shinryuu_w4iatd.png',
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480448/Damonesk_y0vdqc.png',
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Fayarnus_mzf5t9.png',
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Klytoris_lvhiuu.png',
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Mordecouye_lfdfyt.png',
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Randomhero_kbrcr7.png',
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Shyy_glbmyr.png',
 ];
-
-// Fallback: map boss definition IDs to indices
-const BOSS_ID_TO_INDEX = {
-  forest_guardian: 0,
-  stone_sentinel: 1,
-  shadow_lord: 2,
-};
+const BOSS_ID_TO_INDEX = { forest_guardian: 0, stone_sentinel: 1, shadow_lord: 2 };
 
 // ═══════════════════════════════════════════════════════════
-// Spectator Client
+// STATE
 // ═══════════════════════════════════════════════════════════
-
 const basePath = location.pathname.replace(/\/spectator\.?h?t?m?l?$/, '').replace(/\/$/, '');
 const wsPath = basePath ? `${basePath}/ws` : '/ws';
 const WS_URL = location.protocol === 'https:'
   ? `wss://${location.host}${wsPath}`
   : `ws://${location.host}${wsPath}`;
 
-// ── State ──
 let state = null;
-let events = [];
-const MAX_EVENTS = 50;
 const floatingNumbers = [];
+const interpPositions = {};
+const LERP_SPEED = 10;
 
-// ── Position Interpolation ──
-const interpPositions = {}; // { [entityId]: { x: currentSmoothed } }
-const LERP_SPEED = 10; // Higher = snappier
+// Camera (Phase 2)
+const camera = { x: 0, y: 0, zoom: 0.5, targetZoom: 0.5, minZoom: 0.2, maxZoom: 1.5, autoFollow: true };
+let isPanning = false, panStart = { x: 0, y: 0 };
 
-// ── Sprite Cache ──
+// Speech bubbles (Phase 5)
+let activeBubble = null;
+
+// Loot roll animation (Phase 7)
+let lootRollState = null;
+
+// Campfire (Phase 8)
+let campfireLayout = null;
+let campfireDialogueTimer = 0;
+let rezAnimations = [];
+
+// Narrative overlays (Phase 9)
+let narrativeOverlay = null;
+let tvOverlay = null;
+let marchNarrative = null;
+
+// Combat log (Phase 6)
+let logEntries = [];
+let activeLogFilter = 'all';
+let logEventCount = 0;
+
+// Stars canvas cache (Phase 3)
+let starsCanvas = null;
+
+// Sprite caches
 const spriteCache = {};
 const spriteLoading = new Set();
-const bossSpriteCache = {}; // { [index]: Image }
-const mobSpriteCache = {};  // { [templateKey]: Image }
+const bossSpriteCache = {};
+const mobSpriteCache = {};
 
 function preloadSprite(hunterId) {
   if (spriteCache[hunterId] || spriteLoading.has(hunterId)) return;
@@ -332,7 +374,6 @@ function preloadSprite(hunterId) {
   img.onerror = () => { spriteLoading.delete(hunterId); };
   img.src = url;
 }
-
 function preloadBossSprite(index) {
   if (bossSpriteCache[index] || spriteLoading.has(`boss_${index}`)) return;
   const url = BOSS_SPRITES[index];
@@ -344,7 +385,6 @@ function preloadBossSprite(index) {
   img.onerror = () => { spriteLoading.delete(`boss_${index}`); };
   img.src = url;
 }
-
 function preloadMobSprite(key) {
   if (mobSpriteCache[key] || spriteLoading.has(`mob_${key}`)) return;
   const url = MOB_SPRITES[key];
@@ -356,28 +396,23 @@ function preloadMobSprite(key) {
   img.onerror = () => { spriteLoading.delete(`mob_${key}`); };
   img.src = url;
 }
-
-// Preload all sprites upfront
 for (const id of Object.keys(HUNTER_SPRITES)) preloadSprite(id);
 for (let i = 0; i < BOSS_SPRITES.length; i++) preloadBossSprite(i);
 for (const key of Object.keys(MOB_SPRITES)) preloadMobSprite(key);
 
-// ── Animation States ──
+// Animation states
 const animStates = {};
-
 function triggerAnim(entityId, type, duration) {
   animStates[entityId] = { type, timer: duration };
 }
 
-// ── Combat Stats Tracking ──
+// Combat Stats Tracking
 const combatStats = {};
 let activeStatsTab = 'dps';
-
-// ── DPS History (for graph) ──
-const dpsHistory = []; // { time, dmg: { [charId]: totalDmgDealt } }
+const dpsHistory = [];
 let combatStartTime = 0;
 let lastDpsSnapshot = 0;
-const DPS_SNAPSHOT_INTERVAL = 2; // seconds
+const DPS_SNAPSHOT_INTERVAL = 2;
 
 function ensureStats(id) {
   if (!combatStats[id]) {
@@ -394,48 +429,177 @@ function ensureStats(id) {
   }
   return combatStats[id];
 }
-
 function takeDpsSnapshot(elapsedTime) {
   if (elapsedTime - lastDpsSnapshot < DPS_SNAPSHOT_INTERVAL) return;
   lastDpsSnapshot = elapsedTime;
   const dmg = {};
   for (const [id, s] of Object.entries(combatStats)) {
-    if (!id.startsWith('mob_') && !id.startsWith('boss_')) {
-      dmg[id] = s.dmgDealt;
-    }
+    if (!id.startsWith('mob_') && !id.startsWith('boss_')) dmg[id] = s.dmgDealt;
   }
   dpsHistory.push({ time: elapsedTime, dmg });
-  // Keep max 300 snapshots (10 min at 2s interval)
   if (dpsHistory.length > 300) dpsHistory.shift();
 }
 
-// ── Canvas ──
+// Canvas
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
-let cameraX = 0;
-
 function resizeCanvas() {
   const container = document.getElementById('canvas-container');
   canvas.width = container.clientWidth;
   canvas.height = container.clientHeight;
+  starsCanvas = null; // Regenerate stars
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// ── Element Colors ──
-const ELEMENT_COLORS = {
-  fire: '#ef4444',
-  water: '#3b82f6',
-  shadow: '#a855f7',
-};
-const ROLE_SHAPES = {
-  frontline: 'square',
-  frontline_dps: 'triangle',
-  backline_dps: 'diamond',
-  backline_heal: 'circle',
+const ELEMENT_COLORS = { fire: '#ef4444', water: '#3b82f6', shadow: '#a855f7' };
+const ROLE_SHAPES = { frontline: 'square', frontline_dps: 'triangle', backline_dps: 'diamond', backline_heal: 'circle' };
+const ROLE_ICONS = { frontline: '\u{1F6E1}', frontline_dps: '\u2694', backline_dps: '\u2728', backline_heal: '\u2764' };
+
+// ═══════════════════════════════════════════════════════════
+// DIALOGUE POOLS (Phase 5)
+// ═══════════════════════════════════════════════════════════
+const DIALOGUES = {
+  frontline: {
+    idle: [
+      "Si j'avais un gold pour chaque coup que je prends...",
+      "Vous pourriez au moins me heal AVANT que je meure?",
+      "Mon bouclier a plus de PV que vos DPS combines.",
+      "Je suis pas un punching-bag... enfin si, litteralement.",
+      "Quelqu'un a vu mon aggro? Ah elle est la. Sur moi.",
+    ],
+    combat: [
+      "VENEZ ME FRAPPER, JE SUIS LA!",
+      "Restez derriere moi... ou pas.",
+      "C'est tout ce que t'as, le boss?",
+      "*leve son bouclier avec resignation*",
+    ],
+    low_hp: [
+      "HEAL?! HEAL?! ...personne?",
+      "Je vais mourir et c'est votre faute a tous.",
+      "Ok je suis invisible pour les healers apparemment.",
+    ],
+  },
+  frontline_dps: {
+    idle: [
+      "Attendez je check mon DPS... magnifique comme d'hab.",
+      "Les mages font moins de degats que mon auto-attack.",
+      "Pourquoi je suis en frontline si je suis DPS?!",
+      "Mon crit rate est de 100%... dans mes reves.",
+    ],
+    combat: [
+      "UNGA BUNGA!",
+      "CRIT! CRIT! ...non? Dommage.",
+      "Faut que je buff d'abord... nah j'y vais direct.",
+      "*frappe tout ce qui bouge*",
+    ],
+    low_hp: [
+      "Retraite strategique! (c'est PAS une fuite)",
+      "J'ai pas signe pour mourir moi!",
+    ],
+  },
+  backline_dps: {
+    idle: [
+      "*ajuste ses lunettes* Selon mes calculs...",
+      "La magie c'est beau mais ca coute du mana.",
+      "Je suis pas AFK, je regenere mon mana.",
+      "Un jour je ferai Explosion!... quand j'aurai le mana.",
+    ],
+    combat: [
+      "EXPLOSION!!! ...ah non, cooldown.",
+      "Zoltraak. Zoltraak. Zoltraak. Simple.",
+      "Mon AoE va les avoir... normalement.",
+    ],
+    low_hp: [
+      "Comment un mob arrive jusqu'ici?! TANKS?!",
+      "Je suis trop precieux pour mourir!",
+    ],
+  },
+  backline_heal: {
+    idle: [
+      "Mourir c'est un choix. Me forcez pas a faire le votre.",
+      "Non je heal pas le DPS qui rush le boss.",
+      "Mon heal est en cooldown. Priez.",
+      "Je fais plus de DPS que certains... et je suis healer.",
+    ],
+    combat: [
+      "Heal le tank, heal le tank, heal le-- il est mort.",
+      "Arretez. De. Prendre. Les. AOE.",
+      "J'ai rez dans 3... 2... 1... ah, cooldown.",
+    ],
+    low_hp: [
+      "QUI HEAL LE HEALER?!",
+      "C'est la fin. Adieu monde cruel.",
+    ],
+  },
 };
 
-// ── Stats Panel Toggle ──
+const CAMPFIRE_DIALOGUES = [
+  { role: 'frontline', lines: [
+    "Quelqu'un a du bandage? ...non? Ok je souffre en silence.",
+    "Ce feu me rappelle le boss... PTSD.",
+    "Au fait, qui a pris l'aggro la derniere fois?",
+    "*s'assoit lourdement* Mes os craquent de partout.",
+  ]},
+  { role: 'backline_heal', lines: [
+    "J'espere que vous appreciez mes heals parce que MON mana souffre.",
+    "Prochain combat, je heal que les gens sympas.",
+    "*rez le mort* Allez debout, on a besoin de chair a canon.",
+    "Note pour moi-meme: ne plus jouer healer.",
+  ]},
+  { role: 'frontline_dps', lines: [
+    "Mon DPS etait top la, non? NON?!",
+    "Qui veut du poisson grille? J'ai loote un truc bizarre.",
+    "Le prochain boss va regretter d'etre ne.",
+    "*aiguise son epee avec un sourire inquietant*",
+  ]},
+  { role: 'backline_dps', lines: [
+    "Je calcule l'angle optimal pour mon prochain Zoltraak...",
+    "Ce feu c'est 3200K de temperature, je pourrais l'utiliser comme spell.",
+    "*dessine des runes dans le sable*",
+    "Quelqu'un a compte combien de mobs j'ai one-shot?",
+  ]},
+];
+
+// ═══════════════════════════════════════════════════════════
+// BOSS INTROS (Phase 9)
+// ═══════════════════════════════════════════════════════════
+const BOSS_INTROS = {
+  'Gardien de la Foret': {
+    lines: ["La terre tremble sous vos pieds...", "Des racines enormes surgissent du sol...", "LE GARDIEN DE LA FORET SE REVEILLE!"],
+    subtitle: "Premier boss — Ne sous-estimez pas la nature.",
+  },
+  'Sentinelle de Pierre': {
+    lines: ["Un silence glacial envahit la caverne...", "Les murs commencent a bouger...", "LA SENTINELLE DE PIERRE S'ANIME!"],
+    subtitle: "Deuxieme boss — La pierre ne connait pas la pitie.",
+  },
+  'Seigneur Ombre': {
+    lines: ["L'obscurite vous engloutit...", "Vous ne voyez plus vos allies...", "Une voix resonne: 'Vous osez me defier?'", "LE SEIGNEUR OMBRE EMERGE DES TENEBRES!"],
+    subtitle: "Boss final — Seuls les plus forts survivront.",
+  },
+};
+
+const TV_COMMENTARY = {
+  combat_start: ["Le combat commence!", "C'est parti!", "Que le carnage commence!"],
+  boss_appear: ["Un BOSS approche!", "Preparez-vous...", "C'est l'heure du boss!"],
+  crit_big: ["COUP CRITIQUE DEVASTATEUR!", "INCROYABLE!", "IL L'A DETRUIT!"],
+  wipe_near: ["L'equipe est en danger!", "C'EST LA PANIQUE!"],
+  victory: ["VICTOIRE!", "Le boss est TOMBE!", "MAGNIFIQUE!"],
+};
+
+const MARCH_NARRATIVES = [
+  "L'equipe avance prudemment dans les tenebres...",
+  "Des bruits etranges resonnent au loin...",
+  "Le prochain combat approche...",
+  "Les ombres s'epaississent autour de vous...",
+  "L'air devient lourd et oppressant...",
+];
+
+// ═══════════════════════════════════════════════════════════
+// UI SETUP
+// ═══════════════════════════════════════════════════════════
+
+// Stats Panel Toggle
 let statsPanelOpen = true;
 const toggleBtn = document.getElementById('toggle-stats');
 toggleBtn.addEventListener('click', () => {
@@ -448,13 +612,12 @@ toggleBtn.addEventListener('click', () => {
   setTimeout(resizeCanvas, 310);
 });
 
-// ── Stats Tabs ──
+// Stats Tabs
 document.querySelectorAll('.stats-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     activeStatsTab = tab.dataset.tab;
-    // Toggle graph/list visibility
     const graphEl = document.getElementById('graph-container');
     const listEl = document.getElementById('stats-list');
     if (activeStatsTab === 'graph') {
@@ -469,32 +632,126 @@ document.querySelectorAll('.stats-tab').forEach(tab => {
   });
 });
 
-// ── WebSocket ──
-let ws = null;
-let reconnectTimer = null;
+// Combat Log Filters (Phase 6)
+document.querySelectorAll('.log-filter').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.log-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeLogFilter = btn.dataset.filter;
+    rebuildLogDisplay();
+  });
+});
 
+function rebuildLogDisplay() {
+  const container = document.getElementById('log-entries');
+  container.innerHTML = '';
+  const filtered = activeLogFilter === 'all' ? logEntries : logEntries.filter(e => e.type === activeLogFilter);
+  const recent = filtered.slice(-80);
+  for (const entry of recent) {
+    container.appendChild(createLogElement(entry));
+  }
+  container.scrollTop = container.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CAMERA CONTROLS (Phase 2)
+// ═══════════════════════════════════════════════════════════
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.05 : 0.05;
+  camera.targetZoom = Math.max(camera.minZoom, Math.min(camera.maxZoom, camera.targetZoom + delta));
+}, { passive: false });
+
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button === 1) {
+    e.preventDefault();
+    isPanning = true;
+    panStart = { x: e.clientX, y: e.clientY };
+    camera.autoFollow = false;
+  }
+});
+canvas.addEventListener('mousemove', (e) => {
+  if (isPanning) {
+    camera.x += (panStart.x - e.clientX);
+    camera.y += (panStart.y - e.clientY);
+    panStart = { x: e.clientX, y: e.clientY };
+  }
+});
+canvas.addEventListener('mouseup', (e) => { if (e.button === 1) isPanning = false; });
+canvas.addEventListener('dblclick', () => { camera.autoFollow = true; camera.targetZoom = 0.5; });
+
+// Click on character for speech bubble (Phase 5)
+canvas.addEventListener('click', (e) => {
+  if (!state || isPanning) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const groundY = canvas.height * 0.7;
+
+  let closest = null, closestDist = Infinity;
+  for (const char of (state.characters || [])) {
+    if (!char.alive) continue;
+    const ip = interpPositions[char.id];
+    const sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
+    const charY = (char.y || 0) * camera.zoom;
+    const sy = groundY + charY;
+    const dist = Math.sqrt((mx - sx) ** 2 + (my - (sy - 20)) ** 2);
+    if (dist < 30 && dist < closestDist) {
+      closestDist = dist;
+      closest = char;
+    }
+  }
+
+  if (closest) {
+    showBubble(closest);
+  } else {
+    activeBubble = null;
+  }
+});
+
+function showBubble(char) {
+  const pool = DIALOGUES[char.role];
+  if (!pool) return;
+  const hpRatio = char.hp / char.maxHp;
+  let category = state?.status === 'campfire' ? 'idle' : 'combat';
+  if (hpRatio < 0.3) category = 'low_hp';
+  const lines = pool[category] || pool.idle;
+  if (!lines || !lines.length) return;
+  activeBubble = {
+    charId: char.id,
+    text: lines[Math.floor(Math.random() * lines.length)],
+    timer: 4.0,
+    charIndex: 0,
+  };
+}
+
+function maybeAutoQuip(evType, charId) {
+  if (Math.random() > 0.03) return;
+  if (activeBubble && activeBubble.timer > 1) return;
+  const char = findEntity(charId);
+  if (!char || !char.role) return;
+  showBubble(char);
+}
+
+// ═══════════════════════════════════════════════════════════
+// WEBSOCKET
+// ═══════════════════════════════════════════════════════════
+
+let ws = null;
 function connect() {
   ws = new WebSocket(WS_URL);
-
   ws.onopen = () => {
     document.getElementById('connection-status').className = 'connected';
     document.getElementById('connection-status').textContent = 'Connecte';
-    addEvent('info', 'Connecte au serveur');
+    addLogEntry('info', 'Connecte au serveur');
   };
-
-  ws.onmessage = (e) => {
-    try {
-      const msg = JSON.parse(e.data);
-      handleMessage(msg);
-    } catch (err) {}
-  };
-
+  ws.onmessage = (e) => { try { handleMessage(JSON.parse(e.data)); } catch(err) {} };
   ws.onclose = () => {
     document.getElementById('connection-status').className = 'disconnected';
     document.getElementById('connection-status').textContent = 'Deconnecte';
-    reconnectTimer = setTimeout(connect, 3000);
+    setTimeout(connect, 3000);
   };
-
   ws.onerror = () => ws.close();
 }
 
@@ -503,42 +760,29 @@ function handleMessage(msg) {
     case 'expedition_state':
       state = msg;
       updateHeader(msg);
-
-      // Update interpolation targets for characters
       for (const c of msg.characters || []) {
         if (c.hunterId) preloadSprite(c.hunterId);
-        if (!interpPositions[c.id]) {
-          interpPositions[c.id] = { x: c.x };
-        }
-        // Target is always the latest server position (stored on c.x)
+        if (!interpPositions[c.id]) interpPositions[c.id] = { x: c.x, y: c.y || 0 };
         if (combatStats[c.id]) {
           combatStats[c.id].name = c.name;
           combatStats[c.id].hunterId = c.hunterId;
           combatStats[c.id].element = c.element;
         }
       }
-
-      // Mob interpolation targets
       for (const m of msg.mobs || []) {
-        if (!interpPositions[m.id]) {
-          interpPositions[m.id] = { x: m.x };
-        }
+        if (!interpPositions[m.id]) interpPositions[m.id] = { x: m.x, y: m.y || 0 };
       }
-
-      // Boss interpolation + sprite preload
       if (msg.boss) {
-        if (!interpPositions[msg.boss.id]) {
-          interpPositions[msg.boss.id] = { x: msg.boss.x };
-        }
+        if (!interpPositions[msg.boss.id]) interpPositions[msg.boss.id] = { x: msg.boss.x, y: msg.boss.y || 0 };
         const bossIdx = msg.boss.index ?? BOSS_ID_TO_INDEX[msg.boss.id];
         if (bossIdx != null) preloadBossSprite(bossIdx);
       }
-
-      // DPS snapshot
       if (msg.status === 'combat') {
         if (!combatStartTime) combatStartTime = msg.elapsedTime;
         takeDpsSnapshot(msg.elapsedTime);
       }
+      if (msg.status === 'campfire' && !campfireLayout) setupCampfireLayout();
+      if (msg.status !== 'campfire') campfireLayout = null;
       break;
 
     case 'events_batch':
@@ -546,43 +790,51 @@ function handleMessage(msg) {
       break;
 
     case 'combat_start':
-      combatStartTime = 0; // Reset for new combat
+      combatStartTime = 0;
       if (msg.encounterType === 'boss') {
-        addEvent('boss', `BOSS: ${msg.bossName} apparait!`);
+        addLogEntry('boss', `BOSS: ${msg.bossName} apparait!`);
+        startBossIntro(msg.bossName);
+        showTvCommentary('boss_appear');
       } else {
-        addEvent('info', `Vague de mobs! (${msg.mobCount} ennemis)`);
+        addLogEntry('info', `Vague de mobs! (${msg.mobCount} ennemis)`);
+        showTvCommentary('combat_start');
       }
       break;
 
     case 'boss_killed':
-      addEvent('boss', `BOSS VAINCU: ${msg.bossName}!`);
+      addLogEntry('boss', `BOSS VAINCU: ${msg.bossName}!`);
+      showTvCommentary('victory');
       break;
 
     case 'march_start':
-      addEvent('info', `En marche... prochain: ${msg.nextEncounter}`);
+      addLogEntry('info', `En marche... prochain: ${msg.nextEncounter}`);
+      marchNarrative = { text: MARCH_NARRATIVES[Math.floor(Math.random() * MARCH_NARRATIVES.length)], timer: 8 };
       break;
 
     case 'campfire_start':
-      addEvent('info', `Campfire! Repos ${msg.duration}s...`);
+      addLogEntry('info', `Campfire! Repos ${msg.duration}s...`);
+      campfireDialogueTimer = 3;
       break;
 
     case 'loot_roll_start':
+      lootRollState = { results: msg.results || [], currentIndex: -1, revealTimer: 1.5, phase: 'waiting' };
       for (const r of msg.results || []) {
         if (r.stolen) {
-          addEvent('death', `Les monstres ont vole [${r.itemName}]!`);
+          addLogEntry('death', `Les monstres ont vole [${r.itemName}]!`);
         } else if (r.winnerUsername) {
           const srTag = r.srWinner ? ' (SR)' : '';
-          addEvent('loot', `[${r.itemName}] (${r.rarity}) -> ${r.winnerUsername} (${r.winnerRoll})${srTag}`);
+          addLogEntry('loot', `[${r.itemName}] (${r.rarity}) -> ${r.winnerUsername} (${r.winnerRoll})${srTag}`);
         }
       }
       break;
 
     case 'rez':
-      addEvent('rez', `${msg.healerName} ressuscite ${msg.targetName}!`);
+      addLogEntry('rez', `${msg.healerName} ressuscite ${msg.targetName}!`);
+      rezAnimations.push({ targetId: msg.target, timer: 2.0 });
       break;
 
     case 'expedition_finished':
-      addEvent('boss', `EXPEDITION TERMINEE: ${msg.reason} | Boss: ${msg.bossesKilled} | Temps: ${formatTime(msg.elapsedTime)}`);
+      addLogEntry('boss', `EXPEDITION TERMINEE: ${msg.reason} | Boss: ${msg.bossesKilled} | Temps: ${formatTime(msg.elapsedTime)}`);
       break;
   }
 }
@@ -591,7 +843,7 @@ function handleEvent(ev) {
   switch (ev.type) {
     case 'damage':
     case 'skill_damage': {
-      const size = ev.crit ? 20 : 16;
+      const size = ev.crit ? 22 : 16;
       const color = ev.crit ? '#fbbf24' : '#ef4444';
       const text = ev.crit ? `CRIT ${ev.amount}` : `-${ev.amount}`;
       addFloating(ev.target, text, color, size);
@@ -604,9 +856,10 @@ function handleEvent(ev) {
         src.crits++;
         src.totalCritDmg += ev.amount;
         if (ev.amount > src.maxCrit) src.maxCrit = ev.amount;
+        if (ev.amount > 50000) showTvCommentary('crit_big');
       }
-      const tgt = ensureStats(ev.target);
-      tgt.dmgReceived += ev.amount;
+      ensureStats(ev.target).dmgReceived += ev.amount;
+      maybeAutoQuip('damage', ev.source);
       break;
     }
     case 'mob_attack':
@@ -614,56 +867,60 @@ function handleEvent(ev) {
     case 'pattern_damage': {
       addFloating(ev.target, `-${ev.amount}`, '#ff6b6b', 16);
       triggerAnim(ev.target, 'hit', 0.15);
-      const tgt = ensureStats(ev.target);
-      tgt.dmgReceived += ev.amount;
+      ensureStats(ev.target).dmgReceived += ev.amount;
+      maybeAutoQuip('hit', ev.target);
+      // Wipe check
+      if (state) {
+        const alive = state.characters.filter(c => c.alive).length;
+        if (alive <= 3 && alive > 0) showTvCommentary('wipe_near');
+      }
       break;
     }
     case 'heal': {
       addFloating(ev.target, `+${ev.amount}`, '#22c55e', 16);
       triggerAnim(ev.target, 'heal', 0.3);
-      addEvent('heal', `${ev.source.split('_').slice(1).join(' ')} soigne ${ev.target.split('_').slice(1).join(' ')} (+${ev.amount})`);
-      const src = ensureStats(ev.source);
-      src.healsGiven += ev.amount;
-      const tgt = ensureStats(ev.target);
-      tgt.healsReceived += ev.amount;
+      addLogEntry('heal', `${getName(ev.source)} soigne ${getName(ev.target)} (+${formatNumber(ev.amount)})`);
+      ensureStats(ev.source).healsGiven += ev.amount;
+      ensureStats(ev.target).healsReceived += ev.amount;
       break;
     }
     case 'death':
-      addEvent('death', `${ev.characterId.split('_').slice(1).join(' ')} est mort!`);
+      addLogEntry('death', `${getName(ev.characterId)} est mort!`);
       triggerAnim(ev.characterId, 'death', 1.0);
       break;
-    case 'kill': {
-      addEvent('kill', `${ev.killer.split('_').slice(1).join(' ')} tue ${ev.targetName}!`);
-      const src = ensureStats(ev.killer);
-      src.kills++;
+    case 'kill':
+      addLogEntry('kill', `${getName(ev.killer)} tue ${ev.targetName}!`);
+      ensureStats(ev.killer).kills++;
       break;
-    }
     case 'boss_pattern':
-      addEvent('boss', `[${ev.name}] telegraph ${ev.telegraphTime}s!`);
+      addLogEntry('boss', `[${ev.name}] telegraph ${ev.telegraphTime}s!`);
       break;
     case 'buff':
-      addEvent('buff', `${ev.source.split('_').slice(1).join(' ')} buff ${ev.buffType} +${ev.value}% sur ${ev.target.split('_').slice(1).join(' ')}`);
+      addLogEntry('buff', `${getName(ev.source)} buff ${ev.buffType} +${ev.value}% sur ${getName(ev.target)}`);
       break;
     case 'boss_heal':
-      addEvent('info', `Boss soigne +${ev.amount} HP`);
+      addLogEntry('info', `Boss soigne +${formatNumber(ev.amount)} HP`);
       break;
     case 'summon':
-      addEvent('boss', `Boss invoque ${ev.count}x ${ev.mobType}!`);
+      addLogEntry('boss', `Boss invoque ${ev.count}x ${ev.mobType}!`);
       break;
   }
 }
 
-// ── Floating damage numbers ──
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+
 function addFloating(targetId, text, color, size) {
   if (!state) return;
   const entity = findEntity(targetId);
   if (!entity) return;
-  const ix = interpPositions[targetId]?.x ?? entity.x;
+  const ip = interpPositions[targetId];
   floatingNumbers.push({
-    x: ix, y: -30 - Math.random() * 20,
+    x: ip?.x ?? entity.x, y: -30 - Math.random() * 20,
+    entityY: ip?.y ?? entity.y ?? 0,
     text, color, size: size || 16,
-    life: 2.0,
-    vy: -50,
+    life: 2.0, vy: -50,
   });
 }
 
@@ -677,32 +934,42 @@ function findEntity(id) {
   return null;
 }
 
-// ── UI Updates ──
+function getName(id) {
+  if (!id) return '???';
+  return id.split('_').slice(1).join(' ');
+}
+
 function updateHeader(s) {
   const badge = document.getElementById('status-badge');
   badge.textContent = s.status;
   badge.className = `status-badge status-${s.status}`;
-
   document.getElementById('alive-count').textContent = `${s.aliveCount}/${s.totalCount}`;
   document.getElementById('boss-count').textContent = s.bossesKilled;
   document.getElementById('encounter-count').textContent = `${s.encounterIndex + 1}/${s.totalEncounters}`;
   document.getElementById('elapsed-time').textContent = formatTime(s.elapsedTime);
 }
 
-function addEvent(type, text) {
-  events.push({ type, text, time: Date.now() });
-  if (events.length > MAX_EVENTS) events.shift();
+const LOG_ICONS = { damage: '\u2694', heal: '\u2764', kill: '\u{1F480}', death: '\u{1F480}', boss: '\u{1F451}', loot: '\u{1F381}', rez: '\u2728', info: '\u2139', buff: '\u2B06' };
 
-  const feed = document.getElementById('event-feed');
-  const div = document.createElement('div');
-  div.className = `event event-${type}`;
-  div.textContent = text;
-  feed.appendChild(div);
-  feed.scrollTop = feed.scrollHeight;
+function createLogElement(entry) {
+  const el = document.createElement('div');
+  el.className = `log-entry log-${entry.type}`;
+  el.innerHTML = `<span class="log-time">${formatTime(entry.time)}</span><span class="log-icon">${LOG_ICONS[entry.type] || ''}</span><span class="log-text">${entry.text}</span>${entry.crit ? '<span class="log-crit">CRIT</span>' : ''}`;
+  return el;
+}
 
-  while (feed.children.length > MAX_EVENTS) {
-    feed.removeChild(feed.firstChild);
-  }
+function addLogEntry(type, text, extra = {}) {
+  const entry = { type, text, time: state?.elapsedTime || 0, crit: extra.crit || false };
+  logEntries.push(entry);
+  if (logEntries.length > 200) logEntries.shift();
+  logEventCount++;
+  document.getElementById('log-counter').textContent = `${logEventCount} events`;
+
+  if (activeLogFilter !== 'all' && activeLogFilter !== type) return;
+  const container = document.getElementById('log-entries');
+  container.appendChild(createLogElement(entry));
+  container.scrollTop = container.scrollHeight;
+  while (container.children.length > 80) container.removeChild(container.firstChild);
 }
 
 function formatTime(seconds) {
@@ -720,30 +987,64 @@ function formatNumber(n) {
   return String(Math.floor(n));
 }
 
-// ═══════════════════════════════════════════════════════════
-// STATS PANEL RENDERING
-// ═══════════════════════════════════════════════════════════
+function showTvCommentary(category) {
+  const pool = TV_COMMENTARY[category];
+  if (!pool) return;
+  if (tvOverlay && tvOverlay.timer > 1) return;
+  tvOverlay = { text: pool[Math.floor(Math.random() * pool.length)], timer: 2.5 };
+}
 
+function startBossIntro(bossName) {
+  const intro = BOSS_INTROS[bossName];
+  if (!intro) return;
+  narrativeOverlay = { lines: intro.lines, subtitle: intro.subtitle, currentLine: 0, charIndex: 0, lineTimer: 0 };
+}
+
+function setupCampfireLayout() {
+  if (!state) return;
+  const aliveChars = state.characters.filter(c => c.alive);
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height * 0.7 - 30;
+  const radius = Math.min(180, 40 + aliveChars.length * 6);
+  campfireLayout = { positions: {}, centerX, centerY };
+  aliveChars.forEach((c, i) => {
+    const angle = (i / aliveChars.length) * Math.PI * 2 - Math.PI / 2;
+    campfireLayout.positions[c.id] = {
+      x: centerX + Math.cos(angle) * radius,
+      y: centerY + Math.sin(angle) * radius * 0.4,
+    };
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATS PANEL (unchanged from original)
+// ═══════════════════════════════════════════════════════════
 const TAB_COLORS = { dps: '#ef4444', heals: '#22c55e', received: '#f59e0b', crits: '#f97316' };
-
 let statsRenderTimer = null;
 function scheduleStatsRender() {
   if (statsRenderTimer) return;
-  statsRenderTimer = setTimeout(() => {
-    statsRenderTimer = null;
-    if (activeStatsTab === 'graph') renderDpsGraph();
-    else renderStatsPanel();
-  }, 500);
+  statsRenderTimer = setTimeout(() => { statsRenderTimer = null; if (activeStatsTab === 'graph') renderDpsGraph(); else renderStatsPanel(); }, 500);
 }
 
 function renderStatsPanel() {
   if (!statsPanelOpen || activeStatsTab === 'graph') return;
   const list = document.getElementById('stats-list');
+  const entries = Object.entries(combatStats).filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'));
 
-  const entries = Object.entries(combatStats)
-    .filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'));
-
-  // ── Crits tab ──
   if (activeStatsTab === 'crits') {
     const sorted = entries.sort((a, b) => b[1].crits - a[1].crits);
     let html = '';
@@ -752,48 +1053,21 @@ function renderStatsPanel() {
       const spriteUrl = s.hunterId ? HUNTER_SPRITES[s.hunterId] : null;
       const critRate = s.totalHits > 0 ? (s.crits / s.totalHits * 100).toFixed(1) : '0.0';
       const avgCrit = s.crits > 0 ? Math.floor(s.totalCritDmg / s.crits) : 0;
-
-      html += `<div class="crit-card">
-        <div class="crit-card-header">
-          ${spriteUrl ? `<img src="${spriteUrl}" alt="">` : ''}
-          <span class="name">${s.name}</span>
-        </div>
-        <div class="crit-stats-grid">
-          <span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits}</span>
-          <span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits}</span>
-          <span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span>
-          <span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span>
-          <span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit)}</span>
-          <span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills}</span>
-        </div>
-      </div>`;
+      html += `<div class="crit-card"><div class="crit-card-header">${spriteUrl ? `<img src="${spriteUrl}" alt="">` : ''}<span class="name">${s.name}</span></div><div class="crit-stats-grid"><span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits}</span><span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits}</span><span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span><span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span><span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit)}</span><span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills}</span></div></div>`;
     }
     list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de crits</div>';
     return;
   }
 
-  // ── DPS / Heals / Received tabs ──
-  let sorted;
-  let valueKey;
+  let sorted, valueKey;
   switch (activeStatsTab) {
-    case 'dps':
-      valueKey = 'dmgDealt';
-      sorted = entries.sort((a, b) => b[1].dmgDealt - a[1].dmgDealt);
-      break;
-    case 'heals':
-      valueKey = 'healsGiven';
-      sorted = entries.sort((a, b) => b[1].healsGiven - a[1].healsGiven);
-      break;
-    case 'received':
-      valueKey = 'dmgReceived';
-      sorted = entries.sort((a, b) => b[1].dmgReceived - a[1].dmgReceived);
-      break;
+    case 'dps': valueKey = 'dmgDealt'; sorted = entries.sort((a, b) => b[1].dmgDealt - a[1].dmgDealt); break;
+    case 'heals': valueKey = 'healsGiven'; sorted = entries.sort((a, b) => b[1].healsGiven - a[1].healsGiven); break;
+    case 'received': valueKey = 'dmgReceived'; sorted = entries.sort((a, b) => b[1].dmgReceived - a[1].dmgReceived); break;
   }
-
   const maxVal = sorted.length > 0 ? sorted[0][1][valueKey] : 1;
   const barColor = TAB_COLORS[activeStatsTab];
   const elapsed = state?.elapsedTime || 1;
-
   let html = '';
   for (let i = 0; i < sorted.length; i++) {
     const [id, s] = sorted[i];
@@ -803,160 +1077,45 @@ function renderStatsPanel() {
     const spriteUrl = s.hunterId ? HUNTER_SPRITES[s.hunterId] : null;
     const elemColor = ELEMENT_COLORS[s.element] || '#888';
     const perSec = activeStatsTab === 'dps' ? ` (${formatNumber(val / elapsed)}/s)` : '';
-
-    html += `<div class="stat-entry">
-      <span class="stat-rank">${i + 1}</span>
-      ${spriteUrl
-        ? `<img class="stat-sprite" src="${spriteUrl}" alt="">`
-        : `<span class="stat-sprite" style="background:${elemColor}"></span>`}
-      <span class="stat-name" style="color:${elemColor}">${s.name}</span>
-      <div class="stat-bar-container">
-        <div class="stat-bar" style="width:${pct}%;background:${barColor}"></div>
-      </div>
-      <span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec}</span></span>
-    </div>`;
+    html += `<div class="stat-entry"><span class="stat-rank">${i + 1}</span>${spriteUrl ? `<img class="stat-sprite" src="${spriteUrl}" alt="">` : `<span class="stat-sprite" style="background:${elemColor}"></span>`}<span class="stat-name" style="color:${elemColor}">${s.name}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${barColor}"></div></div><span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec}</span></span></div>`;
   }
-
   list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de donnees</div>';
 }
 
-// ═══════════════════════════════════════════════════════════
-// DPS GRAPH (Canvas-based line chart)
-// ═══════════════════════════════════════════════════════════
-
+// DPS Graph
 const GRAPH_COLORS = ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#ef4444', '#06b6d4', '#f97316', '#ec4899'];
-
 function renderDpsGraph() {
   const container = document.getElementById('graph-container');
   if (!container.classList.contains('active')) return;
-
   const graphCanvas = document.getElementById('dps-graph');
   const gctx = graphCanvas.getContext('2d');
   graphCanvas.width = container.clientWidth - 8;
   graphCanvas.height = container.clientHeight - 8;
-
-  const W = graphCanvas.width;
-  const H = graphCanvas.height;
+  const W = graphCanvas.width, H = graphCanvas.height;
   const PAD = { top: 24, right: 8, bottom: 28, left: 48 };
-
   gctx.clearRect(0, 0, W, H);
-
-  // Background
   const bgGrad = gctx.createLinearGradient(0, 0, 0, H);
-  bgGrad.addColorStop(0, 'rgba(88, 28, 135, 0.08)');
-  bgGrad.addColorStop(1, 'rgba(30, 27, 75, 0.08)');
-  gctx.fillStyle = bgGrad;
-  gctx.fillRect(0, 0, W, H);
-
-  if (dpsHistory.length < 2) {
-    gctx.fillStyle = '#555';
-    gctx.font = '12px sans-serif';
-    gctx.textAlign = 'center';
-    gctx.fillText('En attente de donnees...', W / 2, H / 2);
-    return;
-  }
-
-  // Find top 8 characters by total damage
-  const topChars = Object.entries(combatStats)
-    .filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'))
-    .sort((a, b) => b[1].dmgDealt - a[1].dmgDealt)
-    .slice(0, 8);
-
+  bgGrad.addColorStop(0, 'rgba(88, 28, 135, 0.08)'); bgGrad.addColorStop(1, 'rgba(30, 27, 75, 0.08)');
+  gctx.fillStyle = bgGrad; gctx.fillRect(0, 0, W, H);
+  if (dpsHistory.length < 2) { gctx.fillStyle = '#555'; gctx.font = '12px sans-serif'; gctx.textAlign = 'center'; gctx.fillText('En attente de donnees...', W / 2, H / 2); return; }
+  const topChars = Object.entries(combatStats).filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_')).sort((a, b) => b[1].dmgDealt - a[1].dmgDealt).slice(0, 8);
   if (topChars.length === 0) return;
-
-  const timeMin = dpsHistory[0].time;
-  const timeMax = dpsHistory[dpsHistory.length - 1].time;
-  const timeRange = timeMax - timeMin || 1;
-
-  // Calculate max DPS value
+  const timeMin = dpsHistory[0].time, timeMax = dpsHistory[dpsHistory.length - 1].time, timeRange = timeMax - timeMin || 1;
   let maxDps = 0;
-  for (const snap of dpsHistory) {
-    for (const [id] of topChars) {
-      const dmg = snap.dmg[id] || 0;
-      const dps = snap.time > 0 ? dmg / snap.time : 0;
-      if (dps > maxDps) maxDps = dps;
-    }
-  }
+  for (const snap of dpsHistory) for (const [id] of topChars) { const dps = snap.time > 0 ? (snap.dmg[id] || 0) / snap.time : 0; if (dps > maxDps) maxDps = dps; }
   maxDps = maxDps * 1.15 || 100;
-
-  const plotW = W - PAD.left - PAD.right;
-  const plotH = H - PAD.top - PAD.bottom;
-
-  // Grid lines
-  gctx.strokeStyle = 'rgba(255,255,255,0.06)';
-  gctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = PAD.top + plotH * (1 - i / 4);
-    gctx.beginPath();
-    gctx.moveTo(PAD.left, y);
-    gctx.lineTo(PAD.left + plotW, y);
-    gctx.stroke();
-    gctx.fillStyle = '#555';
-    gctx.font = '9px sans-serif';
-    gctx.textAlign = 'right';
-    gctx.fillText(formatNumber(maxDps * i / 4) + '/s', PAD.left - 4, y + 3);
-  }
-
-  // X axis labels
-  const xTicks = Math.min(5, Math.max(2, Math.floor(timeRange / 15) + 1));
-  for (let i = 0; i <= xTicks; i++) {
-    const t = timeMin + timeRange * i / xTicks;
-    const x = PAD.left + plotW * i / xTicks;
-    gctx.fillStyle = '#555';
-    gctx.font = '9px sans-serif';
-    gctx.textAlign = 'center';
-    gctx.fillText(formatTime(t), x, H - 6);
-  }
-
-  // Draw lines
+  const plotW = W - PAD.left - PAD.right, plotH = H - PAD.top - PAD.bottom;
+  gctx.strokeStyle = 'rgba(255,255,255,0.06)'; gctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) { const y = PAD.top + plotH * (1 - i / 4); gctx.beginPath(); gctx.moveTo(PAD.left, y); gctx.lineTo(PAD.left + plotW, y); gctx.stroke(); gctx.fillStyle = '#555'; gctx.font = '9px sans-serif'; gctx.textAlign = 'right'; gctx.fillText(formatNumber(maxDps * i / 4) + '/s', PAD.left - 4, y + 3); }
   for (let ci = 0; ci < topChars.length; ci++) {
-    const [charId] = topChars[ci];
-    const color = GRAPH_COLORS[ci % GRAPH_COLORS.length];
-
-    gctx.strokeStyle = color;
-    gctx.lineWidth = 1.5;
-    gctx.lineJoin = 'round';
-    gctx.beginPath();
-
+    const [charId] = topChars[ci]; const color = GRAPH_COLORS[ci % GRAPH_COLORS.length];
+    gctx.strokeStyle = color; gctx.lineWidth = 1.5; gctx.lineJoin = 'round'; gctx.beginPath();
     let first = true;
-    for (const snap of dpsHistory) {
-      const dmg = snap.dmg[charId] || 0;
-      const dps = snap.time > 0 ? dmg / snap.time : 0;
-      const x = PAD.left + ((snap.time - timeMin) / timeRange) * plotW;
-      const y = PAD.top + plotH * (1 - dps / maxDps);
-
-      if (first) { gctx.moveTo(x, y); first = false; }
-      else gctx.lineTo(x, y);
-    }
+    for (const snap of dpsHistory) { const dps = snap.time > 0 ? (snap.dmg[charId] || 0) / snap.time : 0; const x = PAD.left + ((snap.time - timeMin) / timeRange) * plotW; const y = PAD.top + plotH * (1 - dps / maxDps); if (first) { gctx.moveTo(x, y); first = false; } else gctx.lineTo(x, y); }
     gctx.stroke();
   }
-
-  // Legend (compact, 2 columns)
-  const legendStartY = PAD.top + 2;
-  for (let ci = 0; ci < Math.min(topChars.length, 8); ci++) {
-    const [, stats] = topChars[ci];
-    const color = GRAPH_COLORS[ci % GRAPH_COLORS.length];
-    const col = ci % 2;
-    const row = Math.floor(ci / 2);
-    const x = PAD.left + 4 + col * (plotW / 2);
-    const y = legendStartY + row * 11;
-
-    gctx.fillStyle = color;
-    gctx.fillRect(x, y, 6, 6);
-    gctx.fillStyle = '#aaa';
-    gctx.font = '8px sans-serif';
-    gctx.textAlign = 'left';
-    const name = stats.name.length > 12 ? stats.name.slice(0, 12) + '..' : stats.name;
-    const elapsed = state?.elapsedTime || 1;
-    const dps = formatNumber(stats.dmgDealt / elapsed);
-    gctx.fillText(`${name} ${dps}/s`, x + 9, y + 5);
-  }
-
-  // Title
-  gctx.fillStyle = '#a855f7';
-  gctx.font = 'bold 10px sans-serif';
-  gctx.textAlign = 'left';
-  gctx.fillText('DPS par hunter', PAD.left, PAD.top - 8);
+  for (let ci = 0; ci < Math.min(topChars.length, 8); ci++) { const [, stats] = topChars[ci]; const color = GRAPH_COLORS[ci % GRAPH_COLORS.length]; const col = ci % 2; const row = Math.floor(ci / 2); const x = PAD.left + 4 + col * (plotW / 2); const y = PAD.top + 2 + row * 11; gctx.fillStyle = color; gctx.fillRect(x, y, 6, 6); gctx.fillStyle = '#aaa'; gctx.font = '8px sans-serif'; gctx.textAlign = 'left'; const name = stats.name.length > 12 ? stats.name.slice(0, 12) + '..' : stats.name; gctx.fillText(`${name} ${formatNumber(stats.dmgDealt / (state?.elapsedTime || 1))}/s`, x + 9, y + 5); }
+  gctx.fillStyle = '#a855f7'; gctx.font = 'bold 10px sans-serif'; gctx.textAlign = 'left'; gctx.fillText('DPS par hunter', PAD.left, PAD.top - 8);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -964,440 +1123,745 @@ function renderDpsGraph() {
 // ═══════════════════════════════════════════════════════════
 
 const GROUND_Y_RATIO = 0.7;
-const SCALE = 0.5;
 const CHAR_SIZE = 40;
-const MOB_SIZE_BASIC = 14;
-const MOB_SIZE_ELITE = 22;
-const BOSS_SIZE = 80;         // Bigger for sprite
+const BOSS_SIZE = 80;
 
 let lastTime = performance.now();
 
 function render() {
   requestAnimationFrame(render);
+  if (document.hidden) return;
   const now = performance.now();
-  const dt = (now - lastTime) / 1000;
+  const dt = Math.min(0.1, (now - lastTime) / 1000);
   lastTime = now;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Update animation states
-  for (const id in animStates) {
-    animStates[id].timer -= dt;
-    if (animStates[id].timer <= 0) delete animStates[id];
-  }
+  for (const id in animStates) { animStates[id].timer -= dt; if (animStates[id].timer <= 0) delete animStates[id]; }
 
-  // ── Position interpolation ──
+  // Smooth zoom
+  camera.zoom += (camera.targetZoom - camera.zoom) * Math.min(1, 8 * dt);
+
+  // Position interpolation (X + Y)
   if (state) {
     for (const c of state.characters || []) {
       const ip = interpPositions[c.id];
-      if (ip) ip.x += (c.x - ip.x) * Math.min(1, LERP_SPEED * dt);
+      if (ip) {
+        ip.x += (c.x - ip.x) * Math.min(1, LERP_SPEED * dt);
+        const ty = c.y || 0;
+        if (ip.y === undefined) ip.y = ty;
+        ip.y += (ty - ip.y) * Math.min(1, LERP_SPEED * dt);
+      }
     }
     for (const m of state.mobs || []) {
       const ip = interpPositions[m.id];
-      if (ip) ip.x += (m.x - ip.x) * Math.min(1, LERP_SPEED * dt);
+      if (ip) {
+        ip.x += (m.x - ip.x) * Math.min(1, LERP_SPEED * dt);
+        const ty = m.y || 0;
+        if (ip.y === undefined) ip.y = ty;
+        ip.y += (ty - ip.y) * Math.min(1, LERP_SPEED * dt);
+      }
     }
     if (state.boss) {
       const ip = interpPositions[state.boss.id];
-      if (ip) ip.x += (state.boss.x - ip.x) * Math.min(1, LERP_SPEED * dt);
+      if (ip) {
+        ip.x += (state.boss.x - ip.x) * Math.min(1, LERP_SPEED * dt);
+        const ty = state.boss.y || 0;
+        if (ip.y === undefined) ip.y = ty;
+        ip.y += (ty - ip.y) * Math.min(1, LERP_SPEED * dt);
+      }
     }
   }
 
   if (!state) {
-    ctx.fillStyle = '#555';
-    ctx.font = '24px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('En attente de l\'expedition...', canvas.width / 2, canvas.height / 2);
+    ctx.fillStyle = '#555'; ctx.font = '24px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText("En attente de l'expedition...", canvas.width / 2, canvas.height / 2);
     return;
   }
 
   const groundY = canvas.height * GROUND_Y_RATIO;
 
-  // Camera follows average X of alive characters (smoothed)
-  if (state.characters.length > 0) {
+  // Camera auto-follow
+  if (camera.autoFollow && state.characters.length > 0) {
     const aliveChars = state.characters.filter(c => c.alive);
     if (aliveChars.length > 0) {
-      const avgX = aliveChars.reduce((s, c) => {
-        const ip = interpPositions[c.id];
-        return s + (ip ? ip.x : c.x);
-      }, 0) / aliveChars.length;
-      const targetCam = avgX * SCALE - canvas.width * 0.3;
-      cameraX += (targetCam - cameraX) * Math.min(1, 4 * dt);
+      const avgX = aliveChars.reduce((s, c) => s + (interpPositions[c.id]?.x ?? c.x), 0) / aliveChars.length;
+      const targetCam = avgX * camera.zoom - canvas.width * 0.3;
+      camera.x += (targetCam - camera.x) * Math.min(1, 4 * dt);
     }
   }
 
-  // ── Sky gradient ──
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
-  skyGrad.addColorStop(0, '#0a0a20');
-  skyGrad.addColorStop(1, '#1a1a35');
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, canvas.width, groundY);
+  // ── PARALLAX BACKGROUND (Phase 3) ──
+  drawParallax(groundY);
 
-  // ── Ground ──
-  ctx.fillStyle = '#2d1810';
-  ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
-
-  // Ground detail
-  ctx.fillStyle = '#3d2818';
-  for (let x = -((cameraX * 0.5) % 40); x < canvas.width; x += 40) {
-    ctx.fillRect(x, groundY, 38, 20);
-  }
-  ctx.fillStyle = '#4d3828';
-  for (let x = -((cameraX * 0.5) % 40) + 20; x < canvas.width; x += 40) {
-    ctx.fillRect(x, groundY + 20, 38, 20);
-  }
-
-  // ── Campfire ──
+  // ── CAMPFIRE (Phase 8) ──
   if (state.status === 'campfire') {
-    const fireX = canvas.width / 2;
-    const fireY = groundY - 20;
-    const glowGrad = ctx.createRadialGradient(fireX, fireY, 5, fireX, fireY, 100);
-    glowGrad.addColorStop(0, 'rgba(255, 150, 50, 0.5)');
-    glowGrad.addColorStop(1, 'rgba(255, 150, 50, 0)');
-    ctx.fillStyle = glowGrad;
-    ctx.fillRect(fireX - 100, fireY - 100, 200, 200);
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.arc(fireX, fireY, 10 + Math.sin(Date.now() / 100) * 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath();
-    ctx.arc(fireX, fireY - 6, 6 + Math.cos(Date.now() / 80) * 3, 0, Math.PI * 2);
-    ctx.fill();
+    drawCampfire(dt, groundY);
   }
 
-  // ── Draw Mobs ──
+  // ── PHASE ATMOSPHERES (Phase 3) ──
+  if (state.status === 'combat') {
+    // Red vignette
+    const vgrad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, canvas.width * 0.3, canvas.width / 2, canvas.height / 2, canvas.width * 0.7);
+    vgrad.addColorStop(0, 'rgba(0,0,0,0)');
+    vgrad.addColorStop(1, 'rgba(180,0,0,0.08)');
+    ctx.fillStyle = vgrad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // ── COLLECT ALL ENTITIES FOR DEPTH SORTING (Phase 4) ──
+  const drawCalls = [];
+
+  // Mobs
   for (const mob of (state.mobs || [])) {
     if (!mob.alive) continue;
     const ip = interpPositions[mob.id];
-    const sx = (ip ? ip.x : mob.x) * SCALE - cameraX;
-    const sy = groundY;
-    const spriteSize = mob.elite ? 32 : 24;
-    const anim = animStates[mob.id];
-
-    ctx.save();
-    if (anim?.type === 'hit') ctx.globalAlpha = 0.6;
-
-    // Try mob sprite
-    const mobSprite = mob.templateKey ? mobSpriteCache[mob.templateKey] : null;
-    if (mobSprite?.complete) {
-      ctx.drawImage(mobSprite, sx - spriteSize / 2, sy - spriteSize, spriteSize, spriteSize);
-      // Red tint border for elites
-      if (mob.elite) {
-        ctx.strokeStyle = '#ff4444';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(sx - spriteSize / 2, sy - spriteSize, spriteSize, spriteSize);
-      }
-    } else {
-      // Fallback: colored rectangles
-      const size = mob.elite ? MOB_SIZE_ELITE : MOB_SIZE_BASIC;
-      ctx.fillStyle = mob.caster ? '#9333ea' : mob.elite ? '#991b1b' : '#dc2626';
-      ctx.fillRect(sx - size / 2, sy - size, size, size);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(sx - size / 4 - 1, sy - size * 0.7, 2, 2);
-      ctx.fillRect(sx + size / 4 - 1, sy - size * 0.7, 2, 2);
-    }
-
-    ctx.restore();
-
-    drawHpBar(sx, sy - spriteSize - 4, spriteSize + 4, 3, mob.hp / mob.maxHp);
-
-    ctx.fillStyle = '#aaa';
-    ctx.font = '9px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(mob.name, sx, sy - spriteSize - 8);
+    const sx = (ip ? ip.x : mob.x) * camera.zoom - camera.x;
+    const entityY = (ip?.y ?? mob.y ?? 0) * camera.zoom;
+    const sy = groundY + entityY;
+    if (sx < -100 || sx > canvas.width + 100) continue;
+    drawCalls.push({ sy, fn: () => drawMob(mob, sx, sy) });
   }
 
-  // ── Draw Boss ──
+  // Boss
   if (state.boss) {
     const b = state.boss;
     const ip = interpPositions[b.id];
-    const sx = (ip ? ip.x : b.x) * SCALE - cameraX;
-    const sy = groundY;
-    const anim = animStates[b.id];
-
-    ctx.save();
-    if (anim?.type === 'hit') ctx.globalAlpha = 0.7;
-
-    // Try to draw boss sprite
-    const bossIdx = b.index ?? BOSS_ID_TO_INDEX[b.id];
-    const bossSprite = bossIdx != null ? bossSpriteCache[bossIdx] : null;
-
-    if (bossSprite?.complete) {
-      // Draw boss sprite (large, with border)
-      const bsz = BOSS_SIZE;
-      ctx.save();
-      // Rounded rect clip
-      const rx = sx - bsz / 2;
-      const ry = sy - bsz;
-      const radius = 8;
-      ctx.beginPath();
-      ctx.moveTo(rx + radius, ry);
-      ctx.lineTo(rx + bsz - radius, ry);
-      ctx.quadraticCurveTo(rx + bsz, ry, rx + bsz, ry + radius);
-      ctx.lineTo(rx + bsz, ry + bsz - radius);
-      ctx.quadraticCurveTo(rx + bsz, ry + bsz, rx + bsz - radius, ry + bsz);
-      ctx.lineTo(rx + radius, ry + bsz);
-      ctx.quadraticCurveTo(rx, ry + bsz, rx, ry + bsz - radius);
-      ctx.lineTo(rx, ry + radius);
-      ctx.quadraticCurveTo(rx, ry, rx + radius, ry);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(bossSprite, rx, ry, bsz, bsz);
-      ctx.restore();
-
-      // Border (enraged = red, normal = gold)
-      const borderColor = b.enraged ? '#ff0000' : '#eab308';
-      ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(rx + radius, ry);
-      ctx.lineTo(rx + bsz - radius, ry);
-      ctx.quadraticCurveTo(rx + bsz, ry, rx + bsz, ry + radius);
-      ctx.lineTo(rx + bsz, ry + bsz - radius);
-      ctx.quadraticCurveTo(rx + bsz, ry + bsz, rx + bsz - radius, ry + bsz);
-      ctx.lineTo(rx + radius, ry + bsz);
-      ctx.quadraticCurveTo(rx, ry + bsz, rx, ry + bsz - radius);
-      ctx.lineTo(rx, ry + radius);
-      ctx.quadraticCurveTo(rx, ry, rx + radius, ry);
-      ctx.closePath();
-      ctx.stroke();
-
-      // Enraged pulsing glow
-      if (b.enraged) {
-        const pulse = Math.sin(Date.now() / 200) * 0.15 + 0.2;
-        const glow = ctx.createRadialGradient(sx, sy - bsz / 2, bsz / 3, sx, sy - bsz / 2, bsz);
-        glow.addColorStop(0, `rgba(255, 0, 0, ${pulse})`);
-        glow.addColorStop(1, 'rgba(255, 0, 0, 0)');
-        ctx.fillStyle = glow;
-        ctx.fillRect(sx - bsz, sy - bsz * 1.5, bsz * 2, bsz * 2);
-      }
-    } else {
-      // Fallback: geometric boss
-      ctx.fillStyle = b.enraged ? '#ff0000' : '#7c2d12';
-      ctx.fillRect(sx - BOSS_SIZE / 2, sy - BOSS_SIZE, BOSS_SIZE, BOSS_SIZE);
-
-      // Crown
-      ctx.fillStyle = '#eab308';
-      ctx.beginPath();
-      ctx.moveTo(sx - 16, sy - BOSS_SIZE);
-      ctx.lineTo(sx - 10, sy - BOSS_SIZE - 14);
-      ctx.lineTo(sx - 5, sy - BOSS_SIZE - 5);
-      ctx.lineTo(sx, sy - BOSS_SIZE - 16);
-      ctx.lineTo(sx + 5, sy - BOSS_SIZE - 5);
-      ctx.lineTo(sx + 10, sy - BOSS_SIZE - 14);
-      ctx.lineTo(sx + 16, sy - BOSS_SIZE);
-      ctx.closePath();
-      ctx.fill();
-
-      // Eyes
-      ctx.fillStyle = b.enraged ? '#fff' : '#ef4444';
-      ctx.beginPath();
-      ctx.arc(sx - 12, sy - BOSS_SIZE * 0.6, 5, 0, Math.PI * 2);
-      ctx.arc(sx + 12, sy - BOSS_SIZE * 0.6, 5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.restore();
-
-    // HP bar
-    drawHpBar(sx, sy - BOSS_SIZE - 20, 140, 8, b.hp / b.maxHp);
-
-    // Name + HP%
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 14px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(b.name, sx, sy - BOSS_SIZE - 28);
-    ctx.font = '11px sans-serif';
-    ctx.fillStyle = '#ccc';
-    ctx.fillText(`${Math.floor(b.hp / b.maxHp * 100)}%`, sx, sy - BOSS_SIZE - 10);
-    ctx.shadowBlur = 0;
-
-    // Telegraph indicator
-    if (b.patternPhase === 'telegraph' && b.currentPattern) {
-      const pulse = Math.sin(Date.now() / 150) * 0.15 + 0.25;
-      ctx.fillStyle = `rgba(255, 0, 0, ${pulse})`;
-      const telW = BOSS_SIZE + 100;
-      ctx.fillRect(sx - telW / 2, sy - BOSS_SIZE - 5, telW, BOSS_SIZE + 10);
-      ctx.fillStyle = '#ff4444';
-      ctx.font = 'bold 12px sans-serif';
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      ctx.shadowBlur = 4;
-      ctx.fillText(`!! ${b.currentPattern} !!`, sx, sy - BOSS_SIZE + 30);
-      ctx.shadowBlur = 0;
-    }
+    const sx = (ip ? ip.x : b.x) * camera.zoom - camera.x;
+    const entityY = (ip?.y ?? b.y ?? 0) * camera.zoom;
+    const sy = groundY + entityY;
+    drawCalls.push({ sy, fn: () => drawBoss(b, sx, sy) });
   }
 
-  // ── Draw Characters ──
+  // Characters
   for (const char of (state.characters || [])) {
     const ip = interpPositions[char.id];
-    const sx = (ip ? ip.x : char.x) * SCALE - cameraX;
-    const sy = groundY;
-    const anim = animStates[char.id];
+    const sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
+    const entityY = (ip?.y ?? char.y ?? 0) * camera.zoom;
+    let sy = groundY + entityY;
 
-    // Dead characters: ghost
-    if (!char.alive) {
-      if (anim?.type !== 'death') continue;
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, anim.timer / 1.0) * 0.5;
-      const deathOffset = (1.0 - anim.timer) * 15;
-      drawCharacter(char, sx, sy + deathOffset);
-      ctx.restore();
+    // Campfire override positions
+    if (state.status === 'campfire' && campfireLayout?.positions[char.id]) {
+      const cp = campfireLayout.positions[char.id];
+      const lerpFactor = Math.min(1, 3 * dt);
+      // We can't persist lerp here easily, use the campfire positions directly
+      drawCalls.push({ sy: cp.y, fn: () => drawCharacterFull(char, cp.x, cp.y, dt) });
       continue;
     }
 
+    if (sx < -100 || sx > canvas.width + 100) continue;
+    drawCalls.push({ sy, fn: () => drawCharacterFull(char, sx, sy, dt) });
+  }
+
+  // Sort by Y (back to front)
+  drawCalls.sort((a, b) => a.sy - b.sy);
+  for (const dc of drawCalls) dc.fn();
+
+  // ── Rez Animations (Phase 8) ──
+  for (let i = rezAnimations.length - 1; i >= 0; i--) {
+    const ra = rezAnimations[i];
+    ra.timer -= dt;
+    if (ra.timer <= 0) { rezAnimations.splice(i, 1); continue; }
+    const entity = findEntity(ra.targetId);
+    if (!entity) continue;
+    const ip = interpPositions[ra.targetId];
+    const sx = (ip ? ip.x : entity.x) * camera.zoom - camera.x;
+    const sy = groundY + ((ip?.y ?? entity.y ?? 0) * camera.zoom);
+    const progress = 1 - ra.timer / 2.0;
     ctx.save();
-
-    // Animation effects
-    if (anim?.type === 'attack') {
-      const scale = 1 + 0.15 * (anim.timer / 0.2);
-      ctx.translate(sx, sy - CHAR_SIZE / 2);
-      ctx.scale(scale, scale);
-      ctx.translate(-sx, -(sy - CHAR_SIZE / 2));
+    ctx.globalAlpha = 0.5 + progress * 0.3;
+    const columnGrad = ctx.createLinearGradient(sx, sy - 80, sx, sy);
+    columnGrad.addColorStop(0, 'rgba(255, 215, 0, 0)');
+    columnGrad.addColorStop(0.5, `rgba(255, 215, 0, ${0.4 * (1 - progress)})`);
+    columnGrad.addColorStop(1, 'rgba(255, 215, 0, 0)');
+    ctx.fillStyle = columnGrad;
+    ctx.fillRect(sx - 15, sy - 80, 30, 80);
+    // Sparkles
+    for (let s = 0; s < 4; s++) {
+      const sparkX = sx + (Math.random() - 0.5) * 30;
+      const sparkY = sy - Math.random() * 70;
+      ctx.fillStyle = `rgba(255, 215, 0, ${0.5 + Math.random() * 0.5})`;
+      ctx.beginPath(); ctx.arc(sparkX, sparkY, 1.5, 0, Math.PI * 2); ctx.fill();
     }
-
-    if (anim?.type === 'hit') {
-      ctx.globalAlpha = 0.7;
-    }
-
-    if (anim?.type === 'heal') {
-      const glowAlpha = anim.timer / 0.3 * 0.4;
-      const glow = ctx.createRadialGradient(sx, sy - CHAR_SIZE / 2, 5, sx, sy - CHAR_SIZE / 2, 30);
-      glow.addColorStop(0, `rgba(34, 197, 94, ${glowAlpha})`);
-      glow.addColorStop(1, 'rgba(34, 197, 94, 0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(sx - 30, sy - CHAR_SIZE - 10, 60, CHAR_SIZE + 20);
-    }
-
-    drawCharacter(char, sx, sy);
-
     ctx.restore();
+  }
 
-    // HP bar
-    drawHpBar(sx, sy + 2, 36, 4, char.hp / char.maxHp);
-
-    // Mana bar
-    if (char.maxMana) {
-      const manaRatio = (char.mana || 0) / char.maxMana;
-      const barX = sx - 18;
-      ctx.fillStyle = '#1a1a2e';
-      ctx.fillRect(barX, sy + 7, 36, 2);
-      ctx.fillStyle = '#3b82f6';
-      ctx.fillRect(barX, sy + 7, 36 * Math.max(0, manaRatio), 2);
-    }
-
-    // Name above character
-    const elemColor = ELEMENT_COLORS[char.element] || '#888';
-    ctx.fillStyle = elemColor;
-    ctx.font = '9px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur = 2;
-    ctx.fillText(char.name, sx, sy - CHAR_SIZE - 4);
-    ctx.shadowBlur = 0;
+  // ── Speech Bubble (Phase 5) ──
+  if (activeBubble) {
+    activeBubble.timer -= dt;
+    activeBubble.charIndex += dt * 30;
+    if (activeBubble.timer <= 0) { activeBubble = null; }
+    else drawBubble();
   }
 
   // ── Floating Numbers ──
   for (let i = floatingNumbers.length - 1; i >= 0; i--) {
     const f = floatingNumbers[i];
-    f.life -= dt;
-    f.y += f.vy * dt;
-    f.vy *= 0.97;
+    f.life -= dt; f.y += f.vy * dt; f.vy *= 0.97;
     if (f.life <= 0) { floatingNumbers.splice(i, 1); continue; }
-
-    const sx = f.x * SCALE - cameraX;
-    const sy = GROUND_Y_RATIO * canvas.height + f.y;
+    const sx = f.x * camera.zoom - camera.x;
+    const entityY = (f.entityY || 0) * camera.zoom;
+    const sy = groundY + entityY + f.y;
     const alpha = Math.min(1, f.life / 0.5);
-
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = f.color;
-    ctx.font = `bold ${f.size}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-    ctx.shadowBlur = 4;
+    ctx.fillStyle = f.color; ctx.font = `bold ${f.size}px sans-serif`; ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4;
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 3;
+    ctx.strokeText(f.text, sx, sy);
     ctx.fillText(f.text, sx, sy);
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
   }
 
-  // ── Phase overlay text ──
+  // ── Loot Roll Overlay (Phase 7) ──
+  if (state.status === 'loot_roll' && lootRollState && lootRollState.phase !== 'done') {
+    drawLootRoll(dt);
+  }
+
+  // ── Narrative Overlay (Phase 9) ──
+  if (narrativeOverlay) drawNarrative(dt);
+
+  // ── TV Commentary (Phase 6) ──
+  if (tvOverlay) {
+    tvOverlay.timer -= dt;
+    if (tvOverlay.timer <= 0) { tvOverlay = null; }
+    else {
+      const alpha = tvOverlay.timer < 0.5 ? tvOverlay.timer / 0.5 : tvOverlay.timer > 2 ? (2.5 - tvOverlay.timer) / 0.5 : 1;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      roundRect(ctx, canvas.width / 2 - 200, canvas.height * 0.25 - 20, 400, 40, 8);
+      ctx.fill();
+      ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 8;
+      ctx.fillText(tvOverlay.text, canvas.width / 2, canvas.height * 0.25 + 6);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+  }
+
+  // ── March narrative (Phase 9) ──
+  if (state.status === 'march' && marchNarrative) {
+    marchNarrative.timer -= dt;
+    if (marchNarrative.timer <= 0) marchNarrative = null;
+    else {
+      const alpha = marchNarrative.timer < 1 ? marchNarrative.timer : marchNarrative.timer > 7 ? 8 - marchNarrative.timer : 1;
+      ctx.save(); ctx.globalAlpha = alpha * 0.7;
+      ctx.fillStyle = '#60a5fa'; ctx.font = 'italic 16px sans-serif'; ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 4;
+      ctx.fillText(marchNarrative.text, canvas.width / 2, 50);
+      ctx.shadowBlur = 0; ctx.restore();
+    }
+  }
+
+  // ── Phase overlay ──
   if (state.status === 'march') {
-    ctx.fillStyle = 'rgba(37, 99, 235, 0.12)';
+    ctx.fillStyle = 'rgba(37, 99, 235, 0.06)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#60a5fa';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 6;
-    ctx.fillText('En marche...', canvas.width / 2, 50);
+  }
+  if (state.status === 'finished') {
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.08)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#22c55e'; ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 10;
+    ctx.fillText('VICTOIRE!', canvas.width / 2, canvas.height / 2 - 20);
+    ctx.font = '16px sans-serif'; ctx.fillStyle = '#ccc';
+    ctx.fillText(`Boss elimines: ${state.bossesKilled} | Survivants: ${state.aliveCount}/${state.totalCount}`, canvas.width / 2, canvas.height / 2 + 20);
     ctx.shadowBlur = 0;
   }
-  if (state.status === 'loot_roll') {
-    ctx.fillStyle = 'rgba(168, 85, 247, 0.08)';
+  if (state.status === 'wiped') {
+    ctx.fillStyle = 'rgba(220, 38, 38, 0.1)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#c084fc';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 6;
-    ctx.fillText('Distribution du loot...', canvas.width / 2, 50);
+    ctx.fillStyle = '#dc2626'; ctx.font = 'bold 32px sans-serif'; ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 10;
+    ctx.fillText('DEFAITE...', canvas.width / 2, canvas.height / 2 - 20);
+    ctx.font = '16px sans-serif'; ctx.fillStyle = '#999';
+    ctx.fillText(`Boss elimines: ${state.bossesKilled} | Temps: ${formatTime(state.elapsedTime)}`, canvas.width / 2, canvas.height / 2 + 20);
     ctx.shadowBlur = 0;
   }
+
+  // ── Campfire dialogues (Phase 8) ──
+  if (state.status === 'campfire') {
+    campfireDialogueTimer -= dt;
+    if (campfireDialogueTimer <= 0 && (!activeBubble || activeBubble.timer <= 0)) {
+      campfireDialogueTimer = 5 + Math.random() * 4;
+      const alive = state.characters.filter(c => c.alive);
+      if (alive.length > 0) {
+        const char = alive[Math.floor(Math.random() * alive.length)];
+        const pool = CAMPFIRE_DIALOGUES.find(d => d.role === char.role);
+        if (pool) {
+          activeBubble = { charId: char.id, text: pool.lines[Math.floor(Math.random() * pool.lines.length)], timer: 5.0, charIndex: 0 };
+        }
+      }
+    }
+  }
+
+  // ── Zoom indicator (Phase 2) ──
+  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText(`${Math.round(camera.zoom * 100)}%`, 8, canvas.height - 8);
 
   scheduleStatsRender();
 }
 
-function drawCharacter(char, sx, sy) {
+// ═══════════════════════════════════════════════════════════
+// DRAW FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+
+function drawParallax(groundY) {
+  const cw = canvas.width, ch = canvas.height;
+
+  // Sky gradient
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+  skyGrad.addColorStop(0, '#050510');
+  skyGrad.addColorStop(0.5, '#0a0a20');
+  skyGrad.addColorStop(1, '#151530');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, cw, groundY);
+
+  // Stars (cached)
+  if (!starsCanvas) {
+    starsCanvas = document.createElement('canvas');
+    starsCanvas.width = cw; starsCanvas.height = groundY;
+    const sctx = starsCanvas.getContext('2d');
+    for (let i = 0; i < 120; i++) {
+      const x = Math.random() * cw, y = Math.random() * groundY * 0.8;
+      const r = Math.random() * 1.5 + 0.3;
+      const alpha = Math.random() * 0.6 + 0.2;
+      sctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      sctx.beginPath(); sctx.arc(x, y, r, 0, Math.PI * 2); sctx.fill();
+    }
+  }
+  ctx.drawImage(starsCanvas, 0, 0);
+
+  // Mountains silhouette (parallax 0.15)
+  const mtnOffset = camera.x * 0.15;
+  ctx.fillStyle = '#121225';
+  ctx.beginPath();
+  ctx.moveTo(0, groundY);
+  for (let x = 0; x <= cw; x += 8) {
+    const wx = x + mtnOffset;
+    const h = Math.sin(wx * 0.003) * 60 + Math.sin(wx * 0.007) * 30 + Math.sin(wx * 0.015) * 15;
+    ctx.lineTo(x, groundY * 0.45 - h);
+  }
+  ctx.lineTo(cw, groundY);
+  ctx.closePath();
+  ctx.fill();
+
+  // Trees silhouette (parallax 0.3)
+  const treeOffset = camera.x * 0.3;
+  ctx.fillStyle = '#1a1a30';
+  ctx.beginPath();
+  ctx.moveTo(0, groundY);
+  for (let x = 0; x <= cw; x += 5) {
+    const wx = x + treeOffset;
+    const h = Math.sin(wx * 0.008) * 35 + Math.sin(wx * 0.02) * 18 + Math.abs(Math.sin(wx * 0.05)) * 12;
+    ctx.lineTo(x, groundY * 0.65 - h);
+  }
+  ctx.lineTo(cw, groundY);
+  ctx.closePath();
+  ctx.fill();
+
+  // Ground
+  const groundGrad = ctx.createLinearGradient(0, groundY, 0, ch);
+  groundGrad.addColorStop(0, '#3d2818');
+  groundGrad.addColorStop(0.3, '#2d1810');
+  groundGrad.addColorStop(1, '#1a0c08');
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, groundY, cw, ch - groundY);
+
+  // Ground depth lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for (let y = groundY + 8; y < ch; y += 12) {
+    const offset = (camera.x * (0.5 + (y - groundY) * 0.002)) % 30;
+    ctx.beginPath(); ctx.moveTo(-offset, y); ctx.lineTo(cw, y); ctx.stroke();
+  }
+
+  // March wind particles
+  if (state?.status === 'march') {
+    const t = Date.now() / 1000;
+    for (let i = 0; i < 15; i++) {
+      const px = ((t * 80 + i * 120) % (cw + 100)) - 50;
+      const py = groundY * 0.3 + Math.sin(t + i * 2) * groundY * 0.3;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillRect(px, py, 3, 1);
+    }
+  }
+}
+
+function drawCampfire(dt, groundY) {
+  const cx = campfireLayout?.centerX || canvas.width / 2;
+  const cy = campfireLayout?.centerY || groundY - 30;
+  const t = Date.now() / 1000;
+
+  // Warm ambient glow
+  const glowGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 200);
+  glowGrad.addColorStop(0, 'rgba(255, 150, 50, 0.3)');
+  glowGrad.addColorStop(0.5, 'rgba(255, 100, 30, 0.08)');
+  glowGrad.addColorStop(1, 'rgba(255, 50, 10, 0)');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(cx - 200, cy - 200, 400, 400);
+
+  // Ember particles
+  for (let i = 0; i < 10; i++) {
+    const cycle = ((t + i * 0.4) % 2.5) / 2.5;
+    const px = cx + Math.sin(t * 0.8 + i * 1.7) * (8 + cycle * 20);
+    const py = cy - cycle * 70;
+    const size = (1 - cycle) * 4;
+    const alpha = (1 - cycle) * 0.7;
+    ctx.fillStyle = `rgba(255, ${Math.floor(180 - cycle * 120)}, 50, ${alpha})`;
+    ctx.beginPath(); ctx.arc(px, py, size, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Core fire
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath(); ctx.arc(cx, cy, 12 + Math.sin(t * 3) * 3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath(); ctx.arc(cx, cy - 8, 8 + Math.cos(t * 4) * 2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fde047';
+  ctx.beginPath(); ctx.arc(cx, cy - 4, 4 + Math.sin(t * 5) * 1.5, 0, Math.PI * 2); ctx.fill();
+
+  // Logs
+  ctx.fillStyle = '#3d2818';
+  ctx.save(); ctx.translate(cx, cy + 6); ctx.rotate(0.3);
+  ctx.fillRect(-16, -3, 32, 6); ctx.restore();
+  ctx.save(); ctx.translate(cx, cy + 6); ctx.rotate(-0.3);
+  ctx.fillRect(-14, -3, 28, 6); ctx.restore();
+
+  // Stats recap at top
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(`Boss ${state.bossesKilled}/3 elimines — ${state.aliveCount} survivants`, canvas.width / 2, 45);
+}
+
+function drawMob(mob, sx, sy) {
+  const spriteSize = mob.elite ? 32 : 24;
+  const anim = animStates[mob.id];
+  ctx.save();
+  if (anim?.type === 'hit') ctx.globalAlpha = 0.6;
+  const mobSprite = mob.templateKey ? mobSpriteCache[mob.templateKey] : null;
+  if (mobSprite?.complete) {
+    ctx.drawImage(mobSprite, sx - spriteSize / 2, sy - spriteSize, spriteSize, spriteSize);
+    if (mob.elite) { ctx.strokeStyle = '#ff4444'; ctx.lineWidth = 2; ctx.strokeRect(sx - spriteSize / 2, sy - spriteSize, spriteSize, spriteSize); }
+  } else {
+    const size = mob.elite ? 22 : 14;
+    ctx.fillStyle = mob.caster ? '#9333ea' : mob.elite ? '#991b1b' : '#dc2626';
+    ctx.fillRect(sx - size / 2, sy - size, size, size);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(sx - size / 4 - 1, sy - size * 0.7, 2, 2);
+    ctx.fillRect(sx + size / 4 - 1, sy - size * 0.7, 2, 2);
+  }
+  ctx.restore();
+  drawHpBar(sx, sy - spriteSize - 4, spriteSize + 4, 3, mob.hp / mob.maxHp);
+  ctx.fillStyle = '#aaa'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(mob.name, sx, sy - spriteSize - 8);
+}
+
+function drawBoss(b, sx, sy) {
+  const anim = animStates[b.id];
+  ctx.save();
+  if (anim?.type === 'hit') ctx.globalAlpha = 0.7;
+  const bossIdx = b.index ?? BOSS_ID_TO_INDEX[b.id];
+  const bossSprite = bossIdx != null ? bossSpriteCache[bossIdx] : null;
+  const bsz = BOSS_SIZE;
+
+  if (bossSprite?.complete) {
+    ctx.save();
+    const rx = sx - bsz / 2, ry = sy - bsz;
+    roundRect(ctx, rx, ry, bsz, bsz, 8); ctx.clip();
+    ctx.drawImage(bossSprite, rx, ry, bsz, bsz);
+    ctx.restore();
+    ctx.strokeStyle = b.enraged ? '#ff0000' : '#eab308'; ctx.lineWidth = 3;
+    roundRect(ctx, rx, ry, bsz, bsz, 8); ctx.stroke();
+    if (b.enraged) {
+      const pulse = Math.sin(Date.now() / 200) * 0.15 + 0.2;
+      const glow = ctx.createRadialGradient(sx, sy - bsz / 2, bsz / 3, sx, sy - bsz / 2, bsz);
+      glow.addColorStop(0, `rgba(255, 0, 0, ${pulse})`); glow.addColorStop(1, 'rgba(255, 0, 0, 0)');
+      ctx.fillStyle = glow; ctx.fillRect(sx - bsz, sy - bsz * 1.5, bsz * 2, bsz * 2);
+    }
+  } else {
+    ctx.fillStyle = b.enraged ? '#ff0000' : '#7c2d12';
+    ctx.fillRect(sx - bsz / 2, sy - bsz, bsz, bsz);
+    ctx.fillStyle = '#eab308';
+    ctx.beginPath();
+    ctx.moveTo(sx - 16, sy - bsz); ctx.lineTo(sx - 10, sy - bsz - 14); ctx.lineTo(sx - 5, sy - bsz - 5);
+    ctx.lineTo(sx, sy - bsz - 16); ctx.lineTo(sx + 5, sy - bsz - 5);
+    ctx.lineTo(sx + 10, sy - bsz - 14); ctx.lineTo(sx + 16, sy - bsz);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = b.enraged ? '#fff' : '#ef4444';
+    ctx.beginPath(); ctx.arc(sx - 12, sy - bsz * 0.6, 5, 0, Math.PI * 2); ctx.arc(sx + 12, sy - bsz * 0.6, 5, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  drawHpBar(sx, sy - bsz - 20, 140, 8, b.hp / b.maxHp);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4;
+  ctx.fillText(b.name, sx, sy - bsz - 28);
+  ctx.font = '11px sans-serif'; ctx.fillStyle = '#ccc';
+  ctx.fillText(`${Math.floor(b.hp / b.maxHp * 100)}%`, sx, sy - bsz - 10);
+  ctx.shadowBlur = 0;
+
+  if (b.patternPhase === 'telegraph' && b.currentPattern) {
+    const pulse = Math.sin(Date.now() / 150) * 0.15 + 0.25;
+    ctx.fillStyle = `rgba(255, 0, 0, ${pulse})`;
+    ctx.fillRect(sx - (bsz + 100) / 2, sy - bsz - 5, bsz + 100, bsz + 10);
+    ctx.fillStyle = '#ff4444'; ctx.font = 'bold 12px sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4;
+    ctx.fillText(`!! ${b.currentPattern} !!`, sx, sy - bsz + 30);
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawCharacterFull(char, sx, sy, dt) {
+  const anim = animStates[char.id];
+
+  if (!char.alive) {
+    if (anim?.type !== 'death') return;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, anim.timer / 1.0) * 0.5;
+    const deathOffset = (1.0 - anim.timer) * 15;
+    drawCharacterSprite(char, sx, sy + deathOffset);
+    ctx.restore();
+    return;
+  }
+
+  ctx.save();
+  if (anim?.type === 'attack') {
+    const scale = 1 + 0.15 * (anim.timer / 0.2);
+    ctx.translate(sx, sy - CHAR_SIZE / 2); ctx.scale(scale, scale); ctx.translate(-sx, -(sy - CHAR_SIZE / 2));
+  }
+  if (anim?.type === 'hit') ctx.globalAlpha = 0.7;
+  if (anim?.type === 'heal') {
+    const glowAlpha = anim.timer / 0.3 * 0.4;
+    const glow = ctx.createRadialGradient(sx, sy - CHAR_SIZE / 2, 5, sx, sy - CHAR_SIZE / 2, 30);
+    glow.addColorStop(0, `rgba(34, 197, 94, ${glowAlpha})`); glow.addColorStop(1, 'rgba(34, 197, 94, 0)');
+    ctx.fillStyle = glow; ctx.fillRect(sx - 30, sy - CHAR_SIZE - 10, 60, CHAR_SIZE + 20);
+  }
+  drawCharacterSprite(char, sx, sy);
+  ctx.restore();
+
+  // HP bar
+  drawHpBar(sx, sy + 2, 36, 4, char.hp / char.maxHp);
+
+  // Mana bar (now works with Phase 1 broadcast)
+  if (char.maxMana) {
+    const manaRatio = (char.mana || 0) / char.maxMana;
+    ctx.fillStyle = '#1a1a2e'; ctx.fillRect(sx - 18, sy + 7, 36, 2);
+    ctx.fillStyle = '#3b82f6'; ctx.fillRect(sx - 18, sy + 7, 36 * Math.max(0, manaRatio), 2);
+  }
+
+  // Name + role icon
+  const elemColor = ELEMENT_COLORS[char.element] || '#888';
+  ctx.fillStyle = elemColor; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 2;
+  const roleIcon = ROLE_ICONS[char.role] || '';
+  ctx.fillText(`${roleIcon} ${char.name}`, sx, sy - CHAR_SIZE - 4);
+  ctx.shadowBlur = 0;
+}
+
+function drawCharacterSprite(char, sx, sy) {
   const sprite = char.hunterId ? spriteCache[char.hunterId] : null;
+  // Depth scale
+  const depthScale = 1 - (Math.abs(char.y || 0) / 150) * 0.12;
+  const charSize = CHAR_SIZE * Math.max(0.85, depthScale);
 
   if (sprite?.complete) {
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(sx, sy - CHAR_SIZE / 2, CHAR_SIZE / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-    ctx.drawImage(sprite, sx - CHAR_SIZE / 2, sy - CHAR_SIZE, CHAR_SIZE, CHAR_SIZE);
+    ctx.beginPath(); ctx.arc(sx, sy - charSize / 2, charSize / 2, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+    ctx.drawImage(sprite, sx - charSize / 2, sy - charSize, charSize, charSize);
     ctx.restore();
-
-    // Border ring
     const elemColor = ELEMENT_COLORS[char.element] || '#888';
-    ctx.strokeStyle = elemColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(sx, sy - CHAR_SIZE / 2, CHAR_SIZE / 2, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.strokeStyle = elemColor; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(sx, sy - charSize / 2, charSize / 2, 0, Math.PI * 2); ctx.stroke();
   } else {
-    // Fallback: colored shapes
     const color = ELEMENT_COLORS[char.element] || '#888';
-    const size = 14;
+    const size = 14 * depthScale;
     ctx.fillStyle = color;
-
     switch (ROLE_SHAPES[char.role]) {
-      case 'circle':
-        ctx.beginPath();
-        ctx.arc(sx, sy - size / 2, size / 2, 0, Math.PI * 2);
-        ctx.fill();
-        break;
-      case 'triangle':
-        ctx.beginPath();
-        ctx.moveTo(sx, sy - size);
-        ctx.lineTo(sx - size / 2, sy);
-        ctx.lineTo(sx + size / 2, sy);
-        ctx.closePath();
-        ctx.fill();
-        break;
-      case 'diamond':
-        ctx.beginPath();
-        ctx.moveTo(sx, sy - size);
-        ctx.lineTo(sx + size / 2, sy - size / 2);
-        ctx.lineTo(sx, sy);
-        ctx.lineTo(sx - size / 2, sy - size / 2);
-        ctx.closePath();
-        ctx.fill();
-        break;
-      default:
-        ctx.fillRect(sx - size / 2, sy - size, size, size);
+      case 'circle': ctx.beginPath(); ctx.arc(sx, sy - size / 2, size / 2, 0, Math.PI * 2); ctx.fill(); break;
+      case 'triangle': ctx.beginPath(); ctx.moveTo(sx, sy - size); ctx.lineTo(sx - size / 2, sy); ctx.lineTo(sx + size / 2, sy); ctx.closePath(); ctx.fill(); break;
+      case 'diamond': ctx.beginPath(); ctx.moveTo(sx, sy - size); ctx.lineTo(sx + size / 2, sy - size / 2); ctx.lineTo(sx, sy); ctx.lineTo(sx - size / 2, sy - size / 2); ctx.closePath(); ctx.fill(); break;
+      default: ctx.fillRect(sx - size / 2, sy - size, size, size);
+    }
+  }
+}
+
+function drawBubble() {
+  if (!activeBubble) return;
+  const char = findEntity(activeBubble.charId);
+  if (!char) { activeBubble = null; return; }
+  const ip = interpPositions[activeBubble.charId];
+  let sx, sy;
+  if (state?.status === 'campfire' && campfireLayout?.positions[activeBubble.charId]) {
+    const cp = campfireLayout.positions[activeBubble.charId];
+    sx = cp.x; sy = cp.y - CHAR_SIZE - 20;
+  } else {
+    sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
+    sy = canvas.height * 0.7 + ((ip?.y ?? char.y ?? 0) * camera.zoom) - CHAR_SIZE - 20;
+  }
+
+  const charsToShow = Math.min(activeBubble.text.length, Math.floor(activeBubble.charIndex));
+  const visibleText = activeBubble.text.substring(0, charsToShow);
+  ctx.font = '11px sans-serif';
+  const textW = ctx.measureText(activeBubble.text).width;
+  const bubbleW = Math.min(200, textW + 20);
+  const bubbleH = 30;
+  const alpha = activeBubble.timer < 0.5 ? activeBubble.timer / 0.5 : 1;
+
+  ctx.save(); ctx.globalAlpha = alpha * 0.92;
+
+  // Background
+  ctx.fillStyle = 'rgba(15, 15, 35, 0.92)';
+  roundRect(ctx, sx - bubbleW / 2, sy - bubbleH, bubbleW, bubbleH, 8); ctx.fill();
+
+  // Border
+  const elemColor = ELEMENT_COLORS[char.element] || '#888';
+  ctx.strokeStyle = elemColor + '80'; ctx.lineWidth = 1;
+  roundRect(ctx, sx - bubbleW / 2, sy - bubbleH, bubbleW, bubbleH, 8); ctx.stroke();
+
+  // Triangle
+  ctx.fillStyle = 'rgba(15, 15, 35, 0.92)';
+  ctx.beginPath(); ctx.moveTo(sx - 5, sy); ctx.lineTo(sx + 5, sy); ctx.lineTo(sx, sy + 6); ctx.closePath(); ctx.fill();
+
+  // Text
+  ctx.fillStyle = '#e0e0e0'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(visibleText, sx, sy - bubbleH / 2 + 4);
+  ctx.restore();
+}
+
+function drawLootRoll(dt) {
+  if (!lootRollState) return;
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  lootRollState.revealTimer -= dt;
+  if (lootRollState.revealTimer <= 0 && lootRollState.phase !== 'done') {
+    lootRollState.currentIndex++;
+    if (lootRollState.currentIndex >= lootRollState.results.length) { lootRollState.phase = 'done'; return; }
+    lootRollState.phase = 'revealing';
+    lootRollState.revealTimer = 3.5;
+  }
+
+  if (lootRollState.phase === 'revealing' && lootRollState.currentIndex >= 0) {
+    const item = lootRollState.results[lootRollState.currentIndex];
+    const elapsed = 3.5 - lootRollState.revealTimer;
+    drawLootCard(item, elapsed);
+  }
+
+  // Mini cards for already revealed items
+  for (let i = 0; i < lootRollState.currentIndex; i++) {
+    const item = lootRollState.results[i];
+    const x = 20 + i * 45;
+    const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308' };
+    ctx.fillStyle = 'rgba(20, 15, 40, 0.9)';
+    roundRect(ctx, x, canvas.height - 200, 40, 30, 4); ctx.fill();
+    ctx.strokeStyle = RARITY_COLORS[item.rarity] || '#888'; ctx.lineWidth = 1;
+    roundRect(ctx, x, canvas.height - 200, 40, 30, 4); ctx.stroke();
+    ctx.fillStyle = '#ccc'; ctx.font = '7px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(item.itemName?.substring(0, 6) || '?', x + 20, canvas.height - 182);
+  }
+
+  // Title
+  ctx.fillStyle = '#c084fc'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 6;
+  ctx.fillText('Distribution du loot...', canvas.width / 2, 40);
+  ctx.shadowBlur = 0;
+}
+
+function drawLootCard(item, elapsed) {
+  const cx = canvas.width / 2, cy = canvas.height / 2 - 30;
+  const cardW = 220, cardH = 130;
+  const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308' };
+  const rarityColor = RARITY_COLORS[item.rarity] || '#888';
+
+  ctx.save();
+  if (elapsed < 0.5) {
+    const t = elapsed / 0.5;
+    ctx.translate(cx, cy); ctx.scale(t * t, t * t); ctx.rotate((1 - t) * Math.PI); ctx.translate(-cx, -cy);
+  }
+
+  // Card bg
+  ctx.fillStyle = 'rgba(20, 12, 40, 0.95)';
+  roundRect(ctx, cx - cardW / 2, cy - cardH / 2, cardW, cardH, 12); ctx.fill();
+
+  // Rarity border glow
+  if (elapsed > 0.5) {
+    ctx.shadowColor = rarityColor; ctx.shadowBlur = 15;
+  }
+  ctx.strokeStyle = rarityColor; ctx.lineWidth = 3;
+  roundRect(ctx, cx - cardW / 2, cy - cardH / 2, cardW, cardH, 12); ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Item name
+  if (elapsed > 0.5) {
+    ctx.fillStyle = rarityColor; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(item.itemName || '???', cx, cy - 25);
+    ctx.fillStyle = '#888'; ctx.font = '11px sans-serif';
+    ctx.fillText((item.rarity || '').toUpperCase(), cx, cy - 8);
+  }
+
+  // Roll animation
+  if (elapsed > 1.2 && !item.stolen) {
+    const rollElapsed = elapsed - 1.2;
+    const displayRoll = rollElapsed > 1.0 ? item.winnerRoll : Math.floor(Math.random() * 100);
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 30px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(displayRoll, cx, cy + 20);
+  }
+
+  // Winner
+  if (elapsed > 2.5 && item.winnerUsername) {
+    ctx.fillStyle = item.srWinner ? '#fbbf24' : '#22c55e'; ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(`${item.winnerUsername}${item.srWinner ? ' (SR!)' : ''}`, cx, cy + 48);
+  }
+
+  // Stolen
+  if (item.stolen && elapsed > 1.0) {
+    ctx.fillStyle = '#dc2626'; ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('VOLE PAR LES MONSTRES!', cx, cy + 20);
+  }
+
+  ctx.restore();
+}
+
+function drawNarrative(dt) {
+  if (!narrativeOverlay) return;
+  const no = narrativeOverlay;
+  const line = no.lines[no.currentLine];
+  if (!line) { narrativeOverlay = null; return; }
+
+  // Dim background
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Typewriter
+  no.charIndex += dt * 25;
+  const charsToShow = Math.min(line.length, Math.floor(no.charIndex));
+  const visibleText = line.substring(0, charsToShow);
+  const isLastLine = no.currentLine === no.lines.length - 1;
+
+  ctx.fillStyle = isLastLine ? '#fbbf24' : '#e0e0e0';
+  ctx.font = isLastLine ? 'bold 24px sans-serif' : '18px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 8;
+  ctx.fillText(visibleText, canvas.width / 2, canvas.height / 2);
+  ctx.shadowBlur = 0;
+
+  // Subtitle
+  if (no.subtitle) {
+    ctx.fillStyle = '#888'; ctx.font = '12px sans-serif';
+    ctx.fillText(no.subtitle, canvas.width / 2, canvas.height / 2 + 35);
+  }
+
+  // Auto-advance
+  if (charsToShow >= line.length) {
+    no.lineTimer += dt;
+    if (no.lineTimer > 1.5) {
+      no.currentLine++;
+      no.charIndex = 0;
+      no.lineTimer = 0;
+      if (no.currentLine >= no.lines.length) {
+        setTimeout(() => { if (narrativeOverlay === no) narrativeOverlay = null; }, 1500);
+      }
     }
   }
 }

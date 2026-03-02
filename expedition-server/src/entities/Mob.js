@@ -17,8 +17,9 @@ export class Mob {
     this.spd = template.spd || COMBAT.MOB_MOVE_SPEED;
     this.range = template.range || COMBAT.MELEE_RANGE;
 
-    // Position (1D)
+    // Position (2D)
     this.x = COMBAT.WORLD_WIDTH - 100 - Math.random() * 300;
+    this.y = (Math.random() * 2 - 1) * 30;  // Random Y spread for mobs
 
     // State
     this.alive = true;
@@ -67,6 +68,7 @@ export class Mob {
       maxHp: this.maxHp,
       atk: this.atk,
       x: this.x,
+      y: this.y,
       alive: this.alive,
       elite: this.elite,
       caster: this.caster,
