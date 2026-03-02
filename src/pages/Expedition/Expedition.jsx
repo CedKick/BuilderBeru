@@ -257,7 +257,10 @@ export default function Expedition() {
   // ═══════════════════════════════════════════
   // RENDER: Dashboard
   // ═══════════════════════════════════════════
-  const status = liveStatus?.status || expedition?.status || 'none';
+  // Engine status is "idle" when not running; prefer DB expedition status in that case
+  const engineStatus = liveStatus?.status;
+  const dbStatus = expedition?.status;
+  const status = (engineStatus && engineStatus !== 'idle') ? engineStatus : (dbStatus || 'none');
   const isActive = ['march', 'combat', 'loot_roll', 'campfire'].includes(status);
   const isRegistration = status === 'registration';
 
@@ -296,13 +299,16 @@ export default function Expedition() {
           <h2 className="text-lg font-semibold text-gray-200">Statut</h2>
           <StatusBadge status={status} />
         </div>
-        {liveStatus && (
+        {liveStatus && liveStatus.totalCharacters > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard icon={Users} label="Vivants" value={`${liveStatus.aliveCount}/${liveStatus.totalCharacters}`} />
             <StatCard icon={Skull} label="Boss tués" value={liveStatus.bossesKilled} />
             <StatCard icon={ChevronRight} label="Encounter" value={`${liveStatus.currentEncounter}/${liveStatus.totalEncounters}`} />
             <StatCard icon={Clock} label="Temps" value={formatTime(liveStatus.elapsedSeconds)} />
           </div>
+        )}
+        {isRegistration && (
+          <p className="text-blue-400 text-sm mt-2">Inscription ouverte - inscris tes hunters ci-dessous</p>
         )}
         {!expedition && (
           <div className="text-center py-6">
