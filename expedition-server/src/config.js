@@ -1,6 +1,6 @@
 // ─── Server ───────────────────────────────────────────────
 export const SERVER = {
-  PORT: parseInt(process.env.PORT) || 3003,
+  PORT: parseInt(process.env.PORT) || 3004,
   TICK_RATE: 4,           // 4 TPS (250ms per tick)
   TICK_MS: 250,
   BROADCAST_RATE: 2,      // Spectator updates 2x/sec (every 2 ticks)

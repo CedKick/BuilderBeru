@@ -6,7 +6,7 @@ module.exports = {
     node_args: '--experimental-vm-modules',
     env: {
       NODE_ENV: 'production',
-      PORT: 3003,
+      PORT: 3004,
     },
     watch: false,
     max_memory_restart: '500M',
