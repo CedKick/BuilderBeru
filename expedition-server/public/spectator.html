@@ -68,8 +68,8 @@
       display: flex; border-bottom: 1px solid #333;
     }
     .stats-tab {
-      flex: 1; padding: 8px 4px; text-align: center;
-      font-size: 12px; font-weight: bold; cursor: pointer;
+      flex: 1; padding: 8px 2px; text-align: center;
+      font-size: 10px; font-weight: bold; cursor: pointer;
       background: transparent; border: none; color: #888;
       border-bottom: 2px solid transparent;
       transition: color 0.2s, border-color 0.2s;
@@ -111,6 +111,31 @@
       width: 48px; text-align: right; font-weight: bold;
       font-size: 11px; color: #fff;
     }
+
+    /* ── Graph Canvas ── */
+    #graph-container {
+      flex: 1; position: relative; padding: 4px;
+      display: none;
+    }
+    #graph-container.active { display: flex; flex-direction: column; }
+    #dps-graph { width: 100%; flex: 1; }
+
+    /* ── Crit Stats ── */
+    .crit-card {
+      background: rgba(249, 115, 22, 0.08);
+      border: 1px solid rgba(249, 115, 22, 0.2);
+      border-radius: 6px; padding: 6px 8px; margin-bottom: 4px;
+    }
+    .crit-card-header {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+    }
+    .crit-card-header img { width: 18px; height: 18px; border-radius: 3px; }
+    .crit-card-header .name { font-size: 11px; font-weight: bold; color: #f59e0b; }
+    .crit-stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; font-size: 10px;
+    }
+    .crit-stat-label { color: #888; }
+    .crit-stat-val { color: #f97316; font-weight: bold; text-align: right; }
 
     /* ── Event Feed ── */
     #event-feed {
@@ -164,8 +189,13 @@
       <button class="stats-tab active" data-tab="dps">DPS</button>
       <button class="stats-tab" data-tab="heals">Heals</button>
       <button class="stats-tab" data-tab="received">Recus</button>
+      <button class="stats-tab" data-tab="crits">Crits</button>
+      <button class="stats-tab" data-tab="graph">Graphe</button>
     </div>
     <div class="stats-list" id="stats-list"></div>
+    <div id="graph-container">
+      <canvas id="dps-graph"></canvas>
+    </div>
   </div>
 
   <div id="event-feed"></div>
@@ -232,10 +262,32 @@ const HUNTER_SPRITES = {
 };
 
 // ═══════════════════════════════════════════════════════════
+// BOSS SPRITES (10 boss skins, mapped by boss index)
+// ═══════════════════════════════════════════════════════════
+const BOSS_SPRITES = [
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480449/RockyFire_jshtga.png',     // 0: RockyFire
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480448/Glurayan_jwetj6.png',      // 1: Glurayan
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480448/WinBobby_kohy0o.png',      // 2: WinBobby
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Shinryuu_w4iatd.png',      // 3: Shinryuu
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480448/Damonesk_y0vdqc.png',      // 4: Damonesk
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Fayarnus_mzf5t9.png',      // 5: Fayarnus
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Klytoris_lvhiuu.png',      // 6: Klytoris
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Mordecouye_lfdfyt.png',    // 7: Mordecouye
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Randomhero_kbrcr7.png',    // 8: Randomhero
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Shyy_glbmyr.png',          // 9: Shyy
+];
+
+// Fallback: map boss definition IDs to indices
+const BOSS_ID_TO_INDEX = {
+  forest_guardian: 0,
+  stone_sentinel: 1,
+  shadow_lord: 2,
+};
+
+// ═══════════════════════════════════════════════════════════
 // Spectator Client
 // ═══════════════════════════════════════════════════════════
 
-// Detect base path (works behind /expedition/ proxy or standalone)
 const basePath = location.pathname.replace(/\/spectator\.?h?t?m?l?$/, '').replace(/\/$/, '');
 const wsPath = basePath ? `${basePath}/ws` : '/ws';
 const WS_URL = location.protocol === 'https:'
@@ -246,11 +298,16 @@ const WS_URL = location.protocol === 'https:'
 let state = null;
 let events = [];
 const MAX_EVENTS = 50;
-const floatingNumbers = [];  // { x, y, text, color, life, size }
+const floatingNumbers = [];
+
+// ── Position Interpolation ──
+const interpPositions = {}; // { [entityId]: { x: currentSmoothed } }
+const LERP_SPEED = 10; // Higher = snappier
 
 // ── Sprite Cache ──
 const spriteCache = {};
 const spriteLoading = new Set();
+const bossSpriteCache = {}; // { [index]: Image }
 
 function preloadSprite(hunterId) {
   if (spriteCache[hunterId] || spriteLoading.has(hunterId)) return;
@@ -264,19 +321,38 @@ function preloadSprite(hunterId) {
   img.src = url;
 }
 
+function preloadBossSprite(index) {
+  if (bossSpriteCache[index] || spriteLoading.has(`boss_${index}`)) return;
+  const url = BOSS_SPRITES[index];
+  if (!url) return;
+  spriteLoading.add(`boss_${index}`);
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => { bossSpriteCache[index] = img; spriteLoading.delete(`boss_${index}`); };
+  img.onerror = () => { spriteLoading.delete(`boss_${index}`); };
+  img.src = url;
+}
+
 // Preload all sprites upfront
 for (const id of Object.keys(HUNTER_SPRITES)) preloadSprite(id);
+for (let i = 0; i < BOSS_SPRITES.length; i++) preloadBossSprite(i);
 
 // ── Animation States ──
-const animStates = {}; // { [entityId]: { type, timer } }
+const animStates = {};
 
 function triggerAnim(entityId, type, duration) {
   animStates[entityId] = { type, timer: duration };
 }
 
 // ── Combat Stats Tracking ──
-const combatStats = {}; // { [charId]: { name, hunterId, element, dmgDealt, dmgReceived, healsGiven, healsReceived, kills, crits } }
+const combatStats = {};
 let activeStatsTab = 'dps';
+
+// ── DPS History (for graph) ──
+const dpsHistory = []; // { time, dmg: { [charId]: totalDmgDealt } }
+let combatStartTime = 0;
+let lastDpsSnapshot = 0;
+const DPS_SNAPSHOT_INTERVAL = 2; // seconds
 
 function ensureStats(id) {
   if (!combatStats[id]) {
@@ -287,10 +363,25 @@ function ensureStats(id) {
       element: char?.element || null,
       dmgDealt: 0, dmgReceived: 0,
       healsGiven: 0, healsReceived: 0,
-      kills: 0, crits: 0,
+      kills: 0, crits: 0, totalHits: 0,
+      maxCrit: 0, totalCritDmg: 0,
     };
   }
   return combatStats[id];
+}
+
+function takeDpsSnapshot(elapsedTime) {
+  if (elapsedTime - lastDpsSnapshot < DPS_SNAPSHOT_INTERVAL) return;
+  lastDpsSnapshot = elapsedTime;
+  const dmg = {};
+  for (const [id, s] of Object.entries(combatStats)) {
+    if (!id.startsWith('mob_') && !id.startsWith('boss_')) {
+      dmg[id] = s.dmgDealt;
+    }
+  }
+  dpsHistory.push({ time: elapsedTime, dmg });
+  // Keep max 300 snapshots (10 min at 2s interval)
+  if (dpsHistory.length > 300) dpsHistory.shift();
 }
 
 // ── Canvas ──
@@ -338,7 +429,18 @@ document.querySelectorAll('.stats-tab').forEach(tab => {
     document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     activeStatsTab = tab.dataset.tab;
-    renderStatsPanel();
+    // Toggle graph/list visibility
+    const graphEl = document.getElementById('graph-container');
+    const listEl = document.getElementById('stats-list');
+    if (activeStatsTab === 'graph') {
+      graphEl.classList.add('active');
+      listEl.style.display = 'none';
+      renderDpsGraph();
+    } else {
+      graphEl.classList.remove('active');
+      listEl.style.display = '';
+      renderStatsPanel();
+    }
   });
 });
 
@@ -376,15 +478,41 @@ function handleMessage(msg) {
     case 'expedition_state':
       state = msg;
       updateHeader(msg);
-      // Preload any new sprites we haven't seen
+
+      // Update interpolation targets for characters
       for (const c of msg.characters || []) {
         if (c.hunterId) preloadSprite(c.hunterId);
-        // Update name/hunterId in combatStats if we have entries
+        if (!interpPositions[c.id]) {
+          interpPositions[c.id] = { x: c.x };
+        }
+        // Target is always the latest server position (stored on c.x)
         if (combatStats[c.id]) {
           combatStats[c.id].name = c.name;
           combatStats[c.id].hunterId = c.hunterId;
           combatStats[c.id].element = c.element;
         }
+      }
+
+      // Mob interpolation targets
+      for (const m of msg.mobs || []) {
+        if (!interpPositions[m.id]) {
+          interpPositions[m.id] = { x: m.x };
+        }
+      }
+
+      // Boss interpolation + sprite preload
+      if (msg.boss) {
+        if (!interpPositions[msg.boss.id]) {
+          interpPositions[msg.boss.id] = { x: msg.boss.x };
+        }
+        const bossIdx = msg.boss.index ?? BOSS_ID_TO_INDEX[msg.boss.id];
+        if (bossIdx != null) preloadBossSprite(bossIdx);
+      }
+
+      // DPS snapshot
+      if (msg.status === 'combat') {
+        if (!combatStartTime) combatStartTime = msg.elapsedTime;
+        takeDpsSnapshot(msg.elapsedTime);
       }
       break;
 
@@ -393,6 +521,7 @@ function handleMessage(msg) {
       break;
 
     case 'combat_start':
+      combatStartTime = 0; // Reset for new combat
       if (msg.encounterType === 'boss') {
         addEvent('boss', `BOSS: ${msg.bossName} apparait!`);
       } else {
@@ -443,10 +572,14 @@ function handleEvent(ev) {
       addFloating(ev.target, text, color, size);
       triggerAnim(ev.target, 'hit', 0.15);
       triggerAnim(ev.source, 'attack', 0.2);
-      // Stats
       const src = ensureStats(ev.source);
       src.dmgDealt += ev.amount;
-      if (ev.crit) src.crits++;
+      src.totalHits++;
+      if (ev.crit) {
+        src.crits++;
+        src.totalCritDmg += ev.amount;
+        if (ev.amount > src.maxCrit) src.maxCrit = ev.amount;
+      }
       const tgt = ensureStats(ev.target);
       tgt.dmgReceived += ev.amount;
       break;
@@ -500,8 +633,9 @@ function addFloating(targetId, text, color, size) {
   if (!state) return;
   const entity = findEntity(targetId);
   if (!entity) return;
+  const ix = interpPositions[targetId]?.x ?? entity.x;
   floatingNumbers.push({
-    x: entity.x, y: -30 - Math.random() * 20,
+    x: ix, y: -30 - Math.random() * 20,
     text, color, size: size || 16,
     life: 2.0,
     vy: -50,
@@ -541,7 +675,6 @@ function addEvent(type, text) {
   feed.appendChild(div);
   feed.scrollTop = feed.scrollHeight;
 
-  // Clean old DOM nodes
   while (feed.children.length > MAX_EVENTS) {
     feed.removeChild(feed.firstChild);
   }
@@ -559,29 +692,62 @@ function formatNumber(n) {
   if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1) + 'B';
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
   if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
-  return String(n);
+  return String(Math.floor(n));
 }
 
 // ═══════════════════════════════════════════════════════════
 // STATS PANEL RENDERING
 // ═══════════════════════════════════════════════════════════
 
-const TAB_COLORS = { dps: '#ef4444', heals: '#22c55e', received: '#f59e0b' };
+const TAB_COLORS = { dps: '#ef4444', heals: '#22c55e', received: '#f59e0b', crits: '#f97316' };
 
 let statsRenderTimer = null;
 function scheduleStatsRender() {
   if (statsRenderTimer) return;
-  statsRenderTimer = setTimeout(() => { statsRenderTimer = null; renderStatsPanel(); }, 500);
+  statsRenderTimer = setTimeout(() => {
+    statsRenderTimer = null;
+    if (activeStatsTab === 'graph') renderDpsGraph();
+    else renderStatsPanel();
+  }, 500);
 }
 
 function renderStatsPanel() {
-  if (!statsPanelOpen) return;
+  if (!statsPanelOpen || activeStatsTab === 'graph') return;
   const list = document.getElementById('stats-list');
 
-  // Only include player characters (not mobs/boss)
   const entries = Object.entries(combatStats)
     .filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'));
 
+  // ── Crits tab ──
+  if (activeStatsTab === 'crits') {
+    const sorted = entries.sort((a, b) => b[1].crits - a[1].crits);
+    let html = '';
+    for (const [id, s] of sorted) {
+      if (s.crits === 0 && s.totalHits === 0) continue;
+      const spriteUrl = s.hunterId ? HUNTER_SPRITES[s.hunterId] : null;
+      const critRate = s.totalHits > 0 ? (s.crits / s.totalHits * 100).toFixed(1) : '0.0';
+      const avgCrit = s.crits > 0 ? Math.floor(s.totalCritDmg / s.crits) : 0;
+
+      html += `<div class="crit-card">
+        <div class="crit-card-header">
+          ${spriteUrl ? `<img src="${spriteUrl}" alt="">` : ''}
+          <span class="name">${s.name}</span>
+        </div>
+        <div class="crit-stats-grid">
+          <span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits}</span>
+          <span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits}</span>
+          <span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span>
+          <span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span>
+          <span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit)}</span>
+          <span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills}</span>
+        </div>
+      </div>`;
+    }
+    list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de crits</div>';
+    return;
+  }
+
+  // ── DPS / Heals / Received tabs ──
   let sorted;
   let valueKey;
   switch (activeStatsTab) {
@@ -601,6 +767,7 @@ function renderStatsPanel() {
 
   const maxVal = sorted.length > 0 ? sorted[0][1][valueKey] : 1;
   const barColor = TAB_COLORS[activeStatsTab];
+  const elapsed = state?.elapsedTime || 1;
 
   let html = '';
   for (let i = 0; i < sorted.length; i++) {
@@ -610,6 +777,7 @@ function renderStatsPanel() {
     const pct = maxVal > 0 ? (val / maxVal * 100) : 0;
     const spriteUrl = s.hunterId ? HUNTER_SPRITES[s.hunterId] : null;
     const elemColor = ELEMENT_COLORS[s.element] || '#888';
+    const perSec = activeStatsTab === 'dps' ? ` (${formatNumber(val / elapsed)}/s)` : '';
 
     html += `<div class="stat-entry">
       <span class="stat-rank">${i + 1}</span>
@@ -620,7 +788,7 @@ function renderStatsPanel() {
       <div class="stat-bar-container">
         <div class="stat-bar" style="width:${pct}%;background:${barColor}"></div>
       </div>
-      <span class="stat-value">${formatNumber(val)}</span>
+      <span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec}</span></span>
     </div>`;
   }
 
@@ -628,15 +796,154 @@ function renderStatsPanel() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// DPS GRAPH (Canvas-based line chart)
+// ═══════════════════════════════════════════════════════════
+
+const GRAPH_COLORS = ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#ef4444', '#06b6d4', '#f97316', '#ec4899'];
+
+function renderDpsGraph() {
+  const container = document.getElementById('graph-container');
+  if (!container.classList.contains('active')) return;
+
+  const graphCanvas = document.getElementById('dps-graph');
+  const gctx = graphCanvas.getContext('2d');
+  graphCanvas.width = container.clientWidth - 8;
+  graphCanvas.height = container.clientHeight - 8;
+
+  const W = graphCanvas.width;
+  const H = graphCanvas.height;
+  const PAD = { top: 24, right: 8, bottom: 28, left: 48 };
+
+  gctx.clearRect(0, 0, W, H);
+
+  // Background
+  const bgGrad = gctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, 'rgba(88, 28, 135, 0.08)');
+  bgGrad.addColorStop(1, 'rgba(30, 27, 75, 0.08)');
+  gctx.fillStyle = bgGrad;
+  gctx.fillRect(0, 0, W, H);
+
+  if (dpsHistory.length < 2) {
+    gctx.fillStyle = '#555';
+    gctx.font = '12px sans-serif';
+    gctx.textAlign = 'center';
+    gctx.fillText('En attente de donnees...', W / 2, H / 2);
+    return;
+  }
+
+  // Find top 8 characters by total damage
+  const topChars = Object.entries(combatStats)
+    .filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'))
+    .sort((a, b) => b[1].dmgDealt - a[1].dmgDealt)
+    .slice(0, 8);
+
+  if (topChars.length === 0) return;
+
+  const timeMin = dpsHistory[0].time;
+  const timeMax = dpsHistory[dpsHistory.length - 1].time;
+  const timeRange = timeMax - timeMin || 1;
+
+  // Calculate max DPS value
+  let maxDps = 0;
+  for (const snap of dpsHistory) {
+    for (const [id] of topChars) {
+      const dmg = snap.dmg[id] || 0;
+      const dps = snap.time > 0 ? dmg / snap.time : 0;
+      if (dps > maxDps) maxDps = dps;
+    }
+  }
+  maxDps = maxDps * 1.15 || 100;
+
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  // Grid lines
+  gctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  gctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD.top + plotH * (1 - i / 4);
+    gctx.beginPath();
+    gctx.moveTo(PAD.left, y);
+    gctx.lineTo(PAD.left + plotW, y);
+    gctx.stroke();
+    gctx.fillStyle = '#555';
+    gctx.font = '9px sans-serif';
+    gctx.textAlign = 'right';
+    gctx.fillText(formatNumber(maxDps * i / 4) + '/s', PAD.left - 4, y + 3);
+  }
+
+  // X axis labels
+  const xTicks = Math.min(5, Math.max(2, Math.floor(timeRange / 15) + 1));
+  for (let i = 0; i <= xTicks; i++) {
+    const t = timeMin + timeRange * i / xTicks;
+    const x = PAD.left + plotW * i / xTicks;
+    gctx.fillStyle = '#555';
+    gctx.font = '9px sans-serif';
+    gctx.textAlign = 'center';
+    gctx.fillText(formatTime(t), x, H - 6);
+  }
+
+  // Draw lines
+  for (let ci = 0; ci < topChars.length; ci++) {
+    const [charId] = topChars[ci];
+    const color = GRAPH_COLORS[ci % GRAPH_COLORS.length];
+
+    gctx.strokeStyle = color;
+    gctx.lineWidth = 1.5;
+    gctx.lineJoin = 'round';
+    gctx.beginPath();
+
+    let first = true;
+    for (const snap of dpsHistory) {
+      const dmg = snap.dmg[charId] || 0;
+      const dps = snap.time > 0 ? dmg / snap.time : 0;
+      const x = PAD.left + ((snap.time - timeMin) / timeRange) * plotW;
+      const y = PAD.top + plotH * (1 - dps / maxDps);
+
+      if (first) { gctx.moveTo(x, y); first = false; }
+      else gctx.lineTo(x, y);
+    }
+    gctx.stroke();
+  }
+
+  // Legend (compact, 2 columns)
+  const legendStartY = PAD.top + 2;
+  for (let ci = 0; ci < Math.min(topChars.length, 8); ci++) {
+    const [, stats] = topChars[ci];
+    const color = GRAPH_COLORS[ci % GRAPH_COLORS.length];
+    const col = ci % 2;
+    const row = Math.floor(ci / 2);
+    const x = PAD.left + 4 + col * (plotW / 2);
+    const y = legendStartY + row * 11;
+
+    gctx.fillStyle = color;
+    gctx.fillRect(x, y, 6, 6);
+    gctx.fillStyle = '#aaa';
+    gctx.font = '8px sans-serif';
+    gctx.textAlign = 'left';
+    const name = stats.name.length > 12 ? stats.name.slice(0, 12) + '..' : stats.name;
+    const elapsed = state?.elapsedTime || 1;
+    const dps = formatNumber(stats.dmgDealt / elapsed);
+    gctx.fillText(`${name} ${dps}/s`, x + 9, y + 5);
+  }
+
+  // Title
+  gctx.fillStyle = '#a855f7';
+  gctx.font = 'bold 10px sans-serif';
+  gctx.textAlign = 'left';
+  gctx.fillText('DPS par hunter', PAD.left, PAD.top - 8);
+}
+
+// ═══════════════════════════════════════════════════════════
 // RENDERING
 // ═══════════════════════════════════════════════════════════
 
-const GROUND_Y_RATIO = 0.7;  // Ground at 70% of canvas height
-const SCALE = 0.5;           // World to screen scale
-const CHAR_SIZE = 40;        // Character sprite size
+const GROUND_Y_RATIO = 0.7;
+const SCALE = 0.5;
+const CHAR_SIZE = 40;
 const MOB_SIZE_BASIC = 14;
 const MOB_SIZE_ELITE = 22;
-const BOSS_SIZE = 50;
+const BOSS_SIZE = 80;         // Bigger for sprite
 
 let lastTime = performance.now();
 
@@ -654,6 +961,22 @@ function render() {
     if (animStates[id].timer <= 0) delete animStates[id];
   }
 
+  // ── Position interpolation ──
+  if (state) {
+    for (const c of state.characters || []) {
+      const ip = interpPositions[c.id];
+      if (ip) ip.x += (c.x - ip.x) * Math.min(1, LERP_SPEED * dt);
+    }
+    for (const m of state.mobs || []) {
+      const ip = interpPositions[m.id];
+      if (ip) ip.x += (m.x - ip.x) * Math.min(1, LERP_SPEED * dt);
+    }
+    if (state.boss) {
+      const ip = interpPositions[state.boss.id];
+      if (ip) ip.x += (state.boss.x - ip.x) * Math.min(1, LERP_SPEED * dt);
+    }
+  }
+
   if (!state) {
     ctx.fillStyle = '#555';
     ctx.font = '24px sans-serif';
@@ -664,13 +987,16 @@ function render() {
 
   const groundY = canvas.height * GROUND_Y_RATIO;
 
-  // Camera follows the average X of alive characters
+  // Camera follows average X of alive characters (smoothed)
   if (state.characters.length > 0) {
     const aliveChars = state.characters.filter(c => c.alive);
     if (aliveChars.length > 0) {
-      const avgX = aliveChars.reduce((s, c) => s + c.x, 0) / aliveChars.length;
+      const avgX = aliveChars.reduce((s, c) => {
+        const ip = interpPositions[c.id];
+        return s + (ip ? ip.x : c.x);
+      }, 0) / aliveChars.length;
       const targetCam = avgX * SCALE - canvas.width * 0.3;
-      cameraX += (targetCam - cameraX) * 0.05;
+      cameraX += (targetCam - cameraX) * Math.min(1, 4 * dt);
     }
   }
 
@@ -685,7 +1011,7 @@ function render() {
   ctx.fillStyle = '#2d1810';
   ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
 
-  // Ground detail (blocks)
+  // Ground detail
   ctx.fillStyle = '#3d2818';
   for (let x = -((cameraX * 0.5) % 40); x < canvas.width; x += 40) {
     ctx.fillRect(x, groundY, 38, 20);
@@ -695,7 +1021,7 @@ function render() {
     ctx.fillRect(x, groundY + 20, 38, 20);
   }
 
-  // ── Campfire (during campfire phase) ──
+  // ── Campfire ──
   if (state.status === 'campfire') {
     const fireX = canvas.width / 2;
     const fireY = groundY - 20;
@@ -717,15 +1043,14 @@ function render() {
   // ── Draw Mobs ──
   for (const mob of (state.mobs || [])) {
     if (!mob.alive) continue;
-    const sx = mob.x * SCALE - cameraX;
+    const ip = interpPositions[mob.id];
+    const sx = (ip ? ip.x : mob.x) * SCALE - cameraX;
     const sy = groundY;
     const size = mob.elite ? MOB_SIZE_ELITE : MOB_SIZE_BASIC;
     const anim = animStates[mob.id];
 
     ctx.save();
-    if (anim?.type === 'hit') {
-      ctx.globalAlpha = 0.6;
-    }
+    if (anim?.type === 'hit') ctx.globalAlpha = 0.6;
 
     ctx.fillStyle = mob.caster ? '#9333ea' : mob.elite ? '#991b1b' : '#dc2626';
     ctx.fillRect(sx - size / 2, sy - size, size, size);
@@ -737,10 +1062,8 @@ function render() {
 
     ctx.restore();
 
-    // HP bar
     drawHpBar(sx, sy - size - 6, size + 6, 3, mob.hp / mob.maxHp);
 
-    // Name
     ctx.fillStyle = '#aaa';
     ctx.font = '9px sans-serif';
     ctx.textAlign = 'center';
@@ -750,73 +1073,135 @@ function render() {
   // ── Draw Boss ──
   if (state.boss) {
     const b = state.boss;
-    const sx = b.x * SCALE - cameraX;
+    const ip = interpPositions[b.id];
+    const sx = (ip ? ip.x : b.x) * SCALE - cameraX;
     const sy = groundY;
     const anim = animStates[b.id];
 
     ctx.save();
-    if (anim?.type === 'hit') {
-      ctx.globalAlpha = 0.7;
+    if (anim?.type === 'hit') ctx.globalAlpha = 0.7;
+
+    // Try to draw boss sprite
+    const bossIdx = b.index ?? BOSS_ID_TO_INDEX[b.id];
+    const bossSprite = bossIdx != null ? bossSpriteCache[bossIdx] : null;
+
+    if (bossSprite?.complete) {
+      // Draw boss sprite (large, with border)
+      const bsz = BOSS_SIZE;
+      ctx.save();
+      // Rounded rect clip
+      const rx = sx - bsz / 2;
+      const ry = sy - bsz;
+      const radius = 8;
+      ctx.beginPath();
+      ctx.moveTo(rx + radius, ry);
+      ctx.lineTo(rx + bsz - radius, ry);
+      ctx.quadraticCurveTo(rx + bsz, ry, rx + bsz, ry + radius);
+      ctx.lineTo(rx + bsz, ry + bsz - radius);
+      ctx.quadraticCurveTo(rx + bsz, ry + bsz, rx + bsz - radius, ry + bsz);
+      ctx.lineTo(rx + radius, ry + bsz);
+      ctx.quadraticCurveTo(rx, ry + bsz, rx, ry + bsz - radius);
+      ctx.lineTo(rx, ry + radius);
+      ctx.quadraticCurveTo(rx, ry, rx + radius, ry);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(bossSprite, rx, ry, bsz, bsz);
+      ctx.restore();
+
+      // Border (enraged = red, normal = gold)
+      const borderColor = b.enraged ? '#ff0000' : '#eab308';
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(rx + radius, ry);
+      ctx.lineTo(rx + bsz - radius, ry);
+      ctx.quadraticCurveTo(rx + bsz, ry, rx + bsz, ry + radius);
+      ctx.lineTo(rx + bsz, ry + bsz - radius);
+      ctx.quadraticCurveTo(rx + bsz, ry + bsz, rx + bsz - radius, ry + bsz);
+      ctx.lineTo(rx + radius, ry + bsz);
+      ctx.quadraticCurveTo(rx, ry + bsz, rx, ry + bsz - radius);
+      ctx.lineTo(rx, ry + radius);
+      ctx.quadraticCurveTo(rx, ry, rx + radius, ry);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Enraged pulsing glow
+      if (b.enraged) {
+        const pulse = Math.sin(Date.now() / 200) * 0.15 + 0.2;
+        const glow = ctx.createRadialGradient(sx, sy - bsz / 2, bsz / 3, sx, sy - bsz / 2, bsz);
+        glow.addColorStop(0, `rgba(255, 0, 0, ${pulse})`);
+        glow.addColorStop(1, 'rgba(255, 0, 0, 0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(sx - bsz, sy - bsz * 1.5, bsz * 2, bsz * 2);
+      }
+    } else {
+      // Fallback: geometric boss
+      ctx.fillStyle = b.enraged ? '#ff0000' : '#7c2d12';
+      ctx.fillRect(sx - BOSS_SIZE / 2, sy - BOSS_SIZE, BOSS_SIZE, BOSS_SIZE);
+
+      // Crown
+      ctx.fillStyle = '#eab308';
+      ctx.beginPath();
+      ctx.moveTo(sx - 16, sy - BOSS_SIZE);
+      ctx.lineTo(sx - 10, sy - BOSS_SIZE - 14);
+      ctx.lineTo(sx - 5, sy - BOSS_SIZE - 5);
+      ctx.lineTo(sx, sy - BOSS_SIZE - 16);
+      ctx.lineTo(sx + 5, sy - BOSS_SIZE - 5);
+      ctx.lineTo(sx + 10, sy - BOSS_SIZE - 14);
+      ctx.lineTo(sx + 16, sy - BOSS_SIZE);
+      ctx.closePath();
+      ctx.fill();
+
+      // Eyes
+      ctx.fillStyle = b.enraged ? '#fff' : '#ef4444';
+      ctx.beginPath();
+      ctx.arc(sx - 12, sy - BOSS_SIZE * 0.6, 5, 0, Math.PI * 2);
+      ctx.arc(sx + 12, sy - BOSS_SIZE * 0.6, 5, 0, Math.PI * 2);
+      ctx.fill();
     }
-
-    // Boss body
-    ctx.fillStyle = b.enraged ? '#ff0000' : '#7c2d12';
-    ctx.fillRect(sx - BOSS_SIZE / 2, sy - BOSS_SIZE, BOSS_SIZE, BOSS_SIZE);
-
-    // Boss crown
-    ctx.fillStyle = '#eab308';
-    ctx.beginPath();
-    ctx.moveTo(sx - 12, sy - BOSS_SIZE);
-    ctx.lineTo(sx - 8, sy - BOSS_SIZE - 10);
-    ctx.lineTo(sx - 4, sy - BOSS_SIZE - 4);
-    ctx.lineTo(sx, sy - BOSS_SIZE - 12);
-    ctx.lineTo(sx + 4, sy - BOSS_SIZE - 4);
-    ctx.lineTo(sx + 8, sy - BOSS_SIZE - 10);
-    ctx.lineTo(sx + 12, sy - BOSS_SIZE);
-    ctx.closePath();
-    ctx.fill();
-
-    // Boss eyes (red glow)
-    ctx.fillStyle = b.enraged ? '#fff' : '#ef4444';
-    ctx.beginPath();
-    ctx.arc(sx - 10, sy - BOSS_SIZE * 0.6, 4, 0, Math.PI * 2);
-    ctx.arc(sx + 10, sy - BOSS_SIZE * 0.6, 4, 0, Math.PI * 2);
-    ctx.fill();
 
     ctx.restore();
 
-    // HP bar (big)
-    drawHpBar(sx, sy - BOSS_SIZE - 20, 120, 8, b.hp / b.maxHp);
+    // HP bar
+    drawHpBar(sx, sy - BOSS_SIZE - 20, 140, 8, b.hp / b.maxHp);
 
     // Name + HP%
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 13px sans-serif';
+    ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
     ctx.fillText(b.name, sx, sy - BOSS_SIZE - 28);
     ctx.font = '11px sans-serif';
     ctx.fillStyle = '#ccc';
     ctx.fillText(`${Math.floor(b.hp / b.maxHp * 100)}%`, sx, sy - BOSS_SIZE - 10);
+    ctx.shadowBlur = 0;
 
     // Telegraph indicator
     if (b.patternPhase === 'telegraph' && b.currentPattern) {
       const pulse = Math.sin(Date.now() / 150) * 0.15 + 0.25;
       ctx.fillStyle = `rgba(255, 0, 0, ${pulse})`;
-      ctx.fillRect(sx - 120, sy - BOSS_SIZE - 5, 240, BOSS_SIZE + 10);
+      const telW = BOSS_SIZE + 100;
+      ctx.fillRect(sx - telW / 2, sy - BOSS_SIZE - 5, telW, BOSS_SIZE + 10);
       ctx.fillStyle = '#ff4444';
       ctx.font = 'bold 12px sans-serif';
-      ctx.fillText(`!! ${b.currentPattern} !!`, sx, sy - BOSS_SIZE + 20);
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(`!! ${b.currentPattern} !!`, sx, sy - BOSS_SIZE + 30);
+      ctx.shadowBlur = 0;
     }
   }
 
   // ── Draw Characters ──
   for (const char of (state.characters || [])) {
-    const sx = char.x * SCALE - cameraX;
+    const ip = interpPositions[char.id];
+    const sx = (ip ? ip.x : char.x) * SCALE - cameraX;
     const sy = groundY;
     const anim = animStates[char.id];
 
     // Dead characters: ghost
     if (!char.alive) {
-      if (anim?.type !== 'death') continue; // Only show during death anim
+      if (anim?.type !== 'death') continue;
       ctx.save();
       ctx.globalAlpha = Math.max(0, anim.timer / 1.0) * 0.5;
       const deathOffset = (1.0 - anim.timer) * 15;
@@ -836,12 +1221,10 @@ function render() {
     }
 
     if (anim?.type === 'hit') {
-      // Red flash overlay
       ctx.globalAlpha = 0.7;
     }
 
     if (anim?.type === 'heal') {
-      // Green glow
       const glowAlpha = anim.timer / 0.3 * 0.4;
       const glow = ctx.createRadialGradient(sx, sy - CHAR_SIZE / 2, 5, sx, sy - CHAR_SIZE / 2, 30);
       glow.addColorStop(0, `rgba(34, 197, 94, ${glowAlpha})`);
@@ -854,10 +1237,10 @@ function render() {
 
     ctx.restore();
 
-    // HP bar below character
+    // HP bar
     drawHpBar(sx, sy + 2, 36, 4, char.hp / char.maxHp);
 
-    // Mana bar (thin, blue) below HP
+    // Mana bar
     if (char.maxMana) {
       const manaRatio = (char.mana || 0) / char.maxMana;
       const barX = sx - 18;
@@ -872,7 +1255,10 @@ function render() {
     ctx.fillStyle = elemColor;
     ctx.font = '9px sans-serif';
     ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 2;
     ctx.fillText(char.name, sx, sy - CHAR_SIZE - 4);
+    ctx.shadowBlur = 0;
   }
 
   // ── Floating Numbers ──
@@ -880,7 +1266,7 @@ function render() {
     const f = floatingNumbers[i];
     f.life -= dt;
     f.y += f.vy * dt;
-    f.vy *= 0.97; // ease out
+    f.vy *= 0.97;
     if (f.life <= 0) { floatingNumbers.splice(i, 1); continue; }
 
     const sx = f.x * SCALE - cameraX;
@@ -891,7 +1277,6 @@ function render() {
     ctx.fillStyle = f.color;
     ctx.font = `bold ${f.size}px sans-serif`;
     ctx.textAlign = 'center';
-    // Shadow for readability
     ctx.shadowColor = 'rgba(0,0,0,0.8)';
     ctx.shadowBlur = 4;
     ctx.fillText(f.text, sx, sy);
@@ -923,7 +1308,6 @@ function render() {
     ctx.shadowBlur = 0;
   }
 
-  // Schedule stats panel render (throttled)
   scheduleStatsRender();
 }
 
@@ -931,7 +1315,6 @@ function drawCharacter(char, sx, sy) {
   const sprite = char.hunterId ? spriteCache[char.hunterId] : null;
 
   if (sprite?.complete) {
-    // Draw sprite with rounded clip
     ctx.save();
     ctx.beginPath();
     ctx.arc(sx, sy - CHAR_SIZE / 2, CHAR_SIZE / 2, 0, Math.PI * 2);
@@ -940,7 +1323,7 @@ function drawCharacter(char, sx, sy) {
     ctx.drawImage(sprite, sx - CHAR_SIZE / 2, sy - CHAR_SIZE, CHAR_SIZE, CHAR_SIZE);
     ctx.restore();
 
-    // Border ring (element color)
+    // Border ring
     const elemColor = ELEMENT_COLORS[char.element] || '#888';
     ctx.strokeStyle = elemColor;
     ctx.lineWidth = 2;
@@ -984,10 +1367,8 @@ function drawCharacter(char, sx, sy) {
 
 function drawHpBar(x, y, width, height, ratio) {
   const barX = x - width / 2;
-  // Background
   ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
   ctx.fillRect(barX - 1, y - 1, width + 2, height + 2);
-  // Bar
   const color = ratio > 0.6 ? '#22c55e' : ratio > 0.3 ? '#f59e0b' : '#ef4444';
   ctx.fillStyle = color;
   ctx.fillRect(barX, y, width * Math.max(0, ratio), height);

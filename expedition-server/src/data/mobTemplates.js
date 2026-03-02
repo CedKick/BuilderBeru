@@ -3,11 +3,12 @@
 
 export const MOB_TEMPLATES = {
   // ── Basic Mobs (waves of 5-10) ──
+  // ATK scaled to match character HP x8 & DEF x2 scaling
   slime: {
     name: 'Slime',
     type: 'basic',
     hp: 5000,
-    atk: 80,
+    atk: 350,
     def: 10,
     spd: 40,
     range: 60,
@@ -17,7 +18,7 @@ export const MOB_TEMPLATES = {
     name: 'Squelette',
     type: 'basic',
     hp: 8000,
-    atk: 100,
+    atk: 450,
     def: 20,
     spd: 50,
     range: 70,
@@ -27,7 +28,7 @@ export const MOB_TEMPLATES = {
     name: 'Gobelin',
     type: 'basic',
     hp: 4000,
-    atk: 120,
+    atk: 500,
     def: 5,
     spd: 70,
     range: 50,
@@ -39,7 +40,7 @@ export const MOB_TEMPLATES = {
     name: 'Orc',
     type: 'basic',
     hp: 30000,
-    atk: 200,
+    atk: 900,
     def: 40,
     spd: 35,
     range: 80,
@@ -50,7 +51,7 @@ export const MOB_TEMPLATES = {
     name: 'Golem',
     type: 'basic',
     hp: 50000,
-    atk: 150,
+    atk: 700,
     def: 80,
     spd: 20,
     range: 70,
@@ -63,7 +64,7 @@ export const MOB_TEMPLATES = {
     name: 'Mage Noir',
     type: 'basic',
     hp: 3000,
-    atk: 180,
+    atk: 800,
     def: 5,
     spd: 30,
     range: 350,

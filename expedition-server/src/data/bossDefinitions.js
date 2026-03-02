@@ -9,7 +9,7 @@ export const BOSS_DEFINITIONS = [
     name: 'Gardien de la Foret',
     index: 0,
     hp: 50_000_000,
-    atk: 400,
+    atk: 1800,
     def: 30,
     spd: 40,
     enrageTimer: 300,     // 5 minutes
@@ -58,7 +58,7 @@ export const BOSS_DEFINITIONS = [
     name: 'Sentinelle de Pierre',
     index: 1,
     hp: 120_000_000,
-    atk: 600,
+    atk: 3000,
     def: 60,
     spd: 30,
     enrageTimer: 300,
@@ -118,7 +118,7 @@ export const BOSS_DEFINITIONS = [
     name: 'Seigneur Ombre',
     index: 2,
     hp: 200_000_000,
-    atk: 900,
+    atk: 5000,
     def: 40,
     spd: 55,
     enrageTimer: 240,     // 4 minutes

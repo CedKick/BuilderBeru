@@ -510,6 +510,7 @@ export class ExpeditionEngine {
       })),
       boss: this.currentBoss?.alive ? {
         id: this.currentBoss.id, name: this.currentBoss.name,
+        index: this.currentBoss.index,
         hp: this.currentBoss.hp, maxHp: this.currentBoss.maxHp,
         x: Math.floor(this.currentBoss.x), enraged: this.currentBoss.enraged,
         patternPhase: this.currentBoss.patternPhase,
