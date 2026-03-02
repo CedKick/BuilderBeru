@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expedition I - Spectateur</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a15;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      overflow: hidden;
+    }
+    #header {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 60px; background: rgba(15, 15, 30, 0.95);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; border-bottom: 1px solid #333;
+      z-index: 10;
+    }
+    #header h1 { font-size: 18px; color: #a855f7; }
+    #header .stats { display: flex; gap: 20px; font-size: 14px; }
+    #header .stat { display: flex; align-items: center; gap: 6px; }
+    #header .stat .label { color: #888; }
+    #header .stat .value { color: #fff; font-weight: bold; }
+    .status-badge {
+      padding: 3px 10px; border-radius: 12px; font-size: 12px;
+      font-weight: bold; text-transform: uppercase;
+    }
+    .status-combat { background: #dc2626; color: white; }
+    .status-march { background: #2563eb; color: white; }
+    .status-campfire { background: #f59e0b; color: #000; }
+    .status-loot_roll { background: #a855f7; color: white; }
+    .status-registration { background: #6b7280; color: white; }
+    .status-finished { background: #22c55e; color: #000; }
+    .status-wiped { background: #991b1b; color: white; }
+
+    #canvas-container {
+      position: fixed; top: 60px; left: 0; right: 0; bottom: 120px;
+    }
+    canvas { width: 100%; height: 100%; display: block; }
+
+    #event-feed {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 120px; background: rgba(15, 15, 30, 0.95);
+      border-top: 1px solid #333;
+      overflow-y: auto; padding: 8px 16px;
+      font-size: 13px; line-height: 1.6;
+    }
+    .event { opacity: 0.9; }
+    .event-damage { color: #ef4444; }
+    .event-heal { color: #22c55e; }
+    .event-kill { color: #f59e0b; }
+    .event-death { color: #dc2626; font-weight: bold; }
+    .event-boss { color: #a855f7; font-weight: bold; }
+    .event-loot { color: #eab308; }
+    .event-rez { color: #38bdf8; }
+    .event-info { color: #888; }
+    .event-buff { color: #60a5fa; }
+
+    #connection-status {
+      position: fixed; top: 70px; right: 10px;
+      font-size: 12px; padding: 4px 8px; border-radius: 8px;
+      z-index: 20;
+    }
+    .connected { background: #16a34a33; color: #22c55e; }
+    .disconnected { background: #dc262633; color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <h1>&#9876; Expedition I</h1>
+    <div class="stats">
+      <div class="stat"><span class="label">Status:</span><span id="status-badge" class="status-badge status-registration">--</span></div>
+      <div class="stat"><span class="label">Vivants:</span><span id="alive-count" class="value">0/0</span></div>
+      <div class="stat"><span class="label">Boss tues:</span><span id="boss-count" class="value">0</span></div>
+      <div class="stat"><span class="label">Encounter:</span><span id="encounter-count" class="value">0/0</span></div>
+      <div class="stat"><span class="label">Temps:</span><span id="elapsed-time" class="value">00:00</span></div>
+    </div>
+  </div>
+
+  <div id="connection-status" class="disconnected">Deconnecte</div>
+
+  <div id="canvas-container">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <div id="event-feed"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// Spectator Client
+// ═══════════════════════════════════════════════════════════
+
+const WS_URL = location.protocol === 'https:'
+  ? `wss://${location.host}/ws`
+  : `ws://${location.host}/ws`;
+
+// ── State ──
+let state = null;
+let events = [];
+const MAX_EVENTS = 50;
+const floatingNumbers = [];  // { x, y, text, color, life }
+
+// ── Canvas ──
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+let cameraX = 0;
+
+function resizeCanvas() {
+  const container = document.getElementById('canvas-container');
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ── Element Colors ──
+const ELEMENT_COLORS = {
+  fire: '#ef4444',
+  water: '#3b82f6',
+  shadow: '#a855f7',
+};
+const ROLE_SHAPES = {
+  frontline: 'square',
+  frontline_dps: 'triangle',
+  backline_dps: 'diamond',
+  backline_heal: 'circle',
+};
+
+// ── WebSocket ──
+let ws = null;
+let reconnectTimer = null;
+
+function connect() {
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    document.getElementById('connection-status').className = 'connected';
+    document.getElementById('connection-status').textContent = 'Connecte';
+    addEvent('info', 'Connecte au serveur');
+  };
+
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      handleMessage(msg);
+    } catch (err) {}
+  };
+
+  ws.onclose = () => {
+    document.getElementById('connection-status').className = 'disconnected';
+    document.getElementById('connection-status').textContent = 'Deconnecte';
+    reconnectTimer = setTimeout(connect, 3000);
+  };
+
+  ws.onerror = () => ws.close();
+}
+
+function handleMessage(msg) {
+  switch (msg.type) {
+    case 'expedition_state':
+      state = msg;
+      updateHeader(msg);
+      break;
+
+    case 'events_batch':
+      for (const ev of msg.events) handleEvent(ev);
+      break;
+
+    case 'combat_start':
+      if (msg.encounterType === 'boss') {
+        addEvent('boss', `BOSS: ${msg.bossName} apparait!`);
+      } else {
+        addEvent('info', `Vague de mobs! (${msg.mobCount} ennemis)`);
+      }
+      break;
+
+    case 'boss_killed':
+      addEvent('boss', `BOSS VAINCU: ${msg.bossName}!`);
+      break;
+
+    case 'march_start':
+      addEvent('info', `En marche... prochain: ${msg.nextEncounter}`);
+      break;
+
+    case 'campfire_start':
+      addEvent('info', `Campfire! Repos ${msg.duration}s...`);
+      break;
+
+    case 'loot_roll_start':
+      for (const r of msg.results || []) {
+        if (r.stolen) {
+          addEvent('death', `Les monstres ont vole [${r.itemName}]!`);
+        } else if (r.winnerUsername) {
+          const srTag = r.srWinner ? ' (SR)' : '';
+          addEvent('loot', `[${r.itemName}] (${r.rarity}) -> ${r.winnerUsername} (${r.winnerRoll})${srTag}`);
+        }
+      }
+      break;
+
+    case 'rez':
+      addEvent('rez', `${msg.healerName} ressuscite ${msg.targetName}!`);
+      break;
+
+    case 'expedition_finished':
+      addEvent('boss', `EXPEDITION TERMINEE: ${msg.reason} | Boss: ${msg.bossesKilled} | Temps: ${formatTime(msg.elapsedTime)}`);
+      break;
+  }
+}
+
+function handleEvent(ev) {
+  switch (ev.type) {
+    case 'damage':
+    case 'skill_damage':
+      addFloating(ev.target, `-${ev.amount}`, ev.crit ? '#fbbf24' : '#ef4444');
+      break;
+    case 'mob_attack':
+    case 'boss_attack':
+    case 'pattern_damage':
+      addFloating(ev.target, `-${ev.amount}`, '#ff6b6b');
+      break;
+    case 'heal':
+      addFloating(ev.target, `+${ev.amount}`, '#22c55e');
+      addEvent('heal', `${ev.source.split('_').slice(1).join(' ')} soigne ${ev.target.split('_').slice(1).join(' ')} (+${ev.amount})`);
+      break;
+    case 'death':
+      addEvent('death', `${ev.characterId} est mort!`);
+      break;
+    case 'kill':
+      addEvent('kill', `${ev.killer.split('_').slice(1).join(' ')} tue ${ev.targetName}!`);
+      break;
+    case 'boss_pattern':
+      addEvent('boss', `[${ev.name}] telegraph ${ev.telegraphTime}s!`);
+      break;
+    case 'buff':
+      addEvent('buff', `${ev.source.split('_').slice(1).join(' ')} buff ${ev.buffType} +${ev.value}% sur ${ev.target.split('_').slice(1).join(' ')}`);
+      break;
+    case 'boss_heal':
+      addEvent('info', `Boss soigne +${ev.amount} HP`);
+      break;
+    case 'summon':
+      addEvent('boss', `Boss invoque ${ev.count}x ${ev.mobType}!`);
+      break;
+  }
+}
+
+// ── Floating damage numbers ──
+function addFloating(targetId, text, color) {
+  if (!state) return;
+  const entity = findEntity(targetId);
+  if (!entity) return;
+  floatingNumbers.push({
+    x: entity.x, y: -20 - Math.random() * 30,
+    text, color,
+    life: 1.5,
+    vy: -40,
+  });
+}
+
+function findEntity(id) {
+  if (!state) return null;
+  const c = (state.characters || []).find(c => c.id === id);
+  if (c) return c;
+  const m = (state.mobs || []).find(m => m.id === id);
+  if (m) return m;
+  if (state.boss?.id === id) return state.boss;
+  return null;
+}
+
+// ── UI Updates ──
+function updateHeader(s) {
+  const badge = document.getElementById('status-badge');
+  badge.textContent = s.status;
+  badge.className = `status-badge status-${s.status}`;
+
+  document.getElementById('alive-count').textContent = `${s.aliveCount}/${s.totalCount}`;
+  document.getElementById('boss-count').textContent = s.bossesKilled;
+  document.getElementById('encounter-count').textContent = `${s.encounterIndex + 1}/${s.totalEncounters}`;
+  document.getElementById('elapsed-time').textContent = formatTime(s.elapsedTime);
+}
+
+function addEvent(type, text) {
+  events.push({ type, text, time: Date.now() });
+  if (events.length > MAX_EVENTS) events.shift();
+
+  const feed = document.getElementById('event-feed');
+  const div = document.createElement('div');
+  div.className = `event event-${type}`;
+  div.textContent = text;
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+
+  // Clean old DOM nodes
+  while (feed.children.length > MAX_EVENTS) {
+    feed.removeChild(feed.firstChild);
+  }
+}
+
+function formatTime(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}h${String(m).padStart(2, '0')}m`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════════════════════
+
+const GROUND_Y_RATIO = 0.7;  // Ground at 70% of canvas height
+const SCALE = 0.5;           // World to screen scale
+
+function render() {
+  requestAnimationFrame(render);
+  const dt = 1 / 60;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!state) {
+    ctx.fillStyle = '#555';
+    ctx.font = '24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('En attente de l\'expedition...', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  const groundY = canvas.height * GROUND_Y_RATIO;
+
+  // Camera follows the average X of alive characters
+  if (state.characters.length > 0) {
+    const aliveChars = state.characters.filter(c => c.alive);
+    if (aliveChars.length > 0) {
+      const avgX = aliveChars.reduce((s, c) => s + c.x, 0) / aliveChars.length;
+      const targetCam = avgX * SCALE - canvas.width * 0.3;
+      cameraX += (targetCam - cameraX) * 0.05;
+    }
+  }
+
+  // ── Sky gradient ──
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+  skyGrad.addColorStop(0, '#0a0a20');
+  skyGrad.addColorStop(1, '#1a1a35');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, canvas.width, groundY);
+
+  // ── Ground ──
+  ctx.fillStyle = '#2d1810';
+  ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+
+  // Ground detail (blocks)
+  ctx.fillStyle = '#3d2818';
+  for (let x = -((cameraX * 0.5) % 40); x < canvas.width; x += 40) {
+    ctx.fillRect(x, groundY, 38, 20);
+  }
+  ctx.fillStyle = '#4d3828';
+  for (let x = -((cameraX * 0.5) % 40) + 20; x < canvas.width; x += 40) {
+    ctx.fillRect(x, groundY + 20, 38, 20);
+  }
+
+  // ── Campfire (during campfire phase) ──
+  if (state.status === 'campfire') {
+    const fireX = canvas.width / 2;
+    const fireY = groundY - 20;
+    // Fire glow
+    const glowGrad = ctx.createRadialGradient(fireX, fireY, 5, fireX, fireY, 80);
+    glowGrad.addColorStop(0, 'rgba(255, 150, 50, 0.4)');
+    glowGrad.addColorStop(1, 'rgba(255, 150, 50, 0)');
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(fireX - 80, fireY - 80, 160, 160);
+    // Fire
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(fireX, fireY, 8 + Math.sin(Date.now() / 100) * 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(fireX, fireY - 5, 5 + Math.cos(Date.now() / 80) * 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ── Draw Mobs ──
+  for (const mob of (state.mobs || [])) {
+    if (!mob.alive) continue;
+    const sx = mob.x * SCALE - cameraX;
+    const sy = groundY - 20;
+    const size = mob.elite ? 18 : 12;
+
+    ctx.fillStyle = mob.caster ? '#9333ea' : mob.elite ? '#991b1b' : '#dc2626';
+    ctx.fillRect(sx - size / 2, sy - size, size, size);
+
+    // HP bar
+    drawHpBar(sx, sy - size - 8, size + 4, 3, mob.hp / mob.maxHp, '#dc2626');
+
+    // Name
+    ctx.fillStyle = '#aaa';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(mob.name, sx, sy - size - 12);
+  }
+
+  // ── Draw Boss ──
+  if (state.boss) {
+    const b = state.boss;
+    const sx = b.x * SCALE - cameraX;
+    const sy = groundY - 30;
+    const size = 40;
+
+    // Boss body
+    ctx.fillStyle = b.enraged ? '#ff0000' : '#7c2d12';
+    ctx.fillRect(sx - size / 2, sy - size, size, size);
+
+    // Boss crown
+    ctx.fillStyle = '#eab308';
+    ctx.fillRect(sx - 8, sy - size - 8, 16, 6);
+
+    // HP bar (big)
+    drawHpBar(sx, sy - size - 20, 60, 6, b.hp / b.maxHp, '#dc2626');
+
+    // Name + HP%
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(b.name, sx, sy - size - 24);
+    ctx.font = '10px sans-serif';
+    ctx.fillText(`${Math.floor(b.hp / b.maxHp * 100)}%`, sx, sy - size - 14);
+
+    // Telegraph indicator
+    if (b.patternPhase === 'telegraph' && b.currentPattern) {
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+      ctx.fillRect(sx - 100, sy - size - 5, 200, size + 10);
+      ctx.fillStyle = '#ff4444';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(`⚠ ${b.currentPattern}`, sx, sy - size + 15);
+    }
+  }
+
+  // ── Draw Characters ──
+  for (const char of (state.characters || [])) {
+    if (!char.alive) continue;
+    const sx = char.x * SCALE - cameraX;
+    const sy = groundY - 15;
+    const size = 10;
+
+    const color = ELEMENT_COLORS[char.element] || '#888';
+    ctx.fillStyle = color;
+
+    // Shape based on role
+    switch (ROLE_SHAPES[char.role]) {
+      case 'circle':
+        ctx.beginPath();
+        ctx.arc(sx, sy - size / 2, size / 2, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      case 'triangle':
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - size);
+        ctx.lineTo(sx - size / 2, sy);
+        ctx.lineTo(sx + size / 2, sy);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      case 'diamond':
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - size);
+        ctx.lineTo(sx + size / 2, sy - size / 2);
+        ctx.lineTo(sx, sy);
+        ctx.lineTo(sx - size / 2, sy - size / 2);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      default: // square
+        ctx.fillRect(sx - size / 2, sy - size, size, size);
+    }
+
+    // HP bar
+    drawHpBar(sx, sy - size - 6, 14, 2, char.hp / char.maxHp, color);
+  }
+
+  // ── Floating Numbers ──
+  for (let i = floatingNumbers.length - 1; i >= 0; i--) {
+    const f = floatingNumbers[i];
+    f.life -= dt;
+    f.y += f.vy * dt;
+    if (f.life <= 0) { floatingNumbers.splice(i, 1); continue; }
+
+    const sx = f.x * SCALE - cameraX;
+    const sy = GROUND_Y_RATIO * canvas.height + f.y;
+    const alpha = Math.min(1, f.life / 0.5);
+
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = f.color;
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(f.text, sx, sy);
+    ctx.globalAlpha = 1;
+  }
+
+  // ── Phase overlay text ──
+  if (state.status === 'march') {
+    ctx.fillStyle = 'rgba(37, 99, 235, 0.15)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#60a5fa';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('En marche...', canvas.width / 2, 40);
+  }
+  if (state.status === 'loot_roll') {
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#c084fc';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Distribution du loot...', canvas.width / 2, 40);
+  }
+}
+
+function drawHpBar(x, y, width, height, ratio, color) {
+  const barX = x - width / 2;
+  ctx.fillStyle = '#333';
+  ctx.fillRect(barX, y, width, height);
+  ctx.fillStyle = ratio > 0.5 ? '#22c55e' : ratio > 0.25 ? '#f59e0b' : '#ef4444';
+  ctx.fillRect(barX, y, width * Math.max(0, ratio), height);
+}
+
+// ── Start ──
+connect();
+render();
+</script>
+</body>
+</html>
