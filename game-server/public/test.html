@@ -1107,7 +1107,7 @@
         healer:    { hp: 18000, atk: 200, def: 120, spd: 180, crit: 12, res: 60, mana: 800 },
         dps_cac:   { hp: 22000, atk: 2550, def: 150, spd: 200, crit: 32, res: 20, mana: 100 },
         dps_range: { hp: 14000, atk: 600, def: 80,  spd: 190, crit: 22, res: 15, mana: 500 },
-        berserker: { hp: 23000, atk: 820, def: 140, spd: 210, crit: 28, res: 18, mana: 400 },
+        berserker: { hp: 23000, atk: 2460, def: 140, spd: 210, crit: 28, res: 18, mana: 400 },
       };
       const SPP = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8 };
       const base = CLASS_BASE[cls] || CLASS_BASE.dps_cac;
@@ -3259,69 +3259,136 @@
       ctx.lineTo(p.x + Math.cos(p.aimAngle) * 40, p.y + Math.sin(p.aimAngle) * 40);
       ctx.stroke();
 
-      // Berserker charge bar — 3 separate bars (Lv1, Lv2, Lv3)
+      // Berserker charge bar — 3 premium bars (Lv I, II, III)
       if (p.charging && p.charging.progress !== undefined) {
         const pct = Math.min(1, p.charging.progress);
+        const t = Date.now() / 1000;
         const numBars = 3;
-        const barW = 16, barH = 7, gap = 3;
+        const barW = 22, barH = 10, gap = 4;
         const totalW = numBars * barW + (numBars - 1) * gap;
         const startX = p.x - totalW / 2;
-        const barY = p.y + 30;
-        const barColors = ['#f59e0b', '#ef4444', '#ff0000']; // amber → red → crimson
-        const barGlows  = ['rgba(245,158,11,0.7)', 'rgba(239,68,68,0.8)', 'rgba(255,0,0,0.9)'];
-        const barLabels = ['I', 'II', 'III'];
+        const barY = p.y + 28;
+
+        const barColors  = [['#f59e0b', '#d97706'], ['#ef4444', '#dc2626'], ['#ff0000', '#b91c1c']];
+        const barGlows   = ['rgba(245,158,11,0.8)', 'rgba(239,68,68,0.9)', 'rgba(255,0,0,1.0)'];
+        const barLabels  = ['I', 'II', 'III'];
+
+        // Dark panel background behind all bars
+        ctx.save();
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(startX - 5, barY - 4, totalW + 10, barH + 20, 4);
+        ctx.fill(); ctx.stroke();
+        ctx.restore();
+
+        // Charge level (how many full bars)
+        const chargeLevel = pct >= 1 ? 3 : pct >= 0.667 ? 2 : pct >= 0.333 ? 1 : 0;
 
         for (let i = 0; i < numBars; i++) {
           const bx = startX + i * (barW + gap);
-          // Each bar fills at: 0-33% → bar1, 33-66% → bar2, 66-100% → bar3
           const barStart = i / numBars;
           const barEnd = (i + 1) / numBars;
           const barPct = Math.max(0, Math.min(1, (pct - barStart) / (barEnd - barStart)));
           const isFull = barPct >= 1;
           const isActive = barPct > 0;
 
-          // Background (dark rounded rect)
-          ctx.fillStyle = 'rgba(0,0,0,0.75)';
-          ctx.strokeStyle = isActive ? barColors[i] + '88' : 'rgba(255,255,255,0.15)';
+          // Bar frame (inset effect)
+          ctx.fillStyle = 'rgba(20,20,30,0.9)';
+          ctx.strokeStyle = isActive ? barColors[i][0] + '66' : 'rgba(255,255,255,0.1)';
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.roundRect(bx - 1, barY - 1, barW + 2, barH + 2, 2);
+          ctx.roundRect(bx, barY, barW, barH, 3);
           ctx.fill(); ctx.stroke();
 
-          // Fill with glow
+          // Inner darker inset
+          ctx.fillStyle = 'rgba(0,0,0,0.4)';
+          ctx.beginPath();
+          ctx.roundRect(bx + 1, barY + 1, barW - 2, barH - 2, 2);
+          ctx.fill();
+
+          // Fill with gradient + glow
           if (isActive) {
             ctx.save();
             if (isFull) {
+              const glowPulse = 6 + Math.sin(t * 5 + i * 1.2) * 5;
               ctx.shadowColor = barGlows[i];
-              ctx.shadowBlur = 8 + Math.sin(Date.now() / 120 + i) * 3;
+              ctx.shadowBlur = glowPulse;
             }
-            // Gradient fill
+            // Multi-stop gradient (top highlight → main → darker bottom)
             const grad = ctx.createLinearGradient(bx, barY, bx, barY + barH);
-            grad.addColorStop(0, barColors[i]);
-            grad.addColorStop(1, barColors[i] + 'aa');
+            grad.addColorStop(0, barColors[i][0] + 'ff');
+            grad.addColorStop(0.3, barColors[i][0]);
+            grad.addColorStop(0.7, barColors[i][1]);
+            grad.addColorStop(1, barColors[i][1] + 'bb');
             ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.roundRect(bx, barY, barW * barPct, barH, 1);
+            ctx.roundRect(bx + 1, barY + 1, (barW - 2) * barPct, barH - 2, 2);
             ctx.fill();
+
+            // Top highlight shine
+            const shineGrad = ctx.createLinearGradient(bx, barY, bx, barY + barH * 0.4);
+            shineGrad.addColorStop(0, 'rgba(255,255,255,0.35)');
+            shineGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = shineGrad;
+            ctx.beginPath();
+            ctx.roundRect(bx + 1, barY + 1, (barW - 2) * barPct, barH * 0.4, [2, 2, 0, 0]);
+            ctx.fill();
+
+            // Full bar: spark particles
+            if (isFull) {
+              for (let s = 0; s < 2; s++) {
+                const sparkX = bx + Math.random() * barW;
+                const sparkY = barY + Math.random() * barH;
+                const sparkR = 1 + Math.random() * 1.5;
+                ctx.fillStyle = 'rgba(255,255,200,' + (0.5 + Math.random() * 0.5) + ')';
+                ctx.beginPath(); ctx.arc(sparkX, sparkY, sparkR, 0, Math.PI * 2); ctx.fill();
+              }
+            }
             ctx.restore();
           }
 
           // Level label below each bar
-          ctx.fillStyle = isFull ? barColors[i] : 'rgba(255,255,255,0.3)';
-          ctx.font = isFull ? 'bold 8px sans-serif' : '7px sans-serif';
+          ctx.save();
+          if (isFull) {
+            ctx.shadowColor = barGlows[i];
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = barColors[i][0];
+            ctx.font = 'bold 9px sans-serif';
+          } else {
+            ctx.fillStyle = isActive ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)';
+            ctx.font = '8px sans-serif';
+          }
           ctx.textAlign = 'center';
-          ctx.fillText(barLabels[i], bx + barW / 2, barY + barH + 9);
+          ctx.fillText(barLabels[i], bx + barW / 2, barY + barH + 12);
+          ctx.restore();
         }
 
-        // At max charge: pulsing ring around player
+        // At max charge: dramatic pulsing effects
         if (pct >= 1) {
-          const pulse = 0.4 + Math.sin(Date.now() / 80) * 0.3;
+          const pulse1 = 0.3 + Math.sin(t * 6) * 0.25;
+          const pulse2 = 0.2 + Math.sin(t * 8 + 1) * 0.2;
           ctx.save();
-          ctx.strokeStyle = 'rgba(255, 30, 0, ' + pulse + ')';
-          ctx.shadowColor = 'rgba(255, 0, 0, 0.6)';
-          ctx.shadowBlur = 15;
+          // Outer ring
+          ctx.strokeStyle = 'rgba(255, 20, 0, ' + pulse1 + ')';
+          ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
+          ctx.shadowBlur = 20;
           ctx.lineWidth = 2.5;
-          ctx.beginPath(); ctx.arc(p.x, p.y, 32, 0, Math.PI * 2); ctx.stroke();
+          ctx.beginPath(); ctx.arc(p.x, p.y, 34 + Math.sin(t * 4) * 2, 0, Math.PI * 2); ctx.stroke();
+          // Inner bright ring
+          ctx.strokeStyle = 'rgba(255, 150, 0, ' + pulse2 + ')';
+          ctx.shadowColor = 'rgba(255, 100, 0, 0.5)';
+          ctx.shadowBlur = 10;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 28, 0, Math.PI * 2); ctx.stroke();
+          // "MAX" text above bars
+          ctx.fillStyle = 'rgba(255, 50, 0, ' + (0.7 + Math.sin(t * 5) * 0.3) + ')';
+          ctx.shadowColor = 'rgba(255, 0, 0, 0.9)';
+          ctx.shadowBlur = 12;
+          ctx.font = 'bold 10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('MAX', p.x, barY - 6);
           ctx.restore();
         }
       }

@@ -56,7 +56,7 @@ export const CLASS_STATS = {
     label: 'Berserker',
     hp: 23000,
     mana: 400,
-    atk: 820,
+    atk: 2460,        // x3 DPS buff (820 × 3)
     def: 140,
     spd: 210,
     crit: 28,
