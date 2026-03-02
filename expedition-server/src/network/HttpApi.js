@@ -50,6 +50,7 @@ export class HttpApi {
         // Admin: create/start expedition manually
         case '/api/expedition/create':   return await this.createExpedition(req, res);
         case '/api/expedition/force-start': return await this.forceStart(req, res);
+        case '/api/expedition/reset': return await this.resetExpedition(req, res);
         default:
           return null;  // Not handled by API
       }
@@ -237,6 +238,27 @@ export class HttpApi {
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true, message: 'Expedition started!' }));
+  }
+
+  // POST /api/expedition/reset (admin: stop current and create new)
+  async resetExpedition(req, res) {
+    // Stop engine if running
+    this.engine.reset();
+
+    // Mark current expedition as wiped in DB
+    const expedition = await db.getCurrentExpedition();
+    if (expedition) {
+      await db.updateExpeditionStatus(expedition.id, 'wiped', { endedAt: new Date() });
+    }
+
+    // Create a fresh expedition
+    const newExp = await db.createExpedition('Expedition I', new Date());
+    await db.updateExpeditionStatus(newExp.id, 'registration');
+
+    console.log('[API] Expedition reset, new expedition:', newExp.id);
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, expedition: newExp }));
   }
 
   // ── Helpers ─────────────────────────────────────────

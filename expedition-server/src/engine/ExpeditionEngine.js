@@ -80,6 +80,30 @@ export class ExpeditionEngine {
   }
 
   // Start the expedition: initialize characters from entries, generate encounters, begin
+  // Reset engine to idle state (for admin reset)
+  reset() {
+    this.stop();
+    this.expeditionId = null;
+    this.status = 'idle';
+    this.characters = [];
+    this.srSelections = new Map();
+    this.encounters = [];
+    this.currentEncounterIndex = 0;
+    this.currentMobs = [];
+    this.currentBoss = null;
+    this.combatEngine = new CombatEngine2D();
+    this.elapsedSeconds = 0;
+    this.phaseTimer = 0;
+    this.lootLog = [];
+    this.pendingLootResults = null;
+    this.rezUsedThisCombat = new Set();
+    this.bossesKilled = 0;
+    this.totalDeaths = 0;
+    this.tickCount = 0;
+    this.lastSnapshotTime = 0;
+    console.log('[Expedition] Engine reset to idle');
+  }
+
   async start(expeditionId, entries) {
     this.expeditionId = expeditionId;
 
@@ -432,7 +456,7 @@ export class ExpeditionEngine {
         const template = MOB_TEMPLATES[group.template];
         if (!template) continue;
         for (let i = 0; i < group.count; i++) {
-          this.currentMobs.push(new Mob(template, encounter.difficulty));
+          this.currentMobs.push(new Mob(template, encounter.difficulty, group.template));
         }
       }
       this.broadcast({
@@ -507,6 +531,7 @@ export class ExpeditionEngine {
       mobs: this.currentMobs.filter(m => m.alive).map(m => ({
         id: m.id, name: m.name, hp: m.hp, maxHp: m.maxHp,
         x: Math.floor(m.x), alive: m.alive, elite: m.elite, caster: m.caster,
+        templateKey: m.templateKey,
       })),
       boss: this.currentBoss?.alive ? {
         id: this.currentBoss.id, name: this.currentBoss.name,

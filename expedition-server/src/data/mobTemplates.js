@@ -73,26 +73,29 @@ export const MOB_TEMPLATES = {
   },
 };
 
-// Wave composition by difficulty tier
+// Wave composition by difficulty tier (large waves!)
 export const WAVE_COMPOSITIONS = {
-  // Before Boss 1 (easy)
+  // Before Boss 1 (easy) - swarms
   tier1: [
-    { mobs: [{ t: 'slime', count: 5 }] },
-    { mobs: [{ t: 'slime', count: 3 }, { t: 'skeleton', count: 2 }] },
-    { mobs: [{ t: 'goblin', count: 4 }, { t: 'slime', count: 3 }] },
+    { mobs: [{ t: 'slime', count: 12 }] },
+    { mobs: [{ t: 'slime', count: 8 }, { t: 'skeleton', count: 5 }] },
+    { mobs: [{ t: 'goblin', count: 8 }, { t: 'slime', count: 6 }] },
+    { mobs: [{ t: 'slime', count: 10 }, { t: 'goblin', count: 4 }] },
   ],
-  // Before Boss 2 (medium)
+  // Before Boss 2 (medium) - tougher + more
   tier2: [
-    { mobs: [{ t: 'skeleton', count: 5 }, { t: 'goblin', count: 3 }] },
-    { mobs: [{ t: 'skeleton', count: 4 }, { t: 'orc', count: 1 }] },
-    { mobs: [{ t: 'goblin', count: 5 }, { t: 'dark_mage', count: 2 }] },
-    { mobs: [{ t: 'slime', count: 6 }, { t: 'orc', count: 1 }, { t: 'dark_mage', count: 1 }] },
+    { mobs: [{ t: 'skeleton', count: 10 }, { t: 'goblin', count: 6 }] },
+    { mobs: [{ t: 'skeleton', count: 8 }, { t: 'orc', count: 3 }] },
+    { mobs: [{ t: 'goblin', count: 10 }, { t: 'dark_mage', count: 4 }] },
+    { mobs: [{ t: 'slime', count: 12 }, { t: 'orc', count: 2 }, { t: 'dark_mage', count: 3 }] },
+    { mobs: [{ t: 'orc', count: 4 }, { t: 'skeleton', count: 8 }] },
   ],
-  // Before Boss 3 (hard)
+  // Before Boss 3 (hard) - elite hordes
   tier3: [
-    { mobs: [{ t: 'skeleton', count: 6 }, { t: 'orc', count: 2 }] },
-    { mobs: [{ t: 'orc', count: 2 }, { t: 'dark_mage', count: 3 }] },
-    { mobs: [{ t: 'golem', count: 1 }, { t: 'skeleton', count: 5 }, { t: 'dark_mage', count: 2 }] },
-    { mobs: [{ t: 'orc', count: 3 }, { t: 'goblin', count: 4 }] },
+    { mobs: [{ t: 'skeleton', count: 12 }, { t: 'orc', count: 4 }] },
+    { mobs: [{ t: 'orc', count: 5 }, { t: 'dark_mage', count: 5 }] },
+    { mobs: [{ t: 'golem', count: 3 }, { t: 'skeleton', count: 8 }, { t: 'dark_mage', count: 4 }] },
+    { mobs: [{ t: 'orc', count: 6 }, { t: 'goblin', count: 8 }] },
+    { mobs: [{ t: 'golem', count: 2 }, { t: 'orc', count: 4 }, { t: 'dark_mage', count: 4 }, { t: 'skeleton', count: 6 }] },
   ],
 };

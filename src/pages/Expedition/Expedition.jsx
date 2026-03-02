@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Swords, Users, Play, Plus, LogIn, Eye, Clock, Shield, Skull, Trophy, ChevronRight, Flame, X } from 'lucide-react';
+import { Swords, Users, Play, Plus, LogIn, Eye, Clock, Shield, Skull, Trophy, ChevronRight, Flame, X, RotateCcw } from 'lucide-react';
 
 // ── Import real hunter data from Shadow Colosseum ──
 import { HUNTERS, RAID_SAVE_KEY, loadRaidData, getHunterPool, getHunterStars } from '../ShadowColosseum/raidData';
@@ -247,6 +247,21 @@ export default function Expedition() {
     }
   };
 
+  const resetExpedition = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      await api('/api/expedition/reset', 'POST');
+      setSuccess('Expedition reset ! Nouvelle inscription ouverte.');
+      setShowSpectator(false);
+      await fetchStatus();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleHunter = (hId) => {
     setSelectedHunters(prev => {
       if (prev.includes(hId)) return prev.filter(x => x !== hId);
@@ -347,14 +362,26 @@ export default function Expedition() {
             <p className="text-gray-500 text-sm">PvE Auto-Battler - Phase de test</p>
           </div>
         </div>
-        {isActive && (
-          <button
-            onClick={() => setShowSpectator(true)}
-            className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors"
-          >
-            <Eye className="w-4 h-4" /> Regarder le combat
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {isActive && (
+            <button
+              onClick={() => setShowSpectator(true)}
+              className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors"
+            >
+              <Eye className="w-4 h-4" /> Regarder le combat
+            </button>
+          )}
+          {expedition && (
+            <button
+              onClick={resetExpedition}
+              disabled={loading}
+              className="bg-red-900/50 hover:bg-red-800 disabled:bg-gray-700 border border-red-500/30 text-red-300 px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors"
+              title="Reset l'expedition et relancer les inscriptions"
+            >
+              <RotateCcw className="w-4 h-4" /> Reset
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}

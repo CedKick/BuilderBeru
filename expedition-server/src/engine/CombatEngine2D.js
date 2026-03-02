@@ -455,7 +455,7 @@ export class CombatEngine2D {
         if (template) {
           const newMobs = [];
           for (let i = 0; i < pattern.summon.count; i++) {
-            const mob = new Mob(template, pattern.summon.difficultyMult);
+            const mob = new Mob(template, pattern.summon.difficultyMult, pattern.summon.template);
             mob.x = boss.x + 50 + i * 40;
             newMobs.push(mob);
           }

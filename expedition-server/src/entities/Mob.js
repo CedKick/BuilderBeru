@@ -3,10 +3,11 @@ import { COMBAT } from '../config.js';
 let mobIdCounter = 0;
 
 export class Mob {
-  constructor(template, difficultyMult = 1) {
+  constructor(template, difficultyMult = 1, templateKey = null) {
     this.id = `mob_${++mobIdCounter}`;
     this.name = template.name;
     this.type = template.type;        // 'basic' | 'elite' | 'caster'
+    this.templateKey = templateKey;   // For sprite mapping in spectator
 
     // Stats scaled by difficulty
     this.maxHp = Math.floor(template.hp * difficultyMult);

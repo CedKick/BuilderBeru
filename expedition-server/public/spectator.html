@@ -262,6 +262,17 @@ const HUNTER_SPRITES = {
 };
 
 // ═══════════════════════════════════════════════════════════
+// MOB SPRITES (trashmobs, mapped by template key)
+// ═══════════════════════════════════════════════════════════
+const MOB_SPRITES = {
+  slime:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772485630/spipida_qwwhgo.png',
+  goblin:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772485626/Druggy_n7qfpx.png',
+  skeleton:  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772485625/Skeletoons_dvwdnf.png',
+  golem:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772485625/icymonkey_g81bbx.png',
+  orc:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772485625/Mordcha_pmigkp.png',
+};
+
+// ═══════════════════════════════════════════════════════════
 // BOSS SPRITES (10 boss skins, mapped by boss index)
 // ═══════════════════════════════════════════════════════════
 const BOSS_SPRITES = [
@@ -308,6 +319,7 @@ const LERP_SPEED = 10; // Higher = snappier
 const spriteCache = {};
 const spriteLoading = new Set();
 const bossSpriteCache = {}; // { [index]: Image }
+const mobSpriteCache = {};  // { [templateKey]: Image }
 
 function preloadSprite(hunterId) {
   if (spriteCache[hunterId] || spriteLoading.has(hunterId)) return;
@@ -333,9 +345,22 @@ function preloadBossSprite(index) {
   img.src = url;
 }
 
+function preloadMobSprite(key) {
+  if (mobSpriteCache[key] || spriteLoading.has(`mob_${key}`)) return;
+  const url = MOB_SPRITES[key];
+  if (!url) return;
+  spriteLoading.add(`mob_${key}`);
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => { mobSpriteCache[key] = img; spriteLoading.delete(`mob_${key}`); };
+  img.onerror = () => { spriteLoading.delete(`mob_${key}`); };
+  img.src = url;
+}
+
 // Preload all sprites upfront
 for (const id of Object.keys(HUNTER_SPRITES)) preloadSprite(id);
 for (let i = 0; i < BOSS_SPRITES.length; i++) preloadBossSprite(i);
+for (const key of Object.keys(MOB_SPRITES)) preloadMobSprite(key);
 
 // ── Animation States ──
 const animStates = {};
@@ -1046,28 +1071,40 @@ function render() {
     const ip = interpPositions[mob.id];
     const sx = (ip ? ip.x : mob.x) * SCALE - cameraX;
     const sy = groundY;
-    const size = mob.elite ? MOB_SIZE_ELITE : MOB_SIZE_BASIC;
+    const spriteSize = mob.elite ? 32 : 24;
     const anim = animStates[mob.id];
 
     ctx.save();
     if (anim?.type === 'hit') ctx.globalAlpha = 0.6;
 
-    ctx.fillStyle = mob.caster ? '#9333ea' : mob.elite ? '#991b1b' : '#dc2626';
-    ctx.fillRect(sx - size / 2, sy - size, size, size);
-
-    // Mob eyes
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(sx - size / 4 - 1, sy - size * 0.7, 2, 2);
-    ctx.fillRect(sx + size / 4 - 1, sy - size * 0.7, 2, 2);
+    // Try mob sprite
+    const mobSprite = mob.templateKey ? mobSpriteCache[mob.templateKey] : null;
+    if (mobSprite?.complete) {
+      ctx.drawImage(mobSprite, sx - spriteSize / 2, sy - spriteSize, spriteSize, spriteSize);
+      // Red tint border for elites
+      if (mob.elite) {
+        ctx.strokeStyle = '#ff4444';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(sx - spriteSize / 2, sy - spriteSize, spriteSize, spriteSize);
+      }
+    } else {
+      // Fallback: colored rectangles
+      const size = mob.elite ? MOB_SIZE_ELITE : MOB_SIZE_BASIC;
+      ctx.fillStyle = mob.caster ? '#9333ea' : mob.elite ? '#991b1b' : '#dc2626';
+      ctx.fillRect(sx - size / 2, sy - size, size, size);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(sx - size / 4 - 1, sy - size * 0.7, 2, 2);
+      ctx.fillRect(sx + size / 4 - 1, sy - size * 0.7, 2, 2);
+    }
 
     ctx.restore();
 
-    drawHpBar(sx, sy - size - 6, size + 6, 3, mob.hp / mob.maxHp);
+    drawHpBar(sx, sy - spriteSize - 4, spriteSize + 4, 3, mob.hp / mob.maxHp);
 
     ctx.fillStyle = '#aaa';
     ctx.font = '9px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(mob.name, sx, sy - size - 10);
+    ctx.fillText(mob.name, sx, sy - spriteSize - 8);
   }
 
   // ── Draw Boss ──
