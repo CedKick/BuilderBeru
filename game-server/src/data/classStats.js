@@ -31,7 +31,7 @@ export const CLASS_STATS = {
     label: 'Warrior',
     hp: 22000,
     mana: 100,        // Rage: max 100, starts at 0, builds from basic attacks
-    atk: 2550,        // x3 DPS buff
+    atk: 5100,        // x6 DPS buff (850 × 6)
     def: 150,
     spd: 200,
     crit: 32,
@@ -179,7 +179,7 @@ export const CLASS_SKILLS = {
       cooldown: 0.35,
       manaCost: 0,
       isBasic: true,
-      rageGain: 10,     // +10 rage per basic hit
+      rageGain: 15,     // +15 rage per basic hit
     },
     secondary: {
       name: 'Frappe lourde',
