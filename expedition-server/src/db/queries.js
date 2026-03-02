@@ -120,7 +120,14 @@ export async function saveCharacterStates(expeditionId, characters) {
   let i = 1;
   for (const c of characters) {
     values.push(`($${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++})`);
-    params.push(expeditionId, c.username, c.hunterId, c.hp, c.maxHp, c.mana, c.maxMana, c.alive, c.stats.damageDealt, c.stats.healingDone, c.stats.kills, c.stats.deaths);
+    params.push(
+      expeditionId, c.username, c.hunterId,
+      Math.floor(c.hp || 0), Math.floor(c.maxHp || 0),
+      Math.floor(c.mana || 0), Math.floor(c.maxMana || 0),
+      c.alive,
+      Math.floor(c.stats.damageDealt || 0), Math.floor(c.stats.healingDone || 0),
+      Math.floor(c.stats.kills || 0), Math.floor(c.stats.deaths || 0)
+    );
   }
   await query(
     `INSERT INTO expedition_character_state
