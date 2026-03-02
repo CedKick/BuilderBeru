@@ -97,8 +97,9 @@ export class ExpeditionEngine {
         const data = charData[hunterId] || {};
         const level = data.level || 1;
         const stars = data.stars || 0;
+        const precomputedStats = data.fullStats || null;
         try {
-          const char = new ExpeditionCharacter(entry.username, hunterId, level, stars);
+          const char = new ExpeditionCharacter(entry.username, hunterId, level, stars, precomputedStats);
           this.characters.push(char);
         } catch (e) {
           console.warn(`[Expedition] Failed to create character ${hunterId} for ${entry.username}:`, e.message);

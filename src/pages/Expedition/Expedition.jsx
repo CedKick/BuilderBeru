@@ -1,5 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Swords, Users, Play, Plus, LogIn, Eye, Clock, Shield, Skull, Trophy, ChevronRight, Flame, X } from 'lucide-react';
+
+// ── Import real hunter data from Shadow Colosseum ──
+import { HUNTERS, RAID_SAVE_KEY, loadRaidData, getHunterPool, getHunterStars } from '../ShadowColosseum/raidData';
+import { computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses } from '../ShadowColosseum/equipmentData';
+import { statsAtFull, mergeTalentBonuses } from '../ShadowColosseum/colosseumCore';
+import { computeTalentBonuses } from '../ShadowColosseum/talentTreeData';
+import { computeTalentBonuses2 } from '../ShadowColosseum/talentTree2Data';
 
 // ── API Config ──
 const API_BASE = import.meta.env.DEV
@@ -10,21 +17,57 @@ const SPECTATOR_URL = import.meta.env.DEV
   ? 'http://localhost:3004/spectator'
   : 'https://api.builderberu.com/expedition/spectator';
 
-// ── Hunter display data (minimal subset for registration UI) ──
-const HUNTER_ELEMENTS = {
-  h_sung: 'shadow', h_cha_hae_in: 'water', h_baek_yoonho: 'fire',
-  h_choi_jong_in: 'fire', h_min_byung_gyu: 'water', h_lim_tae_gyu: 'fire',
-  h_park_heejin: 'water', h_yoo_jinho: 'shadow', h_lee_joohee: 'water',
-  h_goto_ryuji: 'fire', h_liu_zhigang: 'fire', h_thomas_andre: 'fire',
-  h_lennart_niermann: 'water', h_kanae: 'shadow', h_esil: 'shadow',
-  h_hwang_dongsoo: 'shadow',
+const COLO_KEY = 'shadow_colosseum_data';
+const defaultColoData = () => ({
+  chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {},
+  respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 },
+  artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {},
+  weaponEnchants: {},
+  hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 },
+  accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 },
+  accountAllocations: 0,
+});
+
+const loadColoData = () => {
+  try { return { ...defaultColoData(), ...JSON.parse(localStorage.getItem(COLO_KEY)) }; }
+  catch { return defaultColoData(); }
 };
 
 const ELEMENT_COLORS = {
-  fire: { bg: 'bg-red-900/30', border: 'border-red-500/50', text: 'text-red-400' },
-  water: { bg: 'bg-blue-900/30', border: 'border-blue-500/50', text: 'text-blue-400' },
-  shadow: { bg: 'bg-purple-900/30', border: 'border-purple-500/50', text: 'text-purple-400' },
+  fire: { bg: 'bg-red-900/30', border: 'border-red-500/50', text: 'text-red-400', ring: 'ring-red-400' },
+  water: { bg: 'bg-blue-900/30', border: 'border-blue-500/50', text: 'text-blue-400', ring: 'ring-blue-400' },
+  shadow: { bg: 'bg-purple-900/30', border: 'border-purple-500/50', text: 'text-purple-400', ring: 'ring-purple-400' },
+  light: { bg: 'bg-yellow-900/30', border: 'border-yellow-500/50', text: 'text-yellow-300', ring: 'ring-yellow-300' },
 };
+
+// Compute full stats for a hunter (including artifacts, weapons, talents, account bonuses)
+function computeHunterFullStats(hunterId, coloData, raidData) {
+  const h = HUNTERS[hunterId];
+  if (!h) return null;
+
+  const level = coloData.chibiLevels?.[hunterId] || 1;
+  const stars = getHunterStars(raidData, hunterId);
+  const allocated = coloData.statPoints?.[hunterId] || {};
+
+  // Talent bonuses
+  const tb1 = computeTalentBonuses(coloData.talentTree?.[hunterId] || {});
+  const tb2 = computeTalentBonuses2(coloData.talentTree2?.[hunterId]);
+  const tb = mergeTalentBonuses(tb1, tb2);
+
+  // Equipment bonuses
+  const artBonuses = computeArtifactBonuses(coloData.artifacts?.[hunterId]);
+  const wId = coloData.weapons?.[hunterId];
+  const weapBonuses = computeWeaponBonuses(wId, coloData.weaponCollection?.[wId] || 0, coloData.weaponEnchants);
+  const equipBonuses = mergeEquipBonuses(artBonuses, weapBonuses);
+
+  // Account bonuses
+  const globalBonuses = coloData.accountBonuses || {};
+
+  // Compute full stats
+  const stats = statsAtFull(h.base, h.growth, level, allocated, tb, equipBonuses, stars, globalBonuses);
+
+  return { ...stats, level, stars };
+}
 
 // ── Main Component ──
 export default function Expedition() {
@@ -41,8 +84,6 @@ export default function Expedition() {
   // Registration form
   const [username, setUsername] = useState(() => localStorage.getItem('expedition_username') || '');
   const [selectedHunters, setSelectedHunters] = useState([]);
-  const [hunterLevels, setHunterLevels] = useState({});
-  const [hunterStars, setHunterStars] = useState({});
   const [selectedSR, setSelectedSR] = useState('');
 
   // UI
@@ -51,6 +92,25 @@ export default function Expedition() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const pollRef = useRef(null);
+
+  // ── Load real hunter data from localStorage ──
+  const raidData = useMemo(() => loadRaidData(), []);
+  const coloData = useMemo(() => loadColoData(), []);
+  const hunterPool = useMemo(() => getHunterPool(raidData), [raidData]);
+
+  // Sort hunters by element then by level (desc)
+  const sortedHunters = useMemo(() => {
+    const elementOrder = { fire: 0, water: 1, shadow: 2, light: 3 };
+    return Object.entries(hunterPool)
+      .map(([id, stars]) => {
+        const h = HUNTERS[id];
+        if (!h) return null;
+        const level = coloData.chibiLevels?.[id] || 1;
+        return { id, stars, name: h.name, element: h.element, rarity: h.rarity, class: h.class, sprite: h.sprite, level };
+      })
+      .filter(Boolean)
+      .sort((a, b) => (elementOrder[a.element] || 9) - (elementOrder[b.element] || 9) || b.level - a.level);
+  }, [hunterPool, coloData]);
 
   // ── API Helper ──
   const api = useCallback(async (path, method = 'GET', body = null) => {
@@ -74,7 +134,7 @@ export default function Expedition() {
         localStorage.setItem('expedition_admin_key', adminKey);
       }
     } catch {
-      setError('Clé invalide');
+      setError('Cle invalide');
     } finally {
       setLoading(false);
     }
@@ -119,7 +179,7 @@ export default function Expedition() {
       setLoading(true);
       setError('');
       await api('/api/expedition/create', 'POST', { name: 'Expedition I' });
-      setSuccess('Expédition créée !');
+      setSuccess('Expedition creee !');
       await fetchStatus();
     } catch (e) {
       setError(e.message);
@@ -138,9 +198,12 @@ export default function Expedition() {
       setError('');
       const characterData = {};
       for (const hId of selectedHunters) {
+        const fullStats = computeHunterFullStats(hId, coloData, raidData);
+        const h = hunterPool[hId];
         characterData[hId] = {
-          level: hunterLevels[hId] || 30,
-          stars: hunterStars[hId] || 3,
+          level: fullStats?.level || 1,
+          stars: typeof h === 'number' ? h : (h?.stars || 0),
+          fullStats, // Pre-computed stats including artifacts/weapons/talents
         };
       }
       await api('/api/expedition/register', 'POST', {
@@ -165,7 +228,7 @@ export default function Expedition() {
       setLoading(true);
       setError('');
       await api('/api/expedition/force-start', 'POST');
-      setSuccess('Expédition lancée !');
+      setSuccess('Expedition lancee !');
       setShowSpectator(true);
       await fetchStatus();
     } catch (e) {
@@ -208,14 +271,14 @@ export default function Expedition() {
           <div className="text-center mb-6">
             <Swords className="w-12 h-12 text-purple-400 mx-auto mb-3" />
             <h1 className="text-2xl font-bold text-purple-300">Expedition I</h1>
-            <p className="text-gray-500 text-sm mt-1">Accès restreint - Phase de test</p>
+            <p className="text-gray-500 text-sm mt-1">Acces restreint - Phase de test</p>
           </div>
           <input
             type="text"
             value={adminKey}
             onChange={e => setAdminKey(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            placeholder="Clé admin"
+            placeholder="Cle admin"
             className="w-full bg-[#0f0f1a] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-purple-500 focus:outline-none mb-4"
           />
           <button
@@ -302,7 +365,7 @@ export default function Expedition() {
         {liveStatus && liveStatus.totalCharacters > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard icon={Users} label="Vivants" value={`${liveStatus.aliveCount}/${liveStatus.totalCharacters}`} />
-            <StatCard icon={Skull} label="Boss tués" value={liveStatus.bossesKilled} />
+            <StatCard icon={Skull} label="Boss tues" value={liveStatus.bossesKilled} />
             <StatCard icon={ChevronRight} label="Encounter" value={`${liveStatus.currentEncounter}/${liveStatus.totalEncounters}`} />
             <StatCard icon={Clock} label="Temps" value={formatTime(liveStatus.elapsedSeconds)} />
           </div>
@@ -312,14 +375,14 @@ export default function Expedition() {
         )}
         {!expedition && (
           <div className="text-center py-6">
-            <p className="text-gray-500 mb-4">Aucune expédition active</p>
+            <p className="text-gray-500 mb-4">Aucune expedition active</p>
             <button
               onClick={createExpedition}
               disabled={loading}
               className="bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 mx-auto font-medium transition-colors"
             >
               <Plus className="w-5 h-5" />
-              {loading ? 'Création...' : 'Créer une expédition'}
+              {loading ? 'Creation...' : 'Creer une expedition'}
             </button>
           </div>
         )}
@@ -344,60 +407,83 @@ export default function Expedition() {
             />
           </div>
 
-          {/* Hunter Selection */}
+          {/* Hunter Selection - Real hunters from account */}
           <div className="mb-4">
-            <label className="text-sm text-gray-400 mb-2 block">Hunters ({selectedHunters.length}/3)</label>
-            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-              {Object.entries(HUNTER_ELEMENTS).map(([hId, element]) => {
-                const selected = selectedHunters.includes(hId);
-                const colors = ELEMENT_COLORS[element];
-                const name = hId.replace('h_', '').replace(/_/g, ' ');
-                return (
-                  <button
-                    key={hId}
-                    onClick={() => toggleHunter(hId)}
-                    className={`p-2 rounded-lg border text-xs font-medium transition-all ${
-                      selected
-                        ? `${colors.bg} ${colors.border} ${colors.text} ring-1 ring-${element === 'fire' ? 'red' : element === 'water' ? 'blue' : 'purple'}-400`
-                        : 'bg-[#0f0f1a] border-gray-800 text-gray-500 hover:border-gray-600'
-                    }`}
-                    title={name}
-                  >
-                    <div className="truncate capitalize">{name.split(' ')[0]}</div>
-                  </button>
-                );
-              })}
-            </div>
+            <label className="text-sm text-gray-400 mb-2 block">
+              Tes Hunters ({selectedHunters.length}/3) — {sortedHunters.length} disponibles
+            </label>
+            {sortedHunters.length === 0 ? (
+              <p className="text-gray-600 text-sm italic">Aucun hunter dans ton compte Shadow Colosseum</p>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2 max-h-80 overflow-y-auto pr-1">
+                {sortedHunters.map(h => {
+                  const selected = selectedHunters.includes(h.id);
+                  const colors = ELEMENT_COLORS[h.element] || ELEMENT_COLORS.shadow;
+                  return (
+                    <button
+                      key={h.id}
+                      onClick={() => toggleHunter(h.id)}
+                      className={`relative p-2 rounded-lg border text-xs transition-all ${
+                        selected
+                          ? `${colors.bg} ${colors.border} ${colors.text} ring-2 ${colors.ring}`
+                          : 'bg-[#0f0f1a] border-gray-800 text-gray-400 hover:border-gray-600'
+                      }`}
+                      title={`${h.name} Lv${h.level} (A${h.stars})`}
+                    >
+                      {h.sprite && (
+                        <img
+                          src={h.sprite}
+                          alt={h.name}
+                          className="w-10 h-10 mx-auto mb-1 object-contain"
+                          loading="lazy"
+                        />
+                      )}
+                      <div className="font-medium truncate text-center">{h.name.split(' ')[0]}</div>
+                      <div className="text-[10px] text-gray-500 text-center">
+                        Lv{h.level} {h.stars > 0 && `A${h.stars}`}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Level/Stars for selected hunters */}
+          {/* Selected hunter stat summaries */}
           {selectedHunters.length > 0 && (
             <div className="mb-4 space-y-2">
               {selectedHunters.map(hId => {
-                const name = hId.replace('h_', '').replace(/_/g, ' ');
+                const h = HUNTERS[hId];
+                if (!h) return null;
+                const fullStats = computeHunterFullStats(hId, coloData, raidData);
+                const colors = ELEMENT_COLORS[h.element] || ELEMENT_COLORS.shadow;
+                const wId = coloData.weapons?.[hId];
+                const hasArts = coloData.artifacts?.[hId] && Object.keys(coloData.artifacts[hId]).length > 0;
                 return (
-                  <div key={hId} className="flex items-center gap-3 bg-[#0f0f1a] rounded-lg px-3 py-2">
-                    <span className="text-sm text-gray-300 capitalize w-32 truncate">{name}</span>
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs text-gray-500">Lvl</label>
-                      <input
-                        type="number"
-                        min={1} max={80}
-                        value={hunterLevels[hId] || 30}
-                        onChange={e => setHunterLevels(p => ({ ...p, [hId]: parseInt(e.target.value) || 1 }))}
-                        className="w-16 bg-[#1a1a2e] border border-gray-700 rounded px-2 py-1 text-white text-sm text-center"
-                      />
+                  <div key={hId} className={`flex items-center gap-3 ${colors.bg} border ${colors.border} rounded-lg px-3 py-2`}>
+                    {h.sprite && <img src={h.sprite} alt={h.name} className="w-8 h-8 object-contain flex-shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-medium ${colors.text}`}>{h.name}</div>
+                      <div className="text-[10px] text-gray-500">
+                        Lv{fullStats?.level || 1} | A{fullStats?.stars || 0} | {h.class}
+                        {wId && ' | Arme'}
+                        {hasArts && ' | Artefacts'}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs text-gray-500">Stars</label>
-                      <select
-                        value={hunterStars[hId] || 3}
-                        onChange={e => setHunterStars(p => ({ ...p, [hId]: parseInt(e.target.value) }))}
-                        className="bg-[#1a1a2e] border border-gray-700 rounded px-2 py-1 text-white text-sm"
-                      >
-                        {[0,1,2,3,4,5].map(s => <option key={s} value={s}>{s} ★</option>)}
-                      </select>
-                    </div>
+                    {fullStats && (
+                      <div className="flex gap-2 text-[10px] text-gray-400">
+                        <span>HP:{fullStats.hp}</span>
+                        <span>ATK:{fullStats.atk}</span>
+                        <span>DEF:{fullStats.def}</span>
+                        <span>SPD:{fullStats.spd}</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleHunter(hId); }}
+                      className="text-gray-600 hover:text-red-400 flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 );
               })}
@@ -465,7 +551,7 @@ export default function Expedition() {
             className="bg-orange-600 hover:bg-orange-500 disabled:bg-gray-700 text-white font-medium px-6 py-3 rounded-lg flex items-center gap-2 transition-colors"
           >
             <Play className="w-5 h-5" />
-            {loading ? 'Démarrage...' : 'Lancer maintenant'}
+            {loading ? 'Demarrage...' : 'Lancer maintenant'}
           </button>
         </div>
       )}
@@ -475,11 +561,11 @@ export default function Expedition() {
         <div className={`bg-[#1a1a2e] border ${status === 'finished' ? 'border-green-500/30' : 'border-red-500/30'} rounded-xl p-5`}>
           <h2 className={`text-lg font-semibold ${status === 'finished' ? 'text-green-300' : 'text-red-300'} mb-3 flex items-center gap-2`}>
             <Trophy className="w-5 h-5" />
-            {status === 'finished' ? 'Expédition terminée !' : 'Wipe total...'}
+            {status === 'finished' ? 'Expedition terminee !' : 'Wipe total...'}
           </h2>
           <div className="grid grid-cols-3 gap-3">
-            <StatCard icon={Skull} label="Boss tués" value={liveStatus.bossesKilled} />
-            <StatCard icon={Clock} label="Durée" value={formatTime(liveStatus.elapsedSeconds)} />
+            <StatCard icon={Skull} label="Boss tues" value={liveStatus.bossesKilled} />
+            <StatCard icon={Clock} label="Duree" value={formatTime(liveStatus.elapsedSeconds)} />
             <StatCard icon={Users} label="Survivants" value={`${liveStatus.aliveCount}/${liveStatus.totalCharacters}`} />
           </div>
           <button
@@ -487,7 +573,7 @@ export default function Expedition() {
             disabled={loading}
             className="mt-4 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors"
           >
-            <Plus className="w-5 h-5" /> Nouvelle expédition
+            <Plus className="w-5 h-5" /> Nouvelle expedition
           </button>
         </div>
       )}
@@ -512,7 +598,7 @@ function StatusBadge({ status }) {
   const labels = {
     none: 'Aucune', idle: 'En attente', registration: 'Inscription',
     march: 'Marche', combat: 'Combat', loot_roll: 'Loot Roll',
-    campfire: 'Campfire', finished: 'Terminée', wiped: 'Wipe',
+    campfire: 'Campfire', finished: 'Terminee', wiped: 'Wipe',
   };
   return (
     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${styles[status] || styles.none}`}>

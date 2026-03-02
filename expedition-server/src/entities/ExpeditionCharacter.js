@@ -2,7 +2,14 @@ import { HUNTERS, hunterStatsAtLevel } from '../data/hunterData.js';
 import { STAT_SCALE, ROLE_MAP, COMBAT } from '../config.js';
 
 export class ExpeditionCharacter {
-  constructor(username, hunterId, hunterLevel, hunterStars) {
+  /**
+   * @param {string} username
+   * @param {string} hunterId
+   * @param {number} hunterLevel
+   * @param {number} hunterStars
+   * @param {object} [precomputedStats] - Full stats from client (includes artifacts, weapons, talents, account bonuses)
+   */
+  constructor(username, hunterId, hunterLevel, hunterStars, precomputedStats = null) {
     const hunterDef = HUNTERS[hunterId];
     if (!hunterDef) throw new Error(`Unknown hunter: ${hunterId}`);
 
@@ -16,17 +23,30 @@ export class ExpeditionCharacter {
     this.rarity = hunterDef.rarity;
     this.role = ROLE_MAP[hunterDef.class] || 'frontline_dps';
 
-    // Compute scaled stats from hunter base + growth + stars
-    const raw = hunterStatsAtLevel(hunterId, hunterLevel, hunterStars);
-    this.maxHp = Math.floor(raw.hp * STAT_SCALE.hp);
-    this.hp = this.maxHp;
-    this.maxMana = hunterDef.class === 'support' ? 800 : 400;
-    this.mana = this.maxMana;
-    this.atk = Math.floor(raw.atk * STAT_SCALE.atk);
-    this.def = Math.floor(raw.def * STAT_SCALE.def);
-    this.spd = Math.floor(raw.spd * STAT_SCALE.spd);
-    this.crit = raw.crit * STAT_SCALE.crit;
-    this.res = raw.res * STAT_SCALE.res;
+    if (precomputedStats && precomputedStats.hp) {
+      // Use pre-computed full stats from client (scaled for expedition)
+      this.maxHp = Math.floor(precomputedStats.hp * STAT_SCALE.hp);
+      this.hp = this.maxHp;
+      this.maxMana = Math.floor((precomputedStats.mana || 100) * STAT_SCALE.hp);
+      this.mana = this.maxMana;
+      this.atk = Math.floor(precomputedStats.atk * STAT_SCALE.atk);
+      this.def = Math.floor(precomputedStats.def * STAT_SCALE.def);
+      this.spd = Math.floor(precomputedStats.spd * STAT_SCALE.spd);
+      this.crit = precomputedStats.crit * STAT_SCALE.crit;
+      this.res = precomputedStats.res * STAT_SCALE.res;
+    } else {
+      // Fallback: simple computation from level + stars only
+      const raw = hunterStatsAtLevel(hunterId, hunterLevel, hunterStars);
+      this.maxHp = Math.floor(raw.hp * STAT_SCALE.hp);
+      this.hp = this.maxHp;
+      this.maxMana = hunterDef.class === 'support' ? 800 : 400;
+      this.mana = this.maxMana;
+      this.atk = Math.floor(raw.atk * STAT_SCALE.atk);
+      this.def = Math.floor(raw.def * STAT_SCALE.def);
+      this.spd = Math.floor(raw.spd * STAT_SCALE.spd);
+      this.crit = raw.crit * STAT_SCALE.crit;
+      this.res = raw.res * STAT_SCALE.res;
+    }
 
     // Skills (with runtime cooldown tracking)
     this.skills = hunterDef.skills.map(s => ({
