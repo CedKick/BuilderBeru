@@ -727,28 +727,40 @@
       }
     }
 
-    // ── Floating Damage Numbers ──
-    let floatingNumbers = []; // { x, y, text, color, alpha, vy, age }
+    // ── Floating Damage Numbers (Enhanced) ──
+    let floatingNumbers = [];
 
     function addFloatingNumber(x, y, amount, crit, isHeal, isDamageTaken) {
-      let color, size, prefix;
+      let color, outlineColor, size, prefix, glowColor, extraText;
       if (isDamageTaken) {
-        color = amount >= 5000 ? '#ff0000' : '#ff6b6b';
-        size = amount >= 5000 ? 26 : 22;
+        color = amount >= 5000 ? '#ff2222' : '#ff6b6b';
+        outlineColor = '#4a0000';
+        size = amount >= 5000 ? 32 : 26;
         prefix = '-';
+        glowColor = 'rgba(255,0,0,0.6)';
       } else if (isHeal) {
-        color = '#10b981'; size = 16; prefix = '+';
+        color = '#4ade80'; outlineColor = '#064e2a'; size = 22; prefix = '+';
+        glowColor = 'rgba(34,197,94,0.5)';
       } else if (crit) {
-        color = '#ffd700'; size = 22; prefix = '';
+        color = '#ffd700'; outlineColor = '#7c5200'; size = 30; prefix = '';
+        glowColor = 'rgba(255,215,0,0.7)';
+        extraText = 'CRIT!';
       } else {
-        color = '#ffffff'; size = 18; prefix = '';
+        color = '#ffffff'; outlineColor = '#333333'; size = 22; prefix = '';
+        glowColor = null;
       }
       floatingNumbers.push({
-        x: x + (Math.random() - 0.5) * 40,
-        y: y - 30,
+        x: x + (Math.random() - 0.5) * 50,
+        y: y - 35,
         text: prefix + formatNum(amount),
-        color, size, alpha: 1, vy: -60, age: 0, maxAge: isDamageTaken ? 1.5 : 1.2,
-        bold: crit || isDamageTaken,
+        extraText,
+        color, outlineColor, glowColor,
+        size, alpha: 1, vy: -80, age: 0,
+        maxAge: crit ? 2.0 : (isDamageTaken ? 1.8 : 1.4),
+        bold: true,
+        scale: crit ? 1.6 : 1.3, // Start bigger then shrink
+        isCrit: !!crit,
+        isDmgTaken: !!isDamageTaken,
       });
     }
 
@@ -2502,6 +2514,23 @@
       }
     });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Prevent context menu globally (right-click anywhere shouldn't break controls)
+    document.addEventListener('contextmenu', (e) => { if (gameState) e.preventDefault(); });
+    // If mouse leaves canvas or window loses focus, stop all actions to prevent stuck inputs
+    window.addEventListener('blur', () => {
+      keys = {}; sendMovement();
+      send({ type: 'input', input: { type: 'stop_basic' } });
+      send({ type: 'input', input: { type: 'stop_secondary' } });
+      send({ type: 'input', input: { type: 'charge_release', angle: mouseAngle } });
+    });
+    document.addEventListener('mouseup', (e) => {
+      // Global mouseup fallback — in case mouseup fires outside canvas
+      if (e.button === 0) send({ type: 'input', input: { type: 'stop_basic' } });
+      if (e.button === 2) send({ type: 'input', input: { type: 'stop_secondary' } });
+    });
+    // Clicking anywhere on page during game should refocus for keyboard inputs
+    document.addEventListener('click', () => { if (gameState) canvas.focus(); });
+    canvas.setAttribute('tabindex', '0');
 
     function sendMovement() {
       let x = 0, y = 0;
@@ -3180,11 +3209,32 @@
         ctx.shadowColor = color;
         ctx.shadowBlur = isBerserker ? (hasRageBuff ? 35 : 22) : (isMe ? 10 : 5);
         ctx.drawImage(spriteImg, -sprSize/2, -sprSize/2, sprSize, sprSize);
-        // Berserker buff glow overlay
-        if (isBerserker && hasRageBuff && bersBuffGlowLoaded) {
-          ctx.globalAlpha = 0.6;
-          ctx.drawImage(bersBuffGlowImg, -sprSize * 0.75, -sprSize * 0.75, sprSize * 1.5, sprSize * 1.5);
-          ctx.globalAlpha = 1;
+        // Berserker rage aura (A buff active)
+        if (isBerserker && hasRageBuff) {
+          // Pulsing fire ring
+          const t = Date.now() / 1000;
+          const pulse = 0.5 + Math.sin(t * 4) * 0.2;
+          const ringR = sprSize * 0.55 + Math.sin(t * 3) * 3;
+          ctx.save();
+          ctx.globalAlpha = pulse;
+          ctx.strokeStyle = '#ff4500';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#ff2200';
+          ctx.shadowBlur = 20;
+          ctx.beginPath(); ctx.arc(0, 0, ringR, 0, Math.PI * 2); ctx.stroke();
+          // Inner glow ring
+          ctx.strokeStyle = '#ffd700';
+          ctx.lineWidth = 1.5;
+          ctx.shadowColor = '#ffa500';
+          ctx.shadowBlur = 12;
+          ctx.beginPath(); ctx.arc(0, 0, ringR - 4, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+          // Buff glow image if loaded
+          if (bersBuffGlowLoaded) {
+            ctx.globalAlpha = 0.4 + Math.sin(t * 5) * 0.15;
+            ctx.drawImage(bersBuffGlowImg, -sprSize * 0.75, -sprSize * 0.75, sprSize * 1.5, sprSize * 1.5);
+            ctx.globalAlpha = 1;
+          }
         }
         ctx.shadowBlur = 0;
         ctx.restore();
@@ -3209,36 +3259,70 @@
       ctx.lineTo(p.x + Math.cos(p.aimAngle) * 40, p.y + Math.sin(p.aimAngle) * 40);
       ctx.stroke();
 
-      // Berserker charge bar (below player)
+      // Berserker charge bar — 3 separate bars (Lv1, Lv2, Lv3)
       if (p.charging && p.charging.progress !== undefined) {
-        const barW = 40, barH = 6;
-        const barX = p.x - barW / 2, barY = p.y + 28;
         const pct = Math.min(1, p.charging.progress);
-        // Level thresholds: 0-25% = Lv0, 25-50% = Lv1, 50-75% = Lv2, 75-100% = Lv3
-        const lvl = Math.min(3, Math.floor(pct * 4));
-        const lvlColors = ['#f59e0b', '#ef4444', '#dc2626', '#ff0000'];
-        // Background
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
-        // Fill
-        ctx.fillStyle = lvlColors[lvl];
-        ctx.fillRect(barX, barY, barW * pct, barH);
-        // Level markers
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        for (let i = 1; i < 4; i++) {
-          ctx.fillRect(barX + barW * i / 4 - 0.5, barY, 1, barH);
+        const numBars = 3;
+        const barW = 16, barH = 7, gap = 3;
+        const totalW = numBars * barW + (numBars - 1) * gap;
+        const startX = p.x - totalW / 2;
+        const barY = p.y + 30;
+        const barColors = ['#f59e0b', '#ef4444', '#ff0000']; // amber → red → crimson
+        const barGlows  = ['rgba(245,158,11,0.7)', 'rgba(239,68,68,0.8)', 'rgba(255,0,0,0.9)'];
+        const barLabels = ['I', 'II', 'III'];
+
+        for (let i = 0; i < numBars; i++) {
+          const bx = startX + i * (barW + gap);
+          // Each bar fills at: 0-33% → bar1, 33-66% → bar2, 66-100% → bar3
+          const barStart = i / numBars;
+          const barEnd = (i + 1) / numBars;
+          const barPct = Math.max(0, Math.min(1, (pct - barStart) / (barEnd - barStart)));
+          const isFull = barPct >= 1;
+          const isActive = barPct > 0;
+
+          // Background (dark rounded rect)
+          ctx.fillStyle = 'rgba(0,0,0,0.75)';
+          ctx.strokeStyle = isActive ? barColors[i] + '88' : 'rgba(255,255,255,0.15)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.roundRect(bx - 1, barY - 1, barW + 2, barH + 2, 2);
+          ctx.fill(); ctx.stroke();
+
+          // Fill with glow
+          if (isActive) {
+            ctx.save();
+            if (isFull) {
+              ctx.shadowColor = barGlows[i];
+              ctx.shadowBlur = 8 + Math.sin(Date.now() / 120 + i) * 3;
+            }
+            // Gradient fill
+            const grad = ctx.createLinearGradient(bx, barY, bx, barY + barH);
+            grad.addColorStop(0, barColors[i]);
+            grad.addColorStop(1, barColors[i] + 'aa');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.roundRect(bx, barY, barW * barPct, barH, 1);
+            ctx.fill();
+            ctx.restore();
+          }
+
+          // Level label below each bar
+          ctx.fillStyle = isFull ? barColors[i] : 'rgba(255,255,255,0.3)';
+          ctx.font = isFull ? 'bold 8px sans-serif' : '7px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(barLabels[i], bx + barW / 2, barY + barH + 9);
         }
-        // Level text
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 8px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('Lv' + lvl, p.x, barY + barH + 9);
-        // Pulsing glow at max charge
+
+        // At max charge: pulsing ring around player
         if (pct >= 1) {
-          const pulse = 0.3 + Math.sin(Date.now() / 100) * 0.2;
-          ctx.strokeStyle = 'rgba(255, 0, 0, ' + pulse + ')';
-          ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.arc(p.x, p.y, 30, 0, Math.PI * 2); ctx.stroke();
+          const pulse = 0.4 + Math.sin(Date.now() / 80) * 0.3;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(255, 30, 0, ' + pulse + ')';
+          ctx.shadowColor = 'rgba(255, 0, 0, 0.6)';
+          ctx.shadowBlur = 15;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 32, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
         }
       }
 
@@ -3424,8 +3508,10 @@
         const fn = floatingNumbers[i];
         fn.age += dt;
         fn.y += fn.vy * dt;
-        fn.vy *= 0.95; // Slow down
+        fn.vy *= 0.92; // Slow down with slight gravity feel
         fn.alpha = Math.max(0, 1 - fn.age / fn.maxAge);
+        // Scale: start big then ease to 1.0
+        fn.scale = 1 + (fn.scale - 1) * Math.max(0, 1 - fn.age * 4);
 
         if (fn.age >= fn.maxAge) {
           floatingNumbers.splice(i, 1);
@@ -3434,11 +3520,48 @@
 
         ctx.save();
         ctx.globalAlpha = fn.alpha;
-        ctx.fillStyle = fn.color;
-        ctx.font = (fn.bold ? 'bold ' : '') + fn.size + 'px sans-serif';
         ctx.textAlign = 'center';
-        ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
+        ctx.textBaseline = 'middle';
+
+        const s = Math.max(1, fn.scale);
+        const fontSize = Math.round(fn.size * s);
+        ctx.font = 'bold ' + fontSize + 'px "Segoe UI", sans-serif';
+
+        // Glow layer (for crits, heals, big hits)
+        if (fn.glowColor) {
+          ctx.shadowColor = fn.glowColor;
+          ctx.shadowBlur = fn.isCrit ? 20 : 12;
+          ctx.fillStyle = fn.glowColor;
+          ctx.fillText(fn.text, fn.x, fn.y);
+          ctx.shadowBlur = 0;
+        }
+
+        // Outline (stroke)
+        ctx.lineWidth = fn.isCrit ? 4 : 3;
+        ctx.strokeStyle = fn.outlineColor;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(fn.text, fn.x, fn.y);
+
+        // Main fill
+        ctx.fillStyle = fn.color;
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 3;
         ctx.fillText(fn.text, fn.x, fn.y);
+
+        // CRIT! label above damage
+        if (fn.extraText && fn.age < fn.maxAge * 0.7) {
+          const critAlpha = Math.max(0, 1 - fn.age / (fn.maxAge * 0.7));
+          ctx.globalAlpha = critAlpha;
+          ctx.font = 'bold ' + Math.round(14 * s) + 'px "Segoe UI", sans-serif';
+          ctx.strokeStyle = '#7c5200';
+          ctx.lineWidth = 3;
+          ctx.strokeText(fn.extraText, fn.x, fn.y - fontSize * 0.7);
+          ctx.fillStyle = '#fff700';
+          ctx.shadowColor = 'rgba(255,215,0,0.8)';
+          ctx.shadowBlur = 10;
+          ctx.fillText(fn.extraText, fn.x, fn.y - fontSize * 0.7);
+        }
+
         ctx.restore();
       }
     }
