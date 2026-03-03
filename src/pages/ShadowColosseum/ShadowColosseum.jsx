@@ -791,7 +791,7 @@ export default function ShadowColosseum() {
   const [ragnarokHistoryOpen, setRagnarokHistoryOpen] = useState(false);
   const [monarchHistoryOpen, setMonarchHistoryOpen] = useState(false);
   const [beruAdvice, setBeruAdvice] = useState(null); // Beru Advisor analysis result
-  const [eqInvFilter, setEqInvFilter] = useState({ slot: null, set: null }); // filters for equipment view inventory
+  const [eqInvFilter, setEqInvFilter] = useState({ slot: null, set: null, type: null }); // filters for equipment view inventory
   const [equipDetailSlot, setEquipDetailSlot] = useState(null); // slotId for equipment view detail panel
   const [rosterSort, setRosterSort] = useState('ilevel'); // 'ilevel' | 'level' | 'name'
   const [rosterFilterElem, setRosterFilterElem] = useState(null); // element id or null
@@ -5355,7 +5355,7 @@ export default function ShadowColosseum() {
               </p>
             </button>
             <button
-              onClick={() => { setView('artifacts'); setArtSelected(null); setArtFilter({ set: null, rarity: null, slot: null }); }}
+              onClick={() => { setView('artifacts'); setArtSelected(null); setArtFilter({ set: null, rarity: null, slot: null, type: null }); }}
               className="p-3 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-900/20 to-indigo-900/20 hover:from-purple-900/40 hover:to-indigo-900/40 transition-all text-center group">
               <div className="flex items-center justify-center gap-1.5">
                 <span className="text-lg">{'\uD83D\uDC8E'}</span>
@@ -9691,6 +9691,16 @@ export default function ShadowColosseum() {
               {/* Filters */}
               {data.artifactInventory.length > 0 && (
                 <div className="mb-2 space-y-1">
+                  {/* Type filter (set category) */}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-small-responsive text-gray-500 w-8">Type</span>
+                    {Object.entries(SET_CATEGORIES).map(([catId, cat]) => (
+                      <button key={catId} onClick={() => setEqInvFilter(prev => ({ ...prev, type: prev.type === catId ? null : catId, set: null }))}
+                        className={`px-1.5 py-0.5 rounded-full text-normal-responsive font-bold transition-all ${
+                          eqInvFilter.type === catId ? `${cat.color} ${cat.bg} ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                        }`}>{cat.label}</button>
+                    ))}
+                  </div>
                   {/* Slot filter */}
                   <div className="flex items-center gap-1 flex-wrap">
                     <span className="text-small-responsive text-gray-500 w-8">Slot</span>
@@ -9701,21 +9711,25 @@ export default function ShadowColosseum() {
                         }`}>{ARTIFACT_SLOTS[sId]?.icon}</button>
                     ))}
                   </div>
-                  {/* Set filter */}
+                  {/* Set filter — shows owned sets, or all sets of selected type */}
                   {(() => {
                     const setsInInv = new Set(data.artifactInventory.map(a => a.set));
-                    if (setsInInv.size === 0) return null;
+                    const setsToShow = eqInvFilter.type
+                      ? Object.keys(ALL_ARTIFACT_SETS).filter(id => getSetCategory(id) === eqInvFilter.type)
+                      : [...setsInInv];
+                    if (setsToShow.length === 0) return null;
                     return (
                       <div className="flex items-center gap-1 flex-wrap">
                         <span className="text-small-responsive text-gray-500 w-8">Set</span>
-                        {[...setsInInv].map(setId => {
+                        {setsToShow.map(setId => {
                           const s = ALL_ARTIFACT_SETS[setId];
                           if (!s) return null;
+                          const owned = setsInInv.has(setId);
                           return (
                             <div key={setId} className="relative group/set">
                               <button onClick={() => setEqInvFilter(prev => ({ ...prev, set: prev.set === setId ? null : setId }))}
                                 className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
-                                  eqInvFilter.set === setId ? `${s.color} ${s.bg} ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                                  eqInvFilter.set === setId ? `${s.color} ${s.bg} ring-1 ring-current` : owned ? 'text-gray-400 bg-gray-800/30 hover:bg-gray-700/30' : 'text-gray-600 bg-gray-900/20 hover:bg-gray-800/20'
                                 }`}>{s.icon}</button>
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/set:block z-50 pointer-events-none">
                                 <div className="bg-gray-900/95 backdrop-blur-sm border border-gray-600/40 rounded-lg px-2.5 py-1.5 shadow-xl w-max max-w-[200px]">
@@ -9731,8 +9745,8 @@ export default function ShadowColosseum() {
                       </div>
                     );
                   })()}
-                  {(eqInvFilter.slot || eqInvFilter.set) && (
-                    <button onClick={() => setEqInvFilter({ slot: null, set: null })}
+                  {(eqInvFilter.slot || eqInvFilter.set || eqInvFilter.type) && (
+                    <button onClick={() => setEqInvFilter({ slot: null, set: null, type: null })}
                       className="text-normal-responsive text-red-400 hover:text-red-300">Reset filtres</button>
                   )}
                 </div>
@@ -9741,6 +9755,7 @@ export default function ShadowColosseum() {
               {/* Inventory grid */}
               {(() => {
                 const filteredInv = data.artifactInventory.map((art, i) => ({ art, i })).filter(({ art }) => {
+                  if (eqInvFilter.type && getSetCategory(art.set) !== eqInvFilter.type) return false;
                   if (eqInvFilter.slot && art.slot !== eqInvFilter.slot) return false;
                   if (eqInvFilter.set && art.set !== eqInvFilter.set) return false;
                   return true;
