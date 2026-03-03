@@ -76,6 +76,7 @@ export class HttpApi {
         case '/api/expedition/boss-loot': return this.getBossLoot(req, res);
         case '/api/expedition/loot':     return await this.getLoot(req, res);
         case '/api/expedition/state':    return this.getState(req, res);
+        case '/api/expedition/recap':    return await this.getRecap(req, res);
         // Admin: create/start expedition manually
         case '/api/expedition/create':   return await this.createExpedition(req, res);
         case '/api/expedition/force-start': return await this.forceStart(req, res);
@@ -368,6 +369,47 @@ export class HttpApi {
     res.end(JSON.stringify({
       success: true,
       ...this.engine.getStatus(),
+    }));
+  }
+
+  // GET /api/expedition/recap (full post-expedition summary)
+  async getRecap(req, res) {
+    const expedition = await db.getCurrentExpedition() || await db.getLatestExpedition();
+    if (!expedition) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: 'No expedition found' }));
+      return;
+    }
+
+    const [charStates, lootHistory, entries, lootByPlayer] = await Promise.all([
+      db.getCharacterStates(expedition.id),
+      db.getLootHistory(expedition.id),
+      db.getEntries(expedition.id),
+      db.getExpeditionLootByPlayer(expedition.id),
+    ]);
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      success: true,
+      expedition: {
+        id: expedition.id,
+        name: expedition.name,
+        status: expedition.status,
+        startedAt: expedition.started_at,
+        endedAt: expedition.ended_at,
+        maxBossReached: expedition.max_boss_reached,
+        currentWave: expedition.current_wave,
+        totalDeaths: expedition.total_deaths,
+      },
+      characterStates: charStates,
+      lootHistory,
+      entries: entries.map(e => ({
+        username: e.username,
+        characterIds: typeof e.character_ids === 'string' ? JSON.parse(e.character_ids) : e.character_ids,
+        characterData: typeof e.character_data === 'string' ? JSON.parse(e.character_data) : e.character_data,
+        srItems: typeof e.sr_items === 'string' ? JSON.parse(e.sr_items) : (e.sr_items || []),
+      })),
+      lootByPlayer,
     }));
   }
 

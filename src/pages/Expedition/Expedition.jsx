@@ -199,6 +199,10 @@ export default function Expedition() {
   const [success, setSuccess] = useState('');
   const pollRef = useRef(null);
 
+  // Recap
+  const [recapData, setRecapData] = useState(null);
+  const [recapTab, setRecapTab] = useState('summary');
+
   // ── Load real hunter data from localStorage ──
   const raidData = useMemo(() => loadRaidData(), []);
   const coloData = useMemo(() => loadColoData(), []);
@@ -482,6 +486,14 @@ export default function Expedition() {
   }, [launchTime]);
 
   const isRegistrationClosed = registrationCutoff && Date.now() >= registrationCutoff.getTime();
+
+  // Fetch recap data when expedition is finished or wiped
+  useEffect(() => {
+    if (status !== 'finished' && status !== 'wiped') { setRecapData(null); return; }
+    api('/api/expedition/recap').then(data => {
+      if (data.success) setRecapData(data);
+    }).catch(() => {});
+  }, [status, api]);
 
   // ═══════════════════════════════════════════
   // RENDER: Spectator Mode (fullscreen iframe)
@@ -781,6 +793,81 @@ export default function Expedition() {
             </div>
           )}
 
+          {/* Team Composition Analysis */}
+          {entries.length > 0 && (() => {
+            // Gather ALL registered hunters across all players
+            const allHunterIds = entries.flatMap(e => {
+              const ids = typeof e.character_ids === 'string' ? JSON.parse(e.character_ids) : (e.character_ids || []);
+              return ids;
+            });
+            const elemCount = { fire: 0, water: 0, shadow: 0, light: 0 };
+            const classCount = { tank: 0, fighter: 0, assassin: 0, mage: 0, support: 0 };
+            for (const hId of allHunterIds) {
+              const h = HUNTERS[hId];
+              if (!h) continue;
+              if (elemCount[h.element] !== undefined) elemCount[h.element]++;
+              if (classCount[h.class] !== undefined) classCount[h.class]++;
+            }
+            const total = allHunterIds.length;
+            // My team analysis
+            const myElems = {};
+            const myClasses = {};
+            for (const hId of selectedHunters) {
+              const h = HUNTERS[hId];
+              if (!h) continue;
+              myElems[h.element] = (myElems[h.element] || 0) + 1;
+              myClasses[h.class] = (myClasses[h.class] || 0) + 1;
+            }
+            const lowTanks = classCount.tank < 3;
+            const lowHealers = classCount.support < 4;
+            const ELEM_DISPLAY = { fire: { icon: '\uD83D\uDD25', label: 'Feu', color: 'text-red-400' }, water: { icon: '\uD83D\uDCA7', label: 'Eau', color: 'text-blue-400' }, shadow: { icon: '\uD83D\uDC7B', label: 'Ombre', color: 'text-purple-400' }, light: { icon: '\u2728', label: 'Lumiere', color: 'text-yellow-300' } };
+            const CLASS_DISPLAY = { tank: { icon: '\uD83D\uDEE1\uFE0F', label: 'Tank' }, fighter: { icon: '\u2694\uFE0F', label: 'Fighter' }, assassin: { icon: '\uD83D\uDDE1\uFE0F', label: 'Assassin' }, mage: { icon: '\uD83D\uDD2E', label: 'Mage' }, support: { icon: '\uD83D\uDC9A', label: 'Support' } };
+            return (
+              <div className="mb-4 bg-[#0f0f1a] border border-gray-700/30 rounded-lg p-3">
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5" /> Composition Raid ({total}/30)
+                </div>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {Object.entries(elemCount).map(([el, count]) => {
+                    const d = ELEM_DISPLAY[el];
+                    return (
+                      <span key={el} className={`text-xs ${d.color} bg-gray-800/50 px-2 py-0.5 rounded-full`}>
+                        {d.icon} {d.label}: {count}
+                      </span>
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {Object.entries(classCount).filter(([,c]) => c > 0).map(([cls, count]) => {
+                    const d = CLASS_DISPLAY[cls];
+                    const warn = (cls === 'tank' && lowTanks) || (cls === 'support' && lowHealers);
+                    return (
+                      <span key={cls} className={`text-xs px-2 py-0.5 rounded-full ${warn ? 'bg-red-900/30 text-red-400 border border-red-500/30' : 'bg-gray-800/50 text-gray-400'}`}>
+                        {d.icon} {d.label}: {count} {warn && '\u26A0\uFE0F'}
+                      </span>
+                    );
+                  })}
+                </div>
+                {selectedHunters.length > 0 && (
+                  <div className="border-t border-gray-700/30 pt-2 mt-2">
+                    <div className="text-[10px] text-gray-500 mb-1">Ton equipe :</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(myElems).map(([el, c]) => {
+                        const d = ELEM_DISPLAY[el];
+                        return <span key={el} className={`text-[10px] ${d.color}`}>{d.icon}{c}</span>;
+                      })}
+                      <span className="text-gray-600">|</span>
+                      {Object.entries(myClasses).map(([cls, c]) => {
+                        const d = CLASS_DISPLAY[cls];
+                        return <span key={cls} className="text-[10px] text-gray-400">{d.icon}{c}</span>;
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* SR Selection — Soft Reserve via Boss Loot Codex */}
           <div className="mb-4">
             {/* SR Header + Toggle */}
@@ -918,18 +1005,160 @@ export default function Expedition() {
 
       {/* Admin force-start removed — expedition auto-launches at 19h */}
 
-      {/* Finished/Wiped summary */}
-      {(status === 'finished' || status === 'wiped') && liveStatus && (
+      {/* Finished/Wiped recap */}
+      {(status === 'finished' || status === 'wiped') && (
         <div className={`bg-[#1a1a2e] border ${status === 'finished' ? 'border-green-500/30' : 'border-red-500/30'} rounded-xl p-5`}>
           <h2 className={`text-lg font-semibold ${status === 'finished' ? 'text-green-300' : 'text-red-300'} mb-3 flex items-center gap-2`}>
             <Trophy className="w-5 h-5" />
             {status === 'finished' ? 'Expedition terminee !' : 'Wipe total...'}
           </h2>
-          <div className="grid grid-cols-3 gap-3">
-            <StatCard icon={Skull} label="Boss tues" value={liveStatus.bossesKilled} />
-            <StatCard icon={Clock} label="Duree" value={formatTime(liveStatus.elapsedSeconds)} />
-            <StatCard icon={Users} label="Survivants" value={`${liveStatus.aliveCount}/${liveStatus.totalCharacters}`} />
-          </div>
+
+          {/* Summary stats */}
+          {liveStatus && (
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <StatCard icon={Skull} label="Boss tues" value={liveStatus.bossesKilled || recapData?.expedition?.maxBossReached || 0} />
+              <StatCard icon={Clock} label="Duree" value={formatTime(liveStatus.elapsedSeconds || (recapData?.expedition?.endedAt && recapData?.expedition?.startedAt ? Math.floor((new Date(recapData.expedition.endedAt) - new Date(recapData.expedition.startedAt)) / 1000) : 0))} />
+              <StatCard icon={Users} label="Survivants" value={`${liveStatus.aliveCount || 0}/${liveStatus.totalCharacters || 0}`} />
+            </div>
+          )}
+
+          {/* Recap tabs */}
+          {recapData && (
+            <>
+              <div className="flex gap-1 mb-4 border-b border-gray-700/50 pb-2">
+                {[
+                  { key: 'summary', label: 'Resume', icon: ScrollText },
+                  { key: 'loot', label: 'Butin', icon: Package },
+                  { key: 'leaderboard', label: 'Classement', icon: Trophy },
+                ].map(tab => (
+                  <button key={tab.key} onClick={() => setRecapTab(tab.key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      recapTab === tab.key ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40' : 'text-gray-500 hover:text-gray-300 border border-transparent'
+                    }`}>
+                    <tab.icon className="w-3.5 h-3.5" /> {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* SUMMARY TAB */}
+              {recapTab === 'summary' && (() => {
+                const cs = recapData.characterStates || [];
+                const totalDmg = cs.reduce((s, c) => s + (c.damage_dealt || 0), 0);
+                const totalHeal = cs.reduce((s, c) => s + (c.healing_done || 0), 0);
+                const totalDeaths = cs.reduce((s, c) => s + (c.deaths || 0), 0);
+                const totalKills = cs.reduce((s, c) => s + (c.kills || 0), 0);
+                const aliveCount = cs.filter(c => c.alive).length;
+                const lootCount = (recapData.lootHistory || []).filter(l => !l.stolen).length;
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <MiniStat label="Boss vaincus" value={`${recapData.expedition.maxBossReached || 0}/15`} color="text-yellow-400" />
+                    <MiniStat label="Degats totaux" value={formatBigNumber(totalDmg)} color="text-red-400" />
+                    <MiniStat label="Soins totaux" value={formatBigNumber(totalHeal)} color="text-green-400" />
+                    <MiniStat label="Kills" value={totalKills} color="text-amber-400" />
+                    <MiniStat label="Morts" value={totalDeaths} color="text-red-500" />
+                    <MiniStat label="Survivants" value={`${aliveCount}/${cs.length}`} color="text-cyan-400" />
+                    <MiniStat label="Items obtenus" value={lootCount} color="text-purple-400" />
+                    <MiniStat label="Joueurs" value={recapData.entries?.length || 0} color="text-blue-400" />
+                    <MiniStat label="Hunters" value={cs.length} color="text-gray-300" />
+                  </div>
+                );
+              })()}
+
+              {/* LOOT TAB */}
+              {recapTab === 'loot' && (() => {
+                const byPlayer = recapData.lootByPlayer || {};
+                const playerNames = Object.keys(byPlayer).sort();
+                if (playerNames.length === 0) return <p className="text-gray-500 text-sm text-center py-4">Aucun loot</p>;
+                return (
+                  <div className="space-y-3">
+                    {playerNames.map(name => (
+                      <div key={name} className="bg-[#0f0f1a] rounded-lg p-3">
+                        <div className="text-sm font-bold text-purple-300 mb-2 flex items-center gap-2">
+                          <Users className="w-3.5 h-3.5" /> {name}
+                          <span className="text-gray-500 font-normal">({byPlayer[name].length} items)</span>
+                        </div>
+                        <div className="space-y-1">
+                          {byPlayer[name].map((item, i) => {
+                            const rs = RARITY_STYLES[item.rarity] || RARITY_STYLES.common;
+                            return (
+                              <div key={i} className={`flex items-center gap-2 px-2 py-1 rounded ${rs.bg} border ${rs.border}`}>
+                                <span className={`text-xs font-bold ${rs.text}`}>{item.itemName}</span>
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${rs.badge}`}>{item.rarity}</span>
+                                {item.srWinner && <span className="text-[9px] px-1 py-0.5 rounded bg-yellow-600/30 text-yellow-300 font-bold">SR</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* LEADERBOARD TAB */}
+              {recapTab === 'leaderboard' && (() => {
+                const cs = recapData.characterStates || [];
+                const dpsBoard = [...cs].sort((a, b) => (b.damage_dealt || 0) - (a.damage_dealt || 0)).slice(0, 15);
+                const healBoard = [...cs].sort((a, b) => (b.healing_done || 0) - (a.healing_done || 0)).filter(c => c.healing_done > 0).slice(0, 10);
+                const maxDmg = dpsBoard[0]?.damage_dealt || 1;
+                const maxHeal = healBoard[0]?.healing_done || 1;
+                return (
+                  <div className="space-y-4">
+                    {/* DPS Leaderboard */}
+                    <div>
+                      <h3 className="text-xs font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1"><Swords className="w-3.5 h-3.5" /> Degats</h3>
+                      <div className="space-y-1">
+                        {dpsBoard.map((c, i) => {
+                          const h = HUNTERS[c.hunter_id];
+                          const pct = Math.max(2, (c.damage_dealt / maxDmg) * 100);
+                          return (
+                            <div key={c.hunter_id} className="flex items-center gap-2 text-xs">
+                              <span className="text-gray-500 w-4 text-right font-bold">{i + 1}</span>
+                              {h?.sprite && <img src={h.sprite} className="w-5 h-5 rounded-full object-cover" alt="" />}
+                              <span className="text-gray-200 w-24 truncate">{h?.name || c.hunter_id} <span className="text-gray-600">({c.username})</span></span>
+                              <div className="flex-1 h-3 bg-gray-800/50 rounded-full overflow-hidden">
+                                <div className="h-full bg-red-500/40 rounded-full" style={{ width: `${pct}%` }} />
+                              </div>
+                              <span className="text-gray-400 w-16 text-right font-mono">{formatBigNumber(c.damage_dealt)}</span>
+                              {!c.alive && <Skull className="w-3 h-3 text-red-500" />}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {/* Heal Leaderboard */}
+                    {healBoard.length > 0 && (
+                      <div>
+                        <h3 className="text-xs font-bold text-green-400 uppercase tracking-wider mb-2 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> Soins</h3>
+                        <div className="space-y-1">
+                          {healBoard.map((c, i) => {
+                            const h = HUNTERS[c.hunter_id];
+                            const pct = Math.max(2, (c.healing_done / maxHeal) * 100);
+                            return (
+                              <div key={c.hunter_id} className="flex items-center gap-2 text-xs">
+                                <span className="text-gray-500 w-4 text-right font-bold">{i + 1}</span>
+                                {h?.sprite && <img src={h.sprite} className="w-5 h-5 rounded-full object-cover" alt="" />}
+                                <span className="text-gray-200 w-24 truncate">{h?.name || c.hunter_id} <span className="text-gray-600">({c.username})</span></span>
+                                <div className="flex-1 h-3 bg-gray-800/50 rounded-full overflow-hidden">
+                                  <div className="h-full bg-green-500/40 rounded-full" style={{ width: `${pct}%` }} />
+                                </div>
+                                <span className="text-gray-400 w-16 text-right font-mono">{formatBigNumber(c.healing_done)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </>
+          )}
+
+          {!recapData && (status === 'finished' || status === 'wiped') && (
+            <p className="text-gray-500 text-sm text-center py-4">Chargement du recap...</p>
+          )}
+
           <button
             onClick={createExpedition}
             disabled={loading}
@@ -981,9 +1210,28 @@ function StatCard({ icon: Icon, label, value }) {
 
 function formatTime(seconds) {
   if (!seconds) return '00:00';
-  const m = Math.floor(seconds / 60);
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}h${String(m).padStart(2, '0')}m`;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function formatBigNumber(n) {
+  if (!n) return '0';
+  if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1) + 'B';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(Math.floor(n));
+}
+
+function MiniStat({ label, value, color }) {
+  return (
+    <div className="bg-[#0f0f1a] rounded-lg p-2.5 text-center">
+      <div className={`text-lg font-bold ${color || 'text-gray-200'}`}>{value}</div>
+      <div className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</div>
+    </div>
+  );
 }
 
 // ── SR Summary Pills ──

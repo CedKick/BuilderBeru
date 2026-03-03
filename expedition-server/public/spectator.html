@@ -793,6 +793,11 @@ const vfxParticles = [];
 let selectedCharInfo = null;
 let selectedBossInfo = null;
 
+// Focus system — click HUD/stats to follow a character
+let focusTarget = null; // { charId, timer }
+let hudEntryRects = []; // { charId, x, y, w, h } for click detection
+let hudScrollOffset = 0; // scroll position for party HUD
+
 // Timeline events
 const timelineEvents = [];
 
@@ -889,6 +894,7 @@ function ensureStats(id) {
       name: char?.name || id.split('_').slice(1).join(' '),
       hunterId: char?.hunterId || null,
       element: char?.element || null,
+      username: char?.username || '',
       dmgDealt: 0, dmgReceived: 0,
       healsGiven: 0, healsReceived: 0,
       kills: 0, deaths: 0, crits: 0, totalHits: 0,
@@ -1285,6 +1291,18 @@ function rebuildLogDisplay() {
 
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
+  // Check if mouse is over the Party HUD — scroll HUD instead of zoom
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  if (mx >= 8 && mx <= 8 + 195 && my >= 95 && hudEntryRects.length > 0) {
+    const lastRect = hudEntryRects[hudEntryRects.length - 1];
+    const hudBottom = lastRect.y + lastRect.h + 8;
+    if (my <= hudBottom || hudScrollOffset > 0) {
+      hudScrollOffset = Math.max(0, hudScrollOffset + (e.deltaY > 0 ? 30 : -30));
+      return;
+    }
+  }
   const delta = e.deltaY > 0 ? -0.05 : 0.05;
   camera.targetZoom = Math.max(camera.minZoom, Math.min(camera.maxZoom, camera.targetZoom + delta));
 }, { passive: false });
@@ -1324,6 +1342,14 @@ canvas.addEventListener('click', (e) => {
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
   const groundY = canvas.height * GROUND_Y_RATIO;
+
+  // 0. Check HUD click first (screen-space, not world-space)
+  for (const hr of hudEntryRects) {
+    if (mx >= hr.x && mx <= hr.x + hr.w && my >= hr.y && my <= hr.y + hr.h) {
+      focusOnCharacter(hr.charId);
+      return;
+    }
+  }
 
   // 1. Check boss click first
   if (state.boss) {
@@ -1398,6 +1424,19 @@ function maybeAutoQuip(evType, charId) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// FOCUS ON CHARACTER (click HUD or stats panel)
+// ═══════════════════════════════════════════════════════════
+
+function focusOnCharacter(charId) {
+  camera.autoFollow = false;
+  focusTarget = { charId, timer: 10 };
+  selectedCharInfo = { charId, timer: 15 };
+  selectedBossInfo = null;
+  const char = findEntity(charId);
+  if (char) showBubble(char);
+}
+
+// ═══════════════════════════════════════════════════════════
 // WEBSOCKET
 // ═══════════════════════════════════════════════════════════
 
@@ -1430,6 +1469,7 @@ function handleMessage(msg) {
           combatStats[c.id].name = c.name;
           combatStats[c.id].hunterId = c.hunterId;
           combatStats[c.id].element = c.element;
+          combatStats[c.id].username = c.username || '';
         }
       }
       for (const m of msg.mobs || []) {
@@ -2288,7 +2328,8 @@ function renderStatsPanel() {
       const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
       const critRate = s.totalHits > 0 ? (s.crits / s.totalHits * 100).toFixed(1) : '0.0';
       const avgCrit = s.crits > 0 ? Math.floor(s.totalCritDmg / s.crits) : 0;
-      html += `<div class="crit-card"><div class="crit-card-header">${thumbSrc ? `<img src="${thumbSrc}" alt="">` : ''}<span class="name">${s.name}</span></div><div class="crit-stats-grid"><span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits}</span><span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits}</span><span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span><span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span><span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit)}</span><span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills}</span></div></div>`;
+      const critUserTag = s.username ? `<span style="font-size:8px;color:#666;margin-left:3px">(${s.username})</span>` : '';
+      html += `<div class="crit-card" style="cursor:pointer" onclick="focusOnCharacter('${id}')"><div class="crit-card-header">${thumbSrc ? `<img src="${thumbSrc}" alt="">` : ''}<span class="name">${s.name}${critUserTag}</span></div><div class="crit-stats-grid"><span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits}</span><span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits}</span><span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span><span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span><span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit)}</span><span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills}</span></div></div>`;
     }
     list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de crits</div>';
     return;
@@ -2317,7 +2358,8 @@ function renderStatsPanel() {
     const isAlive = charObj?.alive !== false;
     const deathBadge = s.deaths > 0 ? `<span style="font-size:7px;color:#dc2626;margin-left:3px">\u2620${s.deaths}</span>` : '';
     const aliveStyle = isAlive ? '' : 'opacity:0.5;';
-    html += `<div class="stat-entry" style="${aliveStyle}"><span class="stat-rank">${i + 1}</span>${thumbSrc ? `<img class="stat-sprite" src="${thumbSrc}" alt="">` : `<span class="stat-sprite" style="background:${elemColor}"></span>`}<span class="stat-name" style="color:${isAlive ? elemColor : '#dc2626'}">${s.name}${deathBadge}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${barColor}"></div></div><span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec}</span></span></div>`;
+    const userTag = s.username ? `<span style="font-size:7px;color:#666;margin-left:2px">(${s.username})</span>` : '';
+    html += `<div class="stat-entry" style="${aliveStyle}cursor:pointer;" onclick="focusOnCharacter('${id}')"><span class="stat-rank">${i + 1}</span>${thumbSrc ? `<img class="stat-sprite" src="${thumbSrc}" alt="">` : `<span class="stat-sprite" style="background:${elemColor}"></span>`}<span class="stat-name" style="color:${isAlive ? elemColor : '#dc2626'}">${s.name}${userTag}${deathBadge}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${barColor}"></div></div><span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec}</span></span></div>`;
   }
   list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de donnees</div>';
 }
@@ -2480,8 +2522,19 @@ function render() {
 
   const groundY = canvas.height * GROUND_Y_RATIO;
 
+  // Camera focus-follow (click-to-focus on a specific character)
+  if (focusTarget) {
+    const fChar = findEntity(focusTarget.charId);
+    if (fChar) {
+      const ip = interpPositions[focusTarget.charId];
+      const targetCam = (ip ? ip.x : fChar.x) * camera.zoom - canvas.width * 0.4;
+      camera.x += (targetCam - camera.x) * Math.min(1, 6 * dt);
+    }
+    focusTarget.timer -= dt;
+    if (focusTarget.timer <= 0) { focusTarget = null; camera.autoFollow = true; }
+  }
   // Camera auto-follow
-  if (camera.autoFollow && state.characters.length > 0) {
+  else if (camera.autoFollow && state.characters.length > 0) {
     const aliveChars = state.characters.filter(c => c.alive && !c.resting);
     if (aliveChars.length > 0) {
       const avgX = aliveChars.reduce((s, c) => s + (interpPositions[c.id]?.x ?? c.x), 0) / aliveChars.length;
@@ -3263,29 +3316,59 @@ function drawNarrative(dt) {
 function drawPartyHUD() {
   if (!state || !state.characters || state.characters.length === 0) return;
 
-  const chars = state.characters.slice();
-  // Sort: alive first, then by role (frontline → heal), then by name
   const roleOrder = { frontline: 0, frontline_dps: 1, backline_dps: 2, backline_heal: 3 };
-  chars.sort((a, b) => {
-    if (a.alive !== b.alive) return a.alive ? -1 : 1;
-    const ra = roleOrder[a.role] ?? 9, rb = roleOrder[b.role] ?? 9;
-    if (ra !== rb) return ra - rb;
-    return (a.name || '').localeCompare(b.name || '');
+
+  // Group characters by username
+  const playerGroups = new Map();
+  for (const char of state.characters) {
+    const user = char.username || 'Unknown';
+    if (!playerGroups.has(user)) playerGroups.set(user, []);
+    playerGroups.get(user).push(char);
+  }
+  // Sort each player's characters: alive first, then by role
+  for (const [, chars] of playerGroups) {
+    chars.sort((a, b) => {
+      if (a.alive !== b.alive) return a.alive ? -1 : 1;
+      return (roleOrder[a.role] ?? 9) - (roleOrder[b.role] ?? 9);
+    });
+  }
+  // Sort players by alive count desc, then alphabetical
+  const sortedPlayers = [...playerGroups.entries()].sort((a, b) => {
+    const aliveA = a[1].filter(c => c.alive).length;
+    const aliveB = b[1].filter(c => c.alive).length;
+    if (aliveA !== aliveB) return aliveB - aliveA;
+    return a[0].localeCompare(b[0]);
   });
 
   const startX = 8;
-  const startY = 95;  // Below "Connecté" badge
-  const rowH = 16;
-  const barW = 44;
-  const barH = 5;
-  const manaH = 2;
-  const panelW = 150;
-  const panelH = chars.length * rowH + 8;
+  const startY = 95;
+  const rowH = 17;
+  const headerH = 16;
+  const barW = 52;
+  const barH = 6;
+  const manaH = 3;
+  const panelW = 195;
+  const pad = 4;
+
+  // Calculate total content height
+  let contentH = pad;
+  for (const [, chars] of sortedPlayers) {
+    contentH += headerH; // player header
+    contentH += chars.length * rowH; // character rows
+    contentH += 4; // gap between groups
+  }
+  contentH += pad;
+
+  // Clamp scroll
+  const maxVisibleH = canvas.height - startY - 160; // leave space for combat log
+  const panelH = Math.min(contentH, maxVisibleH);
+  const maxScroll = Math.max(0, contentH - panelH);
+  hudScrollOffset = Math.min(hudScrollOffset, maxScroll);
 
   ctx.save();
 
   // Background panel
-  ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
+  ctx.fillStyle = 'rgba(8, 8, 20, 0.85)';
   roundRect(ctx, startX, startY, panelW, panelH, 5);
   ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,0.08)';
@@ -3293,52 +3376,113 @@ function drawPartyHUD() {
   roundRect(ctx, startX, startY, panelW, panelH, 5);
   ctx.stroke();
 
-  for (let i = 0; i < chars.length; i++) {
-    const char = chars[i];
-    const y = startY + 4 + i * rowH;
-    const elemColor = ELEMENT_COLORS[char.element] || '#888';
+  // Clip to panel bounds for scrolling
+  ctx.beginPath();
+  ctx.rect(startX, startY, panelW, panelH);
+  ctx.clip();
 
-    // Element dot
-    ctx.fillStyle = char.alive ? elemColor : '#555';
-    ctx.beginPath();
-    ctx.arc(startX + 7, y + 5, 3, 0, Math.PI * 2);
+  hudEntryRects = [];
+  let cy = startY + pad - hudScrollOffset;
+
+  for (const [username, chars] of sortedPlayers) {
+    const aliveCount = chars.filter(c => c.alive).length;
+
+    // Player header
+    if (cy + headerH > startY && cy < startY + panelH) {
+      // Header background
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.08)';
+      ctx.fillRect(startX + 2, cy, panelW - 4, headerH - 1);
+      // Username
+      ctx.fillStyle = '#c084fc';
+      ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(username, startX + 6, cy + 11);
+      // Alive count
+      ctx.fillStyle = aliveCount === chars.length ? '#22c55e' : aliveCount > 0 ? '#f59e0b' : '#dc2626';
+      ctx.font = '8px sans-serif'; ctx.textAlign = 'right';
+      ctx.fillText(`${aliveCount}/${chars.length}`, startX + panelW - 6, cy + 11);
+    }
+    cy += headerH;
+
+    // Character rows
+    for (const char of chars) {
+      if (cy + rowH > startY && cy < startY + panelH) {
+        const elemColor = ELEMENT_COLORS[char.element] || '#888';
+        const isFocused = focusTarget?.charId === char.id;
+
+        // Focused highlight
+        if (isFocused) {
+          ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
+          ctx.fillRect(startX + 2, cy, panelW - 4, rowH - 1);
+          ctx.strokeStyle = '#a855f7';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(startX + 2, cy, panelW - 4, rowH - 1);
+        }
+
+        // Element dot
+        ctx.fillStyle = char.alive ? elemColor : '#555';
+        ctx.beginPath();
+        ctx.arc(startX + 10, cy + 6, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Dead skull overlay
+        if (!char.alive) {
+          ctx.fillStyle = '#dc2626';
+          ctx.font = '6px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('\u2620', startX + 10, cy + 8);
+        }
+
+        // Name (truncated)
+        ctx.fillStyle = char.alive ? '#ccc' : '#666';
+        ctx.font = '8px sans-serif'; ctx.textAlign = 'left';
+        const displayName = char.name.length > 11 ? char.name.slice(0, 10) + '..' : char.name;
+        ctx.fillText(displayName, startX + 17, cy + 9);
+
+        // HP bar
+        const hpX = startX + panelW - barW - 26;
+        const hpRatio = Math.max(0, char.hp / char.maxHp);
+        // Bar background with border
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(hpX, cy + 2, barW, barH);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(hpX, cy + 2, barW, barH);
+        // HP fill
+        const hpColor = hpRatio > 0.6 ? '#22c55e' : hpRatio > 0.3 ? '#f59e0b' : '#ef4444';
+        ctx.fillStyle = char.alive ? hpColor : '#2a1515';
+        ctx.fillRect(hpX, cy + 2, barW * hpRatio, barH);
+
+        // Mana bar
+        if (char.maxMana) {
+          const manaRatio = Math.max(0, (char.mana || 0) / char.maxMana);
+          ctx.fillStyle = 'rgba(0,0,0,0.4)';
+          ctx.fillRect(hpX, cy + barH + 3, barW, manaH);
+          ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+          ctx.strokeRect(hpX, cy + barH + 3, barW, manaH);
+          ctx.fillStyle = char.alive ? '#3b82f6' : '#1a1a2e';
+          ctx.fillRect(hpX, cy + barH + 3, barW * manaRatio, manaH);
+        }
+
+        // HP percentage
+        ctx.fillStyle = char.alive ? '#888' : '#444';
+        ctx.font = '7px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillText(`${Math.floor(hpRatio * 100)}%`, startX + panelW - 5, cy + 9);
+
+        // Store hit rect for click detection
+        hudEntryRects.push({ charId: char.id, x: startX, y: cy, w: panelW, h: rowH });
+      }
+      cy += rowH;
+    }
+    cy += 4; // gap between player groups
+  }
+
+  // Scroll indicator if content overflows
+  if (maxScroll > 0) {
+    const scrollRatio = hudScrollOffset / maxScroll;
+    const thumbH = Math.max(20, panelH * (panelH / contentH));
+    const thumbY = startY + scrollRatio * (panelH - thumbH);
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.3)';
+    roundRect(ctx, startX + panelW - 4, thumbY, 3, thumbH, 1.5);
     ctx.fill();
-
-    // Dead skull overlay on dot
-    if (!char.alive) {
-      ctx.fillStyle = '#dc2626';
-      ctx.font = '6px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText('\u2620', startX + 7, y + 7);
-    }
-
-    // Name (truncated)
-    ctx.fillStyle = char.alive ? '#ccc' : '#666';
-    ctx.font = '8px sans-serif'; ctx.textAlign = 'left';
-    const name = char.name.length > 9 ? char.name.slice(0, 8) + '..' : char.name;
-    ctx.fillText(name, startX + 14, y + 8);
-
-    // HP bar
-    const hpX = startX + panelW - barW - 22;
-    const hpRatio = Math.max(0, char.hp / char.maxHp);
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(hpX, y + 1, barW, barH);
-    const hpColor = hpRatio > 0.6 ? '#22c55e' : hpRatio > 0.3 ? '#f59e0b' : '#ef4444';
-    ctx.fillStyle = char.alive ? hpColor : '#2a1515';
-    ctx.fillRect(hpX, y + 1, barW * hpRatio, barH);
-
-    // Mana bar (thin, below HP)
-    if (char.maxMana) {
-      const manaRatio = Math.max(0, (char.mana || 0) / char.maxMana);
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.fillRect(hpX, y + barH + 2, barW, manaH);
-      ctx.fillStyle = char.alive ? '#3b82f6' : '#1a1a2e';
-      ctx.fillRect(hpX, y + barH + 2, barW * manaRatio, manaH);
-    }
-
-    // HP percentage
-    ctx.fillStyle = char.alive ? '#888' : '#444';
-    ctx.font = '7px sans-serif'; ctx.textAlign = 'right';
-    ctx.fillText(`${Math.floor(hpRatio * 100)}%`, startX + panelW - 4, y + 8);
   }
 
   ctx.restore();
