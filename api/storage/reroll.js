@@ -78,7 +78,7 @@ export default async function handler(req, res) {
     const user = await extractUser(req);
     if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
-    const { artifactUid, fullReroll, lockedStats = [] } = req.body;
+    const { artifactUid, fullReroll, lockedStats = [], clientAlkahest } = req.body;
     if (!artifactUid) return res.status(400).json({ error: 'Missing artifactUid' });
 
     // Read current data from Neon (use FOR UPDATE to prevent race conditions)
@@ -90,6 +90,12 @@ export default async function handler(req, res) {
 
     const data = typeof existing.rows[0].data === 'string'
       ? JSON.parse(existing.rows[0].data) : existing.rows[0].data;
+
+    // Alkahest: use MAX of client value and DB value to prevent desync
+    // (client buys alkahest with coins but cloud sync is debounced 30s+)
+    if (typeof clientAlkahest === 'number' && clientAlkahest > (data.alkahest || 0)) {
+      data.alkahest = clientAlkahest;
+    }
 
     // Validate alkahest balance (cost scales with locked stat count)
     const lockCount = Math.min(lockedStats.length, REROLL_LOCK_COSTS.length - 1);

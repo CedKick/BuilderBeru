@@ -8978,7 +8978,7 @@ export default function ShadowColosseum() {
                       const resp = await fetch('/api/storage/reroll', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-                        body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true, lockedStats: [...lockedStats] }),
+                        body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0 }),
                       });
                       const result = await resp.json();
                       if (!result.success) {
@@ -10568,7 +10568,7 @@ export default function ShadowColosseum() {
             const resp = await fetch('/api/storage/reroll', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-              body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats] }),
+              body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0 }),
             });
             const result = await resp.json();
             if (!result.success) {
