@@ -1,18 +1,30 @@
 import { query } from '../_db/neon.js';
 import { extractUser } from '../_utils/auth.js';
 
-// Sub-stat pool (matches src/pages/ShadowColosseum/equipmentData.js)
+// Sub-stat pool (must match src/pages/ShadowColosseum/equipmentData.js exactly)
 const SUB_STAT_POOL = [
-  { id: 'hp_flat',   range: [15, 40] },
-  { id: 'atk_flat',  range: [2, 6] },
-  { id: 'def_flat',  range: [2, 5] },
-  { id: 'spd_flat',  range: [1, 4] },
-  { id: 'crit_rate', range: [1, 4] },
-  { id: 'crit_dmg',  range: [2, 6] },
-  { id: 'res_flat',  range: [1, 3] },
-  { id: 'hp_pct',    range: [2, 5] },
-  { id: 'atk_pct',   range: [2, 5] },
-  { id: 'def_pct',   range: [2, 5] },
+  { id: 'hp_flat',          range: [15, 40] },
+  { id: 'atk_flat',         range: [2, 6] },
+  { id: 'def_flat',         range: [2, 5] },
+  { id: 'spd_flat',         range: [1, 4] },
+  { id: 'crit_rate',        range: [1, 4] },
+  { id: 'crit_dmg',         range: [2, 6] },
+  { id: 'res_flat',         range: [1, 3] },
+  { id: 'hp_pct',           range: [2, 5] },
+  { id: 'atk_pct',          range: [2, 5] },
+  { id: 'def_pct',          range: [2, 5] },
+  { id: 'int_flat',         range: [1, 4] },
+  { id: 'int_pct',          range: [2, 5] },
+  { id: 'fire_dmg_flat',    range: [1, 3] },
+  { id: 'fire_dmg_pct',     range: [2, 5] },
+  { id: 'water_dmg_flat',   range: [1, 3] },
+  { id: 'water_dmg_pct',    range: [2, 5] },
+  { id: 'shadow_dmg_flat',  range: [1, 3] },
+  { id: 'shadow_dmg_pct',   range: [2, 5] },
+  { id: 'light_dmg_flat',   range: [1, 3] },
+  { id: 'light_dmg_pct',    range: [2, 5] },
+  { id: 'earth_dmg_flat',   range: [1, 3] },
+  { id: 'earth_dmg_pct',    range: [2, 5] },
 ];
 
 const MAIN_STAT_BASE = {
@@ -39,6 +51,7 @@ const ENCHANT_MAIN_STAT_POOL = [
   'hp_flat', 'hp_pct', 'atk_flat', 'atk_pct',
   'crit_rate', 'crit_dmg', 'res_flat',
   'def_flat', 'def_pct', 'spd_flat',
+  'int_flat', 'int_pct',
 ];
 
 const RARITY_INITIAL_SUBS = { rare: 4, legendaire: 4, mythique: 4 };
