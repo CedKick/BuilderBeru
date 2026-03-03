@@ -27,7 +27,7 @@ export class ExpeditionEngine {
     // Characters (all players' hunters)
     this.characters = [];
 
-    // SR selections: Map<username, itemId>
+    // SR selections: Map<username, itemId[]> — each player has up to 5 SR picks (can repeat for extra rolls)
     this.srSelections = new Map();
 
     // Encounter system
@@ -63,6 +63,9 @@ export class ExpeditionEngine {
 
     // Essences collected per player: Map<username, { guerre, arcanique, gardienne }>
     this.playerEssences = new Map();
+
+    // Currencies collected per player: Map<username, { alkahest, marteau_rouge, contribution }>
+    this.playerCurrencies = new Map();
 
     // Tick management
     this.tickInterval = null;
@@ -108,6 +111,7 @@ export class ExpeditionEngine {
     this.bossesKilled = 0;
     this.totalDeaths = 0;
     this.playerEssences = new Map();
+    this.playerCurrencies = new Map();
     this.tickCount = 0;
     this.lastSnapshotTime = 0;
     console.log('[Expedition] Engine reset to idle');
@@ -139,9 +143,10 @@ export class ExpeditionEngine {
         }
       }
 
-      // Store SR selection
-      if (entry.sr_item_id) {
-        this.srSelections.set(entry.username, entry.sr_item_id);
+      // Store SR selections (array of up to 5 picks, can repeat for bonus rolls)
+      const srItems = typeof entry.sr_items === 'string' ? JSON.parse(entry.sr_items) : (entry.sr_items || []);
+      if (Array.isArray(srItems) && srItems.length > 0) {
+        this.srSelections.set(entry.username, srItems);
       }
     }
 
@@ -297,8 +302,44 @@ export class ExpeditionEngine {
       }
     }
 
-    // Roll loot
-    const drops = LootEngine.rollDrops(encounter.lootTableId);
+    // Roll shared trash mob currencies (per mob killed, everyone gets the same)
+    if (!isBoss) {
+      const mobKillCount = this.currentMobs.filter(m => !m.alive).length;
+      const tierMatch = (encounter.lootTableId || '').match(/tier(\d)/);
+      const tier = tierMatch ? parseInt(tierMatch[1]) : 1;
+      const currencies = LootEngine.rollTrashDrops(mobKillCount, tier);
+      const totalCurrencies = currencies.alkahest + currencies.marteau_rouge + currencies.contribution;
+
+      if (totalCurrencies > 0) {
+        const alivePlayers = this.getAlivePlayers();
+        for (const player of alivePlayers) {
+          if (!this.playerCurrencies.has(player.username)) {
+            this.playerCurrencies.set(player.username, { alkahest: 0, marteau_rouge: 0, contribution: 0 });
+          }
+          const pc = this.playerCurrencies.get(player.username);
+          pc.alkahest += currencies.alkahest;
+          pc.marteau_rouge += currencies.marteau_rouge;
+          pc.contribution += currencies.contribution;
+        }
+
+        this.broadcast({
+          type: 'currency_drop',
+          currencies,
+          mobsKilled: mobKillCount,
+          tier,
+        });
+
+        // Deposit currencies immediately to all alive players
+        this.depositCurrencies(currencies, alivePlayers).catch(err =>
+          console.error('[Expedition] Currency deposit error:', err.message)
+        );
+      }
+    }
+
+    // Roll loot — use generateBossLoot for boss encounters, rollDrops for mob waves
+    const drops = isBoss
+      ? LootEngine.generateBossLoot(encounter.bossIndex + 1)  // bossIndex is 0-based, generateBossLoot expects 1-15
+      : LootEngine.rollDrops(encounter.lootTableId);
     if (drops.length > 0) {
       const alivePlayers = this.getAlivePlayers();
       this.pendingLootResults = LootEngine.distributeLoot(drops, this.srSelections, alivePlayers, false);
@@ -361,7 +402,10 @@ export class ExpeditionEngine {
 
     // Roll loot with wipe penalty
     const encounter = this.encounters[this.currentEncounterIndex];
-    const drops = LootEngine.rollDrops(encounter.lootTableId);
+    const isBossWipe = encounter.type === 'boss';
+    const drops = isBossWipe
+      ? LootEngine.generateBossLoot(encounter.bossIndex + 1)
+      : LootEngine.rollDrops(encounter.lootTableId);
     if (drops.length > 0) {
       const allPlayers = this.getAllPlayers();
       this.pendingLootResults = LootEngine.distributeLoot(drops, this.srSelections, allPlayers, true);
@@ -738,6 +782,7 @@ export class ExpeditionEngine {
       characters: this.characters.map(c => c.serialize()),
       srSelections: Array.from(this.srSelections.entries()),
       playerEssences: Array.from(this.playerEssences.entries()),
+      playerCurrencies: Array.from(this.playerCurrencies.entries()),
     };
 
     await db.saveExpeditionSnapshot(this.expeditionId, snapshot);
@@ -773,9 +818,10 @@ export class ExpeditionEngine {
       }
     }).filter(Boolean);
 
-    // Restore SR selections and essences
+    // Restore SR selections, essences, and currencies
     this.srSelections = new Map(snapshot.srSelections || []);
     this.playerEssences = new Map(snapshot.playerEssences || []);
+    this.playerCurrencies = new Map(snapshot.playerCurrencies || []);
 
     console.log(`[Expedition] Restored! Status: ${this.status}, ${this.characters.length} characters, encounter ${this.currentEncounterIndex}/${this.encounters.length}`);
 
@@ -843,10 +889,58 @@ export class ExpeditionEngine {
         });
         const result = await response.json();
         console.log(`[Expedition] Loot deposited:`, result.results);
+
+        // Broadcast deposit results (replacements, rejections) to spectators
+        for (const r of (result.results || [])) {
+          if (r.itemsReplaced > 0 || r.itemsRejected > 0) {
+            const details = r.details || [];
+            for (const d of details) {
+              if (d.action === 'replaced') {
+                this.broadcast({
+                  type: 'inventory_replace',
+                  username: r.username,
+                  newItem: d.itemId,
+                  replacedItem: d.replacedItem,
+                  replacedRarity: d.replacedRarity,
+                });
+              } else if (d.action === 'rejected') {
+                this.broadcast({
+                  type: 'inventory_full',
+                  username: r.username,
+                  itemId: d.itemId,
+                  reason: d.reason,
+                });
+              }
+            }
+          }
+        }
       } catch (err) {
         console.error('[Expedition] Failed to deposit loot:', err.message);
         // Non-fatal: loot is already saved in expedition_loot DB
       }
+    }
+  }
+
+  // Deposit shared currencies to all alive players via Vercel API
+  async depositCurrencies(currencies, alivePlayers) {
+    const usernames = alivePlayers.map(p => p.username);
+    if (usernames.length === 0) return;
+
+    try {
+      const response = await fetch('https://api.builderberu.com/storage/deposit-expedition', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Server-Secret': process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key',
+        },
+        body: JSON.stringify({
+          currencyDeposits: usernames.map(username => ({ username, currencies })),
+        }),
+      });
+      const result = await response.json();
+      console.log(`[Expedition] Currencies deposited to ${usernames.length} players:`, currencies);
+    } catch (err) {
+      console.error('[Expedition] Failed to deposit currencies:', err.message);
     }
   }
 }

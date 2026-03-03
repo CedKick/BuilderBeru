@@ -25,7 +25,7 @@ const TABLES = [
     device_id       VARCHAR(64),
     character_ids   JSONB NOT NULL,
     character_data  JSONB NOT NULL,
-    sr_item_id      VARCHAR(50),
+    sr_items        JSONB DEFAULT '[]',
     joined_at       TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(expedition_id, username)
   )`,
@@ -94,6 +94,15 @@ const TABLES = [
     bonus_2pc       JSONB,
     bonus_4pc       JSONB
   )`,
+
+  // SR migration: sr_item_id → sr_items JSONB
+  `DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='expedition_entries' AND column_name='sr_item_id') THEN
+      ALTER TABLE expedition_entries ADD COLUMN IF NOT EXISTS sr_items JSONB DEFAULT '[]';
+      UPDATE expedition_entries SET sr_items = jsonb_build_array(sr_item_id) WHERE sr_item_id IS NOT NULL AND sr_items = '[]';
+      ALTER TABLE expedition_entries DROP COLUMN IF EXISTS sr_item_id;
+    END IF;
+  END $$`,
 
   // Indexes
   `CREATE INDEX IF NOT EXISTS idx_exp_entries_expedition ON expedition_entries(expedition_id)`,

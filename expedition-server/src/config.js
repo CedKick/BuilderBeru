@@ -14,8 +14,8 @@ export const SERVER = {
 
 // ─── Expedition Rules ─────────────────────────────────────
 export const EXPEDITION = {
-  MAX_PLAYERS: 30,
-  HUNTERS_PER_PLAYER: 3,
+  MAX_CHARACTERS: 30,       // Total hunters across all players (e.g. 5 players × 6 = 30)
+  HUNTERS_PER_PLAYER: 6,
   MAX_DURATION_HOURS: 17,       // 19h -> 11h59 next day = ~17h max
   LAUNCH_HOUR: 19,              // 19h Paris daily
   END_HOUR: 11,                 // 11h59 next day (hard stop)
@@ -117,6 +117,9 @@ export const LOOT = {
   WIPE_STEAL_CHANCE_MIN: 0.10,
   WIPE_STEAL_CHANCE_MAX: 0.40,
   ROLL_MAX: 100,
+  SR_PICKS_MAX: 5,  // Each player can SR up to 5 items (can repeat for extra rolls)
+  INVENTORY_MAX: 200,  // Max items in expeditionInventory per player
+  EQUIP_TYPES: ['armor', 'weapon', 'set_piece'],  // Types considered "artifacts" (have stats, can auto-replace)
 };
 
 // ─── Stat Scaling: hunter base stats → expedition stats ───

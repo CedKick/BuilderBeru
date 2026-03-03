@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Swords, Users, Play, Plus, LogIn, Eye, Clock, Shield, Skull, Trophy, ChevronRight, Flame, X, RotateCcw } from 'lucide-react';
+import { Swords, Users, Play, Plus, LogIn, Eye, Clock, Shield, Skull, Trophy, ChevronRight, ChevronDown, ChevronUp, Flame, X, RotateCcw, BookOpen, Star, Gem, Award, Package, ScrollText, Sparkles, Lock } from 'lucide-react';
 
 // ── Import real hunter data from Shadow Colosseum ──
 import { HUNTERS, RAID_SAVE_KEY, loadRaidData, getHunterPool, getHunterStars } from '../ShadowColosseum/raidData';
@@ -38,6 +38,43 @@ const ELEMENT_COLORS = {
   water: { bg: 'bg-blue-900/30', border: 'border-blue-500/50', text: 'text-blue-400', ring: 'ring-blue-400' },
   shadow: { bg: 'bg-purple-900/30', border: 'border-purple-500/50', text: 'text-purple-400', ring: 'ring-purple-400' },
   light: { bg: 'bg-yellow-900/30', border: 'border-yellow-500/50', text: 'text-yellow-300', ring: 'ring-yellow-300' },
+};
+
+const RARITY_STYLES = {
+  common:    { bg: 'bg-gray-800/50',   border: 'border-gray-600/50',  text: 'text-gray-400',   badge: 'bg-gray-600 text-gray-200' },
+  uncommon:  { bg: 'bg-green-900/30',  border: 'border-green-600/50', text: 'text-green-400',  badge: 'bg-green-700 text-green-100' },
+  rare:      { bg: 'bg-blue-900/30',   border: 'border-blue-500/50',  text: 'text-blue-400',   badge: 'bg-blue-700 text-blue-100' },
+  epic:      { bg: 'bg-purple-900/30', border: 'border-purple-500/50', text: 'text-purple-400', badge: 'bg-purple-700 text-purple-100' },
+  legendary: { bg: 'bg-yellow-900/30', border: 'border-yellow-500/50', text: 'text-yellow-300', badge: 'bg-yellow-600 text-yellow-100' },
+  mythique:  { bg: 'bg-red-900/30',    border: 'border-red-500/50',   text: 'text-red-400',    badge: 'bg-red-700 text-red-100' },
+};
+
+const ZONE_STYLES = {
+  foret:   { bg: 'bg-green-900/20', text: 'text-green-400', label: 'Foret' },
+  abysses: { bg: 'bg-blue-900/20',  text: 'text-blue-400',  label: 'Abysses' },
+  neant:   { bg: 'bg-purple-900/20', text: 'text-purple-400', label: 'Neant' },
+};
+
+const SR_MAX = 5;
+
+// Inject SR notification animation keyframe
+if (typeof document !== 'undefined' && !document.getElementById('sr-notif-style')) {
+  const style = document.createElement('style');
+  style.id = 'sr-notif-style';
+  style.textContent = `@keyframes srSlideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }`;
+  document.head.appendChild(style);
+}
+
+// Item type → icon mapping for loot display
+const TYPE_ICONS = {
+  armor: Shield,
+  weapon: Swords,
+  set_piece: Gem,
+  skin: Sparkles,
+  skill_scroll: ScrollText,
+  consumable: Package,
+  material: Package,
+  currency: Award,
 };
 
 // Extract level number from chibiLevels (can be a number or {xp, level} object)
@@ -87,15 +124,27 @@ export default function Expedition() {
   const [expedition, setExpedition] = useState(null);
   const [liveStatus, setLiveStatus] = useState(null);
   const [entries, setEntries] = useState([]);
-  const [srItems, setSrItems] = useState([]);
+  const [totalCharacters, setTotalCharacters] = useState(0);
+  const [maxCharacters, setMaxCharacters] = useState(30);
+  const [bossLootData, setBossLootData] = useState([]);
 
   // Registration form
   const [username, setUsername] = useState(() => localStorage.getItem('expedition_username') || '');
   const [selectedHunters, setSelectedHunters] = useState([]);
-  const [selectedSR, setSelectedSR] = useState('');
+  const [selectedSRs, setSelectedSRs] = useState([]);
+
+  // SR / Boss Loot UI
+  const [showBossLoot, setShowBossLoot] = useState(false);
+  const [selectedBoss, setSelectedBoss] = useState(1);
+  const [rarityFilter, setRarityFilter] = useState('all');
+
+  // SR notifications (loot results matching your SR)
+  const [srNotifications, setSrNotifications] = useState([]);
+  const lastLootCheckRef = useRef(0);
 
   // UI
   const [showSpectator, setShowSpectator] = useState(false);
+  const [showCodexOverlay, setShowCodexOverlay] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -160,15 +209,17 @@ export default function Expedition() {
   const fetchStatus = useCallback(async () => {
     if (!authenticated) return;
     try {
-      const [currentRes, entriesRes, itemsRes] = await Promise.all([
+      const [currentRes, entriesRes, bossLootRes] = await Promise.all([
         api('/api/expedition/current'),
         api('/api/expedition/entries'),
-        api('/api/expedition/items'),
+        api('/api/expedition/boss-loot'),
       ]);
       setExpedition(currentRes.expedition);
       setLiveStatus(currentRes.live);
       setEntries(entriesRes.entries || []);
-      setSrItems(itemsRes.items || []);
+      setTotalCharacters(entriesRes.totalCharacters || 0);
+      setMaxCharacters(entriesRes.maxCharacters || 30);
+      setBossLootData(bossLootRes.bosses || []);
     } catch (e) {
       console.error('[Expedition] Fetch error:', e.message);
     }
@@ -219,11 +270,12 @@ export default function Expedition() {
         username: username.trim(),
         characterIds: selectedHunters,
         characterData,
-        srItemId: selectedSR || null,
+        srItems: selectedSRs.length > 0 ? selectedSRs : [],
       });
       localStorage.setItem('expedition_username', username.trim());
-      setSuccess(`${username} inscrit avec ${selectedHunters.length} hunter(s) !`);
+      setSuccess(`${username} inscrit avec ${selectedHunters.length} hunter(s)${selectedSRs.length > 0 ? ` et ${selectedSRs.length} SR` : ''} !`);
       setSelectedHunters([]);
+      setSelectedSRs([]);
       await fetchStatus();
     } catch (e) {
       setError(e.message);
@@ -265,10 +317,48 @@ export default function Expedition() {
   const toggleHunter = (hId) => {
     setSelectedHunters(prev => {
       if (prev.includes(hId)) return prev.filter(x => x !== hId);
-      if (prev.length >= 3) return prev;
+      if (prev.length >= 6) return prev;
       return [...prev, hId];
     });
   };
+
+  const toggleSR = (itemId) => {
+    setSelectedSRs(prev => {
+      if (prev.includes(itemId)) return prev.filter(x => x !== itemId);
+      if (prev.length >= SR_MAX) return prev;
+      return [...prev, itemId];
+    });
+  };
+
+  // Build a lookup: itemId → item data from boss loot data
+  const srItemLookup = useMemo(() => {
+    const map = {};
+    for (const boss of bossLootData) {
+      for (const loot of boss.loot) {
+        if (!map[loot.itemId]) map[loot.itemId] = loot;
+      }
+    }
+    return map;
+  }, [bossLootData]);
+
+  // Count how many players have SR'd each item (for concurrence display)
+  const srCountByItem = useMemo(() => {
+    const counts = {};
+    for (const entry of entries) {
+      const srs = entry.srItems || [];
+      for (const itemId of srs) {
+        counts[itemId] = (counts[itemId] || []);
+        counts[itemId].push(entry.username);
+      }
+    }
+    return counts;
+  }, [entries]);
+
+  // Current user's registered SR items (from their entry)
+  const myRegisteredSRs = useMemo(() => {
+    const myEntry = entries.find(e => e.username?.toLowerCase() === username.trim().toLowerCase());
+    return myEntry?.srItems || [];
+  }, [entries, username]);
 
   // ── Auto-show spectator when active ──
   useEffect(() => {
@@ -276,6 +366,57 @@ export default function Expedition() {
       setShowSpectator(true);
     }
   }, [liveStatus]);
+
+  // ── SR Loot Notifications ──
+  // Check for new loot wins matching the player's SR items when bossesKilled changes
+  const prevBossKillsRef = useRef(0);
+  useEffect(() => {
+    if (!liveStatus || !authenticated) return;
+    const bk = liveStatus.bossesKilled || 0;
+    if (bk <= prevBossKillsRef.current) return;
+    prevBossKillsRef.current = bk;
+
+    // Fetch loot history and check for SR wins
+    const checkSRLoot = async () => {
+      try {
+        const data = await api('/api/expedition/loot');
+        const lootList = data.loot || [];
+        const myName = username.trim().toLowerCase();
+        const mySRs = new Set(myRegisteredSRs);
+        if (mySRs.size === 0) return;
+
+        // Find new loot results after lastLootCheckRef
+        const newSRWins = lootList.filter(l =>
+          l.winner_username?.toLowerCase() === myName &&
+          mySRs.has(l.item_id) &&
+          new Date(l.rolled_at).getTime() > lastLootCheckRef.current
+        );
+
+        if (newSRWins.length > 0) {
+          lastLootCheckRef.current = Date.now();
+          const notifs = newSRWins.map(l => ({
+            id: `sr_${l.id}_${Date.now()}`,
+            itemName: l.item_name,
+            rarity: l.rarity,
+            rollValue: l.rolls?.[0]?.roll_value,
+            hadSr: true,
+            timestamp: Date.now(),
+          }));
+          setSrNotifications(prev => [...prev, ...notifs]);
+        }
+      } catch { /* silent */ }
+    };
+    checkSRLoot();
+  }, [liveStatus?.bossesKilled, authenticated, api, username, myRegisteredSRs]);
+
+  // Auto-dismiss SR notifications after 6s
+  useEffect(() => {
+    if (srNotifications.length === 0) return;
+    const t = setTimeout(() => {
+      setSrNotifications(prev => prev.slice(1));
+    }, 6000);
+    return () => clearTimeout(t);
+  }, [srNotifications]);
 
   // ── Clear messages ──
   useEffect(() => {
@@ -332,6 +473,38 @@ export default function Expedition() {
         >
           <X className="w-4 h-4" /> Retour
         </button>
+
+        {/* Floating Codex Button */}
+        <button
+          onClick={() => setShowCodexOverlay(true)}
+          className="fixed top-2 right-2 z-50 bg-[#1a1a2e]/90 hover:bg-yellow-600 text-yellow-400 hover:text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 border border-yellow-500/30 transition-colors"
+        >
+          <BookOpen className="w-4 h-4" /> Loots Boss
+          {myRegisteredSRs.length > 0 && (
+            <span className="bg-yellow-500/20 text-yellow-300 text-[10px] font-bold px-1.5 rounded">
+              {myRegisteredSRs.length} SR
+            </span>
+          )}
+        </button>
+
+        {/* Codex Overlay */}
+        {showCodexOverlay && bossLootData.length > 0 && (
+          <CodexOverlay
+            bossLootData={bossLootData}
+            selectedBoss={selectedBoss}
+            setSelectedBoss={setSelectedBoss}
+            rarityFilter={rarityFilter}
+            setRarityFilter={setRarityFilter}
+            selectedSRs={myRegisteredSRs}
+            srCountByItem={srCountByItem}
+            username={username}
+            onClose={() => setShowCodexOverlay(false)}
+          />
+        )}
+
+        {/* SR Win Notifications */}
+        <SRNotificationToasts notifications={srNotifications} onDismiss={(id) => setSrNotifications(prev => prev.filter(n => n.id !== id))} />
+
         <iframe
           src={`${SPECTATOR_URL}?key=${adminKey}`}
           className="w-full h-screen border-0"
@@ -384,6 +557,39 @@ export default function Expedition() {
         </div>
       </div>
 
+      {/* Floating Codex Button (during active expedition on dashboard) */}
+      {isActive && bossLootData.length > 0 && (
+        <>
+          <button
+            onClick={() => setShowCodexOverlay(true)}
+            className="fixed bottom-4 right-4 z-40 bg-[#1a1a2e] hover:bg-yellow-900/50 text-yellow-400 px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-medium border border-yellow-500/30 shadow-lg shadow-yellow-500/10 transition-all hover:scale-105"
+          >
+            <BookOpen className="w-5 h-5" /> Loots Boss
+            {myRegisteredSRs.length > 0 && (
+              <span className="bg-yellow-500/20 text-yellow-300 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                {myRegisteredSRs.length} SR
+              </span>
+            )}
+          </button>
+          {showCodexOverlay && (
+            <CodexOverlay
+              bossLootData={bossLootData}
+              selectedBoss={selectedBoss}
+              setSelectedBoss={setSelectedBoss}
+              rarityFilter={rarityFilter}
+              setRarityFilter={setRarityFilter}
+              selectedSRs={myRegisteredSRs}
+              srCountByItem={srCountByItem}
+              username={username}
+              onClose={() => setShowCodexOverlay(false)}
+            />
+          )}
+        </>
+      )}
+
+      {/* SR Win Notifications (dashboard) */}
+      <SRNotificationToasts notifications={srNotifications} onDismiss={(id) => setSrNotifications(prev => prev.filter(n => n.id !== id))} />
+
       {/* Messages */}
       {error && (
         <div className="bg-red-900/30 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>
@@ -427,9 +633,14 @@ export default function Expedition() {
       {/* Registration Section */}
       {isRegistration && (
         <div className="bg-[#1a1a2e] border border-gray-800 rounded-xl p-5 mb-6">
-          <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-blue-400" /> Inscription
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-blue-400" /> Inscription
+            </h2>
+            <span className="text-xs text-gray-500">
+              {totalCharacters}/{maxCharacters} places
+            </span>
+          </div>
 
           {/* Username */}
           <div className="mb-4">
@@ -446,7 +657,7 @@ export default function Expedition() {
           {/* Hunter Selection - Real hunters from account */}
           <div className="mb-4">
             <label className="text-sm text-gray-400 mb-2 block">
-              Tes Hunters ({selectedHunters.length}/3) — {sortedHunters.length} disponibles
+              Tes Hunters ({selectedHunters.length}/6) — {sortedHunters.length} disponibles
             </label>
             {sortedHunters.length === 0 ? (
               <p className="text-gray-600 text-sm italic">Aucun hunter dans ton compte Shadow Colosseum</p>
@@ -526,22 +737,44 @@ export default function Expedition() {
             </div>
           )}
 
-          {/* SR Selection */}
-          {srItems.length > 0 && (
-            <div className="mb-4">
-              <label className="text-sm text-gray-400 mb-1 block">Selection Rate (optionnel)</label>
-              <select
-                value={selectedSR}
-                onChange={e => setSelectedSR(e.target.value)}
-                className="w-full bg-[#0f0f1a] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
-              >
-                <option value="">Aucun SR</option>
-                {srItems.map(item => (
-                  <option key={item.id} value={item.id}>{item.name} ({item.rarity})</option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* SR Selection — Soft Reserve via Boss Loot Codex */}
+          <div className="mb-4">
+            {/* SR Header + Toggle */}
+            <button
+              onClick={() => setShowBossLoot(prev => !prev)}
+              className="w-full flex items-center justify-between text-sm text-gray-300 hover:text-yellow-300 transition-colors mb-2"
+            >
+              <span className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-yellow-500" />
+                <span className="font-medium">Soft Reserve ({selectedSRs.length}/{SR_MAX})</span>
+              </span>
+              <span className="flex items-center gap-2">
+                {selectedSRs.length > 0 && (
+                  <span className="text-yellow-500 text-xs">{selectedSRs.length} item{selectedSRs.length > 1 ? 's' : ''} SR</span>
+                )}
+                {showBossLoot ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </span>
+            </button>
+
+            {/* Selected SR summary pills */}
+            <SRSummaryPills selectedSRs={selectedSRs} srItemLookup={srItemLookup} srCountByItem={srCountByItem} onRemove={toggleSR} username={username} />
+
+            {/* Boss Loot Codex Panel */}
+            {showBossLoot && bossLootData.length > 0 && (
+              <BossLootCodex
+                bossLootData={bossLootData}
+                selectedBoss={selectedBoss}
+                setSelectedBoss={setSelectedBoss}
+                rarityFilter={rarityFilter}
+                setRarityFilter={setRarityFilter}
+                selectedSRs={selectedSRs}
+                toggleSR={toggleSR}
+                srCountByItem={srCountByItem}
+                username={username}
+                interactive={true}
+              />
+            )}
+          </div>
 
           {/* Register Button */}
           <button
@@ -558,17 +791,35 @@ export default function Expedition() {
       {/* Entries List */}
       {entries.length > 0 && (
         <div className="bg-[#1a1a2e] border border-gray-800 rounded-xl p-5 mb-6">
-          <h2 className="text-lg font-semibold text-gray-200 mb-3 flex items-center gap-2">
-            <Users className="w-5 h-5 text-green-400" /> Inscrits ({entries.length})
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
+              <Users className="w-5 h-5 text-green-400" /> Inscrits ({entries.length} joueur{entries.length > 1 ? 's' : ''})
+            </h2>
+            <span className={`text-xs font-medium px-2 py-1 rounded ${totalCharacters >= maxCharacters ? 'bg-red-900/30 text-red-400 border border-red-500/30' : 'bg-gray-800 text-gray-400'}`}>
+              {totalCharacters}/{maxCharacters} hunters
+            </span>
+          </div>
           <div className="space-y-2">
             {entries.map((entry, i) => (
-              <div key={i} className="flex items-center justify-between bg-[#0f0f1a] rounded-lg px-3 py-2">
-                <span className="text-sm font-medium text-gray-200">{entry.username}</span>
-                <div className="flex items-center gap-2">
+              <div key={i} className="bg-[#0f0f1a] rounded-lg px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-200">{entry.username}</span>
                   <span className="text-xs text-gray-500">{entry.characterIds?.length || 0} hunters</span>
-                  {entry.srItemId && <span className="text-xs text-yellow-500">SR: {entry.srItemId}</span>}
                 </div>
+                {entry.srItems && entry.srItems.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {entry.srItems.map((itemId, j) => {
+                      const info = srItemLookup[itemId];
+                      const rs = RARITY_STYLES[info?.rarity] || RARITY_STYLES.common;
+                      return (
+                        <span key={j} className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded ${rs.badge}`}>
+                          <Star className="w-2.5 h-2.5 fill-current" />
+                          {info?.name || itemId}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -658,4 +909,286 @@ function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+// ── SR Summary Pills ──
+// Shows selected SR items as compact pills with rarity color + remove button
+function SRSummaryPills({ selectedSRs, srItemLookup, srCountByItem, onRemove, username }) {
+  if (!selectedSRs || selectedSRs.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5 mb-2">
+      {selectedSRs.map(itemId => {
+        const info = srItemLookup[itemId];
+        const rs = RARITY_STYLES[info?.rarity] || RARITY_STYLES.common;
+        const others = (srCountByItem[itemId] || []).filter(u => u.toLowerCase() !== username.trim().toLowerCase());
+        return (
+          <span
+            key={itemId}
+            className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg ${rs.badge} border ${RARITY_STYLES[info?.rarity]?.border || 'border-gray-600/50'}`}
+            title={others.length > 0 ? `Aussi SR par: ${others.join(', ')}` : 'Aucun concurrent'}
+          >
+            <Star className="w-3 h-3 fill-current flex-shrink-0" />
+            <span className="truncate max-w-[120px]">{info?.name || itemId}</span>
+            {others.length > 0 && (
+              <span className="text-[9px] opacity-70 flex-shrink-0">({others.length})</span>
+            )}
+            {onRemove && (
+              <button onClick={() => onRemove(itemId)} className="ml-0.5 hover:text-red-300 flex-shrink-0">
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Boss Loot Codex ──
+// Full boss loot browser with SR selection, type icons, and other players' SR visibility
+function BossLootCodex({ bossLootData, selectedBoss, setSelectedBoss, rarityFilter, setRarityFilter, selectedSRs, toggleSR, srCountByItem, username, interactive }) {
+  const boss = bossLootData.find(b => b.bossId === selectedBoss);
+  const zoneStyle = ZONE_STYLES[boss?.zone] || ZONE_STYLES.foret;
+  const rarities = ['all', 'mythique', 'legendary', 'epic', 'rare', 'uncommon', 'common'];
+
+  // Filter loot by rarity
+  const filteredLoot = (boss?.loot || []).filter(item => {
+    if (rarityFilter !== 'all' && item.rarity !== rarityFilter) return false;
+    return true;
+  });
+
+  return (
+    <div className="bg-[#0f0f1a] rounded-lg border border-gray-800 overflow-hidden">
+      {/* Boss Selector — scrollable tabs */}
+      <div className="flex overflow-x-auto gap-0.5 p-1.5 bg-[#0a0a15] border-b border-gray-800 scrollbar-thin">
+        {bossLootData.map(b => {
+          const z = ZONE_STYLES[b.zone] || ZONE_STYLES.foret;
+          const active = b.bossId === selectedBoss;
+          return (
+            <button
+              key={b.bossId}
+              onClick={() => setSelectedBoss(b.bossId)}
+              className={`flex-shrink-0 px-2.5 py-1.5 rounded text-xs font-medium transition-all ${
+                active
+                  ? `${z.bg} ${z.text} ring-1 ring-current`
+                  : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
+              }`}
+              title={b.name}
+            >
+              {b.bossId}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Boss Info + Rarity Filter */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800/50">
+        <div className="flex items-center gap-2">
+          <Skull className="w-4 h-4 text-red-400" />
+          <span className="text-sm font-medium text-gray-200">{boss?.name || '???'}</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded ${zoneStyle.bg} ${zoneStyle.text}`}>{zoneStyle.label}</span>
+        </div>
+        <div className="flex gap-1">
+          {rarities.map(r => (
+            <button
+              key={r}
+              onClick={() => setRarityFilter(r)}
+              className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+                rarityFilter === r
+                  ? (r === 'all' ? 'bg-gray-600 text-white' : `${RARITY_STYLES[r]?.badge || 'bg-gray-600 text-white'}`)
+                  : 'text-gray-600 hover:text-gray-400'
+              }`}
+            >
+              {r === 'all' ? 'Tout' : r.charAt(0).toUpperCase() + r.slice(1, 4)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Loot Items */}
+      <div className="max-h-72 overflow-y-auto p-2 space-y-1">
+        {filteredLoot.length === 0 && (
+          <p className="text-gray-600 text-xs text-center py-4">Aucun loot pour ce filtre</p>
+        )}
+        {filteredLoot.map(item => {
+          const rs = RARITY_STYLES[item.rarity] || RARITY_STYLES.common;
+          const isSR = selectedSRs?.includes(item.itemId);
+          const srUsers = srCountByItem[item.itemId] || [];
+          const otherSR = srUsers.filter(u => u.toLowerCase() !== username.trim().toLowerCase());
+          const TypeIcon = TYPE_ICONS[item.setId ? 'set_piece' : item.weaponId ? 'weapon' : 'armor'] || Package;
+
+          return (
+            <div
+              key={item.itemId}
+              className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-all ${
+                isSR
+                  ? `${rs.bg} ${rs.border} ring-1 ring-yellow-500/40`
+                  : `bg-[#12121f] border-gray-800/50 ${interactive && item.srEligible ? 'hover:border-gray-600 cursor-pointer' : ''}`
+              }`}
+              onClick={() => interactive && item.srEligible && toggleSR(item.itemId)}
+            >
+              {/* Type Icon */}
+              <TypeIcon className={`w-4 h-4 flex-shrink-0 ${rs.text}`} />
+
+              {/* Item Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-xs font-medium ${rs.text}`}>{item.name}</span>
+                  {item.setId && <span className="text-[9px] text-purple-400/70">(Set)</span>}
+                  {item.weaponId && <span className="text-[9px] text-orange-400/70">(Arme)</span>}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                  <span className={`${rs.badge} px-1 py-0 rounded text-[9px]`}>{item.rarity}</span>
+                  <span>{item.dropChance}%</span>
+                </div>
+              </div>
+
+              {/* SR Concurrence — other players who SR'd this item */}
+              {srUsers.length > 0 && (
+                <div className="flex-shrink-0 text-right" title={`SR par: ${srUsers.join(', ')}`}>
+                  <div className="flex items-center gap-0.5">
+                    <Users className="w-3 h-3 text-yellow-500/60" />
+                    <span className="text-[10px] text-yellow-500/70 font-medium">{srUsers.length}</span>
+                  </div>
+                  {otherSR.length > 0 && (
+                    <div className="text-[9px] text-gray-600 truncate max-w-[80px]">
+                      {otherSR.slice(0, 2).join(', ')}{otherSR.length > 2 ? '...' : ''}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* SR Badge */}
+              {isSR && (
+                <span className="flex-shrink-0 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-1.5 py-0.5 rounded border border-yellow-500/30">
+                  SR
+                </span>
+              )}
+              {!isSR && interactive && item.srEligible && (
+                <span className="flex-shrink-0 text-[10px] text-gray-600">
+                  +SR
+                </span>
+              )}
+              {!item.srEligible && (
+                <Lock className="w-3 h-3 text-gray-700 flex-shrink-0" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer: SR count */}
+      {interactive && (
+        <div className="px-3 py-2 border-t border-gray-800/50 text-center text-[10px] text-gray-500">
+          {selectedSRs?.length || 0}/{SR_MAX} SR selectionnes — Clique un item pour SR
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── SR Win Notification Toasts ──
+// Animated toast notifications when a player wins an SR loot item
+function SRNotificationToasts({ notifications, onDismiss }) {
+  if (!notifications || notifications.length === 0) return null;
+  return (
+    <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[70] flex flex-col gap-2 pointer-events-none">
+      {notifications.map(n => {
+        const rs = RARITY_STYLES[n.rarity] || RARITY_STYLES.common;
+        return (
+          <div
+            key={n.id}
+            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg ${rs.bg} ${rs.border}`}
+            style={{ minWidth: 280, animation: 'srSlideDown 0.3s ease-out' }}
+          >
+            <div className="flex-shrink-0">
+              <Star className="w-6 h-6 text-yellow-400 fill-yellow-400 animate-pulse" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-yellow-400 font-bold uppercase tracking-wide">SR Obtenu !</div>
+              <div className={`text-sm font-semibold ${rs.text} truncate`}>{n.itemName}</div>
+              {n.rollValue && (
+                <div className="text-[10px] text-gray-400">Roll: {n.rollValue}/100</div>
+              )}
+            </div>
+            <button
+              onClick={() => onDismiss(n.id)}
+              className="flex-shrink-0 text-gray-500 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Codex Overlay (Modal) ──
+// Read-only boss loot codex overlay accessible during active expedition
+function CodexOverlay({ bossLootData, selectedBoss, setSelectedBoss, rarityFilter, setRarityFilter, selectedSRs, srCountByItem, username, onClose }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div
+        className="relative bg-[#1a1a2e] border border-yellow-500/30 rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl shadow-yellow-500/10"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-yellow-400" />
+            <span className="text-sm font-semibold text-yellow-300">Codex Boss Loot</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {selectedSRs.length > 0 && (
+              <span className="text-[10px] text-yellow-500 flex items-center gap-1">
+                <Star className="w-3 h-3 fill-current" />
+                {selectedSRs.length} SR actifs
+              </span>
+            )}
+            <button onClick={onClose} className="text-gray-500 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* My SR summary */}
+        {selectedSRs.length > 0 && (
+          <div className="px-4 py-2 border-b border-gray-800/50">
+            <SRSummaryPills
+              selectedSRs={selectedSRs}
+              srItemLookup={(() => {
+                const map = {};
+                for (const boss of bossLootData) {
+                  for (const loot of boss.loot) {
+                    if (!map[loot.itemId]) map[loot.itemId] = loot;
+                  }
+                }
+                return map;
+              })()}
+              srCountByItem={srCountByItem}
+              username={username}
+            />
+          </div>
+        )}
+
+        {/* Codex content (scrollable) */}
+        <div className="flex-1 overflow-y-auto p-3">
+          <BossLootCodex
+            bossLootData={bossLootData}
+            selectedBoss={selectedBoss}
+            setSelectedBoss={setSelectedBoss}
+            rarityFilter={rarityFilter}
+            setRarityFilter={setRarityFilter}
+            selectedSRs={selectedSRs}
+            toggleSR={() => {}}
+            srCountByItem={srCountByItem}
+            username={username}
+            interactive={false}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }

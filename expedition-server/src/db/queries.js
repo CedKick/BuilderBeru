@@ -71,17 +71,17 @@ export async function saveExpeditionSnapshot(id, snapshot) {
 // ENTRIES (Player Registration)
 // ═══════════════════════════════════════════════════════════
 
-export async function registerPlayer(expeditionId, username, deviceId, characterIds, characterData, srItemId) {
+export async function registerPlayer(expeditionId, username, deviceId, characterIds, characterData, srItems) {
   const result = await query(
-    `INSERT INTO expedition_entries (expedition_id, username, device_id, character_ids, character_data, sr_item_id)
+    `INSERT INTO expedition_entries (expedition_id, username, device_id, character_ids, character_data, sr_items)
      VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (expedition_id, username) DO UPDATE SET
        character_ids = EXCLUDED.character_ids,
        character_data = EXCLUDED.character_data,
-       sr_item_id = EXCLUDED.sr_item_id,
+       sr_items = EXCLUDED.sr_items,
        joined_at = NOW()
      RETURNING *`,
-    [expeditionId, username, deviceId, JSON.stringify(characterIds), JSON.stringify(characterData), srItemId]
+    [expeditionId, username, deviceId, JSON.stringify(characterIds), JSON.stringify(characterData), JSON.stringify(srItems || [])]
   );
   return result.rows[0];
 }
@@ -107,6 +107,15 @@ export async function getEntryCount(expeditionId) {
     [expeditionId]
   );
   return parseInt(result.rows[0].count);
+}
+
+export async function getTotalCharacterCount(expeditionId) {
+  const result = await query(
+    `SELECT COALESCE(SUM(jsonb_array_length(character_ids)), 0) as total
+     FROM expedition_entries WHERE expedition_id = $1`,
+    [expeditionId]
+  );
+  return parseInt(result.rows[0].total);
 }
 
 // ═══════════════════════════════════════════════════════════

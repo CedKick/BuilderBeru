@@ -197,6 +197,98 @@
     }
     .connected { background: #16a34a33; color: #22c55e; }
     .disconnected { background: #dc262633; color: #ef4444; }
+
+    /* ── Loot Index Overlay ── */
+    #loot-index-btn {
+      padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: bold;
+      background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308;
+      color: #eab308; cursor: pointer; transition: all 0.2s;
+    }
+    #loot-index-btn:hover { background: rgba(234, 179, 8, 0.3); }
+    #loot-index-overlay {
+      display: none; position: fixed; inset: 0; z-index: 100;
+      background: rgba(5, 5, 15, 0.97);
+      overflow-y: auto;
+    }
+    #loot-index-overlay.visible { display: block; }
+    .loot-idx-header {
+      position: sticky; top: 0; z-index: 5;
+      background: rgba(15, 15, 30, 0.98);
+      border-bottom: 1px solid #333;
+      padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .loot-idx-header h2 { color: #eab308; font-size: 20px; }
+    .loot-idx-close {
+      background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444;
+      padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold;
+    }
+    .loot-idx-close:hover { background: rgba(239, 68, 68, 0.4); }
+    .loot-idx-tabs {
+      position: sticky; top: 56px; z-index: 4;
+      background: rgba(15, 15, 30, 0.98);
+      display: flex; gap: 4px; padding: 8px 24px;
+      border-bottom: 1px solid #222;
+    }
+    .loot-idx-tab {
+      padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: bold;
+      background: transparent; border: 1px solid #333; color: #888;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .loot-idx-tab.active { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; color: #c084fc; }
+    .loot-idx-tab:hover { color: #ccc; }
+    .loot-idx-content { padding: 16px 24px 40px; }
+    .loot-source {
+      margin-bottom: 20px; background: rgba(20, 20, 40, 0.6);
+      border: 1px solid #2a2a4a; border-radius: 10px; overflow: hidden;
+    }
+    .loot-source-header {
+      padding: 10px 16px; background: rgba(30, 30, 55, 0.8);
+      display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    .loot-source-header .boss-name { font-size: 15px; font-weight: bold; color: #eab308; }
+    .loot-source-header .boss-hp { font-size: 11px; color: #888; }
+    .loot-source-header .zone-badge {
+      font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold;
+    }
+    .zone-foret { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .zone-abysses { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .zone-neant { background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .zone-trashmob { background: rgba(107, 114, 128, 0.15); color: #9ca3af; border: 1px solid rgba(107, 114, 128, 0.3); }
+    .loot-table-grid {
+      display: grid; grid-template-columns: 1fr auto; gap: 0;
+      padding: 4px 0;
+    }
+    .loot-row {
+      display: contents;
+    }
+    .loot-row:hover .loot-name, .loot-row:hover .loot-chance {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .loot-name {
+      padding: 4px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px;
+    }
+    .loot-name .set-tag {
+      font-size: 9px; padding: 1px 5px; border-radius: 4px;
+      background: rgba(168, 85, 247, 0.15); color: #a855f7; font-weight: bold;
+    }
+    .loot-name .weapon-tag {
+      font-size: 9px; padding: 1px 5px; border-radius: 4px;
+      background: rgba(234, 179, 8, 0.15); color: #eab308; font-weight: bold;
+    }
+    .loot-name .currency-tag {
+      font-size: 9px; padding: 1px 5px; border-radius: 4px;
+      background: rgba(59, 130, 246, 0.15); color: #3b82f6; font-weight: bold;
+    }
+    .loot-chance {
+      padding: 4px 16px; font-size: 12px; text-align: right; font-weight: bold; font-family: monospace;
+    }
+    .rarity-common { color: #9ca3af; }
+    .rarity-uncommon { color: #22c55e; }
+    .rarity-rare { color: #3b82f6; }
+    .rarity-epic { color: #a855f7; }
+    .rarity-legendary { color: #eab308; }
+    .rarity-mythique { color: #ef4444; }
   </style>
 </head>
 <body>
@@ -208,8 +300,11 @@
       <div class="stat"><span class="label">Boss tues:</span><span id="boss-count" class="value">0</span></div>
       <div class="stat"><span class="label">Encounter:</span><span id="encounter-count" class="value">0/0</span></div>
       <div class="stat"><span class="label">Temps:</span><span id="elapsed-time" class="value">00:00</span></div>
+      <button id="loot-index-btn" onclick="toggleLootIndex()">&#128176; Loot Index</button>
     </div>
   </div>
+
+  <div id="loot-index-overlay"></div>
 
   <div id="connection-status" class="disconnected">Deconnecte</div>
   <button id="toggle-stats" class="panel-open">Stats &#9664;</button>
@@ -340,50 +435,296 @@ const BOSS_SPRITES = [
   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Randomhero_kbrcr7.png',
   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772480447/Shyy_glbmyr.png',
 ];
-const BOSS_ID_TO_INDEX = { forest_guardian: 0, stone_sentinel: 1, shadow_lord: 2 };
+const BOSS_ID_TO_INDEX = {
+  forest_guardian: 0, stone_sentinel: 1, shadow_lord: 2,
+  root_ancient: 3, sylvan_queen: 4, leviathan: 5,
+  abyssal_sorcerer: 6, iron_titan: 7, venom_hydra: 8,
+  deep_king: 9, origin_specter: 10, void_archon: 11,
+  chaos_dragon: 12, eternal_monarch: 13, sung_ilhwan: 14,
+};
 
-// Boss loot tables (embedded for popup display)
+// ── Boss names & HP for loot index ──
+const BOSS_INFO = [
+  { name: 'Gardien de la Foret', hp: '12M', zone: 'foret' },
+  { name: 'Sentinelle de Pierre', hp: '18M', zone: 'foret' },
+  { name: 'Seigneur Ombre', hp: '25M', zone: 'foret' },
+  { name: 'Ancien des Racines', hp: '35M', zone: 'foret' },
+  { name: 'Reine Sylvestre', hp: '50M', zone: 'foret' },
+  { name: 'Leviathan', hp: '70M', zone: 'abysses' },
+  { name: 'Sorcier Abyssal', hp: '90M', zone: 'abysses' },
+  { name: 'Titan de Fer', hp: '120M', zone: 'abysses' },
+  { name: 'Hydre Venimeuse', hp: '160M', zone: 'abysses' },
+  { name: 'Roi des Profondeurs', hp: '200M', zone: 'abysses' },
+  { name: 'Spectre Originel', hp: '250M', zone: 'neant' },
+  { name: 'Archonte du Vide', hp: '320M', zone: 'neant' },
+  { name: 'Dragon du Chaos', hp: '400M', zone: 'neant' },
+  { name: 'Monarque Eternel', hp: '500M', zone: 'neant' },
+  { name: 'Sung Il-Hwan', hp: '650M', zone: 'neant' },
+];
+
+// ── Real resolved loot tables for all 15 bosses (matches lootTables.js) ──
 const BOSS_LOOT_TABLES = {
   0: [ // Gardien de la Foret
-    { name: 'Heaume de Foret', dropChance: 25, rarity: 'rare' },
-    { name: 'Armure de Foret', dropChance: 25, rarity: 'rare' },
-    { name: 'Gantelets de Foret', dropChance: 25, rarity: 'rare' },
-    { name: 'Bottes de Foret', dropChance: 25, rarity: 'rare' },
-    { name: 'Epee de Foret', dropChance: 15, rarity: 'epic' },
-    { name: 'Baton de Foret', dropChance: 15, rarity: 'epic' },
-    { name: 'Essence Magique', dropChance: 40, rarity: 'uncommon' },
-    { name: 'Bois Mystique', dropChance: 60, rarity: 'common' },
-    { name: 'Aura de Foret', dropChance: 0.5, rarity: 'legendary' },
-    { name: 'Soin Nature', dropChance: 2, rarity: 'epic' },
+    { name: 'Heaume Sylvestre', dropChance: 25, rarity: 'uncommon' },
+    { name: 'Plastron Sylvestre', dropChance: 25, rarity: 'uncommon' },
+    { name: 'Gantelets Sylvestres', dropChance: 25, rarity: 'uncommon' },
+    { name: 'Bottes Sylvestres', dropChance: 25, rarity: 'uncommon' },
+    { name: 'Ecailles de Drake', dropChance: 15, rarity: 'rare', tag: 'SET' },
+    { name: 'Crocs du Loup', dropChance: 15, rarity: 'rare', tag: 'SET' },
+    { name: 'Epee de Mousse', dropChance: 15, rarity: 'uncommon' },
+    { name: 'Baton Ancien', dropChance: 15, rarity: 'uncommon' },
+    { name: 'Essence de Boss', dropChance: 40, rarity: 'rare' },
+    { name: 'Bois Ancien', dropChance: 60, rarity: 'common' },
+    { name: 'Alkahest', dropChance: 30, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 5, rarity: 'epic', tag: 'CURR' },
+    { name: 'Aura Sylvestre', dropChance: 0.5, rarity: 'legendary' },
+    { name: 'Soin de la Nature', dropChance: 2, rarity: 'epic' },
   ],
   1: [ // Sentinelle de Pierre
     { name: 'Heaume de Pierre', dropChance: 20, rarity: 'rare' },
-    { name: 'Armure de Pierre', dropChance: 20, rarity: 'rare' },
+    { name: 'Plastron de Pierre', dropChance: 20, rarity: 'rare' },
     { name: 'Gantelets de Pierre', dropChance: 20, rarity: 'rare' },
     { name: 'Bottes de Pierre', dropChance: 20, rarity: 'rare' },
-    { name: 'Epee de Pierre', dropChance: 12, rarity: 'epic' },
-    { name: 'Arc de Pierre', dropChance: 12, rarity: 'epic' },
-    { name: 'Essence Magique', dropChance: 50, rarity: 'uncommon' },
-    { name: 'Pierre Runique', dropChance: 60, rarity: 'common' },
-    { name: 'Armure Pierreuse', dropChance: 0.5, rarity: 'legendary' },
+    { name: 'Plumes de Phenix', dropChance: 12, rarity: 'rare', tag: 'SET' },
+    { name: 'Ronce Vivante', dropChance: 12, rarity: 'rare', tag: 'SET' },
+    { name: 'Lame de Granit', dropChance: 12, rarity: 'rare' },
+    { name: 'Arc Petrifie', dropChance: 12, rarity: 'rare' },
+    { name: 'Essence de Boss', dropChance: 50, rarity: 'rare' },
+    { name: 'Pierre Enchantee', dropChance: 60, rarity: 'common' },
+    { name: 'Alkahest', dropChance: 30, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 5, rarity: 'epic', tag: 'CURR' },
+    { name: 'Armure Vivante', dropChance: 0.5, rarity: 'legendary' },
     { name: 'Mur de Pierre', dropChance: 2, rarity: 'epic' },
   ],
   2: [ // Seigneur Ombre
-    { name: 'Heaume des Ombres', dropChance: 15, rarity: 'epic' },
-    { name: 'Armure des Ombres', dropChance: 15, rarity: 'epic' },
-    { name: 'Gants des Ombres', dropChance: 15, rarity: 'epic' },
-    { name: 'Bottes des Ombres', dropChance: 15, rarity: 'epic' },
-    { name: 'Lame des Ombres', dropChance: 5, rarity: 'legendary' },
-    { name: 'Baton des Ombres', dropChance: 5, rarity: 'legendary' },
-    { name: 'Essence Magique', dropChance: 60, rarity: 'uncommon' },
-    { name: 'Poussiere d\'Ombre', dropChance: 50, rarity: 'rare' },
-    { name: 'Heaume de Foret', dropChance: 8, rarity: 'rare' },
-    { name: 'Armure de Foret', dropChance: 8, rarity: 'rare' },
+    { name: 'Capuche d\'Ombre', dropChance: 15, rarity: 'epic' },
+    { name: 'Tunique d\'Ombre', dropChance: 15, rarity: 'epic' },
+    { name: 'Griffes d\'Ombre', dropChance: 15, rarity: 'epic' },
+    { name: 'Sandales d\'Ombre', dropChance: 15, rarity: 'epic' },
+    { name: 'Griffes de Wyverne', dropChance: 10, rarity: 'rare', tag: 'SET' },
+    { name: 'Lame du Neant', dropChance: 5, rarity: 'epic' },
+    { name: 'Sceptre des Tenebres', dropChance: 5, rarity: 'epic' },
+    { name: 'Essence de Boss', dropChance: 60, rarity: 'rare' },
+    { name: 'Poussiere d\'Ombre', dropChance: 50, rarity: 'uncommon' },
+    { name: 'Alkahest', dropChance: 35, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 8, rarity: 'epic', tag: 'CURR' },
+    { name: 'Heaume Sylvestre', dropChance: 8, rarity: 'uncommon' },
     { name: 'Heaume de Pierre', dropChance: 8, rarity: 'rare' },
-    { name: 'Armure de Pierre', dropChance: 8, rarity: 'rare' },
+  ],
+  3: [ // Ancien des Racines
+    { name: 'Ecailles de Drake', dropChance: 20, rarity: 'rare', tag: 'SET' },
+    { name: 'Plumes de Phenix', dropChance: 20, rarity: 'rare', tag: 'SET' },
+    { name: 'Ronce Vivante', dropChance: 15, rarity: 'rare', tag: 'SET' },
+    { name: 'Nova Arcanique', dropChance: 3, rarity: 'epic', tag: 'SET' },
+    { name: 'Lame de Granit', dropChance: 10, rarity: 'rare' },
+    { name: 'Lame du Neant', dropChance: 4, rarity: 'epic' },
+    { name: 'Essence de Boss', dropChance: 60, rarity: 'rare' },
+    { name: 'Bois Ancien', dropChance: 50, rarity: 'common' },
+    { name: 'Pierre Enchantee', dropChance: 40, rarity: 'common' },
+    { name: 'Alkahest', dropChance: 35, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 8, rarity: 'epic', tag: 'CURR' },
+  ],
+  4: [ // Reine Sylvestre
+    { name: 'Crocs du Loup', dropChance: 18, rarity: 'rare', tag: 'SET' },
+    { name: 'Griffes de Wyverne', dropChance: 18, rarity: 'rare', tag: 'SET' },
+    { name: 'Ecailles de Drake', dropChance: 15, rarity: 'rare', tag: 'SET' },
+    { name: 'Nova Arcanique', dropChance: 5, rarity: 'epic', tag: 'SET' },
+    { name: 'Lame du Neant', dropChance: 8, rarity: 'epic' },
+    { name: 'Sceptre des Tenebres', dropChance: 8, rarity: 'epic' },
+    { name: 'Essence de Boss', dropChance: 70, rarity: 'rare' },
+    { name: 'Poussiere d\'Ombre', dropChance: 40, rarity: 'uncommon' },
+    { name: 'Alkahest', dropChance: 40, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 10, rarity: 'epic', tag: 'CURR' },
+  ],
+  5: [ // Leviathan
+    { name: 'Souffle Glacial', dropChance: 18, rarity: 'epic', tag: 'SET' },
+    { name: 'Cendres Ardentes', dropChance: 18, rarity: 'epic', tag: 'SET' },
+    { name: 'Fureur du Titan', dropChance: 3, rarity: 'epic', tag: 'SET' },
+    { name: 'Aegis du Gardien', dropChance: 3, rarity: 'epic', tag: 'SET' },
+    { name: 'Essence de Boss', dropChance: 70, rarity: 'rare' },
+    { name: 'Poussiere d\'Ombre', dropChance: 50, rarity: 'uncommon' },
+    { name: 'Alkahest', dropChance: 50, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 15, rarity: 'epic', tag: 'CURR' },
+  ],
+  6: [ // Sorcier Abyssal
+    { name: 'Murmure d\'Ombre', dropChance: 15, rarity: 'epic', tag: 'SET' },
+    { name: 'Lumiere Sacree', dropChance: 15, rarity: 'epic', tag: 'SET' },
+    { name: 'Souffle Vital', dropChance: 5, rarity: 'epic', tag: 'SET' },
+    { name: 'Lame Fantome', dropChance: 5, rarity: 'epic', tag: 'SET' },
+    { name: 'Thyrsus', dropChance: 3, rarity: 'mythique', tag: 'ARME' },
+    { name: 'Essence de Boss', dropChance: 75, rarity: 'rare' },
+    { name: 'Alkahest', dropChance: 50, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 15, rarity: 'epic', tag: 'CURR' },
+  ],
+  7: [ // Titan de Fer
+    { name: 'Cuirasse de Fer', dropChance: 15, rarity: 'epic', tag: 'SET' },
+    { name: 'Fureur du Titan', dropChance: 8, rarity: 'epic', tag: 'SET' },
+    { name: 'Aegis du Gardien', dropChance: 8, rarity: 'epic', tag: 'SET' },
+    { name: 'Aegis', dropChance: 3, rarity: 'mythique', tag: 'ARME' },
+    { name: 'Essence de Boss', dropChance: 80, rarity: 'rare' },
+    { name: 'Alkahest', dropChance: 55, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 18, rarity: 'epic', tag: 'CURR' },
+  ],
+  8: [ // Hydre Venimeuse
+    { name: 'Lame Fantome', dropChance: 8, rarity: 'epic', tag: 'SET' },
+    { name: 'Souffle Vital', dropChance: 8, rarity: 'epic', tag: 'SET' },
+    { name: 'Nova Arcanique', dropChance: 6, rarity: 'epic', tag: 'SET' },
+    { name: 'Caladbolg', dropChance: 2, rarity: 'mythique', tag: 'ARME' },
+    { name: 'Souffle Glacial', dropChance: 10, rarity: 'epic', tag: 'SET' },
+    { name: 'Cendres Ardentes', dropChance: 10, rarity: 'epic', tag: 'SET' },
+    { name: 'Essence de Boss', dropChance: 85, rarity: 'rare' },
+    { name: 'Alkahest', dropChance: 55, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 18, rarity: 'epic', tag: 'CURR' },
+  ],
+  9: [ // Roi des Profondeurs
+    { name: 'Fureur du Titan', dropChance: 10, rarity: 'epic', tag: 'SET' },
+    { name: 'Lame Fantome', dropChance: 10, rarity: 'epic', tag: 'SET' },
+    { name: 'Aegis du Gardien', dropChance: 10, rarity: 'epic', tag: 'SET' },
+    { name: 'Souffle Vital', dropChance: 10, rarity: 'epic', tag: 'SET' },
+    { name: 'Nidhogg', dropChance: 1.5, rarity: 'mythique', tag: 'ARME' },
+    { name: 'Cuirasse de Fer', dropChance: 12, rarity: 'epic', tag: 'SET' },
+    { name: 'Murmure d\'Ombre', dropChance: 12, rarity: 'epic', tag: 'SET' },
+    { name: 'Essence de Boss', dropChance: 90, rarity: 'rare' },
+    { name: 'Alkahest', dropChance: 60, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 20, rarity: 'epic', tag: 'CURR' },
+  ],
+  10: [ // Spectre Originel
+    { name: 'Ailes du Vent', dropChance: 15, rarity: 'epic', tag: 'SET' },
+    { name: 'Sang du Guerrier', dropChance: 15, rarity: 'epic', tag: 'SET' },
+    { name: 'Tempete d\'Acier', dropChance: 3, rarity: 'legendary', tag: 'SET' },
+    { name: 'Voix du Neant', dropChance: 3, rarity: 'legendary', tag: 'SET' },
+    { name: 'Yggdrasil', dropChance: 2, rarity: 'mythique', tag: 'ARME' },
+    { name: 'Essence de Boss', dropChance: 90, rarity: 'rare' },
+    { name: 'Cristal du Neant', dropChance: 40, rarity: 'rare' },
+    { name: 'Alkahest', dropChance: 70, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 25, rarity: 'epic', tag: 'CURR' },
+  ],
+  11: [ // Archonte du Vide
+    { name: 'Totem Ancestral', dropChance: 12, rarity: 'epic', tag: 'SET' },
+    { name: 'Brume Mystique', dropChance: 12, rarity: 'epic', tag: 'SET' },
+    { name: 'Pacte de Sang', dropChance: 5, rarity: 'legendary', tag: 'SET' },
+    { name: 'Bastion Eternel', dropChance: 5, rarity: 'legendary', tag: 'SET' },
+    { name: 'Mjolnir', dropChance: 1, rarity: 'mythique', tag: 'ARME' },
+    { name: 'Essence de Boss', dropChance: 95, rarity: 'rare' },
+    { name: 'Cristal du Neant', dropChance: 50, rarity: 'rare' },
+    { name: 'Alkahest', dropChance: 70, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 25, rarity: 'epic', tag: 'CURR' },
+  ],
+  12: [ // Dragon du Chaos
+    { name: 'Lien de Meute', dropChance: 12, rarity: 'epic', tag: 'SET' },
+    { name: 'Tempete d\'Acier', dropChance: 8, rarity: 'legendary', tag: 'SET' },
+    { name: 'Voix du Neant', dropChance: 8, rarity: 'legendary', tag: 'SET' },
+    { name: 'Harmonie Celeste', dropChance: 5, rarity: 'legendary', tag: 'SET' },
+    { name: 'Gungnir', dropChance: 0.8, rarity: 'mythique', tag: 'ARME' },
+    { name: 'Essence de Boss', dropChance: 95, rarity: 'rare' },
+    { name: 'Cristal du Neant', dropChance: 60, rarity: 'rare' },
+    { name: 'Alkahest', dropChance: 75, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 28, rarity: 'epic', tag: 'CURR' },
+  ],
+  13: [ // Monarque Eternel
+    { name: 'Pacte de Sang', dropChance: 8, rarity: 'legendary', tag: 'SET' },
+    { name: 'Bastion Eternel', dropChance: 8, rarity: 'legendary', tag: 'SET' },
+    { name: 'Harmonie Celeste', dropChance: 8, rarity: 'legendary', tag: 'SET' },
+    { name: 'Tempete d\'Acier', dropChance: 8, rarity: 'legendary', tag: 'SET' },
+    { name: 'Muramasa', dropChance: 0.3, rarity: 'mythique', tag: 'ARME' },
+    { name: 'Ailes du Vent', dropChance: 10, rarity: 'epic', tag: 'SET' },
+    { name: 'Sang du Guerrier', dropChance: 10, rarity: 'epic', tag: 'SET' },
+    { name: 'Essence de Boss', dropChance: 100, rarity: 'rare' },
+    { name: 'Cristal du Neant', dropChance: 70, rarity: 'rare' },
+    { name: 'Alkahest', dropChance: 80, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 30, rarity: 'epic', tag: 'CURR' },
+  ],
+  14: [ // Sung Il-Hwan
+    { name: 'Tempete d\'Acier', dropChance: 10, rarity: 'legendary', tag: 'SET' },
+    { name: 'Voix du Neant', dropChance: 10, rarity: 'legendary', tag: 'SET' },
+    { name: 'Pacte de Sang', dropChance: 10, rarity: 'legendary', tag: 'SET' },
+    { name: 'Bastion Eternel', dropChance: 10, rarity: 'legendary', tag: 'SET' },
+    { name: 'Harmonie Celeste', dropChance: 10, rarity: 'legendary', tag: 'SET' },
+    { name: 'Excalibur', dropChance: 0.5, rarity: 'mythique', tag: 'ARME' },
+    { name: 'Gram', dropChance: 0.3, rarity: 'mythique', tag: 'ARME' },
+    { name: 'Lien de Meute', dropChance: 12, rarity: 'epic', tag: 'SET' },
+    { name: 'Totem Ancestral', dropChance: 10, rarity: 'epic', tag: 'SET' },
+    { name: 'Brume Mystique', dropChance: 10, rarity: 'epic', tag: 'SET' },
+    { name: 'Essence de Boss', dropChance: 100, rarity: 'rare' },
+    { name: 'Cristal du Neant', dropChance: 80, rarity: 'rare' },
+    { name: 'Alkahest', dropChance: 85, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 35, rarity: 'epic', tag: 'CURR' },
   ],
 };
-const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308' };
+
+// ── Mob wave loot tables (for loot index) ──
+const MOB_LOOT_TABLES = {
+  'Vague Tier 1 (Boss 1-2)': [
+    { name: 'Potion de Soin', dropChance: 40, rarity: 'common' },
+    { name: 'Potion de Mana', dropChance: 30, rarity: 'common' },
+    { name: 'Bois Ancien', dropChance: 50, rarity: 'common' },
+    { name: 'Alkahest', dropChance: 5, rarity: 'rare', tag: 'CURR' },
+    { name: 'Pts de Contribution', dropChance: 60, rarity: 'uncommon', tag: 'CURR' },
+    { name: 'Ecailles de Drake', dropChance: 3, rarity: 'rare', tag: 'SET' },
+    { name: 'Crocs du Loup', dropChance: 3, rarity: 'rare', tag: 'SET' },
+    { name: 'Plumes de Phenix', dropChance: 2, rarity: 'rare', tag: 'SET' },
+    { name: 'Heaume Sylvestre', dropChance: 5, rarity: 'uncommon' },
+    { name: 'Plastron Sylvestre', dropChance: 5, rarity: 'uncommon' },
+  ],
+  'Vague Tier 2 (Boss 3-4)': [
+    { name: 'Potion de Soin', dropChance: 35, rarity: 'common' },
+    { name: 'Potion de Mana', dropChance: 35, rarity: 'common' },
+    { name: 'Bois Ancien', dropChance: 40, rarity: 'common' },
+    { name: 'Pierre Enchantee', dropChance: 40, rarity: 'common' },
+    { name: 'Elixir d\'Attaque', dropChance: 15, rarity: 'uncommon' },
+    { name: 'Alkahest', dropChance: 8, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 2, rarity: 'epic', tag: 'CURR' },
+    { name: 'Pts de Contribution', dropChance: 55, rarity: 'uncommon', tag: 'CURR' },
+    { name: 'Crocs du Loup', dropChance: 4, rarity: 'rare', tag: 'SET' },
+    { name: 'Griffes de Wyverne', dropChance: 4, rarity: 'rare', tag: 'SET' },
+    { name: 'Ronce Vivante', dropChance: 3, rarity: 'rare', tag: 'SET' },
+    { name: 'Plumes de Phenix', dropChance: 3, rarity: 'rare', tag: 'SET' },
+    { name: 'Heaume de Pierre', dropChance: 4, rarity: 'rare' },
+    { name: 'Plastron de Pierre', dropChance: 4, rarity: 'rare' },
+    { name: 'Epee de Mousse', dropChance: 3, rarity: 'uncommon' },
+  ],
+  'Vague Tier 3 (Boss 5-9)': [
+    { name: 'Potion de Soin', dropChance: 30, rarity: 'common' },
+    { name: 'Potion de Mana', dropChance: 30, rarity: 'common' },
+    { name: 'Pierre Enchantee', dropChance: 45, rarity: 'common' },
+    { name: 'Poussiere d\'Ombre', dropChance: 25, rarity: 'uncommon' },
+    { name: 'Elixir d\'Attaque', dropChance: 20, rarity: 'uncommon' },
+    { name: 'Alkahest', dropChance: 12, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 5, rarity: 'epic', tag: 'CURR' },
+    { name: 'Pts de Contribution', dropChance: 50, rarity: 'uncommon', tag: 'CURR' },
+    { name: 'Souffle Glacial', dropChance: 4, rarity: 'epic', tag: 'SET' },
+    { name: 'Cendres Ardentes', dropChance: 4, rarity: 'epic', tag: 'SET' },
+    { name: 'Murmure d\'Ombre', dropChance: 3, rarity: 'epic', tag: 'SET' },
+    { name: 'Lumiere Sacree', dropChance: 3, rarity: 'epic', tag: 'SET' },
+    { name: 'Cuirasse de Fer', dropChance: 3, rarity: 'epic', tag: 'SET' },
+    { name: 'Fureur du Titan', dropChance: 0.5, rarity: 'epic', tag: 'SET' },
+    { name: 'Aegis du Gardien', dropChance: 0.5, rarity: 'epic', tag: 'SET' },
+    { name: 'Lame du Neant', dropChance: 2, rarity: 'epic' },
+    { name: 'Sceptre des Tenebres', dropChance: 2, rarity: 'epic' },
+  ],
+  'Vague Tier 4 (Boss 10-14)': [
+    { name: 'Potion de Soin', dropChance: 25, rarity: 'common' },
+    { name: 'Potion de Mana', dropChance: 25, rarity: 'common' },
+    { name: 'Poussiere d\'Ombre', dropChance: 40, rarity: 'uncommon' },
+    { name: 'Cristal du Neant', dropChance: 15, rarity: 'rare' },
+    { name: 'Elixir d\'Attaque', dropChance: 25, rarity: 'uncommon' },
+    { name: 'Alkahest', dropChance: 18, rarity: 'rare', tag: 'CURR' },
+    { name: 'Marteau Rouge', dropChance: 8, rarity: 'epic', tag: 'CURR' },
+    { name: 'Pts de Contribution', dropChance: 45, rarity: 'uncommon', tag: 'CURR' },
+    { name: 'Ailes du Vent', dropChance: 5, rarity: 'epic', tag: 'SET' },
+    { name: 'Sang du Guerrier', dropChance: 5, rarity: 'epic', tag: 'SET' },
+    { name: 'Totem Ancestral', dropChance: 4, rarity: 'epic', tag: 'SET' },
+    { name: 'Brume Mystique', dropChance: 4, rarity: 'epic', tag: 'SET' },
+    { name: 'Lien de Meute', dropChance: 3, rarity: 'epic', tag: 'SET' },
+    { name: 'Tempete d\'Acier', dropChance: 1, rarity: 'legendary', tag: 'SET' },
+    { name: 'Voix du Neant', dropChance: 1, rarity: 'legendary', tag: 'SET' },
+    { name: 'Pacte de Sang', dropChance: 0.8, rarity: 'legendary', tag: 'SET' },
+    { name: 'Bastion Eternel', dropChance: 0.8, rarity: 'legendary', tag: 'SET' },
+    { name: 'Harmonie Celeste', dropChance: 0.8, rarity: 'legendary', tag: 'SET' },
+  ],
+};
+
+const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308', mythique: '#ef4444' };
 
 // ═══════════════════════════════════════════════════════════
 // STATE
@@ -1158,16 +1499,23 @@ function handleMessage(msg) {
       break;
 
     case 'loot_roll_start':
-      lootRollState = { results: msg.results || [], currentIndex: -1, revealTimer: 2.5, phase: 'waiting' };
+      lootRollState = { results: msg.results || [], currentIndex: -1, revealTimer: 2.5, phase: 'waiting', narrativeTimer: 0 };
       for (const r of msg.results || []) {
-        const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308' };
+        const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308', mythique: '#ff4500' };
         if (r.stolen) {
-          addLogEntry('death', `Les monstres ont vole [${r.itemName}]!`);
+          const narrativeText = r.narrative?.text || `Les monstres ont vole [${r.itemName}]!`;
+          addLogEntry('death', narrativeText);
           addTimelineEvent('loot', null, { itemName: r.itemName, winner: 'Monstres', stolen: true, rarityColor: RARITY_COLORS[r.rarity] });
         } else if (r.winnerUsername) {
-          const srTag = r.srWinner ? ' (SR)' : '';
-          addLogEntry('loot', `[${r.itemName}] (${r.rarity}) -> ${r.winnerUsername} (${r.winnerRoll})${srTag}`);
+          const narrativeText = r.narrative?.winnerReaction || `[${r.itemName}] -> ${r.winnerUsername} (${r.winnerRoll})`;
+          addLogEntry('loot', narrativeText);
           addTimelineEvent('loot', null, { itemName: r.itemName, winner: r.winnerUsername, stolen: false, rarityColor: RARITY_COLORS[r.rarity] });
+          // Log jealousy / loser reactions too
+          if (r.narrative?.reactions) {
+            for (const reaction of r.narrative.reactions.slice(1)) {
+              if (reaction.text) addLogEntry('chat', reaction.text);
+            }
+          }
         }
       }
       break;
@@ -1811,9 +2159,23 @@ function drawBossPopup(dt) {
   for (let i = 0; i < lootTable.length; i++) {
     const item = lootTable[i];
     const ry = py + headerH + 16 + i * rowH;
+    // Tag badge (SET / ARME / CURR)
+    let nameX = px + 10;
+    if (item.tag) {
+      const tagColors = { SET: '#a855f7', ARME: '#ef4444', CURR: '#3b82f6' };
+      ctx.fillStyle = tagColors[item.tag] || '#888';
+      ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'left';
+      const tw = ctx.measureText(item.tag).width + 6;
+      ctx.globalAlpha *= 0.3;
+      ctx.fillRect(nameX, ry + 2, tw, 10);
+      ctx.globalAlpha /= 0.3;
+      ctx.fillStyle = tagColors[item.tag];
+      ctx.fillText(item.tag, nameX + 3, ry + 10);
+      nameX += tw + 3;
+    }
     ctx.fillStyle = RARITY_COLORS[item.rarity] || '#888';
     ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText(item.name, px + 10, ry + 10);
+    ctx.fillText(item.name, nameX, ry + 10);
     ctx.textAlign = 'right';
     ctx.fillStyle = item.dropChance < 1 ? '#eab308' : item.dropChance <= 5 ? '#a855f7' : '#ccc';
     ctx.fillText(`${item.dropChance}%`, px + popW - 10, ry + 10);
@@ -2713,13 +3075,21 @@ function drawLootRoll(dt) {
   for (let i = 0; i < lootRollState.currentIndex; i++) {
     const item = lootRollState.results[i];
     const x = 20 + i * 45;
-    const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308' };
+    const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308', mythique: '#ff4500' };
     ctx.fillStyle = 'rgba(20, 15, 40, 0.9)';
-    roundRect(ctx, x, canvas.height - 200, 40, 30, 4); ctx.fill();
-    ctx.strokeStyle = RARITY_COLORS[item.rarity] || '#888'; ctx.lineWidth = 1;
-    roundRect(ctx, x, canvas.height - 200, 40, 30, 4); ctx.stroke();
-    ctx.fillStyle = '#ccc'; ctx.font = '7px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(item.itemName?.substring(0, 6) || '?', x + 20, canvas.height - 182);
+    roundRect(ctx, x, canvas.height - 200, 40, 36, 4); ctx.fill();
+    ctx.strokeStyle = RARITY_COLORS[item.rarity] || '#888'; ctx.lineWidth = item.stolen ? 1 : 1.5;
+    roundRect(ctx, x, canvas.height - 200, 40, 36, 4); ctx.stroke();
+    ctx.fillStyle = item.stolen ? '#666' : '#ccc'; ctx.font = '7px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(item.itemName?.substring(0, 6) || '?', x + 20, canvas.height - 185);
+    // Winner name under mini card
+    if (item.winnerUsername) {
+      ctx.fillStyle = item.srWinner ? '#fbbf24' : '#9ca3af'; ctx.font = '6px sans-serif';
+      ctx.fillText(item.winnerUsername.substring(0, 6), x + 20, canvas.height - 174);
+    } else if (item.stolen) {
+      ctx.fillStyle = '#dc2626'; ctx.font = '6px sans-serif';
+      ctx.fillText('VOLE', x + 20, canvas.height - 174);
+    }
   }
 
   // Title
@@ -2730,9 +3100,10 @@ function drawLootRoll(dt) {
 }
 
 function drawLootCard(item, elapsed) {
-  const cx = canvas.width / 2, cy = canvas.height / 2 - 30;
-  const cardW = 220, cardH = 130;
-  const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308' };
+  const cx = canvas.width / 2, cy = canvas.height / 2 - 40;
+  const isEpicMoment = item.narrative?.type === 'epic_moment';
+  const cardW = isEpicMoment ? 280 : 220, cardH = isEpicMoment ? 170 : 140;
+  const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308', mythique: '#ff4500' };
   const rarityColor = RARITY_COLORS[item.rarity] || '#888';
 
   ctx.save();
@@ -2741,44 +3112,83 @@ function drawLootCard(item, elapsed) {
     ctx.translate(cx, cy); ctx.scale(t * t, t * t); ctx.rotate((1 - t) * Math.PI); ctx.translate(-cx, -cy);
   }
 
+  // Mythique/legendary shimmer background
+  if (isEpicMoment && elapsed > 0.8) {
+    const shimmer = Math.sin(elapsed * 3) * 0.15 + 0.85;
+    ctx.fillStyle = `rgba(${item.rarity === 'mythique' ? '80, 20, 0' : '60, 40, 0'}, ${0.3 * shimmer})`;
+    roundRect(ctx, cx - cardW / 2 - 6, cy - cardH / 2 - 6, cardW + 12, cardH + 12, 16); ctx.fill();
+  }
+
   // Card bg
   ctx.fillStyle = 'rgba(20, 12, 40, 0.95)';
   roundRect(ctx, cx - cardW / 2, cy - cardH / 2, cardW, cardH, 12); ctx.fill();
 
   // Rarity border glow
   if (elapsed > 0.8) {
-    ctx.shadowColor = rarityColor; ctx.shadowBlur = 15;
+    ctx.shadowColor = rarityColor; ctx.shadowBlur = isEpicMoment ? 25 : 15;
   }
-  ctx.strokeStyle = rarityColor; ctx.lineWidth = 3;
+  ctx.strokeStyle = rarityColor; ctx.lineWidth = isEpicMoment ? 4 : 3;
   roundRect(ctx, cx - cardW / 2, cy - cardH / 2, cardW, cardH, 12); ctx.stroke();
   ctx.shadowBlur = 0;
 
   // Item name
   if (elapsed > 0.8) {
-    ctx.fillStyle = rarityColor; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(item.itemName || '???', cx, cy - 25);
+    ctx.fillStyle = rarityColor; ctx.font = `bold ${isEpicMoment ? 18 : 16}px sans-serif`; ctx.textAlign = 'center';
+    ctx.fillText(item.itemName || '???', cx, cy - 30);
     ctx.fillStyle = '#888'; ctx.font = '11px sans-serif';
-    ctx.fillText((item.rarity || '').toUpperCase(), cx, cy - 8);
+    const rarityLabel = (item.rarity || '').toUpperCase();
+    const srTag = item.srWinner ? ' | SR' : '';
+    ctx.fillText(rarityLabel + srTag, cx, cy - 13);
   }
 
   // Roll animation
   if (elapsed > 2.0 && !item.stolen) {
     const rollElapsed = elapsed - 2.0;
     const displayRoll = rollElapsed > 1.5 ? item.winnerRoll : Math.floor(Math.random() * 100);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 30px sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText(displayRoll, cx, cy + 20);
+    const rollSettled = rollElapsed > 1.5;
+    // Color roll by value when settled
+    if (rollSettled && item.winnerRoll >= 90) ctx.fillStyle = '#fbbf24';
+    else if (rollSettled && item.winnerRoll <= 15) ctx.fillStyle = '#ef4444';
+    else ctx.fillStyle = '#fff';
+    ctx.font = 'bold 30px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(displayRoll, cx, cy + 15);
   }
 
   // Winner
   if (elapsed > 4.0 && item.winnerUsername) {
     ctx.fillStyle = item.srWinner ? '#fbbf24' : '#22c55e'; ctx.font = 'bold 14px sans-serif';
-    ctx.fillText(`${item.winnerUsername}${item.srWinner ? ' (SR!)' : ''}`, cx, cy + 48);
+    ctx.fillText(`${item.winnerUsername}${item.srWinner ? ' (SR!)' : ''}`, cx, cy + 40);
   }
 
   // Stolen
   if (item.stolen && elapsed > 2.0) {
     ctx.fillStyle = '#dc2626'; ctx.font = 'bold 16px sans-serif';
-    ctx.fillText('VOLE PAR LES MONSTRES!', cx, cy + 20);
+    ctx.fillText('VOLE PAR LES MONSTRES!', cx, cy + 15);
+  }
+
+  // Narrative reaction text (appears after winner reveal)
+  if (elapsed > 4.8 && item.narrative?.reactions?.length > 0) {
+    const reactions = item.narrative.reactions;
+    let ny = cy + cardH / 2 + 20;
+    for (let i = 0; i < Math.min(reactions.length, 2); i++) {
+      const r = reactions[i];
+      if (!r.text) continue;
+      const fadeIn = Math.min(1, (elapsed - 4.8 - i * 0.8) * 2);
+      if (fadeIn <= 0) continue;
+      ctx.globalAlpha = fadeIn;
+      const reactionColors = { ecstatic: '#fbbf24', lucky: '#22c55e', sr_win: '#fbbf24', win: '#a3e635', salty: '#f87171', sr_lost: '#fb923c', jealous: '#94a3b8', group: '#c084fc', stolen: '#dc2626' };
+      ctx.fillStyle = reactionColors[r.type] || '#ccc';
+      ctx.font = r.type === 'group' ? 'italic 11px sans-serif' : '11px sans-serif';
+      ctx.textAlign = 'center';
+      // Truncate long text
+      const maxW = canvas.width - 40;
+      let text = r.text;
+      ctx.font = '11px sans-serif';
+      while (ctx.measureText(text).width > maxW && text.length > 20) text = text.slice(0, -4) + '...';
+      ctx.fillText(text, cx, ny);
+      ny += 16;
+    }
+    ctx.globalAlpha = 1;
   }
 
   ctx.restore();
@@ -2921,6 +3331,104 @@ function drawHpBar(x, y, width, height, ratio) {
   const color = ratio > 0.6 ? '#22c55e' : ratio > 0.3 ? '#f59e0b' : '#ef4444';
   ctx.fillStyle = color;
   ctx.fillRect(barX, y, width * Math.max(0, ratio), height);
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOOT INDEX OVERLAY
+// ═══════════════════════════════════════════════════════════
+
+function toggleLootIndex() {
+  const overlay = document.getElementById('loot-index-overlay');
+  if (overlay.classList.contains('visible')) {
+    overlay.classList.remove('visible');
+    overlay.innerHTML = '';
+    return;
+  }
+  renderLootIndex();
+  overlay.classList.add('visible');
+}
+
+function renderLootIndex() {
+  const overlay = document.getElementById('loot-index-overlay');
+
+  function renderLootTable(items) {
+    return items.map(item => {
+      const rc = `rarity-${item.rarity}`;
+      let tagHtml = '';
+      if (item.tag === 'SET') tagHtml = '<span class="set-tag">SET</span>';
+      else if (item.tag === 'ARME') tagHtml = '<span class="weapon-tag">ARME</span>';
+      else if (item.tag === 'CURR') tagHtml = '<span class="currency-tag">CURR</span>';
+      const chanceColor = item.dropChance < 1 ? 'rarity-legendary' : item.dropChance <= 5 ? 'rarity-epic' : '';
+      return `<div class="loot-row">
+        <div class="loot-name ${rc}">${tagHtml}${item.name}</div>
+        <div class="loot-chance ${chanceColor || rc}">${item.dropChance}%</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderBossSection(idx) {
+    const info = BOSS_INFO[idx];
+    const loot = BOSS_LOOT_TABLES[idx] || [];
+    return `<div class="loot-source">
+      <div class="loot-source-header">
+        <span class="zone-badge zone-${info.zone}">${info.zone.toUpperCase()}</span>
+        <span class="boss-name">Boss ${idx + 1}: ${info.name}</span>
+        <span class="boss-hp">${info.hp} HP</span>
+      </div>
+      <div class="loot-table-grid">${renderLootTable(loot)}</div>
+    </div>`;
+  }
+
+  function renderMobSection(tierName) {
+    const loot = MOB_LOOT_TABLES[tierName] || [];
+    return `<div class="loot-source">
+      <div class="loot-source-header">
+        <span class="zone-badge zone-trashmob">MOBS</span>
+        <span class="boss-name">${tierName}</span>
+      </div>
+      <div class="loot-table-grid">${renderLootTable(loot)}</div>
+    </div>`;
+  }
+
+  const tabs = [
+    { id: 'foret', label: 'Foret (Boss 1-5)', indices: [0,1,2,3,4] },
+    { id: 'abysses', label: 'Abysses (Boss 6-10)', indices: [5,6,7,8,9] },
+    { id: 'neant', label: 'Neant (Boss 11-15)', indices: [10,11,12,13,14] },
+    { id: 'trashmob', label: 'Trashmobs' },
+  ];
+
+  overlay.innerHTML = `
+    <div class="loot-idx-header">
+      <h2>&#128176; Loot Index — Expedition I</h2>
+      <button class="loot-idx-close" onclick="toggleLootIndex()">&#10005; Fermer</button>
+    </div>
+    <div class="loot-idx-tabs">
+      ${tabs.map((t, i) => `<button class="loot-idx-tab ${i === 0 ? 'active' : ''}" data-loot-tab="${t.id}">${t.label}</button>`).join('')}
+    </div>
+    <div class="loot-idx-content" id="loot-idx-content"></div>
+  `;
+
+  function showTab(tabId) {
+    const content = document.getElementById('loot-idx-content');
+    const tab = tabs.find(t => t.id === tabId);
+    if (!tab) return;
+
+    overlay.querySelectorAll('.loot-idx-tab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lootTab === tabId);
+    });
+
+    if (tabId === 'trashmob') {
+      content.innerHTML = Object.keys(MOB_LOOT_TABLES).map(k => renderMobSection(k)).join('');
+    } else {
+      content.innerHTML = tab.indices.map(idx => renderBossSection(idx)).join('');
+    }
+  }
+
+  overlay.querySelectorAll('.loot-idx-tab').forEach(btn => {
+    btn.addEventListener('click', () => showTab(btn.dataset.lootTab));
+  });
+
+  showTab('foret');
 }
 
 // ── Start ──

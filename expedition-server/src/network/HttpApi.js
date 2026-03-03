@@ -1,7 +1,9 @@
-import { EXPEDITION, ADMIN } from '../config.js';
+import { EXPEDITION, ADMIN, LOOT } from '../config.js';
 import * as db from '../db/queries.js';
-import { getSRableItems, EXPEDITION_ITEMS } from '../data/expeditionItems.js';
+import { getSRableItems, EXPEDITION_ITEMS, getItemById } from '../data/expeditionItems.js';
 import { HUNTERS } from '../data/hunterData.js';
+import { LOOT_TABLES, getLootTable } from '../data/lootTables.js';
+import { BOSS_DEFINITIONS } from '../data/bossDefinitions.js';
 
 // ── HTTP API for Expedition ──
 // Handles registration, SR selection, status queries, and loot history.
@@ -45,6 +47,7 @@ export class HttpApi {
         case '/api/expedition/unregister': return await this.unregister(req, res);
         case '/api/expedition/entries':  return await this.getEntries(req, res);
         case '/api/expedition/items':    return this.getItems(req, res);
+        case '/api/expedition/boss-loot': return this.getBossLoot(req, res);
         case '/api/expedition/loot':     return await this.getLoot(req, res);
         case '/api/expedition/state':    return this.getState(req, res);
         // Admin: create/start expedition manually
@@ -75,19 +78,19 @@ export class HttpApi {
   }
 
   // POST /api/expedition/register
-  // Body: { username, deviceId, characterIds: ["h_kanae", ...], characterData: { h_kanae: { level, stars } }, srItemId? }
+  // Body: { username, deviceId, characterIds: ["h_kanae", ...], characterData: { h_kanae: { level, stars } }, srItems?: ["item_id", ...] }
   async register(req, res) {
     const body = await this.readBody(req);
     if (!body) return this.badRequest(res, 'Invalid JSON body');
 
-    const { username, deviceId, characterIds, characterData, srItemId } = body;
+    const { username, deviceId, characterIds, characterData, srItems } = body;
 
     if (!username || !characterIds || !Array.isArray(characterIds) || characterIds.length === 0) {
       return this.badRequest(res, 'Missing username or characterIds');
     }
 
     if (characterIds.length > EXPEDITION.HUNTERS_PER_PLAYER) {
-      return this.badRequest(res, `Maximum ${EXPEDITION.HUNTERS_PER_PLAYER} characters per player`);
+      return this.badRequest(res, `Limite de ${EXPEDITION.HUNTERS_PER_PLAYER} hunters par joueur atteinte`);
     }
 
     // Validate hunter IDs
@@ -107,23 +110,47 @@ export class HttpApi {
       return this.badRequest(res, 'Registration is closed for this expedition');
     }
 
-    // Check max players
-    const count = await db.getEntryCount(expedition.id);
-    if (count >= EXPEDITION.MAX_PLAYERS) {
-      return this.badRequest(res, 'Expedition is full');
+    // Check total character slots (30 max across all players)
+    const totalChars = await db.getTotalCharacterCount(expedition.id);
+    if (totalChars + characterIds.length > EXPEDITION.MAX_CHARACTERS) {
+      const remaining = EXPEDITION.MAX_CHARACTERS - totalChars;
+      return this.badRequest(res, remaining <= 0
+        ? `Expedition complete (${EXPEDITION.MAX_CHARACTERS}/${EXPEDITION.MAX_CHARACTERS})`
+        : `Plus que ${remaining} place(s) disponible(s) — tu as selectionne ${characterIds.length} hunters`
+      );
     }
 
-    // Validate SR item
-    if (srItemId) {
-      const srableItems = getSRableItems();
-      if (!srableItems.find(i => i.id === srItemId)) {
-        return this.badRequest(res, `Invalid SR item: ${srItemId}`);
+    // Validate SR items (max 5 picks, can repeat)
+    const validatedSrItems = [];
+    if (Array.isArray(srItems) && srItems.length > 0) {
+      if (srItems.length > LOOT.SR_PICKS_MAX) {
+        return this.badRequest(res, `Maximum ${LOOT.SR_PICKS_MAX} SR picks per player`);
+      }
+      // Build set of all SR-eligible itemIds from boss loot tables
+      const srableIds = new Set();
+      for (let b = 1; b <= 15; b++) {
+        for (const entry of getLootTable(`boss_${b}`)) {
+          if (entry.setId || entry.weaponId) {
+            srableIds.add(entry.itemId);
+          } else {
+            const item = getItemById(entry.itemId);
+            if (item && ['armor', 'weapon', 'skin', 'skill_scroll'].includes(item.type)) {
+              srableIds.add(entry.itemId);
+            }
+          }
+        }
+      }
+      for (const itemId of srItems) {
+        if (!srableIds.has(itemId)) {
+          return this.badRequest(res, `Invalid SR item: ${itemId}`);
+        }
+        validatedSrItems.push(itemId);
       }
     }
 
     const entry = await db.registerPlayer(
       expedition.id, username, deviceId || null,
-      characterIds, characterData || {}, srItemId || null
+      characterIds, characterData || {}, validatedSrItems
     );
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -156,16 +183,21 @@ export class HttpApi {
       return;
     }
 
-    const entries = await db.getEntries(expedition.id);
+    const [entries, totalChars] = await Promise.all([
+      db.getEntries(expedition.id),
+      db.getTotalCharacterCount(expedition.id),
+    ]);
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       success: true,
       expeditionId: expedition.id,
+      totalCharacters: totalChars,
+      maxCharacters: EXPEDITION.MAX_CHARACTERS,
       entries: entries.map(e => ({
         username: e.username,
         characterIds: e.character_ids,
-        srItemId: e.sr_item_id,
+        srItems: e.sr_items || [],
         joinedAt: e.joined_at,
       })),
     }));
@@ -179,6 +211,48 @@ export class HttpApi {
       success: true,
       items: srableItems,
     }));
+  }
+
+  // GET /api/expedition/boss-loot
+  // Returns all 15 boss loot tables with codex data for SR selection
+  getBossLoot(req, res) {
+    const bosses = BOSS_DEFINITIONS.map((boss, i) => {
+      const bossNum = i + 1;
+      const table = getLootTable(`boss_${bossNum}`);
+
+      const loot = table.map(entry => {
+        // Determine if this item is SR-eligible (gear/sets/weapons/skins/scrolls only)
+        let srEligible = false;
+        if (entry.setId || entry.weaponId) {
+          srEligible = true;
+        } else {
+          const item = getItemById(entry.itemId);
+          if (item && ['armor', 'weapon', 'skin', 'skill_scroll'].includes(item.type)) {
+            srEligible = true;
+          }
+        }
+
+        return {
+          itemId: entry.itemId,
+          name: entry.name || entry.itemId,
+          rarity: entry.rarity || 'common',
+          dropChance: entry.dropChance,
+          setId: entry.setId || null,
+          weaponId: entry.weaponId || null,
+          srEligible,
+        };
+      });
+
+      return {
+        bossId: bossNum,
+        name: boss.name,
+        zone: bossNum <= 5 ? 'foret' : bossNum <= 10 ? 'abysses' : 'neant',
+        loot,
+      };
+    });
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, bosses }));
   }
 
   // GET /api/expedition/loot

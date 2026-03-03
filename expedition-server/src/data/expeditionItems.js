@@ -1,25 +1,7 @@
-// ── Expedition I Items (Phase 1 - Placeholder Definitions) ──
-
-export const EXPEDITION_SETS = [
-  {
-    id: 'set_forest',
-    name: 'Armure de la Foret',
-    bonus2pc: { hp_pct: 10 },
-    bonus4pc: { def_pct: 15, hp_pct: 10 },
-  },
-  {
-    id: 'set_stone',
-    name: 'Carapace de Pierre',
-    bonus2pc: { def_pct: 15 },
-    bonus4pc: { def_pct: 20, res_flat: 10 },
-  },
-  {
-    id: 'set_shadow',
-    name: 'Voile d\'Ombre',
-    bonus2pc: { atk_pct: 10 },
-    bonus4pc: { atk_pct: 15, crit_rate: 8 },
-  },
-];
+// ── Expedition V2 Items ──
+// Real items referenced by lootTables.js
+// Set pieces are resolved via expeditionSets.js, weapons via expeditionWeapons.js
+// This file handles: armor, basic weapons, consumables, materials, currencies, skins, scrolls
 
 export const EXPEDITION_ITEMS = [
   // ══════════════════════════════════════════════════════
@@ -79,6 +61,13 @@ export const EXPEDITION_ITEMS = [
   // ══════════════════════════════════════════════════════
   { id: 'exp_skill_nature_heal', name: 'Soin de la Nature', type: 'skill_scroll', slot: null, rarity: 'epic', binding: 'lqr', stats: null, description: 'Soigne 20% HP de toute l\'equipe (CD 5min)' },
   { id: 'exp_skill_stone_wall', name: 'Mur de Pierre', type: 'skill_scroll', slot: null, rarity: 'epic', binding: 'lqr', stats: null, description: 'Bouclier absorbant 1 coup fatal (CD 5min)' },
+
+  // ══════════════════════════════════════════════════════
+  // CURRENCIES (from mob waves + bosses)
+  // ══════════════════════════════════════════════════════
+  { id: 'exp_alkahest', name: 'Alkahest', type: 'currency', slot: null, rarity: 'rare', binding: 'tradeable', stats: null, description: 'Permet de reroll les stats d\'artefacts' },
+  { id: 'exp_marteau_rouge', name: 'Marteau Rouge', type: 'currency', slot: null, rarity: 'epic', binding: 'tradeable', stats: null, description: 'Monnaie d\'echange pour armes exclusives' },
+  { id: 'exp_contribution', name: 'Points de Contribution', type: 'currency', slot: null, rarity: 'uncommon', binding: 'tradeable', stats: null, description: 'Points de contribution d\'expedition' },
 ];
 
 export function getItemById(id) {
@@ -90,6 +79,8 @@ export function getItemsByRarity(rarity) {
 }
 
 export function getSRableItems() {
-  // Items that can be soft-reserved (armor, weapons, skins, skill scrolls — not consumables/mats)
-  return EXPEDITION_ITEMS.filter(i => i.type !== 'consumable' && i.type !== 'material');
+  // Items that can be soft-reserved (armor, weapons, skins, skill scrolls — not consumables/mats/currencies)
+  return EXPEDITION_ITEMS.filter(i =>
+    i.type !== 'consumable' && i.type !== 'material' && i.type !== 'currency'
+  );
 }
