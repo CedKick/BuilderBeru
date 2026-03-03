@@ -10998,195 +10998,6 @@ export default function ShadowColosseum() {
               )}
             </div>
 
-            {/* ═══ CLEANUP SECTION ═══ */}
-            <div className="mb-4">
-              <button
-                onClick={() => setCleanupExpanded(prev => !prev)}
-                className="w-full flex items-center justify-between p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-all"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{'\u26A1'}</span>
-                  <span className="text-sm font-bold text-yellow-300">Nettoyage d'Inventaire</span>
-                  <span className="text-normal-responsive text-gray-500">({inv.length} artefacts)</span>
-                </div>
-                <span className={`text-gray-400 transition-transform ${cleanupExpanded ? 'rotate-180' : ''}`}>{'\u25BC'}</span>
-              </button>
-
-              {cleanupExpanded && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  className="mt-2 p-3 rounded-xl border border-yellow-500/20 bg-gray-900/40 space-y-3"
-                >
-                  {/* Keep per set slider */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-normal-responsive text-gray-400">Garder par set</span>
-                      <span className="text-sm font-bold text-yellow-300">{cleanupConfig.keepPerSet}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="5"
-                      max="20"
-                      step="1"
-                      value={cleanupConfig.keepPerSet}
-                      onChange={e => setCleanupConfig(prev => ({ ...prev, keepPerSet: parseInt(e.target.value) }))}
-                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
-                    />
-                    <div className="flex justify-between text-small-responsive text-gray-600 mt-0.5">
-                      <span>Minimal (5)</span>
-                      <span>Balanced (10)</span>
-                      <span>Hoarder (20)</span>
-                    </div>
-                  </div>
-
-                  {/* Protected sets */}
-                  <div>
-                    <div className="text-normal-responsive text-gray-400 mb-1">Sets protégés (ne seront pas supprimés)</div>
-                    <div className="flex flex-wrap gap-1">
-                      {Object.values(ALL_ARTIFACT_SETS).map(set => {
-                        const isProtected = cleanupConfig.protectedSets.has(set.id);
-                        return (
-                          <button
-                            key={set.id}
-                            onClick={() => {
-                              setCleanupConfig(prev => {
-                                const newProtected = new Set(prev.protectedSets);
-                                if (isProtected) newProtected.delete(set.id);
-                                else newProtected.add(set.id);
-                                return { ...prev, protectedSets: newProtected };
-                              });
-                            }}
-                            className={`px-2 py-1 rounded text-small-responsive font-bold transition-all ${
-                              isProtected
-                                ? `${set.color} ${set.bg} ring-1 ring-current`
-                                : 'text-gray-600 bg-gray-800/30 hover:bg-gray-700/30'
-                            }`}
-                          >
-                            {set.icon} {set.name.split(' ')[0]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Override options */}
-                  <div className="space-y-1">
-                    <label className="flex items-center gap-2 text-normal-responsive text-gray-400 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={cleanupConfig.includeHighLevel}
-                        onChange={e => setCleanupConfig(prev => ({ ...prev, includeHighLevel: e.target.checked }))}
-                        className="accent-red-500"
-                      />
-                      <span>Inclure artefacts Lv15+ ({'\u26A0\uFE0F'} risqué)</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-normal-responsive text-gray-400 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={cleanupConfig.includeMythic10}
-                        onChange={e => setCleanupConfig(prev => ({ ...prev, includeMythic10: e.target.checked }))}
-                        className="accent-red-500"
-                      />
-                      <span>Inclure Mythiques Lv10+ ({'\u26A0\uFE0F'} risqué)</span>
-                    </label>
-                  </div>
-
-                  {/* Preview button */}
-                  <button
-                    onClick={() => setCleanupPreview(computeCleanupPreview(cleanupConfig))}
-                    className="w-full py-2 rounded-lg bg-blue-600/30 text-blue-300 text-medium-responsive font-bold hover:bg-blue-600/50 transition-colors"
-                  >
-                    {'\uD83D\uDD0D'} Prévisualiser le nettoyage
-                  </button>
-
-                  {/* Preview panel */}
-                  {cleanupPreview && (
-                    <motion.div
-                      initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      className="p-3 rounded-lg border border-purple-500/30 bg-purple-500/10"
-                    >
-                      <div className="text-medium-responsive font-bold text-purple-300 mb-2">{'\uD83D\uDCCA'} Aperçu du nettoyage</div>
-
-                      {cleanupPreview.totalDelete === 0 ? (
-                        <div className="text-normal-responsive text-gray-400">Aucun artefact à supprimer avec ces paramètres.</div>
-                      ) : (
-                        <>
-                          {/* Summary */}
-                          <div className="grid grid-cols-2 gap-2 mb-2 text-normal-responsive">
-                            <div className="p-2 rounded bg-red-500/10 border border-red-500/20">
-                              <div className="text-red-400 font-bold">À supprimer</div>
-                              <div className="text-xl font-black text-red-300">{cleanupPreview.totalDelete}</div>
-                            </div>
-                            <div className="p-2 rounded bg-green-500/10 border border-green-500/20">
-                              <div className="text-green-400 font-bold">À garder</div>
-                              <div className="text-xl font-black text-green-300">{cleanupPreview.totalKeep}</div>
-                            </div>
-                          </div>
-
-                          {/* Breakdown by rarity */}
-                          <div className="mb-2 p-2 rounded bg-gray-800/30 border border-gray-700/20">
-                            <div className="text-small-responsive text-gray-400 mb-1">Par rareté:</div>
-                            <div className="flex gap-2 text-normal-responsive">
-                              {cleanupPreview.rarityBreakdown.rare > 0 && (
-                                <span className="text-blue-400">{cleanupPreview.rarityBreakdown.rare} Rare</span>
-                              )}
-                              {cleanupPreview.rarityBreakdown.legendaire > 0 && (
-                                <span className="text-orange-400">{cleanupPreview.rarityBreakdown.legendaire} Légendaire</span>
-                              )}
-                              {cleanupPreview.rarityBreakdown.mythique > 0 && (
-                                <span className="text-red-400">{cleanupPreview.rarityBreakdown.mythique} Mythique</span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Expected coins */}
-                          <div className="mb-2 p-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-center">
-                            <div className="text-small-responsive text-yellow-400/70">Revenus attendus</div>
-                            <div className="text-lg font-black text-yellow-300">{'\uD83E\uDE99'} {cleanupPreview.totalCoins} coins</div>
-                          </div>
-
-                          {/* Execute button */}
-                          <button
-                            onClick={executeCleanup}
-                            className="w-full py-2 rounded-lg bg-red-600/30 text-red-300 text-medium-responsive font-bold hover:bg-red-600/50 transition-colors border border-red-500/30"
-                          >
-                            {'\uD83D\uDDD1\uFE0F'} NETTOYER L'INVENTAIRE ({cleanupPreview.totalDelete} artefacts)
-                          </button>
-                          <div className="text-tiny-responsive text-gray-500 text-center mt-1">
-                            {'\u26A0\uFE0F'} Cette action est irréversible!
-                          </div>
-                        </>
-                      )}
-                    </motion.div>
-                  )}
-                </motion.div>
-              )}
-            </div>
-
-            {/* ─── Unlock All Artifacts ──────────────────────── */}
-            {(data.artifactInventory || []).some(a => a.locked) && (
-              <div className="mb-4">
-                <button
-                  onClick={() => {
-                    const lockedCount = (data.artifactInventory || []).filter(a => a.locked).length;
-                    if (!confirm(`Debloquer ${lockedCount} artefact${lockedCount > 1 ? 's' : ''} ? Ils pourront etre vendus/nettoyes.`)) return;
-                    setData(prev => ({
-                      ...prev,
-                      artifactInventory: (prev.artifactInventory || []).map(a => a.locked ? { ...a, locked: false } : a),
-                    }));
-                    showToast(`\uD83D\uDD13 ${lockedCount} artefact${lockedCount > 1 ? 's' : ''} debloque${lockedCount > 1 ? 's' : ''}`, '#f59e0b');
-                  }}
-                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15 transition-all"
-                >
-                  <span>{'\uD83D\uDD13'}</span>
-                  <span className="text-sm font-bold text-amber-300">Tout debloquer</span>
-                  <span className="text-normal-responsive text-gray-500">({(data.artifactInventory || []).filter(a => a.locked).length} bloques)</span>
-                </button>
-              </div>
-            )}
-
             {/* ─── Beru Scout ──────────────────────── */}
             <div className="mb-4">
               <button
@@ -11465,6 +11276,215 @@ export default function ShadowColosseum() {
                 </motion.div>
               )}
             </div>
+
+            {/* ═══ CLEANUP SECTION ═══ */}
+            <div className="mb-4">
+              <button
+                onClick={() => setCleanupExpanded(prev => !prev)}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-all"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{'\u26A1'}</span>
+                  <span className="text-sm font-bold text-yellow-300">Nettoyage d'Inventaire</span>
+                  <span className="text-normal-responsive text-gray-500">({inv.length} artefacts)</span>
+                </div>
+                <span className={`text-gray-400 transition-transform ${cleanupExpanded ? 'rotate-180' : ''}`}>{'\u25BC'}</span>
+              </button>
+
+              {cleanupExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  className="mt-2 p-3 rounded-xl border border-yellow-500/20 bg-gray-900/40 space-y-3"
+                >
+                  {/* Keep per set slider */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-normal-responsive text-gray-400">Garder par set</span>
+                      <span className="text-sm font-bold text-yellow-300">{cleanupConfig.keepPerSet}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="20"
+                      step="1"
+                      value={cleanupConfig.keepPerSet}
+                      onChange={e => setCleanupConfig(prev => ({ ...prev, keepPerSet: parseInt(e.target.value) }))}
+                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                    />
+                    <div className="flex justify-between text-small-responsive text-gray-600 mt-0.5">
+                      <span>Minimal (5)</span>
+                      <span>Balanced (10)</span>
+                      <span>Hoarder (20)</span>
+                    </div>
+                  </div>
+
+                  {/* Protected sets */}
+                  <div>
+                    <div className="text-normal-responsive text-gray-400 mb-1">Sets protégés (ne seront pas supprimés)</div>
+                    <div className="flex flex-wrap gap-1">
+                      {Object.values(ALL_ARTIFACT_SETS).map(set => {
+                        const isProtected = cleanupConfig.protectedSets.has(set.id);
+                        return (
+                          <button
+                            key={set.id}
+                            onClick={() => {
+                              setCleanupConfig(prev => {
+                                const newProtected = new Set(prev.protectedSets);
+                                if (isProtected) newProtected.delete(set.id);
+                                else newProtected.add(set.id);
+                                return { ...prev, protectedSets: newProtected };
+                              });
+                            }}
+                            className={`px-2 py-1 rounded text-small-responsive font-bold transition-all ${
+                              isProtected
+                                ? `${set.color} ${set.bg} ring-1 ring-current`
+                                : 'text-gray-600 bg-gray-800/30 hover:bg-gray-700/30'
+                            }`}
+                          >
+                            {set.icon} {set.name.split(' ')[0]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Override options */}
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-2 text-normal-responsive text-gray-400 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={cleanupConfig.includeHighLevel}
+                        onChange={e => setCleanupConfig(prev => ({ ...prev, includeHighLevel: e.target.checked }))}
+                        className="accent-red-500"
+                      />
+                      <span>Inclure artefacts Lv15+ ({'\u26A0\uFE0F'} risqué)</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-normal-responsive text-gray-400 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={cleanupConfig.includeMythic10}
+                        onChange={e => setCleanupConfig(prev => ({ ...prev, includeMythic10: e.target.checked }))}
+                        className="accent-red-500"
+                      />
+                      <span>Inclure Mythiques Lv10+ ({'\u26A0\uFE0F'} risqué)</span>
+                    </label>
+                  </div>
+
+                  {/* Preview button */}
+                  <button
+                    onClick={() => setCleanupPreview(computeCleanupPreview(cleanupConfig))}
+                    className="w-full py-2 rounded-lg bg-blue-600/30 text-blue-300 text-medium-responsive font-bold hover:bg-blue-600/50 transition-colors"
+                  >
+                    {'\uD83D\uDD0D'} Prévisualiser le nettoyage
+                  </button>
+
+                  {/* Preview panel */}
+                  {cleanupPreview && (
+                    <motion.div
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      className="p-3 rounded-lg border border-purple-500/30 bg-purple-500/10"
+                    >
+                      <div className="text-medium-responsive font-bold text-purple-300 mb-2">{'\uD83D\uDCCA'} Aperçu du nettoyage</div>
+
+                      {cleanupPreview.totalDelete === 0 ? (
+                        <div className="text-normal-responsive text-gray-400">Aucun artefact à supprimer avec ces paramètres.</div>
+                      ) : (
+                        <>
+                          {/* Summary */}
+                          <div className="grid grid-cols-2 gap-2 mb-2 text-normal-responsive">
+                            <div className="p-2 rounded bg-red-500/10 border border-red-500/20">
+                              <div className="text-red-400 font-bold">À supprimer</div>
+                              <div className="text-xl font-black text-red-300">{cleanupPreview.totalDelete}</div>
+                            </div>
+                            <div className="p-2 rounded bg-green-500/10 border border-green-500/20">
+                              <div className="text-green-400 font-bold">À garder</div>
+                              <div className="text-xl font-black text-green-300">{cleanupPreview.totalKeep}</div>
+                            </div>
+                          </div>
+
+                          {/* Breakdown by rarity */}
+                          <div className="mb-2 p-2 rounded bg-gray-800/30 border border-gray-700/20">
+                            <div className="text-small-responsive text-gray-400 mb-1">Par rareté:</div>
+                            <div className="flex gap-2 text-normal-responsive">
+                              {cleanupPreview.rarityBreakdown.rare > 0 && (
+                                <span className="text-blue-400">{cleanupPreview.rarityBreakdown.rare} Rare</span>
+                              )}
+                              {cleanupPreview.rarityBreakdown.legendaire > 0 && (
+                                <span className="text-orange-400">{cleanupPreview.rarityBreakdown.legendaire} Légendaire</span>
+                              )}
+                              {cleanupPreview.rarityBreakdown.mythique > 0 && (
+                                <span className="text-red-400">{cleanupPreview.rarityBreakdown.mythique} Mythique</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Expected coins */}
+                          <div className="mb-2 p-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-center">
+                            <div className="text-small-responsive text-yellow-400/70">Revenus attendus</div>
+                            <div className="text-lg font-black text-yellow-300">{'\uD83E\uDE99'} {cleanupPreview.totalCoins} coins</div>
+                          </div>
+
+                          {/* Execute button */}
+                          <button
+                            onClick={executeCleanup}
+                            className="w-full py-2 rounded-lg bg-red-600/30 text-red-300 text-medium-responsive font-bold hover:bg-red-600/50 transition-colors border border-red-500/30"
+                          >
+                            {'\uD83D\uDDD1\uFE0F'} NETTOYER L'INVENTAIRE ({cleanupPreview.totalDelete} artefacts)
+                          </button>
+                          <div className="text-tiny-responsive text-gray-500 text-center mt-1">
+                            {'\u26A0\uFE0F'} Cette action est irréversible!
+                          </div>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </div>
+
+            {/* ─── Lock / Unlock All Artifacts ──────────────────────── */}
+            {(data.artifactInventory || []).length > 0 && (
+              <div className="mb-4 flex gap-2">
+                {(data.artifactInventory || []).some(a => !a.locked) && (
+                  <button
+                    onClick={() => {
+                      const unlockedCount = (data.artifactInventory || []).filter(a => !a.locked).length;
+                      if (!confirm(`Bloquer ${unlockedCount} artefact${unlockedCount > 1 ? 's' : ''} ? Ils ne pourront plus etre vendus/nettoyes.`)) return;
+                      setData(prev => ({
+                        ...prev,
+                        artifactInventory: (prev.artifactInventory || []).map(a => !a.locked ? { ...a, locked: true } : a),
+                      }));
+                      showToast(`\uD83D\uDD12 ${unlockedCount} artefact${unlockedCount > 1 ? 's' : ''} bloque${unlockedCount > 1 ? 's' : ''}`, '#3b82f6');
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-xl border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/15 transition-all"
+                  >
+                    <span>{'\uD83D\uDD12'}</span>
+                    <span className="text-sm font-bold text-blue-300">Tout bloquer</span>
+                    <span className="text-normal-responsive text-gray-500">({(data.artifactInventory || []).filter(a => !a.locked).length})</span>
+                  </button>
+                )}
+                {(data.artifactInventory || []).some(a => a.locked) && (
+                  <button
+                    onClick={() => {
+                      const lockedCount = (data.artifactInventory || []).filter(a => a.locked).length;
+                      if (!confirm(`Debloquer ${lockedCount} artefact${lockedCount > 1 ? 's' : ''} ? Ils pourront etre vendus/nettoyes.`)) return;
+                      setData(prev => ({
+                        ...prev,
+                        artifactInventory: (prev.artifactInventory || []).map(a => a.locked ? { ...a, locked: false } : a),
+                      }));
+                      showToast(`\uD83D\uDD13 ${lockedCount} artefact${lockedCount > 1 ? 's' : ''} debloque${lockedCount > 1 ? 's' : ''}`, '#f59e0b');
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15 transition-all"
+                  >
+                    <span>{'\uD83D\uDD13'}</span>
+                    <span className="text-sm font-bold text-amber-300">Tout debloquer</span>
+                    <span className="text-normal-responsive text-gray-500">({(data.artifactInventory || []).filter(a => a.locked).length})</span>
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Inventory Grid */}
             <div className="mb-5">
