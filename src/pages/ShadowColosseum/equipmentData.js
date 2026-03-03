@@ -1196,7 +1196,7 @@ export function generateUltimeArtifact(rc) {
     usedIds.add(pick.id);
     subs.push({ id: pick.id, value: pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1)) });
   }
-  return { set, slotId: slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `ult_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
+  return { set, slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `ult_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
 }
 
 // Generate a specific-set mythique artifact (used for secret drops like Pacte des Ombres)
@@ -1216,7 +1216,7 @@ export function generateSetArtifact(setId) {
     usedIds.add(pick.id);
     subs.push({ id: pick.id, value: pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1)) });
   }
-  return { set: setId, slotId: slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `pact_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
+  return { set: setId, slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `pact_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
 }
 
 export function rollWeaponDrop(stageTier, isBoss = false) {

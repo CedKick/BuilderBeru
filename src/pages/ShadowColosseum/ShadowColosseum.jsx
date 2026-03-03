@@ -569,18 +569,18 @@ const migrateData = (d) => {
     localStorage.removeItem('manaya_alkahest');
   }
   if (!d.rerollCounts) d.rerollCounts = {};
-  d.artifactInventory = (d.artifactInventory || []).map(art => ({
-    ...art, locked: art.locked ?? false, highlighted: art.highlighted ?? false
-  }));
+  d.artifactInventory = (d.artifactInventory || []).map(art => {
+    // Normalize slotId → slot (fix for artifacts generated with wrong key)
+    if (art.slotId && !art.slot) art.slot = art.slotId;
+    return { ...art, locked: art.locked ?? false, highlighted: art.highlighted ?? false };
+  });
   if (d.artifacts) {
     Object.keys(d.artifacts).forEach(chibiId => {
       Object.keys(d.artifacts[chibiId] || {}).forEach(slotId => {
-        if (d.artifacts[chibiId][slotId]) {
-          d.artifacts[chibiId][slotId] = {
-            ...d.artifacts[chibiId][slotId],
-            locked: d.artifacts[chibiId][slotId].locked ?? false,
-            highlighted: d.artifacts[chibiId][slotId].highlighted ?? false
-          };
+        const a = d.artifacts[chibiId][slotId];
+        if (a) {
+          if (a.slotId && !a.slot) a.slot = a.slotId;
+          d.artifacts[chibiId][slotId] = { ...a, locked: a.locked ?? false, highlighted: a.highlighted ?? false };
         }
       });
     });
@@ -9970,34 +9970,67 @@ export default function ShadowColosseum() {
             <div className="mb-5">
               <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDD04'} Echange de Coins</div>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => {
-                  if (coins < 1000) return;
-                  shadowCoinManager.spendCoins(1000);
-                  setData(prev => ({
-                    ...prev,
-                    alkahest: (prev.alkahest || 0) + 1
-                  }));
-                  showToast('\uD83E\uDDEA +1 Alkahest', '#a78bfa');
-                }} disabled={coins < 1000}
-                  className="p-2.5 rounded-xl border border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/15 disabled:opacity-30 transition-all text-center">
-                  <div className="text-lg">{'\uD83E\uDDEA'}</div>
-                  <div className="text-normal-responsive font-bold text-purple-300">+1 Alkahest</div>
-                  <div className="text-small-responsive text-gray-400 mt-0.5">{'\uD83D\uDCB0'} 1000 coins</div>
-                </button>
-                <button onClick={() => {
-                  if (coins < 1000) return;
-                  shadowCoinManager.spendCoins(1000);
-                  setData(prev => ({
-                    ...prev,
-                    hammers: { ...prev.hammers, marteau_rouge: (prev.hammers?.marteau_rouge || 0) + 10 }
-                  }));
-                  showToast('\uD83D\uDD34 +10 Marteaux Rouges', '#ef4444');
-                }} disabled={coins < 1000}
-                  className="p-2.5 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/15 disabled:opacity-30 transition-all text-center">
-                  <div className="text-lg">{'\uD83D\uDD34'}</div>
-                  <div className="text-normal-responsive font-bold text-red-300">+10 Marteaux Rouges</div>
-                  <div className="text-small-responsive text-gray-400 mt-0.5">{'\uD83D\uDCB0'} 1000 coins</div>
-                </button>
+                {/* Alkahest exchange */}
+                <div className="flex flex-col gap-1">
+                  <button onClick={() => {
+                    if (coins < 1000) return;
+                    shadowCoinManager.spendCoins(1000);
+                    setData(prev => ({ ...prev, alkahest: (prev.alkahest || 0) + 1 }));
+                    showToast('\uD83E\uDDEA +1 Alkahest', '#a78bfa');
+                  }} disabled={coins < 1000}
+                    className="p-2.5 rounded-xl border border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/15 disabled:opacity-30 transition-all text-center">
+                    <div className="text-lg">{'\uD83E\uDDEA'}</div>
+                    <div className="text-normal-responsive font-bold text-purple-300">Alkahest</div>
+                    <div className="text-small-responsive text-gray-400 mt-0.5">{'\uD83D\uDCB0'} 1000 = 1</div>
+                  </button>
+                  <div className="flex gap-0.5">
+                    {[1, 10, 100].map(qty => {
+                      const cost = 1000 * qty;
+                      const affordable = Math.min(qty, Math.floor(coins / 1000));
+                      return (
+                        <button key={qty} onClick={() => {
+                          if (affordable <= 0) return;
+                          shadowCoinManager.spendCoins(1000 * affordable);
+                          setData(prev => ({ ...prev, alkahest: (prev.alkahest || 0) + affordable }));
+                          showToast(`\uD83E\uDDEA +${affordable} Alkahest`, '#a78bfa');
+                        }} disabled={coins < 1000}
+                          className="flex-1 py-0.5 rounded-lg text-tiny-responsive font-bold border border-purple-500/15 bg-purple-500/5 hover:bg-purple-500/20 active:bg-purple-500/30 disabled:opacity-30 transition-all text-purple-400 select-none">
+                          x{qty}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Marteaux Rouges exchange */}
+                <div className="flex flex-col gap-1">
+                  <button onClick={() => {
+                    if (coins < 1000) return;
+                    shadowCoinManager.spendCoins(1000);
+                    setData(prev => ({ ...prev, hammers: { ...prev.hammers, marteau_rouge: (prev.hammers?.marteau_rouge || 0) + 10 } }));
+                    showToast('\uD83D\uDD34 +10 Marteaux Rouges', '#ef4444');
+                  }} disabled={coins < 1000}
+                    className="p-2.5 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/15 disabled:opacity-30 transition-all text-center">
+                    <div className="text-lg">{'\uD83D\uDD34'}</div>
+                    <div className="text-normal-responsive font-bold text-red-300">Marteaux Rouges</div>
+                    <div className="text-small-responsive text-gray-400 mt-0.5">{'\uD83D\uDCB0'} 1000 = 10</div>
+                  </button>
+                  <div className="flex gap-0.5">
+                    {[1, 10, 100].map(qty => {
+                      const affordable = Math.min(qty, Math.floor(coins / 1000));
+                      return (
+                        <button key={qty} onClick={() => {
+                          if (affordable <= 0) return;
+                          shadowCoinManager.spendCoins(1000 * affordable);
+                          setData(prev => ({ ...prev, hammers: { ...prev.hammers, marteau_rouge: (prev.hammers?.marteau_rouge || 0) + (10 * affordable) } }));
+                          showToast(`\uD83D\uDD34 +${10 * affordable} Marteaux Rouges`, '#ef4444');
+                        }} disabled={coins < 1000}
+                          className="flex-1 py-0.5 rounded-lg text-tiny-responsive font-bold border border-red-500/15 bg-red-500/5 hover:bg-red-500/20 active:bg-red-500/30 disabled:opacity-30 transition-all text-red-400 select-none">
+                          x{qty}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -10187,7 +10220,7 @@ export default function ShadowColosseum() {
                       const buySetPiece = (setId, cost) => {
                         if (redHammers < cost) return;
                         const artifact = generateSetArtifact(setId);
-                        const slotName = ARTIFACT_SLOTS[artifact.slotId]?.name || artifact.slotId;
+                        const slotName = ARTIFACT_SLOTS[artifact.slot]?.name || artifact.slot;
                         setData(prev => {
                           const newH = { ...prev.hammers };
                           newH.marteau_rouge = (newH.marteau_rouge || 0) - cost;
@@ -11872,14 +11905,14 @@ export default function ShadowColosseum() {
                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.25 }}
                   className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-2 mb-4">
                   <div className="text-purple-300 text-xs font-bold">{'\u2728'} Artefact {result.guaranteedArtifact.rarity} obtenu !</div>
-                  <div className="text-small-responsive text-gray-400 mt-0.5">{ARTIFACT_SETS[result.guaranteedArtifact.setId]?.name || 'Artefact'} — {ARTIFACT_SLOTS[result.guaranteedArtifact.slotId]?.name || result.guaranteedArtifact.slotId}</div>
+                  <div className="text-small-responsive text-gray-400 mt-0.5">{ARTIFACT_SETS[result.guaranteedArtifact.setId]?.name || 'Artefact'} — {ARTIFACT_SLOTS[result.guaranteedArtifact.slot || result.guaranteedArtifact.slotId]?.name || result.guaranteedArtifact.slot || result.guaranteedArtifact.slotId}</div>
                 </motion.div>
               )}
               {result.pacteDrop && (
                 <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1.3, type: 'spring' }}
                   className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border-2 border-purple-500/50 rounded-xl p-3 mb-4 text-center">
                   <div className="text-lg font-black text-purple-300">{'\uD83C\uDF11'} Pacte des Ombres !</div>
-                  <div className="text-normal-responsive text-gray-400 mt-0.5">Artefact mythique — {ARTIFACT_SLOTS[result.pacteDrop.slotId]?.name || result.pacteDrop.slotId}</div>
+                  <div className="text-normal-responsive text-gray-400 mt-0.5">Artefact mythique — {ARTIFACT_SLOTS[result.pacteDrop.slot || result.pacteDrop.slotId]?.name || result.pacteDrop.slot || result.pacteDrop.slotId}</div>
                   <div className="text-small-responsive text-purple-400 mt-1">Set ultra-rare obtenu sur Zephyr Ultime !</div>
                 </motion.div>
               )}
