@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Swords, Users, Play, Plus, LogIn, Eye, Clock, Shield, Skull, Trophy, ChevronRight, ChevronDown, ChevronUp, Flame, X, RotateCcw, BookOpen, Star, Gem, Award, Package, ScrollText, Sparkles, Lock } from 'lucide-react';
+import { Swords, Users, Play, Plus, Eye, Clock, Shield, Skull, Trophy, ChevronRight, ChevronDown, ChevronUp, Flame, X, RotateCcw, BookOpen, Star, Gem, Award, Package, ScrollText, Sparkles, Lock } from 'lucide-react';
 
 // ── Import real hunter data from Shadow Colosseum ──
 import { HUNTERS, RAID_SAVE_KEY, loadRaidData, getHunterPool, getHunterStars } from '../ShadowColosseum/raidData';
@@ -154,9 +154,8 @@ function computeHunterFullStats(hunterId, coloData, raidData) {
 
 // ── Main Component ──
 export default function Expedition() {
-  // Auth
-  const [adminKey, setAdminKey] = useState(() => localStorage.getItem('expedition_admin_key') || '');
-  const [authenticated, setAuthenticated] = useState(false);
+  // Auth (open to all — admin gate disabled)
+  const [authenticated, setAuthenticated] = useState(true);
 
   // Data
   const [expedition, setExpedition] = useState(null);
@@ -221,38 +220,14 @@ export default function Expedition() {
 
   // ── API Helper ──
   const api = useCallback(async (path, method = 'GET', body = null) => {
-    const url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}key=${adminKey}`;
+    const url = `${API_BASE}${path}`;
     const opts = { method, headers: { 'Content-Type': 'application/json' } };
     if (body) opts.body = JSON.stringify(body);
     const res = await fetch(url, opts);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Request failed');
     return data;
-  }, [adminKey]);
-
-  // ── Auth ──
-  const handleLogin = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const data = await api('/api/expedition/current');
-      if (data.success !== undefined) {
-        setAuthenticated(true);
-        localStorage.setItem('expedition_admin_key', adminKey);
-      }
-    } catch {
-      setError('Cle invalide');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Auto-auth on mount
-  useEffect(() => {
-    if (adminKey && !authenticated) {
-      handleLogin();
-    }
-  }, []); // eslint-disable-line
+  }, []);
 
   // ── Fetch data ──
   const fetchStatus = useCallback(async () => {
@@ -508,40 +483,6 @@ export default function Expedition() {
   const isRegistrationClosed = registrationCutoff && Date.now() >= registrationCutoff.getTime();
 
   // ═══════════════════════════════════════════
-  // RENDER: Login
-  // ═══════════════════════════════════════════
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center">
-        <div className="bg-[#1a1a2e] border border-purple-500/30 rounded-xl p-8 w-full max-w-sm">
-          <div className="text-center mb-6">
-            <Swords className="w-12 h-12 text-purple-400 mx-auto mb-3" />
-            <h1 className="text-2xl font-bold text-purple-300">Expedition I</h1>
-            <p className="text-gray-500 text-sm mt-1">Acces restreint - Phase de test</p>
-          </div>
-          <input
-            type="text"
-            value={adminKey}
-            onChange={e => setAdminKey(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            placeholder="Cle admin"
-            className="w-full bg-[#0f0f1a] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-purple-500 focus:outline-none mb-4"
-          />
-          <button
-            onClick={handleLogin}
-            disabled={loading || !adminKey}
-            className="w-full bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 text-white font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
-          >
-            <LogIn className="w-4 h-4" />
-            {loading ? 'Connexion...' : 'Entrer'}
-          </button>
-          {error && <p className="text-red-400 text-sm text-center mt-3">{error}</p>}
-        </div>
-      </div>
-    );
-  }
-
-  // ═══════════════════════════════════════════
   // RENDER: Spectator Mode (fullscreen iframe)
   // ═══════════════════════════════════════════
   if (showSpectator) {
@@ -587,7 +528,7 @@ export default function Expedition() {
         <SRNotificationToasts notifications={srNotifications} onDismiss={(id) => setSrNotifications(prev => prev.filter(n => n.id !== id))} />
 
         <iframe
-          src={`${SPECTATOR_URL}?key=${adminKey}`}
+          src={SPECTATOR_URL}
           className="w-full h-screen border-0"
           title="Expedition Spectator"
         />
@@ -941,8 +882,8 @@ export default function Expedition() {
         </div>
       )}
 
-      {/* Admin: Force Start */}
-      {isRegistration && entries.length > 0 && (
+      {/* Admin: Force Start (hidden, only with ?reset=1 in URL) */}
+      {isRegistration && entries.length > 0 && isAdminReset && (
         <div className="bg-[#1a1a2e] border border-orange-500/30 rounded-xl p-5">
           <h2 className="text-lg font-semibold text-orange-300 mb-3 flex items-center gap-2">
             <Flame className="w-5 h-5" /> Admin
