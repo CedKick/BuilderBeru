@@ -143,7 +143,7 @@ export const ROLE_MAP = {
 
 // ─── Admin Gate (temporary: restrict access during testing) ──
 export const ADMIN = {
-  ENABLED: true,               // Set to false to open to all
+  ENABLED: false,              // Open to all (prod)
   ALLOWED_USERS: ['kly'],      // Usernames allowed during admin gate
   SECRET_KEY: 'kly',           // URL param ?key=kly to access spectator/API
 };
