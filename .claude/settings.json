@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(powershell:*)",
-      "Bash(npx vite build:*)"
+      "Bash(npx vite build:*)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)",
+      "Bash(git push:*)",
+      "Read(//c/Users/CedPC/Desktop/MesDev/**)",
+      "Bash(nslookup -type=AAAA builderberu.com)",
+      "Bash(tracert -d -h 15 76.76.21.21)",
+      "WebFetch(domain:res.cloudinary.com)"
     ]
   }
 }

@@ -6,6 +6,7 @@ import { LOOT_TABLES, getLootTable } from '../data/lootTables.js';
 import { BOSS_DEFINITIONS } from '../data/bossDefinitions.js';
 import { ALL_SETS } from '../data/expeditionSets.js';
 import { EXPEDITION_WEAPONS } from '../data/expeditionWeapons.js';
+import { UNIQUE_ARTIFACTS } from '../data/expeditionUniques.js';
 
 // ── HTTP API for Expedition ──
 // Handles registration, SR selection, status queries, and loot history.
@@ -132,11 +133,11 @@ export class HttpApi {
       const srableIds = new Set();
       for (let b = 1; b <= 15; b++) {
         for (const entry of getLootTable(`boss_${b}`)) {
-          if (entry.setId || entry.weaponId) {
+          if (entry.setId || entry.weaponId || entry.uniqueId) {
             srableIds.add(entry.itemId);
           } else {
             const item = getItemById(entry.itemId);
-            if (item && ['armor', 'weapon', 'skin', 'skill_scroll'].includes(item.type)) {
+            if (item && ['armor', 'weapon'].includes(item.type)) {
               srableIds.add(entry.itemId);
             }
           }
@@ -223,13 +224,13 @@ export class HttpApi {
       const table = getLootTable(`boss_${bossNum}`);
 
       const loot = table.map(entry => {
-        // Determine if this item is SR-eligible (gear/sets/weapons/skins/scrolls only)
+        // Determine if this item is SR-eligible (gear/sets/weapons/uniques only)
         let srEligible = false;
-        if (entry.setId || entry.weaponId) {
+        if (entry.setId || entry.weaponId || entry.uniqueId) {
           srEligible = true;
         } else {
           const item = getItemById(entry.itemId);
-          if (item && ['armor', 'weapon', 'skin', 'skill_scroll'].includes(item.type)) {
+          if (item && ['armor', 'weapon'].includes(item.type)) {
             srEligible = true;
           }
         }
@@ -242,6 +243,7 @@ export class HttpApi {
           dropChance: entry.dropChance,
           setId: entry.setId || null,
           weaponId: entry.weaponId || null,
+          uniqueId: entry.uniqueId || null,
           srEligible,
         };
 
@@ -282,6 +284,19 @@ export class HttpApi {
             weaponType: wpn.type,
             bonus: wpn.bonus,
             passive: wpn.passive,
+          };
+        }
+
+        // ── Enrich unique artifacts from expeditionUniques
+        if (entry.uniqueId && UNIQUE_ARTIFACTS[entry.uniqueId]) {
+          const uniq = UNIQUE_ARTIFACTS[entry.uniqueId];
+          result.type = 'unique';
+          result.slot = uniq.slot;
+          result.binding = uniq.binding;
+          result.stats = uniq.stats;
+          result.uniqueInfo = {
+            passive: uniq.passive,
+            achievement: uniq.achievement,
           };
         }
 

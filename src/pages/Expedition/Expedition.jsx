@@ -83,9 +83,7 @@ const TYPE_ICONS = {
   armor: Shield,
   weapon: Swords,
   set_piece: Gem,
-  skin: Sparkles,
-  skill_scroll: ScrollText,
-  consumable: Package,
+  unique: Star,
   material: Package,
   currency: Award,
 };
@@ -991,7 +989,7 @@ function ItemTooltip({ item, children }) {
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const ref = useRef(null);
 
-  const hasDetail = item.stats || item.setInfo || item.weaponInfo || item.description;
+  const hasDetail = item.stats || item.setInfo || item.weaponInfo || item.uniqueInfo || item.description;
   if (!hasDetail) return children;
 
   const rs = RARITY_STYLES[item.rarity] || RARITY_STYLES.common;
@@ -1037,8 +1035,9 @@ function ItemTooltip({ item, children }) {
               <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mb-2.5 text-[10px] text-gray-500">
                 <span className={`${rs.badge} px-1.5 py-0.5 rounded font-medium`}>{item.rarity}</span>
                 {item.slot && <span>{SLOT_LABELS[item.slot] || item.slot}</span>}
-                {item.type && item.type !== 'set_piece' && <span className="capitalize">{item.type}</span>}
+                {item.type && item.type !== 'set_piece' && item.type !== 'unique' && <span className="capitalize">{item.type}</span>}
                 {item.type === 'set_piece' && <span>Piece de set</span>}
+                {item.type === 'unique' && <span className="text-yellow-400">Unique</span>}
                 {item.binding && <span className="text-gray-600">· {BINDING_LABELS[item.binding] || item.binding}</span>}
               </div>
 
@@ -1114,6 +1113,19 @@ function ItemTooltip({ item, children }) {
                           : formatStats(item.setInfo.bonus4pc)?.join(', ') || JSON.stringify(item.setInfo.bonus4pc)
                         }
                       </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Unique Info ── */}
+              {item.uniqueInfo && (
+                <div className="mb-2.5 py-2 px-2.5 rounded-lg border border-yellow-500/30" style={{ background: 'linear-gradient(135deg, rgba(161,98,7,0.15), rgba(30,20,5,0.25))' }}>
+                  <div className="text-[10px] text-yellow-400 font-bold uppercase tracking-wide mb-0.5">Passif Unique</div>
+                  <div className="text-[11px] text-yellow-200/90 leading-relaxed">{item.uniqueInfo.passive?.description}</div>
+                  {item.uniqueInfo.achievement && (
+                    <div className="mt-1.5 pt-1 border-t border-yellow-800/30 text-[10px] text-amber-500/70 italic">
+                      {item.uniqueInfo.achievement.description}
                     </div>
                   )}
                 </div>
@@ -1208,7 +1220,7 @@ function BossLootCodex({ bossLootData, selectedBoss, setSelectedBoss, rarityFilt
           const isSR = selectedSRs?.includes(item.itemId);
           const srUsers = srCountByItem[item.itemId] || [];
           const otherSR = srUsers.filter(u => u.toLowerCase() !== username.trim().toLowerCase());
-          const TypeIcon = TYPE_ICONS[item.type || (item.setId ? 'set_piece' : item.weaponId ? 'weapon' : 'armor')] || Package;
+          const TypeIcon = TYPE_ICONS[item.type || (item.uniqueId ? 'unique' : item.setId ? 'set_piece' : item.weaponId ? 'weapon' : 'armor')] || Package;
           const itemStats = formatStats(item.stats);
 
           return (
@@ -1230,6 +1242,7 @@ function BossLootCodex({ bossLootData, selectedBoss, setSelectedBoss, rarityFilt
                     <span className={`text-xs font-medium ${rs.text}`}>{item.name}</span>
                     {item.setInfo && <span className="text-[9px] text-purple-400/70">(Set)</span>}
                     {item.weaponInfo && <span className="text-[9px] text-orange-400/70">(Arme)</span>}
+                    {item.uniqueInfo && <span className="text-[9px] text-yellow-400/70">(Unique)</span>}
                   </div>
                   <div className="flex items-center gap-2 text-[10px] text-gray-500">
                     <span className={`${rs.badge} px-1 py-0 rounded text-[9px]`}>{item.rarity}</span>
@@ -1250,6 +1263,11 @@ function BossLootCodex({ bossLootData, selectedBoss, setSelectedBoss, rarityFilt
                   {item.weaponInfo && (
                     <div className="text-[9px] text-red-400/50 mt-0.5">
                       ATK {item.weaponInfo.atk} · {ELEMENT_LABELS[item.weaponInfo.element] || item.weaponInfo.element}
+                    </div>
+                  )}
+                  {item.uniqueInfo && (
+                    <div className="text-[9px] text-yellow-400/50 mt-0.5 truncate">
+                      {item.uniqueInfo.passive?.description?.slice(0, 50)}{item.uniqueInfo.passive?.description?.length > 50 ? '...' : ''}
                     </div>
                   )}
                 </div>
