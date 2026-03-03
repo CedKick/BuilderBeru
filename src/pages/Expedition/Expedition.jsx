@@ -916,22 +916,7 @@ export default function Expedition() {
         </div>
       )}
 
-      {/* Admin: Force Start (hidden, only with ?reset=1 in URL) */}
-      {isRegistration && entries.length > 0 && isAdminReset && (
-        <div className="bg-[#1a1a2e] border border-orange-500/30 rounded-xl p-5">
-          <h2 className="text-lg font-semibold text-orange-300 mb-3 flex items-center gap-2">
-            <Flame className="w-5 h-5" /> Admin
-          </h2>
-          <button
-            onClick={forceStart}
-            disabled={loading}
-            className="bg-orange-600 hover:bg-orange-500 disabled:bg-gray-700 text-white font-medium px-6 py-3 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <Play className="w-5 h-5" />
-            {loading ? 'Demarrage...' : 'Lancer maintenant'}
-          </button>
-        </div>
-      )}
+      {/* Admin force-start removed — expedition auto-launches at 19h */}
 
       {/* Finished/Wiped summary */}
       {(status === 'finished' || status === 'wiped') && liveStatus && (
