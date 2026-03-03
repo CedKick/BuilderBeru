@@ -323,6 +323,46 @@ export default function MailInbox() {
       shadowCoinManager.addCoins(rewards.coins, 'mail-reward');
     }
 
+    // Expedition items, currencies, essences
+    if (rewards.expeditionItems || rewards.expeditionCurrencies || rewards.expeditionEssences) {
+      let raidData = await cloudStorage.loadFresh(RAID_KEY) || {};
+      if (!Array.isArray(raidData.expeditionInventory)) raidData.expeditionInventory = [];
+      if (!raidData.expeditionCurrencies) raidData.expeditionCurrencies = { alkahest: 0, marteau_rouge: 0, contribution: 0 };
+      if (!raidData.expeditionEssences) raidData.expeditionEssences = { guerre: 0, arcanique: 0, gardienne: 0 };
+
+      // Add items to expedition inventory
+      if (rewards.expeditionItems && Array.isArray(rewards.expeditionItems)) {
+        const timestamp = Date.now();
+        rewards.expeditionItems.forEach(item => {
+          raidData.expeditionInventory.push({
+            ...item,
+            uid: `exp_${timestamp}_${Math.random().toString(36).slice(2, 8)}`,
+            obtainedAt: timestamp,
+            source: 'expedition_mail',
+            locked: false,
+          });
+        });
+      }
+
+      // Add currencies
+      if (rewards.expeditionCurrencies) {
+        const c = raidData.expeditionCurrencies;
+        c.alkahest = (c.alkahest || 0) + (rewards.expeditionCurrencies.alkahest || 0);
+        c.marteau_rouge = (c.marteau_rouge || 0) + (rewards.expeditionCurrencies.marteau_rouge || 0);
+        c.contribution = (c.contribution || 0) + (rewards.expeditionCurrencies.contribution || 0);
+      }
+
+      // Add essences
+      if (rewards.expeditionEssences) {
+        const e = raidData.expeditionEssences;
+        e.guerre = (e.guerre || 0) + (rewards.expeditionEssences.guerre || 0);
+        e.arcanique = (e.arcanique || 0) + (rewards.expeditionEssences.arcanique || 0);
+        e.gardienne = (e.gardienne || 0) + (rewards.expeditionEssences.gardienne || 0);
+      }
+
+      await cloudStorage.saveAndSync(RAID_KEY, raidData);
+    }
+
     // Force immediate sync (no debounce) — ensures cloud has A3 BEFORE user navigates to ShadowColosseum
     await cloudStorage.saveAndSync(SAVE_KEY, data);
 
@@ -407,6 +447,33 @@ export default function MailInbox() {
 
         if (rewards.coins) {
           message += `\n\uD83E\uDE99 ${rewards.coins} Shadow Coins\n`;
+        }
+
+        if (rewards.expeditionItems && rewards.expeditionItems.length > 0) {
+          message += '\n\u2694\uFE0F BUTIN EXPEDITION :\n';
+          rewards.expeditionItems.forEach(it => {
+            message += `  \u2022 ${it.itemName} (${it.rarity})\n`;
+          });
+        }
+
+        if (rewards.expeditionCurrencies) {
+          const ec = rewards.expeditionCurrencies;
+          if (ec.alkahest || ec.marteau_rouge || ec.contribution) {
+            message += '\n\uD83D\uDCB0 MONNAIES EXPEDITION :\n';
+            if (ec.alkahest) message += `  \u2022 Alkahest: ${ec.alkahest}\n`;
+            if (ec.marteau_rouge) message += `  \u2022 Marteau Rouge: ${ec.marteau_rouge}\n`;
+            if (ec.contribution) message += `  \u2022 Contribution: ${ec.contribution}\n`;
+          }
+        }
+
+        if (rewards.expeditionEssences) {
+          const ee = rewards.expeditionEssences;
+          if (ee.guerre || ee.arcanique || ee.gardienne) {
+            message += '\n\u2728 ESSENCES :\n';
+            if (ee.guerre) message += `  \u2022 Guerre: ${ee.guerre}\n`;
+            if (ee.arcanique) message += `  \u2022 Arcanique: ${ee.arcanique}\n`;
+            if (ee.gardienne) message += `  \u2022 Gardienne: ${ee.gardienne}\n`;
+          }
         }
 
         message += '\n\u27A1\uFE0F Rendez-vous dans Shadow Colosseum pour utiliser vos nouvelles recompenses !';
@@ -576,6 +643,26 @@ export default function MailInbox() {
       );
     }
 
+    if (rewards.expeditionItems && rewards.expeditionItems.length > 0) {
+      items.push(
+        <span key="expItems" className="text-emerald-400">
+          \u2694\uFE0F {rewards.expeditionItems.length} item{rewards.expeditionItems.length > 1 ? 's' : ''}
+        </span>
+      );
+    }
+
+    if (rewards.expeditionCurrencies) {
+      const ec = rewards.expeditionCurrencies;
+      const total = (ec.alkahest || 0) + (ec.marteau_rouge || 0) + (ec.contribution || 0);
+      if (total > 0) {
+        items.push(
+          <span key="expCurrency" className="text-amber-300">
+            \uD83D\uDCB0 monnaies
+          </span>
+        );
+      }
+    }
+
     return items.length > 0 ? (
       <div className="flex items-center gap-2 text-xs">
         {items.map((item, i) => (
@@ -661,6 +748,60 @@ export default function MailInbox() {
             <div>
               <div className="text-gray-400 mb-1">Shadow Coins:</div>
               <div className="text-purple-300 font-bold">{rewards.coins} \uD83E\uDE99</div>
+            </div>
+          )}
+
+          {rewards.expeditionItems && rewards.expeditionItems.length > 0 && (
+            <div>
+              <div className="text-gray-400 mb-1">Butin Expedition:</div>
+              <ul className="list-disc list-inside text-emerald-300 space-y-0.5">
+                {rewards.expeditionItems.map((it, i) => {
+                  const rarityColor = {
+                    common: 'text-gray-400', uncommon: 'text-green-400',
+                    rare: 'text-blue-400', epic: 'text-purple-400', legendary: 'text-yellow-400',
+                  }[it.rarity] || 'text-gray-300';
+                  return (
+                    <li key={i} className={rarityColor}>
+                      {it.itemName}
+                      <span className="text-xs text-gray-500 ml-1">({it.rarity})</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {rewards.expeditionCurrencies && (
+            <div>
+              <div className="text-gray-400 mb-1">Monnaies Expedition:</div>
+              <ul className="list-disc list-inside text-amber-300 space-y-0.5">
+                {rewards.expeditionCurrencies.alkahest > 0 && (
+                  <li>Alkahest: {rewards.expeditionCurrencies.alkahest}</li>
+                )}
+                {rewards.expeditionCurrencies.marteau_rouge > 0 && (
+                  <li>Marteau Rouge: {rewards.expeditionCurrencies.marteau_rouge}</li>
+                )}
+                {rewards.expeditionCurrencies.contribution > 0 && (
+                  <li>Contribution: {rewards.expeditionCurrencies.contribution}</li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {rewards.expeditionEssences && (
+            <div>
+              <div className="text-gray-400 mb-1">Essences:</div>
+              <ul className="list-disc list-inside text-cyan-300 space-y-0.5">
+                {rewards.expeditionEssences.guerre > 0 && (
+                  <li>Guerre: {rewards.expeditionEssences.guerre}</li>
+                )}
+                {rewards.expeditionEssences.arcanique > 0 && (
+                  <li>Arcanique: {rewards.expeditionEssences.arcanique}</li>
+                )}
+                {rewards.expeditionEssences.gardienne > 0 && (
+                  <li>Gardienne: {rewards.expeditionEssences.gardienne}</li>
+                )}
+              </ul>
             </div>
           )}
         </div>
@@ -916,7 +1057,10 @@ export default function MailInbox() {
                   (mail.rewards.hunters && mail.rewards.hunters.length > 0) ||
                   (mail.rewards.hammers && Object.keys(mail.rewards.hammers).length > 0) ||
                   (mail.rewards.fragments && Object.keys(mail.rewards.fragments).length > 0) ||
-                  mail.rewards.coins
+                  mail.rewards.coins ||
+                  (mail.rewards.expeditionItems && mail.rewards.expeditionItems.length > 0) ||
+                  mail.rewards.expeditionCurrencies ||
+                  mail.rewards.expeditionEssences
                 );
 
                 return (

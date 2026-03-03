@@ -965,8 +965,37 @@ export class ExpeditionEngine {
     if (this.expeditionId) {
       await this.saveState();
       await db.updateExpeditionStatus(this.expeditionId, finalStatus, { endedAt: new Date() });
+
+      // Send loot summary mails to all players
+      try {
+        await this.sendLootMails(finalStatus);
+      } catch (err) {
+        console.error('[Expedition] Failed to send loot mails:', err.message);
+      }
     }
     console.log(`[Expedition] Finalized: ${finalStatus}`);
+  }
+
+  async sendLootMails(finalStatus) {
+    // Get all loot grouped by player
+    const lootByPlayer = await db.getExpeditionLootByPlayer(this.expeditionId);
+
+    // Get all unique player usernames (from characters)
+    const allPlayers = [...new Set(this.characters.map(c => c.username))];
+
+    for (const username of allPlayers) {
+      const items = lootByPlayer[username] || [];
+      const currencies = this.playerCurrencies.get(username) || { alkahest: 0, marteau_rouge: 0, contribution: 0 };
+      const essences = this.playerEssences.get(username) || { guerre: 0, arcanique: 0, gardienne: 0 };
+
+      const mailId = await db.sendExpeditionMail(
+        username, this.expeditionId, finalStatus,
+        items, currencies, essences, this.bossesKilled
+      );
+      console.log(`[Expedition] Mail sent to ${username}: id=${mailId} (${items.length} items)`);
+    }
+
+    console.log(`[Expedition] Loot mails sent to ${allPlayers.length} players`);
   }
 
   async saveLootResults(results) {

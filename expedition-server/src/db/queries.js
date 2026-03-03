@@ -255,3 +255,74 @@ export async function getPlayerInventory(username) {
     : result.rows[0].data;
   return data?.expeditionInventory || [];
 }
+
+// ═══════════════════════════════════════════════════════════
+// MAIL — Send expedition loot summary to players
+// ═══════════════════════════════════════════════════════════
+
+export async function sendExpeditionMail(username, expeditionId, finalStatus, items, currencies, essences, bossesKilled) {
+  const statusLabel = finalStatus === 'wiped' ? 'Wipe' : 'Victoire';
+  const subject = `Expedition #${expeditionId} - ${statusLabel}`;
+
+  let message = `Expedition #${expeditionId} terminee (${statusLabel} - ${bossesKilled} boss vaincus)\n\n`;
+
+  if (items.length > 0) {
+    message += `BUTIN (${items.length} items):\n`;
+    items.forEach(it => {
+      message += `- ${it.itemName} (${it.rarity})${it.srWinner ? ' [SR]' : ''}\n`;
+    });
+  } else {
+    message += 'Aucun item obtenu.\n';
+  }
+
+  message += '\nMONNAIES:\n';
+  message += `- Alkahest: ${currencies.alkahest || 0}\n`;
+  message += `- Marteau Rouge: ${currencies.marteau_rouge || 0}\n`;
+  message += `- Contribution: ${currencies.contribution || 0}\n`;
+
+  message += '\nESSENCES:\n';
+  message += `- Guerre: ${essences.guerre || 0}\n`;
+  message += `- Arcanique: ${essences.arcanique || 0}\n`;
+  message += `- Gardienne: ${essences.gardienne || 0}\n`;
+
+  const rewards = {
+    expeditionItems: items.map(it => ({
+      itemId: it.itemId,
+      itemName: it.itemName,
+      rarity: it.rarity,
+      binding: it.binding,
+    })),
+    expeditionCurrencies: currencies,
+    expeditionEssences: essences,
+  };
+
+  const result = await query(
+    `INSERT INTO player_mail (recipient_username, sender, subject, message, mail_type, rewards, expires_at)
+     VALUES ($1, 'Expedition', $2, $3, 'reward', $4, NOW() + INTERVAL '30 days')
+     RETURNING id`,
+    [username, subject, message, JSON.stringify(rewards)]
+  );
+  return result.rows[0].id;
+}
+
+export async function getExpeditionLootByPlayer(expeditionId) {
+  const result = await query(
+    `SELECT winner_username, item_id, item_name, rarity, binding, sr_winner, stolen
+     FROM expedition_loot WHERE expedition_id = $1 ORDER BY rolled_at`,
+    [expeditionId]
+  );
+  // Group by player
+  const byPlayer = {};
+  for (const row of result.rows) {
+    if (row.stolen || !row.winner_username) continue;
+    if (!byPlayer[row.winner_username]) byPlayer[row.winner_username] = [];
+    byPlayer[row.winner_username].push({
+      itemId: row.item_id,
+      itemName: row.item_name,
+      rarity: row.rarity,
+      binding: row.binding,
+      srWinner: row.sr_winner,
+    });
+  }
+  return byPlayer;
+}
