@@ -914,6 +914,7 @@ export default function ShadowColosseum() {
   const [tooltipPinned, setTooltipPinned] = useState(false); // click-pinned tooltip stays on mouse leave
   const tooltipTimerRef = useRef(null); // long-press timer for mobile tooltip
   const hammerHoldRef = useRef(null); // hold-to-buy timer for hammer shop
+  const weaponHoldRef = useRef(null); // hold-to-buy timer for weapon shop
   const lootBoostStartRef = useRef(null); // tracks battle start time for loot boost timer
   const lastBeruTauntRef = useRef(0); // timestamp of last Beru taunt to avoid spam
   const [dropLog, setDropLog] = useState([]);
@@ -9824,11 +9825,11 @@ export default function ShadowColosseum() {
 
         const buyWeapon = (wId) => {
           const w = WEAPONS[wId];
-          if (!w) return;
+          if (!w) return false;
           const price = WEAPON_PRICES[w.rarity];
-          if (coins < price) return;
+          if (coins < price) return false;
           const currentAw = data.weaponCollection[wId];
-          if (currentAw !== undefined && currentAw >= MAX_WEAPON_AWAKENING) return;
+          if (currentAw !== undefined && currentAw >= MAX_WEAPON_AWAKENING) return false;
           shadowCoinManager.spendCoins(price);
           setData(prev => {
             const wc = { ...prev.weaponCollection };
@@ -9836,6 +9837,22 @@ export default function ShadowColosseum() {
             else wc[wId] = 0;
             return { ...prev, weaponCollection: wc };
           });
+          return true;
+        };
+
+        const startWeaponHold = (wId) => {
+          buyWeapon(wId);
+          let delay = 300;
+          const tick = () => {
+            const ok = buyWeapon(wId);
+            if (!ok) { stopWeaponHold(); return; }
+            delay = Math.max(50, delay * 0.85);
+            weaponHoldRef.current = setTimeout(tick, delay);
+          };
+          weaponHoldRef.current = setTimeout(tick, delay);
+        };
+        const stopWeaponHold = () => {
+          if (weaponHoldRef.current) { clearTimeout(weaponHoldRef.current); weaponHoldRef.current = null; }
         };
 
         const buyHammer = (hId) => {
@@ -9949,6 +9966,41 @@ export default function ShadowColosseum() {
               </div>
             </div>
 
+            {/* Coin Exchange — coins to alkahest & marteaux rouges */}
+            <div className="mb-5">
+              <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDD04'} Echange de Coins</div>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => {
+                  if (coins < 1000) return;
+                  shadowCoinManager.spendCoins(1000);
+                  setData(prev => ({
+                    ...prev,
+                    alkahest: (prev.alkahest || 0) + 1
+                  }));
+                  showToast('\uD83E\uDDEA +1 Alkahest', '#a78bfa');
+                }} disabled={coins < 1000}
+                  className="p-2.5 rounded-xl border border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/15 disabled:opacity-30 transition-all text-center">
+                  <div className="text-lg">{'\uD83E\uDDEA'}</div>
+                  <div className="text-normal-responsive font-bold text-purple-300">+1 Alkahest</div>
+                  <div className="text-small-responsive text-gray-400 mt-0.5">{'\uD83D\uDCB0'} 1000 coins</div>
+                </button>
+                <button onClick={() => {
+                  if (coins < 1000) return;
+                  shadowCoinManager.spendCoins(1000);
+                  setData(prev => ({
+                    ...prev,
+                    hammers: { ...prev.hammers, marteau_rouge: (prev.hammers?.marteau_rouge || 0) + 10 }
+                  }));
+                  showToast('\uD83D\uDD34 +10 Marteaux Rouges', '#ef4444');
+                }} disabled={coins < 1000}
+                  className="p-2.5 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/15 disabled:opacity-30 transition-all text-center">
+                  <div className="text-lg">{'\uD83D\uDD34'}</div>
+                  <div className="text-normal-responsive font-bold text-red-300">+10 Marteaux Rouges</div>
+                  <div className="text-small-responsive text-gray-400 mt-0.5">{'\uD83D\uDCB0'} 1000 coins</div>
+                </button>
+              </div>
+            </div>
+
             {/* Forge Section */}
             <div className="mb-5">
               <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDD2E'} Forge d'Artefacts</div>
@@ -9998,8 +10050,12 @@ export default function ShadowColosseum() {
                   const maxed = owned && aw >= MAX_WEAPON_AWAKENING;
                   const price = WEAPON_PRICES[w.rarity];
                   return (
-                    <button key={w.id} onClick={() => !maxed && buyWeapon(w.id)} disabled={maxed || coins < price}
-                      className={`p-2 rounded-lg border text-left transition-all ${
+                    <button key={w.id} disabled={maxed || coins < price}
+                      onPointerDown={() => !maxed && startWeaponHold(w.id)}
+                      onPointerUp={stopWeaponHold}
+                      onPointerLeave={stopWeaponHold}
+                      onContextMenu={(e) => e.preventDefault()}
+                      className={`p-2 rounded-lg border text-left transition-all select-none touch-none ${
                         maxed ? 'border-yellow-500/30 bg-yellow-500/5 opacity-60' :
                         owned ? 'border-green-500/30 bg-green-500/5 hover:border-amber-500/40' :
                         coins >= price ? 'border-gray-700/40 bg-gray-800/20 hover:border-amber-500/40' :
@@ -10126,21 +10182,26 @@ export default function ShadowColosseum() {
                       );
                     })()}
 
-                    {/* Set Artifact Shop — 500 red hammers → 1 chosen set, random slot */}
+                    {/* Set Artifact Shop — choose set, random slot */}
                     {(() => {
-                      const setCost = 500;
-                      const canBuySet = redHammers >= setCost;
-                      const buySetPiece = (setId) => {
-                        if (redHammers < setCost) return;
+                      const buySetPiece = (setId, cost) => {
+                        if (redHammers < cost) return;
                         const artifact = generateSetArtifact(setId);
                         const slotName = ARTIFACT_SLOTS[artifact.slotId]?.name || artifact.slotId;
                         setData(prev => {
                           const newH = { ...prev.hammers };
-                          newH.marteau_rouge = (newH.marteau_rouge || 0) - setCost;
+                          newH.marteau_rouge = (newH.marteau_rouge || 0) - cost;
                           return { ...prev, hammers: newH, artifactInventory: trimArtifactInventory([...(prev.artifactInventory || []), artifact]) };
                         });
-                        showToast(`${ARTIFACT_SETS[setId]?.icon || ''} ${ARTIFACT_SETS[setId]?.name} — ${slotName} obtenu !`, '#f59e0b');
+                        const sDef = ALL_ARTIFACT_SETS[setId];
+                        showToast(`${sDef?.icon || ''} ${sDef?.name} — ${slotName} obtenu !`, '#f59e0b');
                       };
+                      const categories = [
+                        { label: 'Sets Classiques', icon: '\u2694\uFE0F', sets: ARTIFACT_SETS, cost: 500 },
+                        { label: 'Sets Raid', icon: '\uD83D\uDC80', sets: RAID_ARTIFACT_SETS, cost: 500 },
+                        { label: 'Sets ARC II', icon: '\u26A1', sets: ARC2_ARTIFACT_SETS, cost: 750 },
+                        { label: 'Sets Ultimes', icon: '\uD83C\uDF1F', sets: ULTIME_ARTIFACT_SETS, cost: 750 },
+                      ];
                       return (
                         <div className="mt-3 p-3 rounded-xl border border-red-500/20 bg-red-900/10 transition-all">
                           <div className="flex items-center gap-3 mb-3">
@@ -10149,60 +10210,34 @@ export default function ShadowColosseum() {
                               <div className="text-sm font-black text-red-300">Artefacts de Set</div>
                               <div className="text-normal-responsive text-gray-400 mt-0.5">Choisis ton set, piece aleatoire (mythique)</div>
                             </div>
-                            <div className="text-small-responsive text-red-400 font-bold">{'\uD83D\uDD34'} {setCost}/piece</div>
                           </div>
-                          <div className="grid grid-cols-2 gap-1.5">
-                            {Object.entries(ARTIFACT_SETS).map(([setId, s]) => (
-                              <button key={setId} onClick={() => buySetPiece(setId)} disabled={!canBuySet}
-                                className={`p-2 rounded-lg border text-left transition-all ${canBuySet
-                                  ? `${s.border} ${s.bg} hover:brightness-125`
-                                  : 'border-gray-700/20 bg-gray-900/10 opacity-30 cursor-not-allowed'}`}>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-base">{s.icon}</span>
-                                  <div className="flex-1 min-w-0">
-                                    <div className={`text-normal-responsive font-bold ${s.color} truncate`}>{s.name}</div>
-                                    <div className="text-tiny-responsive text-gray-500">{s.bonus2Desc} / {s.bonus4Desc}</div>
-                                  </div>
+                          {categories.map(cat => {
+                            const canBuy = redHammers >= cat.cost;
+                            return (
+                              <div key={cat.label} className="mb-3 last:mb-0">
+                                <div className="text-small-responsive font-bold text-gray-400 mb-1.5 flex items-center gap-1.5">
+                                  <span>{cat.icon}</span> {cat.label}
+                                  <span className="text-red-400 ml-auto">{'\uD83D\uDD34'} {cat.cost}/piece</span>
                                 </div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Ultimate Artifact — 1000 red hammers → 1 random ultimate set piece */}
-                    {(() => {
-                      const ultCost = 1000;
-                      const canBuyUlt = redHammers >= ultCost;
-                      const ultSetNames = Object.entries(ULTIME_ARTIFACT_SETS).map(([, v]) => v.name);
-                      const buyUlt = () => {
-                        if (!canBuyUlt) return;
-                        const ultKeys = Object.keys(ULTIME_ARTIFACT_SETS);
-                        const randomSetId = ultKeys[Math.floor(Math.random() * ultKeys.length)];
-                        const artifact = generateSetArtifact(randomSetId);
-                        setData(prev => {
-                          const newH = { ...prev.hammers };
-                          newH.marteau_rouge = (newH.marteau_rouge || 0) - ultCost;
-                          return { ...prev, hammers: newH, artifactInventory: trimArtifactInventory([...(prev.artifactInventory || []), artifact]) };
-                        });
-                      };
-                      return (
-                        <div className="mt-3 p-3 rounded-xl border border-red-500/20 bg-red-900/10 transition-all">
-                          <div className="flex items-center gap-3">
-                            <div className="text-3xl">{'\uD83C\uDF1F'}</div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-black text-red-300">Artefact Ultime</div>
-                              <div className="text-normal-responsive text-gray-400 mt-0.5">1 piece mythique aleatoire d'un set ultime</div>
-                              <div className="text-small-responsive text-gray-500 mt-0.5">{ultSetNames.join(', ')}</div>
-                            </div>
-                          </div>
-                          <button onClick={buyUlt} disabled={!canBuyUlt}
-                            className={`mt-2 w-full py-2 rounded-lg text-xs font-bold transition-all ${canBuyUlt
-                              ? 'bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 hover:text-red-200'
-                              : 'bg-gray-800/40 border border-gray-700/20 text-gray-600 cursor-not-allowed'}`}>
-                            {'\uD83D\uDD34'} 1000 marteaux rouges — 1 piece ultime
-                          </button>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  {Object.entries(cat.sets).map(([setId, s]) => (
+                                    <button key={setId} onClick={() => buySetPiece(setId, cat.cost)} disabled={!canBuy}
+                                      className={`p-2 rounded-lg border text-left transition-all ${canBuy
+                                        ? `${s.border} ${s.bg} hover:brightness-125`
+                                        : 'border-gray-700/20 bg-gray-900/10 opacity-30 cursor-not-allowed'}`}>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-base">{s.icon}</span>
+                                        <div className="flex-1 min-w-0">
+                                          <div className={`text-normal-responsive font-bold ${s.color} truncate`}>{s.name}</div>
+                                          <div className="text-tiny-responsive text-gray-500">{s.bonus2Desc} / {s.bonus4Desc}</div>
+                                        </div>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     })()}
