@@ -158,6 +158,9 @@ export class ExpeditionBoss {
     }
   }
 
+  // Stub: bosses don't track buffs/debuffs but skills may target them
+  addBuff() {}
+
   // ── Serialization ───────────────────────────────────────
 
   serialize() {

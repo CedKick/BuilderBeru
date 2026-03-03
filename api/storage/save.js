@@ -79,7 +79,19 @@ function mergeColoData(cloud, incoming) {
   m.monarchKills = Math.max(cloud.monarchKills || 0, incoming.monarchKills || 0);
   m.archDemonKills = Math.max(cloud.archDemonKills || 0, incoming.archDemonKills || 0);
   m.lootBoostMs = Math.max(cloud.lootBoostMs || 0, incoming.lootBoostMs || 0);
-  m.alkahest = Math.max(cloud.alkahest || 0, incoming.alkahest || 0);
+
+  // ─── Alkahest: respect server-side reroll deductions ────────
+  // The reroll endpoint deducts alkahest directly in DB. If the cloud has
+  // more rerolls tracked (totalRerolls), it means server-side deductions
+  // happened → trust the cloud alkahest value. Otherwise take MAX.
+  const cloudTotalRerolls = Object.values(cloud.rerollCounts || {}).reduce((a, b) => a + b, 0);
+  const incomingTotalRerolls = Object.values(incoming.rerollCounts || {}).reduce((a, b) => a + b, 0);
+  if (cloudTotalRerolls > incomingTotalRerolls) {
+    // Cloud has more rerolls → server deducted alkahest, keep cloud value
+    m.alkahest = cloud.alkahest || 0;
+  } else {
+    m.alkahest = Math.max(cloud.alkahest || 0, incoming.alkahest || 0);
+  }
 
   // ─── rerollCounts: MAX per artifact uid ──────────────
   m.rerollCounts = mergeObjectsMax(cloud.rerollCounts, incoming.rerollCounts);

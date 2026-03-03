@@ -251,6 +251,22 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// CLOUDINARY IMAGE TRANSFORMS (reduce bandwidth!)
+// ═══════════════════════════════════════════════════════════
+// Canvas sprites: 96px (2x for retina at CHAR_SIZE=48)
+function spriteUrl(url) {
+  return url.replace('/upload/', '/upload/c_fill,w_96,h_96,q_auto,f_webp/');
+}
+// Stats panel thumbnails: 40px
+function thumbUrl(url) {
+  return url.replace('/upload/', '/upload/c_fill,w_40,h_40,q_auto,f_webp/');
+}
+// Boss sprites: larger (160px for BOSS_SIZE=90)
+function bossSpriteUrl(url) {
+  return url.replace('/upload/', '/upload/c_fill,w_160,h_160,q_auto,f_webp/');
+}
+
 // HUNTER SPRITES (from raidData.js S object)
 // ═══════════════════════════════════════════════════════════
 const HUNTER_SPRITES = {
@@ -380,8 +396,28 @@ const WS_URL = location.protocol === 'https:'
 
 let state = null;
 const floatingNumbers = [];
-const interpPositions = {};
-const LERP_SPEED = 10;
+const interpPositions = {};  // id → { x, y, vx, vy, targetX, targetY }
+const LERP_SPEED = 8;
+const PREDICT_BLEND = 6;    // How fast to correct prediction errors toward server pos
+
+// Called when server sends new position data — compute velocity for prediction
+function updateInterpPosition(id, serverX, serverY) {
+  const ip = interpPositions[id];
+  if (!ip) {
+    interpPositions[id] = { x: serverX, y: serverY, vx: 0, vy: 0, targetX: serverX, targetY: serverY };
+    return;
+  }
+  // Compute velocity from old target → new target (server tick interval ~500ms)
+  const dx = serverX - ip.targetX;
+  const dy = serverY - ip.targetY;
+  // Only update velocity if entity actually moved (avoid jitter on stationary)
+  if (Math.abs(dx) > 2) ip.vx = dx * 2;  // *2 because server sends at 2Hz
+  else ip.vx *= 0.5;  // Decelerate if stopped
+  if (Math.abs(dy) > 1) ip.vy = dy * 2;
+  else ip.vy *= 0.5;
+  ip.targetX = serverX;
+  ip.targetY = serverY;
+}
 
 // Camera (Phase 2)
 const camera = { x: 0, y: 0, zoom: 0.5, targetZoom: 0.5, minZoom: 0.15, maxZoom: 2.5, autoFollow: true };
@@ -433,6 +469,20 @@ const spriteCache = {};
 const spriteLoading = new Set();
 const bossSpriteCache = {};
 const mobSpriteCache = {};
+const thumbDataUrls = {};  // hunterId → base64 data URL (for HTML img tags, zero network!)
+
+// Generate a tiny data URL from a loaded Image (for stats panel)
+function generateThumbDataUrl(hunterId, img) {
+  try {
+    const s = 36;  // tiny thumbnail
+    const oc = document.createElement('canvas');
+    oc.width = s; oc.height = s;
+    const octx = oc.getContext('2d');
+    octx.beginPath(); octx.arc(s/2, s/2, s/2, 0, Math.PI * 2); octx.clip();
+    octx.drawImage(img, 0, 0, s, s);
+    thumbDataUrls[hunterId] = oc.toDataURL('image/webp', 0.7);
+  } catch(e) { /* crossOrigin issue, ignore */ }
+}
 
 function preloadSprite(hunterId) {
   if (spriteCache[hunterId] || spriteLoading.has(hunterId)) return;
@@ -441,9 +491,13 @@ function preloadSprite(hunterId) {
   spriteLoading.add(hunterId);
   const img = new Image();
   img.crossOrigin = 'anonymous';
-  img.onload = () => { spriteCache[hunterId] = img; spriteLoading.delete(hunterId); };
+  img.onload = () => {
+    spriteCache[hunterId] = img;
+    spriteLoading.delete(hunterId);
+    generateThumbDataUrl(hunterId, img);
+  };
   img.onerror = () => { spriteLoading.delete(hunterId); };
-  img.src = url;
+  img.src = spriteUrl(url);
 }
 function preloadBossSprite(index) {
   if (bossSpriteCache[index] || spriteLoading.has(`boss_${index}`)) return;
@@ -454,7 +508,7 @@ function preloadBossSprite(index) {
   img.crossOrigin = 'anonymous';
   img.onload = () => { bossSpriteCache[index] = img; spriteLoading.delete(`boss_${index}`); };
   img.onerror = () => { spriteLoading.delete(`boss_${index}`); };
-  img.src = url;
+  img.src = bossSpriteUrl(url);
 }
 function preloadMobSprite(key) {
   if (mobSpriteCache[key] || spriteLoading.has(`mob_${key}`)) return;
@@ -465,7 +519,7 @@ function preloadMobSprite(key) {
   img.crossOrigin = 'anonymous';
   img.onload = () => { mobSpriteCache[key] = img; spriteLoading.delete(`mob_${key}`); };
   img.onerror = () => { spriteLoading.delete(`mob_${key}`); };
-  img.src = url;
+  img.src = spriteUrl(url);
 }
 for (const id of Object.keys(HUNTER_SPRITES)) preloadSprite(id);
 for (let i = 0; i < BOSS_SPRITES.length; i++) preloadBossSprite(i);
@@ -495,7 +549,7 @@ function ensureStats(id) {
       element: char?.element || null,
       dmgDealt: 0, dmgReceived: 0,
       healsGiven: 0, healsReceived: 0,
-      kills: 0, crits: 0, totalHits: 0,
+      kills: 0, deaths: 0, crits: 0, totalHits: 0,
       maxCrit: 0, totalCritDmg: 0,
     };
   }
@@ -524,7 +578,7 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-const ELEMENT_COLORS = { fire: '#ef4444', water: '#3b82f6', shadow: '#a855f7' };
+const ELEMENT_COLORS = { fire: '#f97316', water: '#3b82f6', shadow: '#a855f7', light: '#facc15', dark: '#6366f1' };
 const ROLE_SHAPES = { frontline: 'square', frontline_dps: 'triangle', backline_dps: 'diamond', backline_heal: 'circle' };
 const ROLE_ICONS = { frontline: '\u{1F6E1}', frontline_dps: '\u2694', backline_dps: '\u2728', backline_heal: '\u2764' };
 
@@ -539,17 +593,27 @@ const DIALOGUES = {
       "Mon bouclier a plus de PV que vos DPS combines.",
       "Je suis pas un punching-bag... enfin si, litteralement.",
       "Quelqu'un a vu mon aggro? Ah elle est la. Sur moi.",
+      "*verifie son armure* Encore un trou. Magnifique.",
+      "J'attire les mobs comme un aimant. C'est mon charme naturel.",
+      "Si je tombe, vous tombez tous. Pensez-y.",
     ],
     combat: [
       "VENEZ ME FRAPPER, JE SUIS LA!",
       "Restez derriere moi... ou pas.",
       "C'est tout ce que t'as, le boss?",
       "*leve son bouclier avec resignation*",
+      "JE TIENS! CONTINUEZ A TAPER!",
+      "Ca chatouille!",
+      "AGGRO! TOUT SUR MOI!",
+      "Allez, j'en ai vu des pires...",
+      "Vous frappez comme des slimes!",
     ],
     low_hp: [
       "HEAL?! HEAL?! ...personne?",
       "Je vais mourir et c'est votre faute a tous.",
       "Ok je suis invisible pour les healers apparemment.",
+      "MES HP! JE VOIS ROUGE!",
+      "SI JE MEURS LE RAID EST FINI!",
     ],
   },
   frontline_dps: {
@@ -558,16 +622,26 @@ const DIALOGUES = {
       "Les mages font moins de degats que mon auto-attack.",
       "Pourquoi je suis en frontline si je suis DPS?!",
       "Mon crit rate est de 100%... dans mes reves.",
+      "*fait des exercices d'echauffement*",
+      "J'espere que le prochain mob a beaucoup de HP.",
+      "On est la pour combattre ou pour parler?",
     ],
     combat: [
       "UNGA BUNGA!",
       "CRIT! CRIT! ...non? Dommage.",
       "Faut que je buff d'abord... nah j'y vais direct.",
       "*frappe tout ce qui bouge*",
+      "CA C'EST UN CRIT!",
+      "ENCORE! ENCORE!",
+      "T'as vu ca?! PERSONNE a vu ca...",
+      "MON TOUR! POUSSEZ-VOUS!",
+      "Je suis en feu! Pas litteralement!",
     ],
     low_hp: [
       "Retraite strategique! (c'est PAS une fuite)",
       "J'ai pas signe pour mourir moi!",
+      "HEAL MOI OU JE DPS PLUS!",
+      "OK qui a oublie de taper le mob?!",
     ],
   },
   backline_dps: {
@@ -576,15 +650,25 @@ const DIALOGUES = {
       "La magie c'est beau mais ca coute du mana.",
       "Je suis pas AFK, je regenere mon mana.",
       "Un jour je ferai Explosion!... quand j'aurai le mana.",
+      "Theoriquement, un seul sort devrait suffire.",
+      "*relit son grimoire pour la 47ème fois*",
+      "Mon mana est a 100%. Tremblez.",
     ],
     combat: [
       "EXPLOSION!!! ...ah non, cooldown.",
       "Zoltraak. Zoltraak. Zoltraak. Simple.",
       "Mon AoE va les avoir... normalement.",
+      "PRENEZ CA!",
+      "*lance un sort* C'est beau, non?",
+      "Feu! ...ou glace? Les deux!",
+      "On les calcine!",
+      "Restez groupes que je vous AoE... les mobs, pas vous.",
     ],
     low_hp: [
       "Comment un mob arrive jusqu'ici?! TANKS?!",
       "Je suis trop precieux pour mourir!",
+      "UN MOB! DERRIERE MOI! AU SECOURS!",
+      "C'est pas mon job de tanker!!",
     ],
   },
   backline_heal: {
@@ -593,15 +677,26 @@ const DIALOGUES = {
       "Non je heal pas le DPS qui rush le boss.",
       "Mon heal est en cooldown. Priez.",
       "Je fais plus de DPS que certains... et je suis healer.",
+      "*prepare des bandages* On va en avoir besoin...",
+      "Pourquoi c'est toujours moi qui ramasse les morceaux?",
+      "Si tout le monde esquivait, j'aurais plus rien a faire.",
     ],
     combat: [
       "Heal le tank, heal le tank, heal le-- il est mort.",
       "Arretez. De. Prendre. Les. AOE.",
       "J'ai rez dans 3... 2... 1... ah, cooldown.",
+      "HEAL! HEAL! HEAL! JE FAIS QUE CA!",
+      "Qui a besoin de heal?! ...tout le monde. Ok.",
+      "Mon mana fond comme neige au soleil...",
+      "Tiens bon tank! *heal frenetique*",
+      "C'est plus un raid c'est une infirmerie!",
     ],
     low_hp: [
       "QUI HEAL LE HEALER?!",
       "C'est la fin. Adieu monde cruel.",
+      "JE VAIS MOURIR ET PERSONNE POURRA REZ!",
+      "Si je tombe, c'est FINI pour tout le monde!",
+      "PRIO HEAL SUR MOI! ...ah c'est vrai, c'est moi le heal.",
     ],
   },
 };
@@ -612,26 +707,113 @@ const CAMPFIRE_DIALOGUES = [
     "Ce feu me rappelle le boss... PTSD.",
     "Au fait, qui a pris l'aggro la derniere fois?",
     "*s'assoit lourdement* Mes os craquent de partout.",
+    "Je sais pas si je reve ou si mes HP remontent...",
+    "Si le tank c'est moi, je fais quoi assis la?",
+    "Mon bouclier a plus de cicatrices que moi a ce stade.",
+    "*regarde le feu* Ca me rappelle la derniere fois ou j'ai failli mourir. Ah oui c'etait y'a 5 min.",
+    "Vous savez ce qui est pire que tanker? Tanker sans healer.",
+    "J'ai encaisse combien de coups la? Meme moi j'ai perdu le compte.",
+    "Le prochain mob qui me tape, je le provoque meme pas. J'en ai marre.",
+    "*masse ses epaules* Portez une armure lourde qu'ils disaient, ce sera fun qu'ils disaient...",
+    "Techniquement je suis le plus important du groupe. Techniquement.",
+    "Vous me devez tous une biere apres ca.",
+    "Au prochain fight, c'est quelqu'un d'autre qui prend l'aggro. J'insiste.",
+    "*baille* C'est fatiguant d'etre invincible.",
+    "Le secret du tanking? Encaisser et pleurer en silence.",
+    "J'ai mal au dos. J'ai mal aux bras. J'ai mal partout en fait.",
   ]},
   { role: 'backline_heal', lines: [
     "J'espere que vous appreciez mes heals parce que MON mana souffre.",
     "Prochain combat, je heal que les gens sympas.",
-    "*rez le mort* Allez debout, on a besoin de chair a canon.",
     "Note pour moi-meme: ne plus jouer healer.",
+    "Allez recuperez vite, j'ai pas du mana infini...",
+    "*regarde les morts* Bon... faut que je m'y mette.",
+    "Si vous pouviez eviter de mourir ca m'arrangerait.",
+    "Mon mana etait a 0. ZERO. Vous avez de la chance d'etre en vie.",
+    "*soupire profondement* Pourquoi j'ai choisi support deja?",
+    "Le tank prend tout dans sa face et c'est MOI qui suis fatigue.",
+    "Juste pour info, si je meurs c'est game over pour tout le monde.",
+    "J'ai soigne plus de HP que vous en avez tous fait en degats combines.",
+    "Si un DPS me dit encore 'heal pls' je le laisse crever.",
+    "*prepare des potions* Ca c'est pour le tank, ca pour le DPS... et ca c'est pour moi. Surtout pour moi.",
+    "Rappel: le healer est toujours la derniere priorite pour les heals. Injuste.",
+    "J'ai presque fait plus de DPS que le mage... par accident.",
+    "Vous croyez que c'est facile de garder 12 idiots en vie?",
+    "La prochaine fois quelqu'un rush le boss, je AFK.",
+    "*boit une potion de mana* Ah ca fait du bien... il m'en reste 3. Pour tout le raid. Super.",
   ]},
   { role: 'frontline_dps', lines: [
     "Mon DPS etait top la, non? NON?!",
     "Qui veut du poisson grille? J'ai loote un truc bizarre.",
     "Le prochain boss va regretter d'etre ne.",
     "*aiguise son epee avec un sourire inquietant*",
+    "J'etais a combien de DPS? J'AI DIT J'ETAIS A COMBIEN?!",
+    "MVP du combat? Moi evidemment. Debat clos.",
+    "*fait tourner son arme* Faudrait un boss plus resistant, celui-la etait trop facile.",
+    "Hé le mage, t'as vu mon crit? 12000. De rien.",
+    "Si j'avais un meilleur stuff je ferais le double. Facile.",
+    "Je comprends pas pourquoi le healer me heal pas en prio, c'est moi le DPS.",
+    "Le tank a pris l'aggro mais c'est moi qui ai fait tout le boulot.",
+    "*s'etire* Bon, c'etait l'echauffement. Le vrai combat c'est le prochain.",
+    "Qui a le meilleur DPS? C'est moi. Vous le savez. JE le sais.",
+    "Un jour j'écrirai un livre: 'Comment one-shot tout avec style'.",
+    "Le secret? Pas de strategie. Juste frapper tres fort.",
+    "*regarde son arme* T'as fait du bon boulot mon bebe.",
+    "Attendez qu'on arrive au boss final, la vous allez voir.",
+    "Le healer veut pas me heal? Pas grave, les morts ont pas besoin de heal. Ni de DPS. Pensez-y.",
   ]},
   { role: 'backline_dps', lines: [
     "Je calcule l'angle optimal pour mon prochain Zoltraak...",
     "Ce feu c'est 3200K de temperature, je pourrais l'utiliser comme spell.",
     "*dessine des runes dans le sable*",
     "Quelqu'un a compte combien de mobs j'ai one-shot?",
+    "Mon mana regenere... je sens le pouvoir revenir.",
+    "Quand j'aurais mon ulti je vais tous les carboniser.",
+    "*lit un grimoire* Ah tiens, un sort que je connais pas encore.",
+    "La magie c'est de la science qu'on comprend pas encore. Et j'adore.",
+    "Si on avait plus de mages, le raid serait deja fini.",
+    "Le DPS melee pense qu'il fait plus de degats que moi. C'est cute.",
+    "*concentre de l'energie entre ses mains* Juste... un... petit... peu... plus...",
+    "Mon AoE a touche 15 mobs d'un coup. Aucun remerciement. Classique.",
+    "Je pourrais bruler ce feu de camp en 0.3 seconde si je voulais.",
+    "Le probleme du mana c'est qu'il regen pas assez vite pour mon talent.",
+    "EXPLOSION! ...nan je deconne. Mais au prochain fight...",
+    "*marmonne des incantations* Non c'est rien, je m'entraine.",
+    "Si quelqu'un touche a mon grimoire, je le transforme en grenouille.",
+    "Un mage competent vaut 10 guerriers. Citation: moi.",
   ]},
 ];
+
+// Rez-specific dialogues (triggered when healer rezzes someone)
+const REZ_DIALOGUES = [
+  "Allez debout {target}, on a besoin de toi!",
+  "*concentre son mana* {target}, reviens parmi nous!",
+  "Hey {target}! C'est pas l'heure de dormir!",
+  "Tiens bon {target}... *lumiere dorée*",
+  "{target}! Tu me dois un café pour ca.",
+  "*rez* Debout {target}, le boss attend pas!",
+  "Respire {target}... voila, c'est bien.",
+  "T'as interet a pas mourir encore {target}!",
+];
+
+// Rest-at-camp dialogues (when a hunter decides to sit out)
+const REST_DIALOGUES = {
+  died: [
+    "Non... j'y retourne pas. Pas cette fois.",
+    "Mon corps dit non. Je reste la.",
+    "*tremble* Le prochain, c'est sans moi...",
+  ],
+  low_hp: [
+    "Je suis a peine debout... je passe mon tour.",
+    "Un combat de plus et je suis fini. Je me repose.",
+    "*s'assoit* Allez-y sans moi, je recupere.",
+  ],
+  cautious: [
+    "J'ai un mauvais pressentiment... je reste en reserve.",
+    "Quelqu'un doit rester au cas ou. Je veille.",
+    "Strategie: garder des forces en reserve. C'est moi la reserve.",
+  ],
+};
 
 // ═══════════════════════════════════════════════════════════
 // BOSS INTROS (Phase 9)
@@ -765,12 +947,16 @@ canvas.addEventListener('wheel', (e) => {
   camera.targetZoom = Math.max(camera.minZoom, Math.min(camera.maxZoom, camera.targetZoom + delta));
 }, { passive: false });
 
+let dragStartPos = { x: 0, y: 0 };
+let wasDragging = false;
+
 canvas.addEventListener('mousedown', (e) => {
-  if (e.button === 1) {
+  if (e.button === 0 || e.button === 1) {
     e.preventDefault();
     isPanning = true;
     panStart = { x: e.clientX, y: e.clientY };
-    camera.autoFollow = false;
+    dragStartPos = { x: e.clientX, y: e.clientY };
+    wasDragging = false;
   }
 });
 canvas.addEventListener('mousemove', (e) => {
@@ -778,14 +964,20 @@ canvas.addEventListener('mousemove', (e) => {
     camera.x += (panStart.x - e.clientX);
     camera.y += (panStart.y - e.clientY);
     panStart = { x: e.clientX, y: e.clientY };
+    const totalDrag = Math.abs(e.clientX - dragStartPos.x) + Math.abs(e.clientY - dragStartPos.y);
+    if (totalDrag > 5) {
+      wasDragging = true;
+      camera.autoFollow = false;
+    }
   }
 });
-canvas.addEventListener('mouseup', (e) => { if (e.button === 1) isPanning = false; });
+canvas.addEventListener('mouseup', () => { isPanning = false; });
 canvas.addEventListener('dblclick', () => { camera.autoFollow = true; camera.targetZoom = 0.5; });
 
 // Click on character for speech bubble (Phase 5)
 canvas.addEventListener('click', (e) => {
-  if (!state || isPanning) return;
+  if (wasDragging) { wasDragging = false; return; }
+  if (!state) return;
   const rect = canvas.getBoundingClientRect();
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
@@ -810,10 +1002,9 @@ canvas.addEventListener('click', (e) => {
     }
   }
 
-  // 2. Check character click
+  // 2. Check character click (alive AND dead)
   let closest = null, closestDist = Infinity;
   for (const char of (state.characters || [])) {
-    if (!char.alive) continue;
     const ip = interpPositions[char.id];
     const sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
     const charY = entityScreenY(char.y);
@@ -892,7 +1083,7 @@ function handleMessage(msg) {
       updateHeader(msg);
       for (const c of msg.characters || []) {
         if (c.hunterId) preloadSprite(c.hunterId);
-        if (!interpPositions[c.id]) interpPositions[c.id] = { x: c.x, y: c.y || 0 };
+        updateInterpPosition(c.id, c.x, c.y || 0);
         if (combatStats[c.id]) {
           combatStats[c.id].name = c.name;
           combatStats[c.id].hunterId = c.hunterId;
@@ -900,10 +1091,10 @@ function handleMessage(msg) {
         }
       }
       for (const m of msg.mobs || []) {
-        if (!interpPositions[m.id]) interpPositions[m.id] = { x: m.x, y: m.y || 0 };
+        updateInterpPosition(m.id, m.x, m.y || 0);
       }
       if (msg.boss) {
-        if (!interpPositions[msg.boss.id]) interpPositions[msg.boss.id] = { x: msg.boss.x, y: msg.boss.y || 0 };
+        updateInterpPosition(msg.boss.id, msg.boss.x, msg.boss.y || 0);
         const bossIdx = msg.boss.index ?? BOSS_ID_TO_INDEX[msg.boss.id];
         if (bossIdx != null) preloadBossSprite(bossIdx);
       }
@@ -949,6 +1140,23 @@ function handleMessage(msg) {
       campfireDialogueTimer = 3;
       break;
 
+    case 'rest_decision': {
+      addLogEntry('info', `${msg.charName} decide de se reposer au camp.`);
+      const restPool = REST_DIALOGUES[msg.reason] || REST_DIALOGUES.cautious;
+      const restLine = restPool[Math.floor(Math.random() * restPool.length)];
+      // Show bubble from the resting character
+      setTimeout(() => {
+        activeBubble = { charId: msg.charId, text: restLine, timer: 6.0, charIndex: 0 };
+        campfireDialogueTimer = 10;
+      }, 1000 + Math.random() * 2000);
+      break;
+    }
+
+    case 'wipe_recovery':
+      addLogEntry('boss', `SAUVETAGE! ${msg.message}`);
+      addTimelineEvent('phase', null, { text: 'Sauvetage par les reserves!' });
+      break;
+
     case 'loot_roll_start':
       lootRollState = { results: msg.results || [], currentIndex: -1, revealTimer: 2.5, phase: 'waiting' };
       for (const r of msg.results || []) {
@@ -966,7 +1174,16 @@ function handleMessage(msg) {
 
     case 'rez':
       addLogEntry('rez', `${msg.healerName} ressuscite ${msg.targetName}!`);
-      rezAnimations.push({ targetId: msg.target, timer: 2.0 });
+      rezAnimations.push({ targetId: msg.target, timer: 2.5 });
+      // Update campfire layout: move rezzed char from dead ring to alive ring
+      if (campfireLayout?.deadIds) campfireLayout.deadIds.delete(msg.target);
+      // Trigger rez dialogue from healer
+      const rezLine = REZ_DIALOGUES[Math.floor(Math.random() * REZ_DIALOGUES.length)]
+        .replace('{target}', msg.targetName.split(' ')[0]);
+      activeBubble = { charId: msg.healer, text: rezLine, timer: 5.0, charIndex: 0 };
+      campfireDialogueTimer = 8; // delay next random dialogue
+      // Rebuild campfire positions after short delay (let state update)
+      setTimeout(() => setupCampfireLayout(), 500);
       break;
 
     case 'expedition_finished':
@@ -980,7 +1197,9 @@ function handleEvent(ev) {
     case 'damage':
     case 'skill_damage': {
       const size = ev.crit ? 22 : 16;
-      const color = ev.crit ? '#fbbf24' : '#ef4444';
+      const srcEntity = findEntity(ev.source);
+      const elemDmgColor = ELEMENT_COLORS[srcEntity?.element] || '#ef4444';
+      const color = ev.crit ? '#fbbf24' : elemDmgColor;
       const text = ev.crit ? `CRIT ${ev.amount}` : `-${ev.amount}`;
       addFloating(ev.target, text, color, size);
       triggerAnim(ev.target, 'hit', 0.15);
@@ -1031,6 +1250,7 @@ function handleEvent(ev) {
       break;
     }
     case 'death':
+      ensureStats(ev.characterId).deaths++;
       addLogEntry('death', `${getName(ev.characterId)} est mort!`);
       triggerAnim(ev.characterId, 'death', 1.0);
       addTimelineEvent('death', null, { name: getName(ev.characterId), charId: ev.characterId });
@@ -1329,6 +1549,92 @@ function drawDeadMarker(char, sx, sy) {
   ctx.fillText(char.name, sx, sy - CHAR_SIZE - 18);
 }
 
+function drawCampfireGhost(char, sx, sy) {
+  const t = Date.now() / 1000;
+  const idHash = char.id.split('').reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0);
+
+  // Ghostly floating bob
+  const floatY = Math.sin(t * 1.5 + idHash * 0.5) * 6;
+
+  ctx.save();
+  ctx.globalAlpha = 0.25 + Math.sin(t * 2 + idHash) * 0.08;
+
+  // Blue-white ethereal glow
+  const glow = ctx.createRadialGradient(sx, sy + floatY - CHAR_SIZE / 2, 5, sx, sy + floatY - CHAR_SIZE / 2, CHAR_SIZE * 0.8);
+  glow.addColorStop(0, 'rgba(150, 180, 255, 0.2)');
+  glow.addColorStop(1, 'rgba(100, 140, 255, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(sx - CHAR_SIZE, sy + floatY - CHAR_SIZE * 1.5, CHAR_SIZE * 2, CHAR_SIZE * 2);
+
+  // Draw sprite (ghostly)
+  drawCharacterSprite(char, sx, sy + floatY);
+
+  // Wispy particles rising
+  for (let i = 0; i < 3; i++) {
+    const cycle = ((t * 0.8 + i * 1.2 + idHash * 0.3) % 2) / 2;
+    const px = sx + Math.sin(t + i * 2.1) * 10;
+    const py = sy + floatY - CHAR_SIZE / 2 - cycle * 40;
+    const alpha = (1 - cycle) * 0.3;
+    ctx.fillStyle = `rgba(150, 180, 255, ${alpha})`;
+    ctx.beginPath(); ctx.arc(px, py, 2 - cycle, 0, Math.PI * 2); ctx.fill();
+  }
+
+  ctx.restore();
+
+  // Name
+  ctx.fillStyle = '#6688cc'; ctx.font = '8px sans-serif'; ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(100,140,255,0.4)'; ctx.shadowBlur = 4;
+  ctx.fillText(char.name, sx, sy + floatY - CHAR_SIZE - 4);
+  ctx.shadowBlur = 0;
+
+  // "En attente de rez" text
+  ctx.fillStyle = '#556'; ctx.font = '7px sans-serif';
+  ctx.fillText('En attente de rez...', sx, sy + floatY + 8);
+}
+
+function drawRestingCharacter(char, sx, sy, dt) {
+  const t = Date.now() / 1000;
+  const idHash = char.id.split('').reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0);
+
+  // Gentle breathing animation
+  const breathY = Math.sin(t * 1.2 + idHash) * 2;
+
+  ctx.save();
+  ctx.globalAlpha = 0.7;
+
+  // Draw character sprite (slightly faded, peaceful)
+  drawCharacterSprite(char, sx, sy + breathY);
+  ctx.restore();
+
+  // HP bar
+  drawHpBar(sx, sy + breathY + 2, 36, 4, char.hp / char.maxHp);
+
+  // "Zzz" floating animation
+  const zzz1 = ((t * 0.6 + idHash * 0.3) % 3) / 3;
+  const zzz2 = ((t * 0.6 + idHash * 0.3 + 1) % 3) / 3;
+  ctx.font = `${10 + zzz1 * 4}px sans-serif`; ctx.textAlign = 'center';
+  ctx.fillStyle = `rgba(150, 180, 255, ${0.6 - zzz1 * 0.5})`;
+  ctx.fillText('z', sx + 12 + zzz1 * 10, sy + breathY - CHAR_SIZE - 4 - zzz1 * 20);
+  ctx.font = `${8 + zzz2 * 4}px sans-serif`;
+  ctx.fillStyle = `rgba(150, 180, 255, ${0.5 - zzz2 * 0.4})`;
+  ctx.fillText('z', sx + 18 + zzz2 * 8, sy + breathY - CHAR_SIZE - 10 - zzz2 * 18);
+
+  // Name + role
+  const elemColor = ELEMENT_COLORS[char.element] || '#888';
+  ctx.fillStyle = elemColor; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 2;
+  const roleIcon = ROLE_ICONS[char.role] || '';
+  ctx.fillText(`${roleIcon} ${char.name}`, sx, sy + breathY - CHAR_SIZE - 4);
+  ctx.shadowBlur = 0;
+
+  // "Au repos" badge
+  ctx.fillStyle = 'rgba(59, 130, 246, 0.6)';
+  roundRect(ctx, sx - 22, sy + breathY + 10, 44, 13, 4);
+  ctx.fill();
+  ctx.fillStyle = '#e0e8ff'; ctx.font = 'bold 8px sans-serif';
+  ctx.fillText('AU REPOS', sx, sy + breathY + 19);
+}
+
 // ═══════════════════════════════════════════════════════════
 // CHARACTER INFO POPUP (click to see live stats)
 // ═══════════════════════════════════════════════════════════
@@ -1352,7 +1658,7 @@ function drawCharacterPopup(dt) {
   }
 
   const stats = combatStats[selectedCharInfo.charId];
-  const popW = 180, popH = 130;
+  const popW = 190, popH = 148;
   const px = Math.max(5, Math.min(canvas.width - popW - 5, sx - popW / 2));
   const py = sy - CHAR_SIZE - popH - 25;
 
@@ -1370,6 +1676,11 @@ function drawCharacterPopup(dt) {
   ctx.fillStyle = elemColor; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left';
   const roleLabel = { frontline: 'Tank', frontline_dps: 'Fighter', backline_dps: 'Mage', backline_heal: 'Healer' };
   ctx.fillText(`${char.name} (${roleLabel[char.role] || char.role})`, px + 8, py + 16);
+  // Alive/dead + username
+  const statusColor = char.alive ? '#22c55e' : '#dc2626';
+  const statusText = char.alive ? 'En vie' : 'Mort';
+  ctx.fillStyle = statusColor; ctx.font = 'bold 8px sans-serif';
+  ctx.fillText(statusText, px + popW - 8 - ctx.measureText(statusText).width, py + 16);
   ctx.fillStyle = '#888'; ctx.font = '9px sans-serif';
   ctx.fillText(`${char.username || ''}`, px + 8, py + 28);
 
@@ -1398,6 +1709,7 @@ function drawCharacterPopup(dt) {
     { l: 'Degats', v: formatNumber(stats?.dmgDealt || 0), c: '#ff8888' },
     { l: 'Soins', v: formatNumber(stats?.healsGiven || 0), c: '#22c55e' },
     { l: 'Kills', v: String(stats?.kills || 0), c: '#f59e0b' },
+    { l: 'Morts', v: String(stats?.deaths || 0), c: '#dc2626' },
     { l: 'Crits', v: `${stats?.crits || 0} (max: ${formatNumber(stats?.maxCrit || 0)})`, c: '#fbbf24' },
   ];
   for (let i = 0; i < lines.length; i++) {
@@ -1519,16 +1831,40 @@ function drawBossPopup(dt) {
 
 function setupCampfireLayout() {
   if (!state) return;
-  const aliveChars = state.characters.filter(c => c.alive);
+  const allChars = state.characters || [];
+  const aliveActive = allChars.filter(c => c.alive && !c.resting);
+  const restingChars = allChars.filter(c => c.alive && c.resting);
+  const deadChars = allChars.filter(c => !c.alive);
   const centerX = canvas.width / 2;
-  const centerY = canvas.height * GROUND_Y_RATIO + 60;
-  const radius = Math.min(180, 40 + aliveChars.length * 6);
-  campfireLayout = { positions: {}, centerX, centerY };
-  aliveChars.forEach((c, i) => {
-    const angle = (i / aliveChars.length) * Math.PI * 2 - Math.PI / 2;
+  const centerY = canvas.height * (GROUND_Y_RATIO + (1 - GROUND_Y_RATIO) * 0.4);
+  const radius = Math.min(200, 50 + aliveActive.length * 5);
+  campfireLayout = { positions: {}, centerX, centerY, deadIds: new Set(deadChars.map(c => c.id)) };
+
+  // Active alive characters in inner circle
+  aliveActive.forEach((c, i) => {
+    const angle = (i / aliveActive.length) * Math.PI * 2 - Math.PI / 2;
     campfireLayout.positions[c.id] = {
       x: centerX + Math.cos(angle) * radius,
       y: centerY + Math.sin(angle) * radius * 0.4,
+    };
+  });
+
+  // Resting characters: slightly off to the side (right of campfire, near a tent)
+  const restX = centerX + radius + 60;
+  restingChars.forEach((c, i) => {
+    campfireLayout.positions[c.id] = {
+      x: restX + (i % 3) * 35,
+      y: centerY - 20 + Math.floor(i / 3) * 30,
+    };
+  });
+
+  // Dead characters in outer ring (ghosts)
+  const deadRadius = radius + 60;
+  deadChars.forEach((c, i) => {
+    const angle = (i / Math.max(1, deadChars.length)) * Math.PI * 2 - Math.PI / 2;
+    campfireLayout.positions[c.id] = {
+      x: centerX + Math.cos(angle) * deadRadius,
+      y: centerY + Math.sin(angle) * deadRadius * 0.4 + 10,
     };
   });
 }
@@ -1554,7 +1890,7 @@ const TAB_COLORS = { dps: '#ef4444', heals: '#22c55e', received: '#f59e0b', crit
 let statsRenderTimer = null;
 function scheduleStatsRender() {
   if (statsRenderTimer) return;
-  statsRenderTimer = setTimeout(() => { statsRenderTimer = null; if (activeStatsTab === 'graph') renderDpsGraph(); else if (activeStatsTab === 'timeline') renderTimeline(); else renderStatsPanel(); }, 500);
+  statsRenderTimer = setTimeout(() => { statsRenderTimer = null; if (activeStatsTab === 'graph') renderDpsGraph(); else if (activeStatsTab === 'timeline') renderTimeline(); else renderStatsPanel(); }, 2000);
 }
 
 function renderStatsPanel() {
@@ -1567,10 +1903,10 @@ function renderStatsPanel() {
     let html = '';
     for (const [id, s] of sorted) {
       if (s.crits === 0 && s.totalHits === 0) continue;
-      const spriteUrl = s.hunterId ? HUNTER_SPRITES[s.hunterId] : null;
+      const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
       const critRate = s.totalHits > 0 ? (s.crits / s.totalHits * 100).toFixed(1) : '0.0';
       const avgCrit = s.crits > 0 ? Math.floor(s.totalCritDmg / s.crits) : 0;
-      html += `<div class="crit-card"><div class="crit-card-header">${spriteUrl ? `<img src="${spriteUrl}" alt="">` : ''}<span class="name">${s.name}</span></div><div class="crit-stats-grid"><span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits}</span><span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits}</span><span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span><span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span><span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit)}</span><span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills}</span></div></div>`;
+      html += `<div class="crit-card"><div class="crit-card-header">${thumbSrc ? `<img src="${thumbSrc}" alt="">` : ''}<span class="name">${s.name}</span></div><div class="crit-stats-grid"><span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits}</span><span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits}</span><span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span><span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span><span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit)}</span><span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills}</span></div></div>`;
     }
     list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de crits</div>';
     return;
@@ -1591,10 +1927,15 @@ function renderStatsPanel() {
     const val = s[valueKey];
     if (val === 0) continue;
     const pct = maxVal > 0 ? (val / maxVal * 100) : 0;
-    const spriteUrl = s.hunterId ? HUNTER_SPRITES[s.hunterId] : null;
+    const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
     const elemColor = ELEMENT_COLORS[s.element] || '#888';
     const perSec = activeStatsTab === 'dps' ? ` (${formatNumber(val / combatSec)}/s)` : '';
-    html += `<div class="stat-entry"><span class="stat-rank">${i + 1}</span>${spriteUrl ? `<img class="stat-sprite" src="${spriteUrl}" alt="">` : `<span class="stat-sprite" style="background:${elemColor}"></span>`}<span class="stat-name" style="color:${elemColor}">${s.name}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${barColor}"></div></div><span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec}</span></span></div>`;
+    // Check if character is currently alive
+    const charObj = state?.characters?.find(c => c.id === id);
+    const isAlive = charObj?.alive !== false;
+    const deathBadge = s.deaths > 0 ? `<span style="font-size:7px;color:#dc2626;margin-left:3px">\u2620${s.deaths}</span>` : '';
+    const aliveStyle = isAlive ? '' : 'opacity:0.5;';
+    html += `<div class="stat-entry" style="${aliveStyle}"><span class="stat-rank">${i + 1}</span>${thumbSrc ? `<img class="stat-sprite" src="${thumbSrc}" alt="">` : `<span class="stat-sprite" style="background:${elemColor}"></span>`}<span class="stat-name" style="color:${isAlive ? elemColor : '#dc2626'}">${s.name}${deathBadge}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${barColor}"></div></div><span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec}</span></span></div>`;
   }
   list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de donnees</div>';
 }
@@ -1700,10 +2041,10 @@ function renderTimeline() {
 // RENDERING
 // ═══════════════════════════════════════════════════════════
 
-const GROUND_Y_RATIO = 0.78;
-const CHAR_SIZE = 40;
-const BOSS_SIZE = 80;
-const CHAR_Y_BASE = 100;   // Added to server Y BEFORE zoom, so all entities stay on/below ground at any zoom
+const GROUND_Y_RATIO = 0.52;  // Even more floor space (was 0.62)
+const CHAR_SIZE = 48;         // Bigger characters (was 40)
+const BOSS_SIZE = 90;         // Bigger boss (was 80)
+const CHAR_Y_BASE = 200;     // Push entities further down onto floor (was 150)
 function entityScreenY(serverY) { return ((serverY || 0) + CHAR_Y_BASE) * camera.zoom; }
 
 let lastTime = performance.now();
@@ -1726,34 +2067,26 @@ function render() {
   // Smooth zoom
   camera.zoom += (camera.targetZoom - camera.zoom) * Math.min(1, 8 * dt);
 
-  // Position interpolation (X + Y)
+  // Position interpolation: velocity prediction + server correction
   if (state) {
-    for (const c of state.characters || []) {
-      const ip = interpPositions[c.id];
-      if (ip) {
-        ip.x += (c.x - ip.x) * Math.min(1, LERP_SPEED * dt);
-        const ty = c.y || 0;
-        if (ip.y === undefined) ip.y = ty;
-        ip.y += (ty - ip.y) * Math.min(1, LERP_SPEED * dt);
-      }
-    }
-    for (const m of state.mobs || []) {
-      const ip = interpPositions[m.id];
-      if (ip) {
-        ip.x += (m.x - ip.x) * Math.min(1, LERP_SPEED * dt);
-        const ty = m.y || 0;
-        if (ip.y === undefined) ip.y = ty;
-        ip.y += (ty - ip.y) * Math.min(1, LERP_SPEED * dt);
-      }
-    }
-    if (state.boss) {
-      const ip = interpPositions[state.boss.id];
-      if (ip) {
-        ip.x += (state.boss.x - ip.x) * Math.min(1, LERP_SPEED * dt);
-        const ty = state.boss.y || 0;
-        if (ip.y === undefined) ip.y = ty;
-        ip.y += (ty - ip.y) * Math.min(1, LERP_SPEED * dt);
-      }
+    const allEntities = [
+      ...(state.characters || []).map(c => c.id),
+      ...(state.mobs || []).map(m => m.id),
+      ...(state.boss ? [state.boss.id] : []),
+    ];
+    for (const id of allEntities) {
+      const ip = interpPositions[id];
+      if (!ip) continue;
+      // Predict: move along velocity
+      ip.x += ip.vx * dt;
+      ip.y += ip.vy * dt;
+      // Correct: blend toward server target position
+      const blendFactor = Math.min(1, PREDICT_BLEND * dt);
+      ip.x += (ip.targetX - ip.x) * blendFactor;
+      ip.y += (ip.targetY - ip.y) * blendFactor;
+      // Friction: gradually slow down velocity
+      ip.vx *= (1 - 2 * dt);
+      ip.vy *= (1 - 2 * dt);
     }
   }
 
@@ -1767,7 +2100,7 @@ function render() {
 
   // Camera auto-follow
   if (camera.autoFollow && state.characters.length > 0) {
-    const aliveChars = state.characters.filter(c => c.alive);
+    const aliveChars = state.characters.filter(c => c.alive && !c.resting);
     if (aliveChars.length > 0) {
       const avgX = aliveChars.reduce((s, c) => s + (interpPositions[c.id]?.x ?? c.x), 0) / aliveChars.length;
       const targetCam = avgX * camera.zoom - canvas.width * 0.3;
@@ -1819,6 +2152,9 @@ function render() {
 
   // Characters
   for (const char of (state.characters || [])) {
+    // Skip resting characters during combat (they're at camp)
+    if (char.resting && state.status === 'combat') continue;
+
     const ip = interpPositions[char.id];
     const sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
     const entityY = entityScreenY(ip?.y ?? char.y ?? 0);
@@ -1827,9 +2163,12 @@ function render() {
     // Campfire override positions
     if (state.status === 'campfire' && campfireLayout?.positions[char.id]) {
       const cp = campfireLayout.positions[char.id];
-      const lerpFactor = Math.min(1, 3 * dt);
-      // We can't persist lerp here easily, use the campfire positions directly
-      drawCalls.push({ sy: cp.y, fn: () => drawCharacterFull(char, cp.x, cp.y, dt) });
+      if (char.resting) {
+        // Resting chars drawn with special indicator
+        drawCalls.push({ sy: cp.y, fn: () => drawRestingCharacter(char, cp.x, cp.y, dt) });
+      } else {
+        drawCalls.push({ sy: cp.y, fn: () => drawCharacterFull(char, cp.x, cp.y, dt) });
+      }
       continue;
     }
 
@@ -1986,6 +2325,9 @@ function render() {
     }
   }
 
+  // ── Party HUD (top-left) ──
+  drawPartyHUD();
+
   // ── Zoom indicator (Phase 2) ──
   ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
   ctx.fillText(`${Math.round(camera.zoom * 100)}%`, 8, canvas.height - 8);
@@ -2081,7 +2423,7 @@ function drawParallax(groundY) {
 
 function drawCampfire(dt, groundY) {
   const cx = campfireLayout?.centerX || canvas.width / 2;
-  const cy = campfireLayout?.centerY || groundY + 60;
+  const cy = campfireLayout?.centerY || groundY + (canvas.height - groundY) * 0.4;
   const t = Date.now() / 1000;
 
   // Warm ambient glow
@@ -2216,6 +2558,11 @@ function drawCharacterFull(char, sx, sy, dt) {
       const deathOffset = (1.0 - anim.timer) * 15;
       drawCharacterSprite(char, sx, sy + deathOffset);
       ctx.restore();
+      return;
+    }
+    // Campfire: ghostly floating spirit (waiting for rez)
+    if (state?.status === 'campfire' && campfireLayout?.deadIds?.has(char.id)) {
+      drawCampfireGhost(char, sx, sy);
       return;
     }
     // After death animation: show ghost marker
@@ -2478,6 +2825,93 @@ function drawNarrative(dt) {
       }
     }
   }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PARTY HUD — compact HP/mana overview (top-left corner)
+// ═══════════════════════════════════════════════════════════
+function drawPartyHUD() {
+  if (!state || !state.characters || state.characters.length === 0) return;
+
+  const chars = state.characters.slice();
+  // Sort: alive first, then by role (frontline → heal), then by name
+  const roleOrder = { frontline: 0, frontline_dps: 1, backline_dps: 2, backline_heal: 3 };
+  chars.sort((a, b) => {
+    if (a.alive !== b.alive) return a.alive ? -1 : 1;
+    const ra = roleOrder[a.role] ?? 9, rb = roleOrder[b.role] ?? 9;
+    if (ra !== rb) return ra - rb;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
+  const startX = 8;
+  const startY = 95;  // Below "Connecté" badge
+  const rowH = 16;
+  const barW = 44;
+  const barH = 5;
+  const manaH = 2;
+  const panelW = 150;
+  const panelH = chars.length * rowH + 8;
+
+  ctx.save();
+
+  // Background panel
+  ctx.fillStyle = 'rgba(8, 8, 20, 0.8)';
+  roundRect(ctx, startX, startY, panelW, panelH, 5);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  roundRect(ctx, startX, startY, panelW, panelH, 5);
+  ctx.stroke();
+
+  for (let i = 0; i < chars.length; i++) {
+    const char = chars[i];
+    const y = startY + 4 + i * rowH;
+    const elemColor = ELEMENT_COLORS[char.element] || '#888';
+
+    // Element dot
+    ctx.fillStyle = char.alive ? elemColor : '#555';
+    ctx.beginPath();
+    ctx.arc(startX + 7, y + 5, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Dead skull overlay on dot
+    if (!char.alive) {
+      ctx.fillStyle = '#dc2626';
+      ctx.font = '6px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('\u2620', startX + 7, y + 7);
+    }
+
+    // Name (truncated)
+    ctx.fillStyle = char.alive ? '#ccc' : '#666';
+    ctx.font = '8px sans-serif'; ctx.textAlign = 'left';
+    const name = char.name.length > 9 ? char.name.slice(0, 8) + '..' : char.name;
+    ctx.fillText(name, startX + 14, y + 8);
+
+    // HP bar
+    const hpX = startX + panelW - barW - 22;
+    const hpRatio = Math.max(0, char.hp / char.maxHp);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(hpX, y + 1, barW, barH);
+    const hpColor = hpRatio > 0.6 ? '#22c55e' : hpRatio > 0.3 ? '#f59e0b' : '#ef4444';
+    ctx.fillStyle = char.alive ? hpColor : '#2a1515';
+    ctx.fillRect(hpX, y + 1, barW * hpRatio, barH);
+
+    // Mana bar (thin, below HP)
+    if (char.maxMana) {
+      const manaRatio = Math.max(0, (char.mana || 0) / char.maxMana);
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(hpX, y + barH + 2, barW, manaH);
+      ctx.fillStyle = char.alive ? '#3b82f6' : '#1a1a2e';
+      ctx.fillRect(hpX, y + barH + 2, barW * manaRatio, manaH);
+    }
+
+    // HP percentage
+    ctx.fillStyle = char.alive ? '#888' : '#444';
+    ctx.font = '7px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText(`${Math.floor(hpRatio * 100)}%`, startX + panelW - 4, y + 8);
+  }
+
+  ctx.restore();
 }
 
 function drawHpBar(x, y, width, height, ratio) {

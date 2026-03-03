@@ -96,6 +96,9 @@ export const POINTS_PER_LEVEL = 2;
 export const MAX_LEVEL = 140;
 
 // ─── Account Level System ───────────────────────────────────
+export const MAX_ACCOUNT_LEVEL = 12000;
+export const CHEATER_RESET_LEVEL = 5000;
+
 export const ACCOUNT_XP_FOR_LEVEL = (lvl) => {
   const base = 80 + lvl * 25;
   if (lvl <= 10000) return base;
@@ -105,6 +108,15 @@ export const ACCOUNT_XP_FOR_LEVEL = (lvl) => {
 };
 export const ACCOUNT_BONUS_INTERVAL = 10; // kept for backward compat display
 export const ACCOUNT_BONUS_AMOUNT = 10;
+
+// Total XP needed to reach exactly a given level (from 0)
+export function accountXpForLevel(targetLevel) {
+  let total = 0;
+  for (let i = 1; i <= targetLevel; i++) {
+    total += ACCOUNT_XP_FOR_LEVEL(i);
+  }
+  return total;
+}
 
 // Progressive allocation count: fewer allocations at high levels
 // Lv 1-1000: every 10, Lv 1001-5000: every 15, Lv 5001-10000: every 25, Lv 10001+: every 30
@@ -128,12 +140,35 @@ export function nextAllocationLevel(level) {
 export function accountLevelFromXp(totalXp) {
   let lvl = 0, spent = 0;
   while (true) {
+    if (lvl >= MAX_ACCOUNT_LEVEL) break;
     const need = ACCOUNT_XP_FOR_LEVEL(lvl + 1);
     if (spent + need > totalXp) break;
     spent += need;
     lvl++;
   }
   return { level: lvl, xpInLevel: totalXp - spent, xpForNext: ACCOUNT_XP_FOR_LEVEL(lvl + 1) };
+}
+
+// Anti-cheat: detect and fix accounts above max level
+// Compares raw XP against what's needed to exceed the cap
+export function sanitizeAccountXp(data) {
+  if (!data || !data.accountXp) return data;
+  // XP threshold: amount needed to complete level MAX_ACCOUNT_LEVEL (i.e. would be level MAX+1)
+  const maxLegitXp = accountXpForLevel(MAX_ACCOUNT_LEVEL);
+  // Allow up to 1 level of overflow XP (earned in the battle that hit cap)
+  const overflowBuffer = ACCOUNT_XP_FOR_LEVEL(MAX_ACCOUNT_LEVEL + 1);
+  if (data.accountXp > maxLegitXp + overflowBuffer) {
+    const resetXp = accountXpForLevel(CHEATER_RESET_LEVEL);
+    console.warn(`[Anti-cheat] Account XP ${data.accountXp} exceeds max (Lv${MAX_ACCOUNT_LEVEL}). Resetting to Lv${CHEATER_RESET_LEVEL}.`);
+    return {
+      ...data,
+      accountXp: resetXp,
+      accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, mana: 0 },
+      accountAllocations: 0,
+      _cheaterReset: true,
+    };
+  }
+  return data;
 }
 
 // ─── Skill Tree Constants ────────────────────────────────────

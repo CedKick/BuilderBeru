@@ -22,7 +22,7 @@ import {
   TIER_NAMES_SKILL, TIER_COSTS, SP_INTERVAL, MAX_LEVEL,
   statsAt, statsAtFull, xpForLevel, getElementMult, getEffStat, buildSpdTurnOrder,
   applySkillUpgrades, getUpgradeDesc, computeAttack, aiPickSkill, mergeTalentBonuses,
-  ACCOUNT_XP_FOR_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT, accountLevelFromXp, accountAllocationsAtLevel, nextAllocationLevel,
+  ACCOUNT_XP_FOR_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT, accountLevelFromXp, accountAllocationsAtLevel, nextAllocationLevel, MAX_ACCOUNT_LEVEL, sanitizeAccountXp,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
   getStarScaledStats, getStarRewardMult, getStarDropBonus, getGuaranteedArtifactRarity,
   calculatePowerScore, getDifficultyRating,
@@ -609,7 +609,8 @@ const loadData = () => {
   try {
     const raw = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (!raw) return defaultData();
-    return migrateData({ ...defaultData(), ...raw });
+    const migrated = migrateData({ ...defaultData(), ...raw });
+    return sanitizeAccountXp(migrated);
   } catch { return defaultData(); }
 };
 
@@ -638,7 +639,17 @@ const debouncedSaveAndSync = (data) => {
 
 export default function ShadowColosseum() {
   const [view, setView] = useState('hub'); // hub, stats, skilltree, talents, battle, result
-  const [data, setData] = useState(loadData);
+  const [data, setData] = useState(() => {
+    const d = loadData();
+    if (d._cheaterReset) {
+      delete d._cheaterReset;
+      saveData(d);
+      setTimeout(() => window.dispatchEvent(new CustomEvent('beru-react', {
+        detail: { message: "Hola ! Ton niveau de compte depassait la limite autorisee... J'ai du le remettre a 5000. Pas de triche ici !", mood: 'angry' },
+      })), 2000);
+    }
+    return d;
+  });
   const dataRef = useRef(data); // Always-fresh ref for sync callbacks
   useEffect(() => { dataRef.current = data; }, [data]);
   const [cloudLoading, setCloudLoading] = useState(isLoggedIn());
@@ -664,6 +675,13 @@ export default function ShadowColosseum() {
         // initialSync already merged cloud → localStorage — just re-read it
         const freshData = loadData();
         if (cancelled) return;
+        if (freshData._cheaterReset) {
+          delete freshData._cheaterReset;
+          saveData(freshData);
+          setTimeout(() => window.dispatchEvent(new CustomEvent('beru-react', {
+            detail: { message: "Hola ! Ton niveau de compte depassait la limite autorisee... J'ai du le remettre a 5000. Pas de triche ici !", mood: 'angry' },
+          })), 1500);
+        }
         setData(freshData);
       } catch (err) {
         console.warn('[ShadowColosseum] Cloud load failed:', err);
@@ -2465,9 +2483,10 @@ export default function ShadowColosseum() {
       const coins = Math.floor(stage.coins * rMult.coins);
       shadowCoinManager.addCoins(coins);
       rewardFactionPoints('arc');
-      // Account XP
+      // Account XP — capped at MAX_ACCOUNT_LEVEL
       const baseAccountXp = 20 + stage.tier * 12 + (stage.isBoss ? 25 : 0);
-      const accountXpGain = Math.floor(baseAccountXp * rMult.accountXp);
+      const arc2PrevLvl = accountLevelFromXp(d.accountXp || 0).level;
+      const accountXpGain = arc2PrevLvl >= MAX_ACCOUNT_LEVEL ? 0 : Math.floor(baseAccountXp * rMult.accountXp);
       d.accountXp = (d.accountXp || 0) + accountXpGain;
       // Stage cleared + star record
       if (!d.arc2StagesCleared[stage.id]) d.arc2StagesCleared[stage.id] = { maxStars: 0 };
@@ -3932,12 +3951,12 @@ export default function ShadowColosseum() {
     shadowCoinManager.addCoins(scaledCoins, 'colosseum_victory');
     rewardFactionPoints('arc');
 
-    // Account XP (scaled)
+    // Account XP (scaled) — capped at MAX_ACCOUNT_LEVEL
     const baseAccountXp = 15 + stage.tier * 10 + (stage.isBoss ? 20 : 0);
-    const accountXpGain = Math.floor(baseAccountXp * rMult.accountXp);
     const prevAccountXp = data.accountXp || 0;
-    const newAccountXp = prevAccountXp + accountXpGain;
     const prevAccLvl = accountLevelFromXp(prevAccountXp).level;
+    const accountXpGain = prevAccLvl >= MAX_ACCOUNT_LEVEL ? 0 : Math.floor(baseAccountXp * rMult.accountXp);
+    const newAccountXp = prevAccountXp + accountXpGain;
     const newAccLvl = accountLevelFromXp(newAccountXp).level;
     const prevMilestones = accountAllocationsAtLevel(prevAccLvl);
     const newMilestones = accountAllocationsAtLevel(newAccLvl);
@@ -4423,6 +4442,18 @@ export default function ShadowColosseum() {
               </>
             );
           })()}
+          {/* Hunter Passive */}
+          {HUNTERS[id]?.passiveDesc && (
+            <div className="mb-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/15">
+              <div className="flex items-start gap-2">
+                <span className="text-sm mt-0.5">{'\u26A1'}</span>
+                <div className="flex-1">
+                  <div className="text-[10px] text-amber-400/80 font-bold uppercase tracking-wider mb-0.5">Passif</div>
+                  <div className="text-xs text-gray-300 leading-relaxed">{HUNTERS[id].passiveDesc}</div>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Action Buttons */}
           <div className="flex gap-2">
             <button
@@ -5136,12 +5167,16 @@ export default function ShadowColosseum() {
                     <span className="text-sm">{'\uD83C\uDFC5'}</span>
                     <span className="text-xs font-bold text-indigo-300">Niveau Compte</span>
                     <span className="text-sm font-black text-white">{acc.level}</span>
+                    {acc.level >= MAX_ACCOUNT_LEVEL && <span className="text-[10px] font-black text-amber-400 bg-amber-500/20 px-1.5 py-0.5 rounded">MAX</span>}
                   </div>
-                  <span className="text-small-responsive text-gray-500">{acc.xpInLevel}/{acc.xpForNext} XP</span>
+                  {acc.level >= MAX_ACCOUNT_LEVEL
+                    ? <span className="text-small-responsive text-amber-400 font-bold">Niveau maximum atteint !</span>
+                    : <span className="text-small-responsive text-gray-500">{acc.xpInLevel}/{acc.xpForNext} XP</span>
+                  }
                 </div>
                 <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, (acc.xpInLevel / acc.xpForNext) * 100)}%` }} />
+                  <div className={`h-full rounded-full transition-all duration-500 ${acc.level >= MAX_ACCOUNT_LEVEL ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-indigo-500 to-purple-500'}`}
+                    style={{ width: `${acc.level >= MAX_ACCOUNT_LEVEL ? 100 : Math.min(100, (acc.xpInLevel / acc.xpForNext) * 100)}%` }} />
                 </div>
                 {hasAnyBonus && (
                   <div className="flex items-center gap-2 mt-1.5">
@@ -5173,9 +5208,11 @@ export default function ShadowColosseum() {
                     {'\u2B50'} {pendingPoints} points de stats a attribuer !
                   </button>
                 )}
-                <div className="text-normal-responsive text-gray-600 mt-1 text-center">
-                  Prochain bonus : Lv {nextAllocationLevel(acc.level)} (+{ACCOUNT_BONUS_AMOUNT} pts d'une stat au choix)
-                </div>
+                {acc.level < MAX_ACCOUNT_LEVEL && (
+                  <div className="text-normal-responsive text-gray-600 mt-1 text-center">
+                    Prochain bonus : Lv {nextAllocationLevel(acc.level)} (+{ACCOUNT_BONUS_AMOUNT} pts d'une stat au choix)
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -8932,7 +8969,13 @@ export default function ShadowColosseum() {
                       const result = await resp.json();
                       if (!result.success) {
                         shadowCoinManager.addCoins(eqRerollCoinCost, 'reroll_refund');
-                        beruSay(result.error || 'Reroll echoue... tes coins ont ete rendus.', 'shocked');
+                        if (result.errorCode === 'ALKAHEST_INSUFFICIENT') {
+                          // Sync local alkahest with server value to fix desync
+                          setData(prev => ({ ...prev, alkahest: result.have }));
+                          beruSay(`Desync detecte ! Le serveur dit que tu as ${result.have} Alkahest, mais il en faut ${result.need} avec ${result.lockCount} lock${result.lockCount > 1 ? 's' : ''}. Tes coins ont ete rendus.`, 'shocked');
+                        } else {
+                          beruSay(result.error || 'Reroll echoue... tes coins ont ete rendus.', 'shocked');
+                        }
                         return;
                       }
                       const rerolled = result.rerolledArtifact;
@@ -10388,7 +10431,12 @@ export default function ShadowColosseum() {
             const result = await resp.json();
             if (!result.success) {
               shadowCoinManager.addCoins(rerollCoinCost, 'reroll_refund');
-              beruSay(result.error || 'Reroll echoue... tes coins ont ete rendus.', 'shocked');
+              if (result.errorCode === 'ALKAHEST_INSUFFICIENT') {
+                setData(prev => ({ ...prev, alkahest: result.have }));
+                beruSay(`Desync detecte ! Le serveur dit que tu as ${result.have} Alkahest, mais il en faut ${result.need} avec ${result.lockCount} lock${result.lockCount > 1 ? 's' : ''}. Tes coins ont ete rendus.`, 'shocked');
+              } else {
+                beruSay(result.error || 'Reroll echoue... tes coins ont ete rendus.', 'shocked');
+              }
               return;
             }
             const rerolled = result.rerolledArtifact;

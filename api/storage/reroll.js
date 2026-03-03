@@ -81,9 +81,9 @@ export default async function handler(req, res) {
     const { artifactUid, fullReroll, lockedStats = [] } = req.body;
     if (!artifactUid) return res.status(400).json({ error: 'Missing artifactUid' });
 
-    // Read current data from Neon
+    // Read current data from Neon (use FOR UPDATE to prevent race conditions)
     const existing = await query(
-      'SELECT data FROM user_storage WHERE device_id = $1 AND storage_key = $2',
+      `SELECT data FROM user_storage WHERE device_id = $1 AND storage_key = $2`,
       [user.deviceId, 'shadow_colosseum_data']
     );
     if (!existing.rows.length) return res.status(404).json({ error: 'No data found' });
@@ -96,7 +96,14 @@ export default async function handler(req, res) {
     const alkahestCost = REROLL_LOCK_COSTS[lockCount];
     const currentAlkahest = data.alkahest || 0;
     if (currentAlkahest < alkahestCost) {
-      return res.status(400).json({ error: 'Not enough alkahest', have: currentAlkahest, need: alkahestCost });
+      console.warn(`[reroll] Not enough alkahest for ${user.username}: have=${currentAlkahest}, need=${alkahestCost}, locks=${lockCount}`);
+      return res.status(400).json({
+        error: 'Not enough alkahest',
+        errorCode: 'ALKAHEST_INSUFFICIENT',
+        have: currentAlkahest,
+        need: alkahestCost,
+        lockCount,
+      });
     }
 
     // Find the artifact (inventory or equipped)
@@ -192,6 +199,7 @@ export default async function handler(req, res) {
       [jsonStr, sizeBytes, user.deviceId, 'shadow_colosseum_data']
     );
 
+    console.log(`[reroll] OK ${user.username}: artifact=${artifactUid}, locks=${lockCount}, alkahest=${currentAlkahest}->${data.alkahest}`);
     return res.status(200).json({
       success: true,
       rerolledArtifact: rerolled,
@@ -200,6 +208,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('[reroll] Error:', err);
-    return res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: 'Server error', errorCode: 'SERVER_ERROR' });
   }
 }

@@ -87,6 +87,21 @@ export const CAMPFIRE = {
   REZ_HP_PERCENT: 30,
 };
 
+// ─── Rest at Camp (anti-wipe reserve) ─────────────────────
+export const REST_CAMP = {
+  // Chance for a char to decide to rest (checked at campfire, per char)
+  BASE_REST_CHANCE: 0.03,       // 3% base chance
+  LOW_HP_REST_CHANCE: 0.15,     // 15% if HP < 30%
+  DIED_RECENTLY_REST_CHANCE: 0.12, // 12% if died this combat
+  MAX_RESTING_RATIO: 0.2,      // Max 20% of alive chars can rest at once
+  // Stat bonuses while resting (applied when they rejoin after wipe recovery)
+  REST_BONUS_HP: 0.15,         // +15% max HP
+  REST_BONUS_ATK: 0.10,        // +10% ATK
+  REST_BONUS_DEF: 0.15,        // +15% DEF
+  // Wipe recovery: resting chars with healer can save the raid
+  WIPE_RECOVERY_REZ_HP: 0.40,  // Rezzed chars get 40% HP
+};
+
 // ─── March ────────────────────────────────────────────────
 export const MARCH = {
   DURATION_SEC: 15,

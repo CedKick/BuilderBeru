@@ -1,4 +1,4 @@
-import { SERVER, EXPEDITION, CAMPFIRE, MARCH } from '../config.js';
+import { SERVER, EXPEDITION, CAMPFIRE, MARCH, REST_CAMP } from '../config.js';
 import { CombatEngine2D } from './CombatEngine2D.js';
 import { AIController } from './AIController.js';
 import { LootEngine } from './LootEngine.js';
@@ -51,6 +51,11 @@ export class ExpeditionEngine {
 
     // Campfire
     this.rezUsedThisCombat = new Set();
+    this.pendingRezQueue = [];
+    this.rezTimer = 999;
+
+    // Rest at camp (anti-wipe reserve)
+    this.restingCharacters = new Set();  // char IDs sitting out next fight
 
     // Stats
     this.bossesKilled = 0;
@@ -231,7 +236,9 @@ export class ExpeditionEngine {
   // STATE: COMBAT
   // ═══════════════════════════════════════════════════════
   tickCombat(dt) {
-    const result = this.combatEngine.tick(this.characters, this.currentMobs, this.currentBoss, dt);
+    // Exclude resting characters from combat
+    const combatChars = this.characters.filter(c => !this.restingCharacters.has(c.id));
+    const result = this.combatEngine.tick(combatChars, this.currentMobs, this.currentBoss, dt);
 
     // Broadcast combat events
     if (result.events.length > 0) {
@@ -268,6 +275,52 @@ export class ExpeditionEngine {
   }
 
   onCombatWipe() {
+    // Check if resting characters can save the raid
+    const restingAlive = this.characters.filter(c =>
+      this.restingCharacters.has(c.id) && c.alive
+    );
+    const restingHasHealer = restingAlive.some(c => c.role === 'backline_heal');
+
+    if (restingAlive.length > 0 && restingHasHealer) {
+      console.log(`[Expedition] WIPE RECOVERY! ${restingAlive.length} resting characters (with healer) can save the raid!`);
+
+      this.broadcast({
+        type: 'wipe_recovery',
+        restingCount: restingAlive.length,
+        message: 'Les reserves arrivent! Les guerriers au repos se precipitent pour sauver le raid!',
+      });
+
+      // Apply rest bonuses to resting characters
+      for (const char of restingAlive) {
+        char.maxHp = Math.floor(char.maxHp * (1 + REST_CAMP.REST_BONUS_HP));
+        char.hp = char.maxHp; // Full HP
+        char.stats.atk = Math.floor(char.stats.atk * (1 + REST_CAMP.REST_BONUS_ATK));
+        char.stats.def = Math.floor(char.stats.def * (1 + REST_CAMP.REST_BONUS_DEF));
+        char.mana = char.maxMana; // Full mana
+      }
+
+      // Rez all dead combatants at reduced HP
+      for (const char of this.characters) {
+        if (!char.alive && !this.restingCharacters.has(char.id)) {
+          char.resurrect(REST_CAMP.WIPE_RECOVERY_REZ_HP * 100);
+          this.broadcast({
+            type: 'rez',
+            healer: restingAlive[0].id,
+            healerName: 'Les Reserves',
+            target: char.id,
+            targetName: char.name,
+          });
+        }
+      }
+
+      // Clear resting — everyone is back in action
+      this.restingCharacters.clear();
+
+      // Go to campfire to recover before retrying
+      this.transitionTo('campfire');
+      return;
+    }
+
     console.log(`[Expedition] WIPE! All characters are dead.`);
 
     // Roll loot with wipe penalty
@@ -299,10 +352,11 @@ export class ExpeditionEngine {
         this.pendingLootResults = null;
       }
 
-      // Check if this was a wipe
-      const allDead = this.characters.every(c => !c.alive);
-      if (allDead) {
-        this.transitionTo('wiped');
+      // Check if this was a wipe (excluding resting chars)
+      const allCombatantsDead = this.characters.every(c => !c.alive || this.restingCharacters.has(c.id));
+      if (allCombatantsDead) {
+        this.onCombatWipe(); // Will check resting chars for recovery
+        return;
       } else {
         this.currentEncounterIndex++;
         if (this.currentEncounterIndex >= this.encounters.length) {
@@ -325,7 +379,45 @@ export class ExpeditionEngine {
       this.applyCampfireEffects();
     }
 
+    // Process staggered rez queue (one rez every ~7s, first at ~5s)
+    if (this.pendingRezQueue && this.pendingRezQueue.length > 0) {
+      this.rezTimer -= dt;
+      if (this.rezTimer <= 0) {
+        const rez = this.pendingRezQueue.shift();
+        rez.target.resurrect(CAMPFIRE.REZ_HP_PERCENT);
+        this.rezUsedThisCombat.add(rez.healer.id);
+
+        this.broadcast({
+          type: 'rez',
+          healer: rez.healer.id,
+          healerName: rez.healer.name,
+          target: rez.target.id,
+          targetName: rez.target.name,
+        });
+
+        console.log(`[Campfire] ${rez.healer.name} rezzed ${rez.target.name} (${CAMPFIRE.REZ_HP_PERCENT}% HP)`);
+
+        // Next rez in 7 seconds
+        this.rezTimer = 7;
+      }
+    }
+
     if (this.phaseTimer <= 0) {
+      // Force-rez any remaining in queue (safety net)
+      if (this.pendingRezQueue) {
+        for (const rez of this.pendingRezQueue) {
+          rez.target.resurrect(CAMPFIRE.REZ_HP_PERCENT);
+          this.broadcast({
+            type: 'rez',
+            healer: rez.healer.id,
+            healerName: rez.healer.name,
+            target: rez.target.id,
+            targetName: rez.target.name,
+          });
+        }
+        this.pendingRezQueue = [];
+      }
+
       // Reset combat flags for next encounter
       for (const char of this.characters) {
         char.diedThisCombat = false;
@@ -346,7 +438,7 @@ export class ExpeditionEngine {
       }
     }
 
-    // Healer resurrections (1 per alive healer)
+    // Queue healer resurrections (staggered over campfire duration)
     const aliveHealers = this.characters.filter(c =>
       c.alive && c.role === 'backline_heal' && !this.rezUsedThisCombat.has(c.id)
     );
@@ -355,24 +447,55 @@ export class ExpeditionEngine {
     // Sort dead by DPS contribution (most useful first)
     deadChars.sort((a, b) => b.stats.damageDealt - a.stats.damageDealt);
 
+    this.pendingRezQueue = [];
     for (const healer of aliveHealers) {
       if (deadChars.length === 0) break;
       const target = deadChars.shift();
-      target.resurrect(CAMPFIRE.REZ_HP_PERCENT);
-      this.rezUsedThisCombat.add(healer.id);
-
-      this.broadcast({
-        type: 'rez',
-        healer: healer.id,
-        healerName: healer.name,
-        target: target.id,
-        targetName: target.name,
-      });
-
-      console.log(`[Campfire] ${healer.name} rezzed ${target.name} (${CAMPFIRE.REZ_HP_PERCENT}% HP)`);
+      this.pendingRezQueue.push({ healer, target });
     }
 
-    this.broadcast({ type: 'campfire_effects', aliveCount: this.characters.filter(c => c.alive).length });
+    // First rez after 5 seconds
+    this.rezTimer = this.pendingRezQueue.length > 0 ? 5 : 999;
+
+    // ── Rest-at-camp decisions ──
+    // Some characters may decide to sit out the next fight
+    this.restingCharacters.clear();
+    const aliveChars = this.characters.filter(c => c.alive);
+    const maxResting = Math.floor(aliveChars.length * REST_CAMP.MAX_RESTING_RATIO);
+    // Need at least 3 chars in combat
+    const minCombatants = Math.max(3, aliveChars.length - maxResting);
+
+    for (const char of aliveChars) {
+      if (this.restingCharacters.size >= maxResting) break;
+      if (aliveChars.length - this.restingCharacters.size <= minCombatants) break;
+
+      let restChance = REST_CAMP.BASE_REST_CHANCE;
+      if (char.hp / char.maxHp < 0.3) restChance = REST_CAMP.LOW_HP_REST_CHANCE;
+      if (char.diedThisCombat) restChance = REST_CAMP.DIED_RECENTLY_REST_CHANCE;
+
+      if (Math.random() < restChance) {
+        this.restingCharacters.add(char.id);
+        console.log(`[Campfire] ${char.name} (${char.username}) decides to rest at camp`);
+
+        this.broadcast({
+          type: 'rest_decision',
+          charId: char.id,
+          charName: char.name,
+          username: char.username,
+          reason: char.diedThisCombat ? 'died' : (char.hp / char.maxHp < 0.3 ? 'low_hp' : 'cautious'),
+        });
+      }
+    }
+
+    // Broadcast dead count so spectator knows who to show as ghosts
+    const deadCount = this.characters.filter(c => !c.alive).length;
+    this.broadcast({
+      type: 'campfire_effects',
+      aliveCount: aliveChars.length,
+      deadCount,
+      pendingRez: this.pendingRezQueue.length,
+      restingCount: this.restingCharacters.size,
+    });
   }
 
   // ═══════════════════════════════════════════════════════
@@ -480,7 +603,17 @@ export class ExpeditionEngine {
     }
 
     // Reset formation for combat (arc around boss if present)
-    AIController.assignFormation(this.characters, this.currentBoss);
+    // Exclude resting characters from combat
+    const combatCharacters = this.characters.filter(c => c.alive && !this.restingCharacters.has(c.id));
+    AIController.assignFormation(combatCharacters, this.currentBoss);
+
+    // Move resting characters offscreen (far left, safe)
+    for (const char of this.characters) {
+      if (this.restingCharacters.has(char.id)) {
+        char.x = -200;
+        char.y = 0;
+      }
+    }
   }
 
   // ═══════════════════════════════════════════════════════
@@ -528,6 +661,7 @@ export class ExpeditionEngine {
         mana: Math.floor(c.mana), maxMana: c.maxMana,
         x: Math.floor(c.x), y: Math.floor(c.y || 0), alive: c.alive, role: c.role,
         element: c.element, username: c.username,
+        resting: this.restingCharacters.has(c.id),
       })),
       mobs: this.currentMobs.filter(m => m.alive).map(m => ({
         id: m.id, name: m.name, hp: m.hp, maxHp: m.maxHp,

@@ -59,6 +59,9 @@ export class Mob {
     }
   }
 
+  // Stub: mobs don't track buffs/debuffs but skills may target them
+  addBuff() {}
+
   serialize() {
     return {
       id: this.id,
