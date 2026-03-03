@@ -884,21 +884,9 @@ export default function ShadowColosseum() {
     }
   }, [view]);
 
-  // Refresh alkahest from cloud when entering artifacts/equipment view
-  const alkahestSyncRef = useRef(null);
-  useEffect(() => {
-    if ((view === 'artifacts' || view === 'equipment') && isLoggedIn()) {
-      // Avoid syncing more than once per 30s
-      const now = Date.now();
-      if (alkahestSyncRef.current && now - alkahestSyncRef.current < 30000) return;
-      alkahestSyncRef.current = now;
-      cloudStorage.loadCloud(SAVE_KEY).then(cloud => {
-        if (cloud && (cloud.alkahest || 0) > (data.alkahest || 0)) {
-          setData(prev => ({ ...prev, alkahest: cloud.alkahest }));
-        }
-      }).catch(() => {});
-    }
-  }, [view]);
+  // NOTE: alkahest cloud sync removed — was causing desync when buying alkahest with coins.
+  // initialSync() already patches alkahest (cloud-wins-if-higher) on page load, which is sufficient.
+  // The old useEffect re-fetched cloud on every view change, overwriting local purchases not yet synced.
 
   // Scroll detail panel into view when a chibi is selected
   useEffect(() => {
