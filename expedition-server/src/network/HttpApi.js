@@ -4,6 +4,8 @@ import { getSRableItems, EXPEDITION_ITEMS, getItemById } from '../data/expeditio
 import { HUNTERS } from '../data/hunterData.js';
 import { LOOT_TABLES, getLootTable } from '../data/lootTables.js';
 import { BOSS_DEFINITIONS } from '../data/bossDefinitions.js';
+import { ALL_SETS } from '../data/expeditionSets.js';
+import { EXPEDITION_WEAPONS } from '../data/expeditionWeapons.js';
 
 // ── HTTP API for Expedition ──
 // Handles registration, SR selection, status queries, and loot history.
@@ -214,7 +216,7 @@ export class HttpApi {
   }
 
   // GET /api/expedition/boss-loot
-  // Returns all 15 boss loot tables with codex data for SR selection
+  // Returns all 15 boss loot tables with FULL codex data (stats, set bonuses, weapon passives)
   getBossLoot(req, res) {
     const bosses = BOSS_DEFINITIONS.map((boss, i) => {
       const bossNum = i + 1;
@@ -232,7 +234,8 @@ export class HttpApi {
           }
         }
 
-        return {
+        // Build enriched item data
+        const result = {
           itemId: entry.itemId,
           name: entry.name || entry.itemId,
           rarity: entry.rarity || 'common',
@@ -241,6 +244,48 @@ export class HttpApi {
           weaponId: entry.weaponId || null,
           srEligible,
         };
+
+        // ── Enrich from EXPEDITION_ITEMS (armor, basic weapons, consumables, etc.)
+        const itemData = getItemById(entry.itemId);
+        if (itemData) {
+          result.type = itemData.type;
+          result.slot = itemData.slot;
+          result.stats = itemData.stats || null;
+          result.description = itemData.description || null;
+          result.binding = itemData.binding || null;
+          if (itemData.setId) result.itemSetId = itemData.setId;
+        }
+
+        // ── Enrich set pieces from expeditionSets
+        if (entry.setId && ALL_SETS[entry.setId]) {
+          const set = ALL_SETS[entry.setId];
+          result.type = result.type || 'set_piece';
+          result.binding = result.binding || set.binding;
+          result.setInfo = {
+            name: set.name,
+            zone: set.zone,
+            targetClass: set.targetClass,
+            bonus2pc: set.bonus2pc,
+            bonus4pc: set.bonus4pc,
+          };
+        }
+
+        // ── Enrich weapons from expeditionWeapons
+        if (entry.weaponId && EXPEDITION_WEAPONS[entry.weaponId]) {
+          const wpn = EXPEDITION_WEAPONS[entry.weaponId];
+          result.type = 'weapon';
+          result.slot = 'weapon';
+          result.binding = wpn.binding;
+          result.weaponInfo = {
+            atk: wpn.atk,
+            element: wpn.element,
+            weaponType: wpn.type,
+            bonus: wpn.bonus,
+            passive: wpn.passive,
+          };
+        }
+
+        return result;
       });
 
       return {

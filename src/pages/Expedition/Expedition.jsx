@@ -57,13 +57,26 @@ const ZONE_STYLES = {
 
 const SR_MAX = 5;
 
-// Inject SR notification animation keyframe
+// Inject expedition animation keyframes
 if (typeof document !== 'undefined' && !document.getElementById('sr-notif-style')) {
   const style = document.createElement('style');
   style.id = 'sr-notif-style';
-  style.textContent = `@keyframes srSlideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }`;
+  style.textContent = `
+    @keyframes srSlideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes tooltipFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  `;
   document.head.appendChild(style);
 }
+
+// Rarity glow colors for WoW-style tooltips
+const RARITY_GLOW = {
+  common:    { border: '#6b7280', glow: 'none' },
+  uncommon:  { border: '#22c55e', glow: '0 0 12px rgba(34,197,94,0.3)' },
+  rare:      { border: '#3b82f6', glow: '0 0 12px rgba(59,130,246,0.3)' },
+  epic:      { border: '#a855f7', glow: '0 0 16px rgba(168,85,247,0.35)' },
+  legendary: { border: '#eab308', glow: '0 0 20px rgba(234,179,8,0.4)' },
+  mythique:  { border: '#ef4444', glow: '0 0 24px rgba(239,68,68,0.45), 0 0 48px rgba(239,68,68,0.15)' },
+};
 
 // Item type → icon mapping for loot display
 const TYPE_ICONS = {
@@ -76,6 +89,33 @@ const TYPE_ICONS = {
   material: Package,
   currency: Award,
 };
+
+// Stat label mapping for tooltip display
+const STAT_LABELS = {
+  hp_flat: 'PV', hp_pct: 'PV%', atk_flat: 'ATK', atk_pct: 'ATK%',
+  def_flat: 'DEF', def_pct: 'DEF%', spd_flat: 'SPD', spd_pct: 'SPD%',
+  crit_rate: 'Taux Crit', crit_dmg_pct: 'DMG Crit%', res_flat: 'RES', res_pct: 'RES%',
+  heal_pct: 'Soin%', heal_received_pct: 'Soins recus%', lifesteal_pct: 'Vol vie%',
+  mana_max_pct: 'Mana max%', mana_regen_pct: 'Regen mana%', magic_dmg_pct: 'DMG magique%',
+  fire_dmg_pct: 'DMG feu%', water_dmg_pct: 'DMG eau%', shadow_dmg_pct: 'DMG ombre%',
+  aoe_reduction_pct: 'Reduc AoE%', aggro_pct: 'Aggro%', dodge_pct: 'Esquive%',
+  double_attack_pct: 'Double frappe%', all_dmg_pct: 'Tous DMG%', all_stats_pct: 'Tous stats%',
+  cd_reduction_pct: 'Reduc CD%', hp_regen_pct: 'Regen PV%',
+};
+const SLOT_LABELS = {
+  helm: 'Casque', chest: 'Plastron', gloves: 'Gants', boots: 'Bottes',
+  weapon: 'Arme', anneau: 'Anneau', collier: 'Collier', bracelet: 'Bracelet',
+  boucles: 'Boucles', plastron: 'Plastron', casque: 'Casque', gants: 'Gants',
+};
+const BINDING_LABELS = { lqr: 'Lie au personnage', lqe: 'Lie a l\'equipement', tradeable: 'Echangeable' };
+const ELEMENT_LABELS = { fire: 'Feu', water: 'Eau', shadow: 'Ombre', light: 'Lumiere' };
+
+function formatStats(stats) {
+  if (!stats || Object.keys(stats).length === 0) return null;
+  return Object.entries(stats)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${STAT_LABELS[k] || k} +${v}${k.includes('pct') || k.includes('rate') ? '%' : ''}`);
+}
 
 // Extract level number from chibiLevels (can be a number or {xp, level} object)
 function getLevel(coloData, hunterId) {
@@ -944,6 +984,159 @@ function SRSummaryPills({ selectedSRs, srItemLookup, srCountByItem, onRemove, us
   );
 }
 
+// ── Item Tooltip ──
+// WoW-style rich tooltip with rarity glow, stats, set bonuses, weapon passives
+function ItemTooltip({ item, children }) {
+  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const ref = useRef(null);
+
+  const hasDetail = item.stats || item.setInfo || item.weaponInfo || item.description;
+  if (!hasDetail) return children;
+
+  const rs = RARITY_STYLES[item.rarity] || RARITY_STYLES.common;
+  const glow = RARITY_GLOW[item.rarity] || RARITY_GLOW.common;
+  const stats = formatStats(item.stats);
+  const setBonus2 = item.setInfo?.bonus2pc ? formatStats(item.setInfo.bonus2pc) : null;
+
+  const handleEnter = () => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPos({ x: rect.left, y: rect.top });
+    setShow(true);
+  };
+
+  return (
+    <div ref={ref} onMouseEnter={handleEnter} onMouseLeave={() => setShow(false)} className="relative">
+      {children}
+      {show && (
+        <div
+          className="fixed z-[100] pointer-events-none"
+          style={{
+            left: Math.min(pos.x - 8, window.innerWidth - 310),
+            top: Math.max(pos.y - 8, 8),
+            transform: 'translateY(-100%)',
+            animation: 'tooltipFadeIn 0.15s ease-out',
+          }}
+        >
+          <div
+            className="w-72 rounded-xl overflow-hidden"
+            style={{ boxShadow: glow.glow, border: `1.5px solid ${glow.border}` }}
+          >
+            {/* Top gradient accent bar */}
+            <div className="h-1" style={{ background: `linear-gradient(90deg, transparent, ${glow.border}, transparent)` }} />
+
+            <div className="bg-[#0a0a16]/98 backdrop-blur-xl p-3">
+              {/* Header — Item name + element badge */}
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`text-sm font-bold ${rs.text}`} style={{ textShadow: `0 0 8px ${glow.border}40` }}>
+                  {item.name}
+                </span>
+              </div>
+              {/* Sub-header — rarity, slot, type, binding */}
+              <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mb-2.5 text-[10px] text-gray-500">
+                <span className={`${rs.badge} px-1.5 py-0.5 rounded font-medium`}>{item.rarity}</span>
+                {item.slot && <span>{SLOT_LABELS[item.slot] || item.slot}</span>}
+                {item.type && item.type !== 'set_piece' && <span className="capitalize">{item.type}</span>}
+                {item.type === 'set_piece' && <span>Piece de set</span>}
+                {item.binding && <span className="text-gray-600">· {BINDING_LABELS[item.binding] || item.binding}</span>}
+              </div>
+
+              {/* ── Weapon ATK block ── */}
+              {item.weaponInfo && (
+                <div className="mb-2.5 py-2 px-2.5 rounded-lg border border-red-500/20" style={{ background: 'linear-gradient(135deg, rgba(127,29,29,0.2), rgba(30,10,10,0.3))' }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-base text-red-300 font-black tracking-tight">ATK {item.weaponInfo.atk}</div>
+                      {item.weaponInfo.weaponType && <div className="text-[10px] text-gray-500 capitalize">{item.weaponInfo.weaponType}</div>}
+                    </div>
+                    {item.weaponInfo.element && (
+                      <span className={`text-[10px] px-2 py-1 rounded-lg font-medium ${ELEMENT_COLORS[item.weaponInfo.element]?.bg || ''} ${ELEMENT_COLORS[item.weaponInfo.element]?.text || 'text-gray-400'} border ${ELEMENT_COLORS[item.weaponInfo.element]?.border || 'border-gray-600'}`}>
+                        {ELEMENT_LABELS[item.weaponInfo.element] || item.weaponInfo.element}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Item Stats ── */}
+              {stats && stats.length > 0 && (
+                <div className="mb-2.5">
+                  <div className="text-[9px] text-gray-600 uppercase tracking-widest mb-1 font-semibold">Stats</div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1">
+                    {stats.map((s, i) => <span key={i} className="text-xs text-green-400 font-medium">{s}</span>)}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Weapon Bonus Stats ── */}
+              {item.weaponInfo?.bonus && (
+                <div className="mb-2.5">
+                  <div className="text-[9px] text-gray-600 uppercase tracking-widest mb-1 font-semibold">Bonus</div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1">
+                    {formatStats(item.weaponInfo.bonus)?.map((s, i) => <span key={i} className="text-xs text-green-400 font-medium">{s}</span>)}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Weapon Passive ── */}
+              {item.weaponInfo?.passive && (
+                <div className="mb-2.5 py-2 px-2.5 rounded-lg border border-yellow-500/20" style={{ background: 'linear-gradient(135deg, rgba(113,63,18,0.15), rgba(30,20,5,0.2))' }}>
+                  <div className="text-[10px] text-yellow-400 font-bold uppercase tracking-wide mb-0.5">Passif</div>
+                  <div className="text-[11px] text-yellow-200/90 leading-relaxed">{item.weaponInfo.passive.description}</div>
+                </div>
+              )}
+
+              {/* ── Set Info ── */}
+              {item.setInfo && (
+                <div className="mb-2.5 py-2 px-2.5 rounded-lg border border-purple-500/20" style={{ background: 'linear-gradient(135deg, rgba(88,28,135,0.15), rgba(20,5,30,0.2))' }}>
+                  <div className="text-[10px] text-purple-300 font-bold uppercase tracking-wide mb-1">Set: {item.setInfo.name}</div>
+                  {item.setInfo.targetClass && (
+                    <div className="text-[9px] text-gray-500 mb-1.5">
+                      {Array.isArray(item.setInfo.targetClass)
+                        ? (item.setInfo.targetClass.includes('all') ? 'Toutes classes' : item.setInfo.targetClass.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', '))
+                        : item.setInfo.targetClass
+                      }
+                    </div>
+                  )}
+                  {setBonus2 && (
+                    <div className="mb-1 flex items-baseline gap-1">
+                      <span className="text-[10px] text-purple-400 font-bold">(2)</span>
+                      <span className="text-[11px] text-purple-200/80">{setBonus2.join(', ')}</span>
+                    </div>
+                  )}
+                  {item.setInfo.bonus4pc && (
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-[10px] text-purple-400 font-bold">(4)</span>
+                      <span className="text-[11px] text-purple-200/80 leading-relaxed">
+                        {typeof item.setInfo.bonus4pc === 'object' && item.setInfo.bonus4pc.passive
+                          ? item.setInfo.bonus4pc.description
+                          : formatStats(item.setInfo.bonus4pc)?.join(', ') || JSON.stringify(item.setInfo.bonus4pc)
+                        }
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Description ── */}
+              {item.description && (
+                <div className="text-[11px] text-gray-400 italic leading-snug mb-1">{item.description}</div>
+              )}
+
+              {/* ── Footer: drop chance ── */}
+              <div className="mt-2 pt-1.5 border-t border-gray-800/40 text-[10px] text-gray-600 flex justify-between items-center">
+                <span>Drop: <span className="text-gray-400 font-medium">{item.dropChance}%</span></span>
+                {item.srEligible && <span className="text-yellow-600 font-medium flex items-center gap-0.5"><Star className="w-2.5 h-2.5" /> SR eligible</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Boss Loot Codex ──
 // Full boss loot browser with SR selection, type icons, and other players' SR visibility
 function BossLootCodex({ bossLootData, selectedBoss, setSelectedBoss, rarityFilter, setRarityFilter, selectedSRs, toggleSR, srCountByItem, username, interactive }) {
@@ -1015,64 +1208,83 @@ function BossLootCodex({ bossLootData, selectedBoss, setSelectedBoss, rarityFilt
           const isSR = selectedSRs?.includes(item.itemId);
           const srUsers = srCountByItem[item.itemId] || [];
           const otherSR = srUsers.filter(u => u.toLowerCase() !== username.trim().toLowerCase());
-          const TypeIcon = TYPE_ICONS[item.setId ? 'set_piece' : item.weaponId ? 'weapon' : 'armor'] || Package;
+          const TypeIcon = TYPE_ICONS[item.type || (item.setId ? 'set_piece' : item.weaponId ? 'weapon' : 'armor')] || Package;
+          const itemStats = formatStats(item.stats);
 
           return (
-            <div
-              key={item.itemId}
-              className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-all ${
-                isSR
-                  ? `${rs.bg} ${rs.border} ring-1 ring-yellow-500/40`
-                  : `bg-[#12121f] border-gray-800/50 ${interactive && item.srEligible ? 'hover:border-gray-600 cursor-pointer' : ''}`
-              }`}
-              onClick={() => interactive && item.srEligible && toggleSR(item.itemId)}
-            >
-              {/* Type Icon */}
-              <TypeIcon className={`w-4 h-4 flex-shrink-0 ${rs.text}`} />
+            <ItemTooltip key={item.itemId} item={item}>
+              <div
+                className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-all ${
+                  isSR
+                    ? `${rs.bg} ${rs.border} ring-1 ring-yellow-500/40`
+                    : `bg-[#12121f] border-gray-800/50 ${interactive && item.srEligible ? 'hover:border-gray-600 cursor-pointer' : ''}`
+                }`}
+                onClick={() => interactive && item.srEligible && toggleSR(item.itemId)}
+              >
+                {/* Type Icon */}
+                <TypeIcon className={`w-4 h-4 flex-shrink-0 ${rs.text}`} />
 
-              {/* Item Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className={`text-xs font-medium ${rs.text}`}>{item.name}</span>
-                  {item.setId && <span className="text-[9px] text-purple-400/70">(Set)</span>}
-                  {item.weaponId && <span className="text-[9px] text-orange-400/70">(Arme)</span>}
-                </div>
-                <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                  <span className={`${rs.badge} px-1 py-0 rounded text-[9px]`}>{item.rarity}</span>
-                  <span>{item.dropChance}%</span>
-                </div>
-              </div>
-
-              {/* SR Concurrence — other players who SR'd this item */}
-              {srUsers.length > 0 && (
-                <div className="flex-shrink-0 text-right" title={`SR par: ${srUsers.join(', ')}`}>
-                  <div className="flex items-center gap-0.5">
-                    <Users className="w-3 h-3 text-yellow-500/60" />
-                    <span className="text-[10px] text-yellow-500/70 font-medium">{srUsers.length}</span>
+                {/* Item Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-xs font-medium ${rs.text}`}>{item.name}</span>
+                    {item.setInfo && <span className="text-[9px] text-purple-400/70">(Set)</span>}
+                    {item.weaponInfo && <span className="text-[9px] text-orange-400/70">(Arme)</span>}
                   </div>
-                  {otherSR.length > 0 && (
-                    <div className="text-[9px] text-gray-600 truncate max-w-[80px]">
-                      {otherSR.slice(0, 2).join(', ')}{otherSR.length > 2 ? '...' : ''}
+                  <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                    <span className={`${rs.badge} px-1 py-0 rounded text-[9px]`}>{item.rarity}</span>
+                    <span>{item.dropChance}%</span>
+                    {item.slot && <span className="text-gray-600">· {SLOT_LABELS[item.slot] || item.slot}</span>}
+                  </div>
+                  {/* Inline preview: key stats or set name */}
+                  {itemStats && itemStats.length > 0 && (
+                    <div className="text-[9px] text-green-500/60 mt-0.5 truncate">
+                      {itemStats.slice(0, 3).join(' · ')}
+                    </div>
+                  )}
+                  {item.setInfo && !itemStats?.length && (
+                    <div className="text-[9px] text-purple-400/50 mt-0.5 truncate">
+                      Set: {item.setInfo.name}
+                    </div>
+                  )}
+                  {item.weaponInfo && (
+                    <div className="text-[9px] text-red-400/50 mt-0.5">
+                      ATK {item.weaponInfo.atk} · {ELEMENT_LABELS[item.weaponInfo.element] || item.weaponInfo.element}
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* SR Badge */}
-              {isSR && (
-                <span className="flex-shrink-0 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-1.5 py-0.5 rounded border border-yellow-500/30">
-                  SR
-                </span>
-              )}
-              {!isSR && interactive && item.srEligible && (
-                <span className="flex-shrink-0 text-[10px] text-gray-600">
-                  +SR
-                </span>
-              )}
-              {!item.srEligible && (
-                <Lock className="w-3 h-3 text-gray-700 flex-shrink-0" />
-              )}
-            </div>
+                {/* SR Concurrence — other players who SR'd this item */}
+                {srUsers.length > 0 && (
+                  <div className="flex-shrink-0 text-right" title={`SR par: ${srUsers.join(', ')}`}>
+                    <div className="flex items-center gap-0.5">
+                      <Users className="w-3 h-3 text-yellow-500/60" />
+                      <span className="text-[10px] text-yellow-500/70 font-medium">{srUsers.length}</span>
+                    </div>
+                    {otherSR.length > 0 && (
+                      <div className="text-[9px] text-gray-600 truncate max-w-[80px]">
+                        {otherSR.slice(0, 2).join(', ')}{otherSR.length > 2 ? '...' : ''}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SR Badge */}
+                {isSR && (
+                  <span className="flex-shrink-0 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold px-1.5 py-0.5 rounded border border-yellow-500/30">
+                    SR
+                  </span>
+                )}
+                {!isSR && interactive && item.srEligible && (
+                  <span className="flex-shrink-0 text-[10px] text-gray-600">
+                    +SR
+                  </span>
+                )}
+                {!item.srEligible && (
+                  <Lock className="w-3 h-3 text-gray-700 flex-shrink-0" />
+                )}
+              </div>
+            </ItemTooltip>
           );
         })}
       </div>
