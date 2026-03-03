@@ -145,8 +145,8 @@ export class ExpeditionEngine {
     this.encounters = generateEncounterSequence(3);
     this.currentEncounterIndex = 0;
 
-    // Assign initial formation
-    AIController.assignFormation(this.characters);
+    // Assign initial formation (no boss yet → linear fallback)
+    AIController.assignFormation(this.characters, null);
 
     // Update DB
     await db.updateExpeditionStatus(expeditionId, 'active', { startedAt: new Date() });
@@ -479,8 +479,8 @@ export class ExpeditionEngine {
       }
     }
 
-    // Reset formation for combat
-    AIController.assignFormation(this.characters);
+    // Reset formation for combat (arc around boss if present)
+    AIController.assignFormation(this.characters, this.currentBoss);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -625,6 +625,8 @@ export class ExpeditionEngine {
 
   async saveLootResults(results) {
     if (!this.expeditionId) return;
+
+    // 1. Save to expedition_loot DB (audit trail)
     for (const r of results) {
       const lootId = await db.saveLootDrop(
         this.expeditionId, this.currentEncounterIndex,
@@ -633,6 +635,43 @@ export class ExpeditionEngine {
       );
       if (r.rolls.length > 0) {
         await db.saveLootRolls(lootId, r.rolls);
+      }
+    }
+
+    // 2. Deposit non-stolen loot to player inventories via Vercel API
+    const byUser = new Map();
+    for (const r of results) {
+      if (r.stolen || !r.winnerUsername) continue;
+      if (!byUser.has(r.winnerUsername)) byUser.set(r.winnerUsername, []);
+      byUser.get(r.winnerUsername).push({
+        itemId: r.itemId,
+        itemName: r.itemName,
+        rarity: r.rarity,
+        binding: r.binding,
+        type: r.type,
+        slot: r.slot || null,
+        stats: r.stats || {},
+        setId: r.setId || null,
+        encounterIndex: this.currentEncounterIndex,
+      });
+    }
+
+    if (byUser.size > 0) {
+      const deposits = Array.from(byUser.entries()).map(([username, items]) => ({ username, items }));
+      try {
+        const response = await fetch('https://api.builderberu.com/storage/deposit-expedition', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Server-Secret': process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key',
+          },
+          body: JSON.stringify({ deposits }),
+        });
+        const result = await response.json();
+        console.log(`[Expedition] Loot deposited:`, result.results);
+      } catch (err) {
+        console.error('[Expedition] Failed to deposit loot:', err.message);
+        // Non-fatal: loot is already saved in expedition_loot DB
       }
     }
   }

@@ -326,6 +326,49 @@ const BOSS_SPRITES = [
 ];
 const BOSS_ID_TO_INDEX = { forest_guardian: 0, stone_sentinel: 1, shadow_lord: 2 };
 
+// Boss loot tables (embedded for popup display)
+const BOSS_LOOT_TABLES = {
+  0: [ // Gardien de la Foret
+    { name: 'Heaume de Foret', dropChance: 25, rarity: 'rare' },
+    { name: 'Armure de Foret', dropChance: 25, rarity: 'rare' },
+    { name: 'Gantelets de Foret', dropChance: 25, rarity: 'rare' },
+    { name: 'Bottes de Foret', dropChance: 25, rarity: 'rare' },
+    { name: 'Epee de Foret', dropChance: 15, rarity: 'epic' },
+    { name: 'Baton de Foret', dropChance: 15, rarity: 'epic' },
+    { name: 'Essence Magique', dropChance: 40, rarity: 'uncommon' },
+    { name: 'Bois Mystique', dropChance: 60, rarity: 'common' },
+    { name: 'Aura de Foret', dropChance: 0.5, rarity: 'legendary' },
+    { name: 'Soin Nature', dropChance: 2, rarity: 'epic' },
+  ],
+  1: [ // Sentinelle de Pierre
+    { name: 'Heaume de Pierre', dropChance: 20, rarity: 'rare' },
+    { name: 'Armure de Pierre', dropChance: 20, rarity: 'rare' },
+    { name: 'Gantelets de Pierre', dropChance: 20, rarity: 'rare' },
+    { name: 'Bottes de Pierre', dropChance: 20, rarity: 'rare' },
+    { name: 'Epee de Pierre', dropChance: 12, rarity: 'epic' },
+    { name: 'Arc de Pierre', dropChance: 12, rarity: 'epic' },
+    { name: 'Essence Magique', dropChance: 50, rarity: 'uncommon' },
+    { name: 'Pierre Runique', dropChance: 60, rarity: 'common' },
+    { name: 'Armure Pierreuse', dropChance: 0.5, rarity: 'legendary' },
+    { name: 'Mur de Pierre', dropChance: 2, rarity: 'epic' },
+  ],
+  2: [ // Seigneur Ombre
+    { name: 'Heaume des Ombres', dropChance: 15, rarity: 'epic' },
+    { name: 'Armure des Ombres', dropChance: 15, rarity: 'epic' },
+    { name: 'Gants des Ombres', dropChance: 15, rarity: 'epic' },
+    { name: 'Bottes des Ombres', dropChance: 15, rarity: 'epic' },
+    { name: 'Lame des Ombres', dropChance: 5, rarity: 'legendary' },
+    { name: 'Baton des Ombres', dropChance: 5, rarity: 'legendary' },
+    { name: 'Essence Magique', dropChance: 60, rarity: 'uncommon' },
+    { name: 'Poussiere d\'Ombre', dropChance: 50, rarity: 'rare' },
+    { name: 'Heaume de Foret', dropChance: 8, rarity: 'rare' },
+    { name: 'Armure de Foret', dropChance: 8, rarity: 'rare' },
+    { name: 'Heaume de Pierre', dropChance: 8, rarity: 'rare' },
+    { name: 'Armure de Pierre', dropChance: 8, rarity: 'rare' },
+  ],
+};
+const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308' };
+
 // ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
@@ -370,6 +413,7 @@ const vfxParticles = [];
 
 // Character info popup (click to see stats)
 let selectedCharInfo = null;
+let selectedBossInfo = null;
 
 // Timeline events
 const timelineEvents = [];
@@ -440,6 +484,7 @@ const dpsHistory = [];
 let combatStartTime = 0;
 let lastDpsSnapshot = 0;
 const DPS_SNAPSHOT_INTERVAL = 2;
+let combatElapsedTime = 0;  // Only increments during combat status
 
 function ensureStats(id) {
   if (!combatStats[id]) {
@@ -463,7 +508,7 @@ function takeDpsSnapshot(elapsedTime) {
   for (const [id, s] of Object.entries(combatStats)) {
     if (!id.startsWith('mob_') && !id.startsWith('boss_')) dmg[id] = s.dmgDealt;
   }
-  dpsHistory.push({ time: elapsedTime, dmg });
+  dpsHistory.push({ time: elapsedTime, combatTime: combatElapsedTime, dmg });
   if (dpsHistory.length > 300) dpsHistory.shift();
 }
 
@@ -746,12 +791,32 @@ canvas.addEventListener('click', (e) => {
   const my = e.clientY - rect.top;
   const groundY = canvas.height * GROUND_Y_RATIO;
 
+  // 1. Check boss click first
+  if (state.boss) {
+    const b = state.boss;
+    const ip = interpPositions[b.id];
+    const bsx = (ip ? ip.x : b.x) * camera.zoom - camera.x;
+    const bsy = groundY + entityScreenY(ip?.y ?? b.y ?? 0);
+    const bDist = Math.sqrt((mx - bsx) ** 2 + (my - (bsy - BOSS_SIZE / 2)) ** 2);
+    if (bDist < BOSS_SIZE) {
+      if (selectedBossInfo?.bossId === b.id) {
+        selectedBossInfo = null;
+      } else {
+        selectedBossInfo = { bossId: b.id, timer: 20 };
+        selectedCharInfo = null;
+        activeBubble = null;
+      }
+      return;
+    }
+  }
+
+  // 2. Check character click
   let closest = null, closestDist = Infinity;
   for (const char of (state.characters || [])) {
     if (!char.alive) continue;
     const ip = interpPositions[char.id];
     const sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
-    const charY = (char.y || 0) * camera.zoom + CHAR_Y_OFFSET;
+    const charY = entityScreenY(char.y);
     const sy = groundY + charY;
     const dist = Math.sqrt((mx - sx) ** 2 + (my - (sy - 20)) ** 2);
     if (dist < 30 && dist < closestDist) {
@@ -761,16 +826,17 @@ canvas.addEventListener('click', (e) => {
   }
 
   if (closest) {
-    // Toggle: if already selected, deselect. Otherwise show popup + bubble
     if (selectedCharInfo?.charId === closest.id) {
       selectedCharInfo = null;
     } else {
       selectedCharInfo = { charId: closest.id, timer: 15 };
+      selectedBossInfo = null;
       showBubble(closest);
     }
   } else {
     activeBubble = null;
     selectedCharInfo = null;
+    selectedBossInfo = null;
   }
 });
 
@@ -1146,7 +1212,7 @@ function drawVFX(dt, groundY) {
         const px = p.x + (p.tx - p.x) * t;
         const py = p.y + (p.ty - p.y) * t;
         const sx = px * camera.zoom - camera.x;
-        const sy = groundY + py * camera.zoom + CHAR_Y_OFFSET;
+        const sy = groundY + entityScreenY(py);
         // Trail
         p.trail.push({ x: sx, y: sy, a: 1 });
         if (p.trail.length > 6) p.trail.shift();
@@ -1170,7 +1236,7 @@ function drawVFX(dt, groundY) {
       }
       case 'magic_circle': {
         const sx = p.x * camera.zoom - camera.x;
-        const sy = groundY + p.y * camera.zoom + CHAR_Y_OFFSET;
+        const sy = groundY + entityScreenY(p.y);
         const r = 20 + progress * 25;
         ctx.save(); ctx.globalAlpha = alpha * 0.5;
         ctx.strokeStyle = p.color; ctx.lineWidth = 2;
@@ -1191,7 +1257,7 @@ function drawVFX(dt, groundY) {
         p.x += p.vx * dt; p.y += p.vy * dt;
         p.vy += 80 * dt; // gravity
         const sx = p.x * camera.zoom - camera.x;
-        const sy = groundY + p.y * camera.zoom + CHAR_Y_OFFSET;
+        const sy = groundY + entityScreenY(p.y);
         ctx.save(); ctx.globalAlpha = alpha;
         ctx.fillStyle = p.color;
         ctx.shadowColor = p.color; ctx.shadowBlur = 4;
@@ -1202,7 +1268,7 @@ function drawVFX(dt, groundY) {
       case 'rise': {
         p.y += p.vy * dt;
         const sx = p.x * camera.zoom - camera.x;
-        const sy = groundY + p.y * camera.zoom + CHAR_Y_OFFSET;
+        const sy = groundY + entityScreenY(p.y);
         ctx.save(); ctx.globalAlpha = alpha * 0.7;
         ctx.fillStyle = p.color;
         ctx.shadowColor = p.color; ctx.shadowBlur = 6;
@@ -1212,7 +1278,7 @@ function drawVFX(dt, groundY) {
       }
       case 'heal_ring': {
         const sx = p.x * camera.zoom - camera.x;
-        const sy = groundY + p.y * camera.zoom + CHAR_Y_OFFSET;
+        const sy = groundY + entityScreenY(p.y);
         const r = 10 + progress * 30;
         ctx.save(); ctx.globalAlpha = alpha * 0.4;
         ctx.strokeStyle = p.color; ctx.lineWidth = 2;
@@ -1223,7 +1289,7 @@ function drawVFX(dt, groundY) {
       }
       case 'shockwave': {
         const sx = p.x * camera.zoom - camera.x;
-        const sy = groundY + p.y * camera.zoom + CHAR_Y_OFFSET;
+        const sy = groundY + entityScreenY(p.y);
         const r = progress * 60;
         ctx.save(); ctx.globalAlpha = alpha * 0.35;
         ctx.strokeStyle = p.color; ctx.lineWidth = 3;
@@ -1282,10 +1348,10 @@ function drawCharacterPopup(dt) {
     sx = cp.x; sy = cp.y;
   } else {
     sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
-    sy = groundY + ((ip?.y ?? char.y ?? 0) * camera.zoom) + CHAR_Y_OFFSET;
+    sy = groundY + entityScreenY(ip?.y ?? char.y ?? 0);
   }
 
-  const stats = charStats[selectedCharInfo.charId];
+  const stats = combatStats[selectedCharInfo.charId];
   const popW = 180, popH = 130;
   const px = Math.max(5, Math.min(canvas.width - popW - 5, sx - popW / 2));
   const py = sy - CHAR_SIZE - popH - 25;
@@ -1326,7 +1392,7 @@ function drawCharacterPopup(dt) {
   // Stats
   const lineY = barY + 30;
   ctx.font = '9px sans-serif';
-  const dps = stats ? (stats.dmgDealt / Math.max(1, (state?.elapsedTime || 1))) : 0;
+  const dps = stats && combatElapsedTime > 0 ? (stats.dmgDealt / combatElapsedTime) : 0;
   const lines = [
     { l: 'DPS', v: formatNumber(dps) + '/s', c: '#ef4444' },
     { l: 'Degats', v: formatNumber(stats?.dmgDealt || 0), c: '#ff8888' },
@@ -1366,6 +1432,89 @@ function startBossIntro(bossName) {
   const intro = BOSS_INTROS[bossName];
   if (!intro) return;
   narrativeOverlay = { lines: intro.lines, subtitle: intro.subtitle, currentLine: 0, charIndex: 0, lineTimer: 0 };
+}
+
+function drawBossPopup(dt) {
+  if (!selectedBossInfo) return;
+  const boss = state?.boss;
+  if (!boss || boss.id !== selectedBossInfo.bossId) { selectedBossInfo = null; return; }
+
+  selectedBossInfo.timer -= dt;
+  if (selectedBossInfo.timer <= 0) { selectedBossInfo = null; return; }
+
+  const ip = interpPositions[boss.id];
+  const groundY = canvas.height * GROUND_Y_RATIO;
+  const bsx = (ip ? ip.x : boss.x) * camera.zoom - camera.x;
+  const bsy = groundY + entityScreenY(ip?.y ?? boss.y ?? 0);
+
+  const bossIdx = boss.index ?? BOSS_ID_TO_INDEX[boss.id] ?? 0;
+  const lootTable = BOSS_LOOT_TABLES[bossIdx] || [];
+  const popW = 230;
+  const headerH = 60;
+  const rowH = 15;
+  const popH = headerH + lootTable.length * rowH + 16;
+
+  const px = Math.max(5, Math.min(canvas.width - popW - 5, bsx - popW / 2));
+  const py = Math.max(5, bsy - BOSS_SIZE - popH - 25);
+
+  const alpha = selectedBossInfo.timer < 0.5 ? selectedBossInfo.timer / 0.5 : 1;
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.95;
+
+  // Background
+  ctx.fillStyle = 'rgba(10, 10, 25, 0.95)';
+  ctx.beginPath();
+  ctx.roundRect(px, py, popW, popH, 10);
+  ctx.fill();
+  ctx.strokeStyle = '#eab308'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(px, py, popW, popH, 10); ctx.stroke();
+
+  // Boss name
+  ctx.fillStyle = '#eab308'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText(boss.name || 'Boss', px + 10, py + 18);
+
+  // HP bar
+  const barY = py + 24;
+  const hpRatio = Math.max(0, (boss.hp || 0) / (boss.maxHp || 1));
+  ctx.fillStyle = '#1a1a2e'; ctx.fillRect(px + 10, barY, popW - 20, 8);
+  const hpColor = hpRatio > 0.5 ? '#dc2626' : hpRatio > 0.25 ? '#f59e0b' : '#7f1d1d';
+  ctx.fillStyle = hpColor; ctx.fillRect(px + 10, barY, (popW - 20) * hpRatio, 8);
+
+  // HP text
+  ctx.fillStyle = '#aaa'; ctx.font = '9px sans-serif';
+  ctx.fillText(`HP: ${formatNumber(boss.hp || 0)} / ${formatNumber(boss.maxHp || 0)}`, px + 10, barY + 19);
+
+  // Divider
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(px + 10, py + headerH - 2); ctx.lineTo(px + popW - 10, py + headerH - 2); ctx.stroke();
+
+  // Loot table header
+  ctx.fillStyle = '#a855f7'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('TABLE DE LOOT', px + 10, py + headerH + 10);
+  ctx.textAlign = 'right';
+  ctx.fillText('DROP %', px + popW - 10, py + headerH + 10);
+  ctx.textAlign = 'left';
+
+  // Loot rows
+  for (let i = 0; i < lootTable.length; i++) {
+    const item = lootTable[i];
+    const ry = py + headerH + 16 + i * rowH;
+    ctx.fillStyle = RARITY_COLORS[item.rarity] || '#888';
+    ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(item.name, px + 10, ry + 10);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = item.dropChance < 1 ? '#eab308' : item.dropChance <= 5 ? '#a855f7' : '#ccc';
+    ctx.fillText(`${item.dropChance}%`, px + popW - 10, ry + 10);
+    ctx.textAlign = 'left';
+  }
+
+  // Arrow
+  ctx.fillStyle = 'rgba(10, 10, 25, 0.95)';
+  ctx.beginPath();
+  ctx.moveTo(bsx - 6, py + popH); ctx.lineTo(bsx + 6, py + popH); ctx.lineTo(bsx, py + popH + 8);
+  ctx.closePath(); ctx.fill();
+
+  ctx.restore();
 }
 
 function setupCampfireLayout() {
@@ -1435,7 +1584,7 @@ function renderStatsPanel() {
   }
   const maxVal = sorted.length > 0 ? sorted[0][1][valueKey] : 1;
   const barColor = TAB_COLORS[activeStatsTab];
-  const elapsed = state?.elapsedTime || 1;
+  const combatSec = Math.max(1, combatElapsedTime);
   let html = '';
   for (let i = 0; i < sorted.length; i++) {
     const [id, s] = sorted[i];
@@ -1444,7 +1593,7 @@ function renderStatsPanel() {
     const pct = maxVal > 0 ? (val / maxVal * 100) : 0;
     const spriteUrl = s.hunterId ? HUNTER_SPRITES[s.hunterId] : null;
     const elemColor = ELEMENT_COLORS[s.element] || '#888';
-    const perSec = activeStatsTab === 'dps' ? ` (${formatNumber(val / elapsed)}/s)` : '';
+    const perSec = activeStatsTab === 'dps' ? ` (${formatNumber(val / combatSec)}/s)` : '';
     html += `<div class="stat-entry"><span class="stat-rank">${i + 1}</span>${spriteUrl ? `<img class="stat-sprite" src="${spriteUrl}" alt="">` : `<span class="stat-sprite" style="background:${elemColor}"></span>`}<span class="stat-name" style="color:${elemColor}">${s.name}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${barColor}"></div></div><span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec}</span></span></div>`;
   }
   list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de donnees</div>';
@@ -1470,7 +1619,7 @@ function renderDpsGraph() {
   if (topChars.length === 0) return;
   const timeMin = dpsHistory[0].time, timeMax = dpsHistory[dpsHistory.length - 1].time, timeRange = timeMax - timeMin || 1;
   let maxDps = 0;
-  for (const snap of dpsHistory) for (const [id] of topChars) { const dps = snap.time > 0 ? (snap.dmg[id] || 0) / snap.time : 0; if (dps > maxDps) maxDps = dps; }
+  for (const snap of dpsHistory) for (const [id] of topChars) { const ct = snap.combatTime || snap.time; const dps = ct > 0 ? (snap.dmg[id] || 0) / ct : 0; if (dps > maxDps) maxDps = dps; }
   maxDps = maxDps * 1.15 || 100;
   const plotW = W - PAD.left - PAD.right, plotH = H - PAD.top - PAD.bottom;
   gctx.strokeStyle = 'rgba(255,255,255,0.06)'; gctx.lineWidth = 1;
@@ -1479,10 +1628,10 @@ function renderDpsGraph() {
     const [charId] = topChars[ci]; const color = GRAPH_COLORS[ci % GRAPH_COLORS.length];
     gctx.strokeStyle = color; gctx.lineWidth = 1.5; gctx.lineJoin = 'round'; gctx.beginPath();
     let first = true;
-    for (const snap of dpsHistory) { const dps = snap.time > 0 ? (snap.dmg[charId] || 0) / snap.time : 0; const x = PAD.left + ((snap.time - timeMin) / timeRange) * plotW; const y = PAD.top + plotH * (1 - dps / maxDps); if (first) { gctx.moveTo(x, y); first = false; } else gctx.lineTo(x, y); }
+    for (const snap of dpsHistory) { const ct = snap.combatTime || snap.time; const dps = ct > 0 ? (snap.dmg[charId] || 0) / ct : 0; const x = PAD.left + ((snap.time - timeMin) / timeRange) * plotW; const y = PAD.top + plotH * (1 - dps / maxDps); if (first) { gctx.moveTo(x, y); first = false; } else gctx.lineTo(x, y); }
     gctx.stroke();
   }
-  for (let ci = 0; ci < Math.min(topChars.length, 8); ci++) { const [, stats] = topChars[ci]; const color = GRAPH_COLORS[ci % GRAPH_COLORS.length]; const col = ci % 2; const row = Math.floor(ci / 2); const x = PAD.left + 4 + col * (plotW / 2); const y = PAD.top + 2 + row * 11; gctx.fillStyle = color; gctx.fillRect(x, y, 6, 6); gctx.fillStyle = '#aaa'; gctx.font = '8px sans-serif'; gctx.textAlign = 'left'; const name = stats.name.length > 12 ? stats.name.slice(0, 12) + '..' : stats.name; gctx.fillText(`${name} ${formatNumber(stats.dmgDealt / (state?.elapsedTime || 1))}/s`, x + 9, y + 5); }
+  for (let ci = 0; ci < Math.min(topChars.length, 8); ci++) { const [, stats] = topChars[ci]; const color = GRAPH_COLORS[ci % GRAPH_COLORS.length]; const col = ci % 2; const row = Math.floor(ci / 2); const x = PAD.left + 4 + col * (plotW / 2); const y = PAD.top + 2 + row * 11; gctx.fillStyle = color; gctx.fillRect(x, y, 6, 6); gctx.fillStyle = '#aaa'; gctx.font = '8px sans-serif'; gctx.textAlign = 'left'; const name = stats.name.length > 12 ? stats.name.slice(0, 12) + '..' : stats.name; gctx.fillText(`${name} ${formatNumber(stats.dmgDealt / Math.max(1, combatElapsedTime))}/s`, x + 9, y + 5); }
   gctx.fillStyle = '#a855f7'; gctx.font = 'bold 10px sans-serif'; gctx.textAlign = 'left'; gctx.fillText('DPS par hunter', PAD.left, PAD.top - 8);
 }
 
@@ -1554,7 +1703,8 @@ function renderTimeline() {
 const GROUND_Y_RATIO = 0.78;
 const CHAR_SIZE = 40;
 const BOSS_SIZE = 80;
-const CHAR_Y_OFFSET = 40;  // Push all entities down onto the ground plane
+const CHAR_Y_BASE = 100;   // Added to server Y BEFORE zoom, so all entities stay on/below ground at any zoom
+function entityScreenY(serverY) { return ((serverY || 0) + CHAR_Y_BASE) * camera.zoom; }
 
 let lastTime = performance.now();
 
@@ -1566,6 +1716,9 @@ function render() {
   lastTime = now;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Accumulate combat time only during combat
+  if (state?.status === 'combat') combatElapsedTime += dt;
 
   // Update animation states
   for (const id in animStates) { animStates[id].timer -= dt; if (animStates[id].timer <= 0) delete animStates[id]; }
@@ -1648,7 +1801,7 @@ function render() {
     if (!mob.alive) continue;
     const ip = interpPositions[mob.id];
     const sx = (ip ? ip.x : mob.x) * camera.zoom - camera.x;
-    const entityY = (ip?.y ?? mob.y ?? 0) * camera.zoom + CHAR_Y_OFFSET;
+    const entityY = entityScreenY(ip?.y ?? mob.y ?? 0);
     const sy = groundY + entityY;
     if (sx < -100 || sx > canvas.width + 100) continue;
     drawCalls.push({ sy, fn: () => drawMob(mob, sx, sy) });
@@ -1659,7 +1812,7 @@ function render() {
     const b = state.boss;
     const ip = interpPositions[b.id];
     const sx = (ip ? ip.x : b.x) * camera.zoom - camera.x;
-    const entityY = (ip?.y ?? b.y ?? 0) * camera.zoom + CHAR_Y_OFFSET;
+    const entityY = entityScreenY(ip?.y ?? b.y ?? 0);
     const sy = groundY + entityY;
     drawCalls.push({ sy, fn: () => drawBoss(b, sx, sy) });
   }
@@ -1668,7 +1821,7 @@ function render() {
   for (const char of (state.characters || [])) {
     const ip = interpPositions[char.id];
     const sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
-    const entityY = (ip?.y ?? char.y ?? 0) * camera.zoom + CHAR_Y_OFFSET;
+    const entityY = entityScreenY(ip?.y ?? char.y ?? 0);
     let sy = groundY + entityY;
 
     // Campfire override positions
@@ -1697,7 +1850,7 @@ function render() {
     if (!entity) continue;
     const ip = interpPositions[ra.targetId];
     const sx = (ip ? ip.x : entity.x) * camera.zoom - camera.x;
-    const sy = groundY + ((ip?.y ?? entity.y ?? 0) * camera.zoom) + CHAR_Y_OFFSET;
+    const sy = groundY + entityScreenY(ip?.y ?? entity.y ?? 0);
     const progress = 1 - ra.timer / 2.0;
     ctx.save();
     ctx.globalAlpha = 0.5 + progress * 0.3;
@@ -1722,6 +1875,7 @@ function render() {
 
   // ── Character Info Popup ──
   drawCharacterPopup(dt);
+  drawBossPopup(dt);
 
   // ── Speech Bubble (Phase 5) ──
   if (activeBubble) {
@@ -1737,7 +1891,7 @@ function render() {
     f.life -= dt; f.y += f.vy * dt; f.vy *= 0.97;
     if (f.life <= 0) { floatingNumbers.splice(i, 1); continue; }
     const sx = f.x * camera.zoom - camera.x;
-    const entityY = (f.entityY || 0) * camera.zoom + CHAR_Y_OFFSET;
+    const entityY = entityScreenY(f.entityY);
     const sy = groundY + entityY + f.y;
     const alpha = Math.min(1, f.life / 0.5);
     ctx.globalAlpha = alpha;
@@ -2156,7 +2310,7 @@ function drawBubble() {
     sx = cp.x; sy = cp.y - CHAR_SIZE - 20;
   } else {
     sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
-    sy = canvas.height * GROUND_Y_RATIO + ((ip?.y ?? char.y ?? 0) * camera.zoom) + CHAR_Y_OFFSET - CHAR_SIZE - 20;
+    sy = canvas.height * GROUND_Y_RATIO + entityScreenY(ip?.y ?? char.y ?? 0) - CHAR_SIZE - 20;
   }
 
   const charsToShow = Math.min(activeBubble.text.length, Math.floor(activeBubble.charIndex));

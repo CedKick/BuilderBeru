@@ -40,10 +40,18 @@ export const COMBAT = {
   RANGED_RANGE: 400,
   HEALER_RANGE: 500,
 
-  // Formation
+  // Formation (legacy linear — kept as fallback)
   FORMATION_SPACING: 55,
-  FRONTLINE_BASE_X: 600,    // Where frontliners start
+  FRONTLINE_BASE_X: 600,    // Where frontliners start (fallback if no boss)
   BACKLINE_OFFSET: -300,    // Backline is 300px behind frontline
+
+  // Arc formation around boss
+  ARC_CENTER_OFFSET: 250,   // Arc pivot = boss.x - this
+  ARC_INNER_RADIUS: 100,    // Tanks (closest ring to boss)
+  ARC_MIDDLE_RADIUS: 180,   // Fighters/Assassins
+  ARC_OUTER_DPS_RADIUS: 260,// Mages
+  ARC_OUTER_HEAL_RADIUS: 340,// Healers (furthest ring)
+  ARC_SPREAD_ANGLE: 120,    // Total arc degrees (60° each side)
 
   // Vertical lanes (Y) — visual depth separation by role
   // Positive Y = closer to camera (lower on screen), Negative = further back (higher)

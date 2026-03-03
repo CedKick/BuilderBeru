@@ -149,15 +149,15 @@ export class AIController {
       }
     }
 
-    // PRIORITY 1: Emergency heal (ally below 30% HP)
-    const criticalAlly = AIController.findMostInjuredAlly(allies, 0.3);
+    // PRIORITY 1: Emergency heal (ally below 30% HP, proximity-weighted)
+    const criticalAlly = AIController.findBestHealTarget(allies, char, 0.3, 0.3);
     if (criticalAlly) {
       const healSkill = AIController.findHealSkill(char);
       if (healSkill) return { type: 'skill', skill: healSkill, target: criticalAlly, isHeal: true };
     }
 
-    // PRIORITY 2: Buff def on low HP ally
-    const injuredAlly = AIController.findMostInjuredAlly(allies, 0.6);
+    // PRIORITY 2: Buff def on low HP ally (proximity-weighted)
+    const injuredAlly = AIController.findBestHealTarget(allies, char, 0.6, 0.3);
     if (injuredAlly) {
       const defBuff = AIController.findSkillWithBuff(char, 'buffDef');
       if (defBuff) return { type: 'skill', skill: defBuff, target: injuredAlly };
@@ -185,51 +185,47 @@ export class AIController {
   // ═══════════════════════════════════════════════════════
   // Formation Management
   // ═══════════════════════════════════════════════════════
-  static assignFormation(characters) {
+  static assignFormation(characters, boss) {
     const alive = characters.filter(c => c.alive);
     if (!alive.length) return;
 
-    // Group by role
+    // Group by role, then sort by username so same-player hunters are adjacent
     const groups = { frontline: [], frontline_dps: [], backline_dps: [], backline_heal: [] };
     for (const c of alive) {
       (groups[c.role] || groups.frontline_dps).push(c);
+    }
+    for (const key of Object.keys(groups)) {
+      groups[key].sort((a, b) => (a.username || '').localeCompare(b.username || ''));
     }
 
     const jitter = COMBAT.LANE_Y_JITTER || 15;
     const laneY = COMBAT.LANE_Y || { frontline: 0, frontline_dps: -20, backline_dps: -50, backline_heal: -70 };
 
-    // Frontline (tanks): spread from FRONTLINE_BASE_X
-    let x = COMBAT.FRONTLINE_BASE_X;
-    for (const c of groups.frontline) {
-      c.targetX = x;
-      c.y = laneY.frontline + (Math.random() * 2 - 1) * jitter;
-      x += COMBAT.FORMATION_SPACING;
+    // Arc formation centered around the boss
+    const arcCenterX = boss?.alive
+      ? boss.x - (COMBAT.ARC_CENTER_OFFSET || 250)
+      : COMBAT.FRONTLINE_BASE_X;
+    const halfAngle = ((COMBAT.ARC_SPREAD_ANGLE || 120) / 2) * (Math.PI / 180);
+
+    function assignArcGroup(group, radius, baseY) {
+      if (group.length === 0) return;
+      const n = group.length;
+      for (let i = 0; i < n; i++) {
+        // Distribute evenly across arc from -halfAngle to +halfAngle
+        const t = n === 1 ? 0.5 : i / (n - 1);
+        const angle = -halfAngle + t * (2 * halfAngle);
+        // angle=0 is straight toward boss (max X), flanks fan out left with lower X
+        const arcX = arcCenterX + Math.cos(angle) * radius;
+        const arcY = Math.sin(angle) * radius * 0.4 + baseY + (Math.random() * 2 - 1) * jitter;
+        group[i].targetX = Math.floor(arcX);
+        group[i].y = arcY;
+      }
     }
 
-    // Frontline DPS: right behind tanks
-    x = COMBAT.FRONTLINE_BASE_X - 60;
-    for (const c of groups.frontline_dps) {
-      c.targetX = x;
-      c.y = laneY.frontline_dps + (Math.random() * 2 - 1) * jitter;
-      x += COMBAT.FORMATION_SPACING;
-    }
-
-    // Backline DPS: spread across backline area with proper spacing
-    const backlineStartX = COMBAT.FRONTLINE_BASE_X + COMBAT.BACKLINE_OFFSET;
-    x = backlineStartX;
-    for (const c of groups.backline_dps) {
-      c.targetX = x;
-      c.y = laneY.backline_dps + (Math.random() * 2 - 1) * jitter;
-      x += Math.max(COMBAT.FORMATION_SPACING, 40);
-    }
-
-    // Backline Heal: furthest back, well spaced
-    x = backlineStartX - 80;
-    for (const c of groups.backline_heal) {
-      c.targetX = x;
-      c.y = laneY.backline_heal + (Math.random() * 2 - 1) * jitter;
-      x += COMBAT.FORMATION_SPACING + 10;
-    }
+    assignArcGroup(groups.frontline,     COMBAT.ARC_INNER_RADIUS || 100,      laneY.frontline);
+    assignArcGroup(groups.frontline_dps, COMBAT.ARC_MIDDLE_RADIUS || 180,     laneY.frontline_dps);
+    assignArcGroup(groups.backline_dps,  COMBAT.ARC_OUTER_DPS_RADIUS || 260,  laneY.backline_dps);
+    assignArcGroup(groups.backline_heal, COMBAT.ARC_OUTER_HEAL_RADIUS || 340, laneY.backline_heal);
 
     // Set initial position if not yet positioned
     for (const c of alive) {
@@ -280,6 +276,35 @@ export class AIController {
       }
     }
     return target;
+  }
+
+  // Proximity-weighted heal target: favors low HP AND nearby allies
+  static findBestHealTarget(allies, healer, thresholdPercent, distWeight = 0.3) {
+    let bestTarget = null;
+    let bestScore = -Infinity;
+
+    // Find max distance for normalization
+    let maxDist = 1;
+    for (const a of allies) {
+      if (!a.alive) continue;
+      const d = Math.sqrt((healer.x - a.x) ** 2 + (healer.y - a.y) ** 2);
+      if (d > maxDist) maxDist = d;
+    }
+
+    for (const a of allies) {
+      if (!a.alive) continue;
+      const ratio = a.hp / a.maxHp;
+      if (ratio >= thresholdPercent) continue;
+      const dist = Math.sqrt((healer.x - a.x) ** 2 + (healer.y - a.y) ** 2);
+      const distNorm = dist / maxDist; // 0=close, 1=far
+      // Score: higher = should heal first (low HP + close distance)
+      const score = (1 - ratio) * (1 - distWeight) + (1 - distNorm) * distWeight;
+      if (score > bestScore) {
+        bestScore = score;
+        bestTarget = a;
+      }
+    }
+    return bestTarget;
   }
 
   static getBacklinePosition(allies) {

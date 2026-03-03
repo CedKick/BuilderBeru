@@ -27,6 +27,9 @@ export class LootEngine {
             rarity: item.rarity,
             binding: item.binding,
             type: item.type,
+            slot: item.slot || null,
+            stats: item.stats || {},
+            setId: item.setId || null,
           });
         }
       }
