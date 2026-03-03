@@ -1523,8 +1523,246 @@ export const ULTIME_ARTIFACT_SETS = {
   },
 };
 
+// ═══════════════════════════════════════════════════════════════
+// EXPEDITION ARTIFACT SETS (25 sets — from Expedition raids)
+// ═══════════════════════════════════════════════════════════════
+
+export const EXPEDITION_ARTIFACT_SETS = {
+  // ── BIG SETS (10) — Powerful class-specific passives ──
+  fureur_titan: {
+    id: 'fureur_titan', name: 'Fureur du Titan', icon: '\u2694\uFE0F', expedition: true,
+    color: 'text-orange-400', bg: 'bg-orange-500/15', border: 'border-orange-500/30',
+    desc: 'Monte en puissance au fil du combat',
+    bonus2: { atkPercent: 15 }, bonus2Desc: 'ATK +15%',
+    bonus4: {}, bonus4Desc: 'Chaque attaque: ATK +2% (max 20 stacks). A 20 stacks: crits garantis 5s puis reset. Kill = +3 stacks.',
+    passive2: null, passive4: { trigger: 'afterAttack', type: 'titanFury' },
+  },
+  lame_fantome: {
+    id: 'lame_fantome', name: 'Lame Fantome', icon: '\uD83D\uDDE1\uFE0F', expedition: true,
+    color: 'text-teal-400', bg: 'bg-teal-500/15', border: 'border-teal-500/30',
+    desc: 'Burst DPS en chain-crit',
+    bonus2: { critRate: 12 }, bonus2Desc: 'CRIT +12%',
+    bonus4: {}, bonus4Desc: 'Apres crit: prochain coup ignore 40% DEF. 15% chance double frappe. Kill = reset CD skill le plus long.',
+    passive2: null, passive4: { trigger: 'afterCrit', type: 'ghostBlade' },
+  },
+  aegis_gardien: {
+    id: 'aegis_gardien', name: 'Aegis du Gardien', icon: '\uD83C\uDFF0', expedition: true,
+    color: 'text-blue-400', bg: 'bg-blue-500/15', border: 'border-blue-500/30',
+    desc: 'Tank protecteur qui contribue aux degats',
+    bonus2: { defPercent: 20 }, bonus2Desc: 'DEF +20%, Aggro +25%',
+    bonus4: {}, bonus4Desc: 'Absorbe 15% degats allies (200px). Bouclier a 50% max HP: explose AoE 300% ATK (150px), -20% ATK ennemis 8s.',
+    passive2: null, passive4: { trigger: 'always', type: 'guardianAegis' },
+  },
+  souffle_vital: {
+    id: 'souffle_vital', name: 'Souffle Vital', icon: '\uD83D\uDC9A', expedition: true,
+    color: 'text-green-400', bg: 'bg-green-500/15', border: 'border-green-500/30',
+    desc: 'Survie massive, soins jamais gaspilles',
+    bonus2: { healBonus: 25 }, bonus2Desc: 'Soins +25%',
+    bonus4: {}, bonus4Desc: 'Overheals = bouclier (max 20% HP, 10s). Allie < 25% HP: heal auto 15% (CD 12s/allie). 15% chance soin crit x2.',
+    passive2: null, passive4: { trigger: 'onHeal', type: 'vitalBreath' },
+  },
+  tempete_acier: {
+    id: 'tempete_acier', name: "Tempete d'Acier", icon: '\u26A1', expedition: true,
+    color: 'text-yellow-400', bg: 'bg-yellow-500/15', border: 'border-yellow-500/30',
+    desc: 'Snowball en vitesse sur les vagues',
+    bonus2: { spdPercent: 15 }, bonus2Desc: 'SPD +15%',
+    bonus4: {}, bonus4Desc: 'Chaque 5eme attaque: 200% degats, ignore 20% DEF. SPD +5%/kill (max +25%). A +25%: doubles frappes.',
+    passive2: null, passive4: { trigger: 'afterAttack', type: 'steelStorm' },
+  },
+  voix_neant: {
+    id: 'voix_neant', name: 'Voix du Neant', icon: '\uD83C\uDF0C', expedition: true,
+    color: 'text-purple-400', bg: 'bg-purple-500/15', border: 'border-purple-500/30',
+    desc: 'Amplifie les degats de toute l\'equipe',
+    bonus2: {}, bonus2Desc: 'Degats magiques +15%',
+    bonus4: {}, bonus4Desc: 'Attaques: DoT 3% ATK/s 8s (stack x3). 3 stacks: ennemi +25% degats TOUTES sources. DoT kill: AoE 200% ATK.',
+    passive2: null, passive4: { trigger: 'afterAttack', type: 'voidVoice' },
+  },
+  pacte_sang: {
+    id: 'pacte_sang', name: 'Pacte de Sang', icon: '\uD83E\uDE78', expedition: true,
+    color: 'text-rose-400', bg: 'bg-rose-500/15', border: 'border-rose-500/30',
+    desc: 'High risk/high reward. HP bas = puissance',
+    bonus2: {}, bonus2Desc: 'Vol de vie +10%',
+    bonus4: {}, bonus4Desc: 'HP < 50%: ATK +30%, vol vie +20%. Kill: restore 10% HP. HP < 15%: annule coup mortel (CD 45s) + Frenzy ATK+50%+SPD+30% 8s.',
+    passive2: { trigger: 'afterAttack', type: 'bloodPactSteal' }, passive4: { trigger: 'always', type: 'bloodPact' },
+  },
+  bastion_eternel: {
+    id: 'bastion_eternel', name: 'Bastion Eternel', icon: '\uD83C\uDFDB\uFE0F', expedition: true,
+    color: 'text-sky-400', bg: 'bg-sky-500/15', border: 'border-sky-500/30',
+    desc: 'Tank immortel qui scale en defense',
+    bonus2: { hpPercent: 25 }, bonus2Desc: 'HP +25%',
+    bonus4: {}, bonus4Desc: 'Resurrection passive: 30% HP +50% DEF 10s (1x/combat). Allies 250px: bouclier 10% HP tank. DEF +1%/coup subi (max +20%).',
+    passive2: null, passive4: { trigger: 'onDeath', type: 'eternalBastion' },
+  },
+  harmonie_celeste: {
+    id: 'harmonie_celeste', name: 'Harmonie Celeste', icon: '\u2728', expedition: true,
+    color: 'text-amber-300', bg: 'bg-amber-400/15', border: 'border-amber-400/30',
+    desc: 'Support permanent, pas juste du heal reactif',
+    bonus2: { manaRegen: 50 }, bonus2Desc: 'Mana regen +50%',
+    bonus4: {}, bonus4Desc: 'Buffs +50% duree. Sort: allies 300px +5% ATK (stack x3=+15%, 8s). Tous les 30s: mega-heal 10% HP + cleanse.',
+    passive2: null, passive4: { trigger: 'always', type: 'celestialHarmony' },
+  },
+  nova_arcanique: {
+    id: 'nova_arcanique', name: 'Nova Arcanique', icon: '\uD83C\uDF00', expedition: true,
+    color: 'text-fuchsia-400', bg: 'bg-fuchsia-500/15', border: 'border-fuchsia-500/30',
+    desc: 'Combo burst pour mages, timing de sorts',
+    bonus2: { manaPercent: 30 }, bonus2Desc: 'Mana max +30%',
+    bonus4: {}, bonus4Desc: 'Apres 3 sorts: 4eme fait x2 degats et 0 mana. Kill par sort: tous CD -2s. Mana > 80%: degats +15%.',
+    passive2: null, passive4: { trigger: 'afterAttack', type: 'arcaneNova' },
+  },
+  // ── MEDIUM SETS — Foret (Boss 1-5) ──
+  ecailles_drake: {
+    id: 'ecailles_drake', name: 'Ecailles de Drake', icon: '\uD83D\uDC32', expedition: true,
+    color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30',
+    desc: 'Defense et resistance aux AoE',
+    bonus2: { defPercent: 12 }, bonus2Desc: 'DEF +12%',
+    bonus4: { hpPercent: 15 }, bonus4Desc: 'HP +15%, reduit degats AoE -15%',
+    passive2: null, passive4: null,
+  },
+  crocs_loup: {
+    id: 'crocs_loup', name: 'Crocs du Loup', icon: '\uD83D\uDC3A', expedition: true,
+    color: 'text-red-400', bg: 'bg-red-500/15', border: 'border-red-500/30',
+    desc: 'ATK et degats critiques',
+    bonus2: { atkPercent: 10 }, bonus2Desc: 'ATK +10%',
+    bonus4: { critRate: 6, critDamage: 12 }, bonus4Desc: 'CRIT +6%, CRIT DMG +12%',
+    passive2: null, passive4: null,
+  },
+  plumes_phenix: {
+    id: 'plumes_phenix', name: 'Plumes de Phenix', icon: '\uD83E\uDEB6', expedition: true,
+    color: 'text-orange-300', bg: 'bg-orange-400/15', border: 'border-orange-400/30',
+    desc: 'Regeneration quand HP bas',
+    bonus2: {}, bonus2Desc: 'Soins recus +15%',
+    bonus4: {}, bonus4Desc: 'HP < 40%: regen 2% HP/5s',
+    passive2: null, passive4: { trigger: 'always', type: 'phoenixRegen' },
+  },
+  griffes_wyverne: {
+    id: 'griffes_wyverne', name: 'Griffes de Wyverne', icon: '\uD83E\uDD85', expedition: true,
+    color: 'text-lime-400', bg: 'bg-lime-500/15', border: 'border-lime-500/30',
+    desc: 'Vitesse et double attaque',
+    bonus2: { atkPercent: 8 }, bonus2Desc: 'ATK +8%',
+    bonus4: { spdPercent: 8 }, bonus4Desc: 'SPD +8%, chance double attaque +5%',
+    passive2: null, passive4: null,
+  },
+  ronce_vivante: {
+    id: 'ronce_vivante', name: 'Ronce Vivante', icon: '\uD83C\uDF3F', expedition: true,
+    color: 'text-green-500', bg: 'bg-green-600/15', border: 'border-green-600/30',
+    desc: 'Reflete les degats subis',
+    bonus2: { defPercent: 10 }, bonus2Desc: 'DEF +10%',
+    bonus4: {}, bonus4Desc: 'Reflete 8% des degats subis',
+    passive2: null, passive4: { trigger: 'onHit', type: 'thornReflect' },
+  },
+  // ── MEDIUM SETS — Abysses (Boss 6-10) ──
+  souffle_glacial: {
+    id: 'souffle_glacial', name: 'Souffle Glacial', icon: '\u2744\uFE0F', expedition: true,
+    color: 'text-cyan-400', bg: 'bg-cyan-500/15', border: 'border-cyan-500/30',
+    desc: 'Degats Eau et ralentissement',
+    bonus2: {}, bonus2Desc: 'Degats Eau +12%',
+    bonus4: {}, bonus4Desc: 'Attaques: -10% SPD ennemis 3s',
+    passive2: null, passive4: { trigger: 'afterAttack', type: 'frostSlow' },
+  },
+  cendres_ardentes: {
+    id: 'cendres_ardentes', name: 'Cendres Ardentes', icon: '\uD83D\uDD25', expedition: true,
+    color: 'text-red-500', bg: 'bg-red-600/15', border: 'border-red-600/30',
+    desc: 'Degats Feu et brulure',
+    bonus2: {}, bonus2Desc: 'Degats Feu +12%',
+    bonus4: {}, bonus4Desc: '10% chance brulure (3% HP/s, 4s)',
+    passive2: null, passive4: { trigger: 'afterAttack', type: 'burnProc' },
+  },
+  murmure_ombre: {
+    id: 'murmure_ombre', name: "Murmure d'Ombre", icon: '\uD83C\uDF11', expedition: true,
+    color: 'text-gray-300', bg: 'bg-gray-500/15', border: 'border-gray-500/30',
+    desc: 'Esquive et contre-attaque',
+    bonus2: {}, bonus2Desc: 'Degats Ombre +12%',
+    bonus4: {}, bonus4Desc: '8% esquive, si esquive: +30% prochain coup',
+    passive2: null, passive4: { trigger: 'onDodge', type: 'shadowWhisper' },
+  },
+  lumiere_sacree: {
+    id: 'lumiere_sacree', name: 'Lumiere Sacree', icon: '\u2600\uFE0F', expedition: true,
+    color: 'text-yellow-300', bg: 'bg-yellow-400/15', border: 'border-yellow-400/30',
+    desc: 'Soins et resistance',
+    bonus2: { healBonus: 15 }, bonus2Desc: 'Soins +15%',
+    bonus4: {}, bonus4Desc: 'RES +8%, soins touchent aussi 2eme allie le plus blesse pour 30%',
+    passive2: null, passive4: { trigger: 'onHeal', type: 'sacredSplash' },
+  },
+  cuirasse_fer: {
+    id: 'cuirasse_fer', name: 'Cuirasse de Fer', icon: '\uD83D\uDEE1\uFE0F', expedition: true,
+    color: 'text-slate-400', bg: 'bg-slate-500/15', border: 'border-slate-500/30',
+    desc: 'Anti-crit et debuff attaquant',
+    bonus2: { defPercent: 15 }, bonus2Desc: 'DEF +15%',
+    bonus4: {}, bonus4Desc: 'Reduit degats crits subis -25%, -5% ATK attaquant 3s',
+    passive2: null, passive4: { trigger: 'onHit', type: 'ironGuard' },
+  },
+  // ── MEDIUM SETS — Neant (Boss 11-15) ──
+  ailes_vent: {
+    id: 'ailes_vent', name: 'Ailes du Vent', icon: '\uD83D\uDCA8', expedition: true,
+    color: 'text-teal-300', bg: 'bg-teal-400/15', border: 'border-teal-400/30',
+    desc: 'Vitesse et premier coup critique',
+    bonus2: { spdPercent: 12 }, bonus2Desc: 'SPD +12%',
+    bonus4: {}, bonus4Desc: 'Esquive +5%, 1ere attaque combat = crit garanti',
+    passive2: null, passive4: { trigger: 'onBattleStart', type: 'windRush' },
+  },
+  sang_guerrier: {
+    id: 'sang_guerrier', name: 'Sang du Guerrier', icon: '\uD83E\uDE78', expedition: true,
+    color: 'text-red-400', bg: 'bg-red-500/15', border: 'border-red-500/30',
+    desc: 'Vol de vie et scaling sur les kills',
+    bonus2: { atkPercent: 12 }, bonus2Desc: 'ATK +12%',
+    bonus4: {}, bonus4Desc: 'Vol vie +8%, kill: +3% ATK (max +15%, reset au boss)',
+    passive2: null, passive4: { trigger: 'onKill', type: 'warriorBlood' },
+  },
+  totem_ancestral: {
+    id: 'totem_ancestral', name: 'Totem Ancestral', icon: '\uD83C\uDFDB\uFE0F', expedition: true,
+    color: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30',
+    desc: 'Aura defense et regen pour les allies',
+    bonus2: { hpPercent: 15 }, bonus2Desc: 'HP +15%',
+    bonus4: {}, bonus4Desc: 'Allies 200px: +5% DEF, +3% HP regen',
+    passive2: null, passive4: { trigger: 'always', type: 'ancestralAura' },
+  },
+  brume_mystique: {
+    id: 'brume_mystique', name: 'Brume Mystique', icon: '\uD83C\uDF2B\uFE0F', expedition: true,
+    color: 'text-indigo-400', bg: 'bg-indigo-500/15', border: 'border-indigo-500/30',
+    desc: 'Economie de mana et sorts gratuits',
+    bonus2: { manaPercent: 20 }, bonus2Desc: 'Mana max +20%',
+    bonus4: {}, bonus4Desc: 'Cout mana -10%, 10% chance sort gratuit',
+    passive2: null, passive4: { trigger: 'beforeAttack', type: 'mysticMist' },
+  },
+  lien_meute: {
+    id: 'lien_meute', name: 'Lien de Meute', icon: '\uD83D\uDC3A', expedition: true,
+    color: 'text-cyan-300', bg: 'bg-cyan-400/15', border: 'border-cyan-400/30',
+    desc: 'Synergie entre hunters du meme joueur',
+    bonus2: { atkPercent: 5, defPercent: 5 }, bonus2Desc: 'ATK +5%, DEF +5%',
+    bonus4: {}, bonus4Desc: 'Si 3 hunters du meme joueur en vie: ATK +10%, DEF +10%',
+    passive2: null, passive4: { trigger: 'always', type: 'packBond' },
+  },
+};
+
 // Merge all sets into ALL_ARTIFACT_SETS (defined earlier as let)
-ALL_ARTIFACT_SETS = { ...ALL_ARTIFACT_SETS, ...ARC2_ARTIFACT_SETS, ...ULTIME_ARTIFACT_SETS };
+ALL_ARTIFACT_SETS = { ...ALL_ARTIFACT_SETS, ...ARC2_ARTIFACT_SETS, ...ULTIME_ARTIFACT_SETS, ...EXPEDITION_ARTIFACT_SETS };
+
+// ═══════════════════════════════════════════════════════════════
+// SET CATEGORY MAPPING
+// ═══════════════════════════════════════════════════════════════
+
+const _colKeys = new Set(Object.keys(ARTIFACT_SETS));
+const _raidKeys = new Set(Object.keys(RAID_ARTIFACT_SETS));
+const _arc2Keys = new Set(Object.keys(ARC2_ARTIFACT_SETS));
+const _ultKeys = new Set(Object.keys(ULTIME_ARTIFACT_SETS));
+const _expKeys = new Set(Object.keys(EXPEDITION_ARTIFACT_SETS));
+
+export function getSetCategory(setId) {
+  if (_colKeys.has(setId)) return 'colosseum';
+  if (_raidKeys.has(setId)) return 'raid';
+  if (_arc2Keys.has(setId)) return 'arc2';
+  if (_ultKeys.has(setId)) return 'ultime';
+  if (_expKeys.has(setId)) return 'expedition';
+  return null;
+}
+
+export const SET_CATEGORIES = {
+  colosseum: { label: 'Colosseum', color: 'text-gray-300', bg: 'bg-gray-500/15', border: 'border-gray-500/30' },
+  raid: { label: 'Raid', color: 'text-pink-400', bg: 'bg-pink-500/15', border: 'border-pink-500/30' },
+  arc2: { label: 'ARC II', color: 'text-purple-400', bg: 'bg-purple-500/15', border: 'border-purple-500/30' },
+  ultime: { label: 'Ultime', color: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30' },
+  expedition: { label: 'Expedition', color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30' },
+};
 
 export function generateArc2Artifact(rarity) {
   const setKeys = Object.keys(ARC2_ARTIFACT_SETS);

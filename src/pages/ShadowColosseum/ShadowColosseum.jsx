@@ -44,7 +44,8 @@ import {
   MAX_WEAPON_AWAKENING, WEAPON_AWAKENING_PASSIVES, rollWeaponDrop,
   RARITY_SUB_COUNT,
   computeWeaponILevel, computeArtifactILevel, computeEquipILevel,
-  ARC2_ARTIFACT_SETS, generateArc2Artifact, generateSetArtifact, ULTIME_ARTIFACT_SETS,
+  ARC2_ARTIFACT_SETS, generateArc2Artifact, generateSetArtifact, ULTIME_ARTIFACT_SETS, EXPEDITION_ARTIFACT_SETS,
+  getSetCategory, SET_CATEGORIES,
   ROLE_WEIGHTS, scoreArtifact, scoreToGrade, scoreAllArtifacts,
   MAX_ARTIFACT_INVENTORY, trimArtifactInventory,
   REROLL_ALKAHEST_COST, REROLL_LOCK_COSTS, REROLL_BASE_COIN_COST, getRerollCoinCost, rerollArtifact,
@@ -757,7 +758,7 @@ export default function ShadowColosseum() {
   const [farmConfirm, setFarmConfirm] = useState(null); // { action: fn, label: string } — confirmation before stopping farm
   const [factionPointsAvailable, setFactionPointsAvailable] = useState(null);
   const [weaponReveal, setWeaponReveal] = useState(null); // weapon data for epic reveal
-  const [artFilter, setArtFilter] = useState({ set: null, rarity: null, slot: null });
+  const [artFilter, setArtFilter] = useState({ set: null, rarity: null, slot: null, type: null });
   const [artSort, setArtSort] = useState('level_desc'); // 'level_desc' | 'level_asc' | 'ilevel' | 'rarity'
   const [artSelected, setArtSelected] = useState(null); // index in inventory OR "eq:chibiId:slot"
   const [artEquipPicker, setArtEquipPicker] = useState(false);
@@ -10464,6 +10465,7 @@ export default function ShadowColosseum() {
 
         // Filter inventory
         const filtered = inv.map((art, idx) => ({ art, idx })).filter(({ art }) => {
+          if (artFilter.type && getSetCategory(art.set) !== artFilter.type) return false;
           if (artFilter.set && art.set !== artFilter.set) return false;
           if (artFilter.rarity && art.rarity !== artFilter.rarity) return false;
           if (artFilter.slot && art.slot !== artFilter.slot) return false;
@@ -10919,6 +10921,19 @@ export default function ShadowColosseum() {
 
             {/* Filters */}
             <div className="mb-4 space-y-2">
+              {/* Type filter (set category) */}
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-small-responsive text-gray-500 w-10">Type</span>
+                {Object.entries(SET_CATEGORIES).map(([catId, cat]) => {
+                  const active = artFilter.type === catId;
+                  return (
+                    <button key={catId} onClick={() => setArtFilter(prev => ({ ...prev, type: prev.type === catId ? null : catId, set: null }))}
+                      className={`px-2 py-0.5 rounded-full text-normal-responsive font-bold transition-all ${
+                        active ? `${cat.color} ${cat.bg} ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                      }`}>{cat.label}</button>
+                  );
+                })}
+              </div>
               {/* Rarity filter */}
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-small-responsive text-gray-500 w-10">Rarete</span>
@@ -10939,24 +10954,30 @@ export default function ShadowColosseum() {
                     }`}>{ARTIFACT_SLOTS[sId]?.icon}</button>
                 ))}
               </div>
-              {/* Set filter */}
-              {allSetsInUse.size > 0 && (
-                <div className="flex items-center gap-1 flex-wrap">
-                  <span className="text-small-responsive text-gray-500 w-10">Set</span>
-                  {[...allSetsInUse].map(setId => {
-                    const s = ALL_ARTIFACT_SETS[setId];
-                    if (!s) return null;
-                    return (
-                      <button key={setId} onClick={() => setArtFilter(prev => ({ ...prev, set: prev.set === setId ? null : setId }))}
-                        className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
-                          artFilter.set === setId ? `${s.color} ${s.bg} ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
-                        }`}>{s.icon} {s.name.split(' ')[0]}</button>
-                    );
-                  })}
-                </div>
-              )}
-              {(artFilter.set || artFilter.rarity || artFilter.slot) && (
-                <button onClick={() => setArtFilter({ set: null, rarity: null, slot: null })}
+              {/* Set filter — shows owned sets, or all sets of selected type */}
+              {(() => {
+                const setsToShow = artFilter.type
+                  ? Object.keys(ALL_ARTIFACT_SETS).filter(id => getSetCategory(id) === artFilter.type)
+                  : [...allSetsInUse];
+                return setsToShow.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-small-responsive text-gray-500 w-10">Set</span>
+                    {setsToShow.map(setId => {
+                      const s = ALL_ARTIFACT_SETS[setId];
+                      if (!s) return null;
+                      const owned = allSetsInUse.has(setId);
+                      return (
+                        <button key={setId} onClick={() => setArtFilter(prev => ({ ...prev, set: prev.set === setId ? null : setId }))}
+                          className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
+                            artFilter.set === setId ? `${s.color} ${s.bg} ring-1 ring-current` : owned ? 'text-gray-400 bg-gray-800/30 hover:bg-gray-700/30' : 'text-gray-600 bg-gray-900/20 hover:bg-gray-800/20'
+                          }`}>{s.icon} {s.name.split(' ')[0]}</button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+              {(artFilter.set || artFilter.rarity || artFilter.slot || artFilter.type) && (
+                <button onClick={() => setArtFilter({ set: null, rarity: null, slot: null, type: null })}
                   className="text-normal-responsive text-red-400 hover:text-red-300">Reset filtres</button>
               )}
             </div>
