@@ -1194,7 +1194,7 @@ export function generateUltimeArtifact(rc) {
     if (pool.length === 0) break;
     const pick = pool[Math.floor(Math.random() * pool.length)];
     usedIds.add(pick.id);
-    subs.push({ id: pick.id, value: pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1)) });
+    subs.push({ id: pick.id, value: pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)) });
   }
   return { set, slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `ult_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
 }
@@ -1214,7 +1214,7 @@ export function generateSetArtifact(setId) {
     if (pool.length === 0) break;
     const pick = pool[Math.floor(Math.random() * pool.length)];
     usedIds.add(pick.id);
-    subs.push({ id: pick.id, value: pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1)) });
+    subs.push({ id: pick.id, value: pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)) });
   }
   return { set: setId, slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `pact_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
 }

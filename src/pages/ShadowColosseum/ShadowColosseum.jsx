@@ -570,9 +570,21 @@ const migrateData = (d) => {
     localStorage.removeItem('manaya_alkahest');
   }
   if (!d.rerollCounts) d.rerollCounts = {};
+  // Fix NaN sub-stat values (generated with pick.min/max instead of pick.range[0]/[1])
+  const _fixNaNSubs = (subs) => {
+    if (!subs) return subs;
+    return subs.map(s => {
+      if (isNaN(s.value) || s.value === undefined || s.value === null) {
+        const pool = SUB_STAT_POOL.find(p => p.id === s.id);
+        return { ...s, value: pool ? pool.range[0] + Math.floor(Math.random() * (pool.range[1] - pool.range[0] + 1)) : 1 };
+      }
+      return s;
+    });
+  };
   d.artifactInventory = (d.artifactInventory || []).map(art => {
     // Normalize slotId → slot (fix for artifacts generated with wrong key)
     if (art.slotId && !art.slot) art.slot = art.slotId;
+    if (art.subs) art.subs = _fixNaNSubs(art.subs);
     return { ...art, locked: art.locked ?? false, highlighted: art.highlighted ?? false };
   });
   if (d.artifacts) {
@@ -581,6 +593,7 @@ const migrateData = (d) => {
         const a = d.artifacts[chibiId][slotId];
         if (a) {
           if (a.slotId && !a.slot) a.slot = a.slotId;
+          if (a.subs) a.subs = _fixNaNSubs(a.subs);
           d.artifacts[chibiId][slotId] = { ...a, locked: a.locked ?? false, highlighted: a.highlighted ?? false };
         }
       });
