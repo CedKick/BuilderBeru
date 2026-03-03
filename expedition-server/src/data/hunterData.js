@@ -491,10 +491,23 @@ export function hunterStatsAtLevel(hunterId, level = 1, stars = 0) {
     { hp: 20, atk: 15, def: 10, spd: 5, crit: 5, res: 3 },
   ];
 
+  // Base star bonuses (0-5★ table)
   const bonus = starBonuses[Math.min(stars, 5)] || starBonuses[0];
-  stats.hp = Math.floor(stats.hp * (1 + bonus.hp / 100));
-  stats.atk = Math.floor(stats.atk * (1 + bonus.atk / 100));
-  stats.def = Math.floor(stats.def * (1 + bonus.def / 100));
+  let hpPct = bonus.hp;
+  let atkPct = bonus.atk;
+  let defPct = bonus.def;
+
+  // Beyond 5★: +1% HP/ATK/DEF per 5 stars (rewards high-star investment)
+  if (stars > 5) {
+    const extraPct = Math.floor((stars - 5) / 5);
+    hpPct += extraPct;
+    atkPct += extraPct;
+    defPct += extraPct;
+  }
+
+  stats.hp = Math.floor(stats.hp * (1 + hpPct / 100));
+  stats.atk = Math.floor(stats.atk * (1 + atkPct / 100));
+  stats.def = Math.floor(stats.def * (1 + defPct / 100));
   stats.spd = Math.floor(stats.spd * (1 + bonus.spd / 100));
   stats.crit += bonus.crit;
   stats.res += bonus.res;

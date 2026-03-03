@@ -1,29 +1,38 @@
 import { WAVE_COMPOSITIONS, MOB_TEMPLATES } from '../data/mobTemplates.js';
 import { BOSS_DEFINITIONS } from '../data/bossDefinitions.js';
+import { getMobWaveTier } from '../data/lootTables.js';
 
 // ── Wave Generator ──
 // Pre-generates the full sequence of encounters for an expedition.
 // Structure: [mob_wave, mob_wave, boss_1, mob_wave, mob_wave, mob_wave, boss_2, ...]
 
-export function generateEncounterSequence(bossCount = 3) {
+// Map loot table tier names to wave composition keys
+const TIER_TO_WAVE = {
+  mob_wave_tier1: 'tier1',
+  mob_wave_tier2: 'tier2',
+  mob_wave_tier3: 'tier3',
+  mob_wave_tier4: 'tier4',
+};
+
+export function generateEncounterSequence(bossCount = 15) {
   const encounters = [];
 
   for (let bossIdx = 0; bossIdx < bossCount; bossIdx++) {
     const bossDef = BOSS_DEFINITIONS[bossIdx];
     if (!bossDef) break;
 
-    // Determine wave tier for this boss section
-    const tier = bossIdx === 0 ? 'tier1' : bossIdx === 1 ? 'tier2' : 'tier3';
-    const wavePool = WAVE_COMPOSITIONS[tier] || WAVE_COMPOSITIONS.tier1;
+    // Determine wave tier for this boss section (from lootTables.js)
+    const lootTier = getMobWaveTier(bossIdx);
+    const waveTier = TIER_TO_WAVE[lootTier] || 'tier1';
+    const wavePool = WAVE_COMPOSITIONS[waveTier] || WAVE_COMPOSITIONS.tier1;
 
-    // 2-4 mob waves before each boss
-    const waveCount = 2 + Math.floor(Math.random() * 3);
+    // 2-4 mob waves before each boss (fewer waves for later bosses to reduce tedium)
+    const baseWaves = bossIdx < 5 ? 3 : bossIdx < 10 ? 2 : 2;
+    const waveCount = baseWaves + Math.floor(Math.random() * 2);
     for (let w = 0; w < waveCount; w++) {
       const composition = wavePool[Math.floor(Math.random() * wavePool.length)];
-      const difficultyMult = 1 + bossIdx * 0.5 + w * 0.1;
-
-      // Determine loot table for mob waves
-      const mobLootTable = `mob_wave_${tier}`;
+      // Difficulty scales with boss section and wave progress
+      const difficultyMult = 1 + bossIdx * 0.4 + w * 0.1;
 
       encounters.push({
         type: 'mob_wave',
@@ -34,7 +43,7 @@ export function generateEncounterSequence(bossCount = 3) {
           template: m.t,
           count: m.count,
         })),
-        lootTableId: mobLootTable,
+        lootTableId: lootTier,
       });
     }
 

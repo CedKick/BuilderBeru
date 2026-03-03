@@ -32,7 +32,8 @@ export class AIController {
   // FRONTLINE (tank-type): Go front, soak damage, use defensive skills
   // ═══════════════════════════════════════════════════════
   static decideFrontline(char, allies, enemies, boss) {
-    const target = AIController.findClosestEnemy(char, enemies, boss);
+    // Tanks always target boss (hold aggro), but if no boss, target closest add
+    const target = AIController.pickSmartTarget(char, allies, enemies, boss, 'frontline');
     if (!target) return null;
 
     // Move toward enemy if not in melee range
@@ -60,11 +61,10 @@ export class AIController {
   }
 
   // ═══════════════════════════════════════════════════════
-  // FRONTLINE DPS: Go front, focus lowest HP enemy
+  // FRONTLINE DPS: Go front, SMART targeting (adds > boss when adds exist)
   // ═══════════════════════════════════════════════════════
   static decideFrontlineDps(char, allies, enemies, boss) {
-    // Target priority: boss if alive, else lowest HP enemy
-    const target = boss?.alive ? boss : AIController.findLowestHpEnemy(enemies);
+    const target = AIController.pickSmartTarget(char, allies, enemies, boss, 'frontline_dps');
     if (!target) return null;
 
     // Move toward target
@@ -100,10 +100,10 @@ export class AIController {
   }
 
   // ═══════════════════════════════════════════════════════
-  // BACKLINE DPS (mage): Stay at range, focus boss or AoE
+  // BACKLINE DPS (mage): Stay at range, SMART targeting (adds priority for AoE value)
   // ═══════════════════════════════════════════════════════
   static decideBacklineDps(char, allies, enemies, boss) {
-    const target = boss?.alive ? boss : AIController.findLowestHpEnemy(enemies);
+    const target = AIController.pickSmartTarget(char, allies, enemies, boss, 'backline_dps');
     if (!target) return null;
 
     const dist = Math.abs(char.x - target.x);
@@ -231,6 +231,62 @@ export class AIController {
     for (const c of alive) {
       if (c.x === 0) c.x = c.targetX;
     }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // SMART TARGET SELECTION — adds priority when boss + adds coexist
+  // ═══════════════════════════════════════════════════════
+  //
+  // Strategy:
+  // - Tanks: ALWAYS target boss (hold aggro)
+  // - Mages (backline_dps): ALWAYS target adds first (AoE efficiency)
+  // - Frontline DPS: Split — some focus adds, rest focus boss
+  //   Rule: enough DPS to kill adds, but don't let boss be untouched
+  // - If no adds: everyone targets boss
+  // - If boss is < 10% HP: everyone finishes boss (kill threshold)
+  //
+  static pickSmartTarget(char, allies, enemies, boss, role) {
+    const aliveAdds = enemies.filter(e => e.alive);
+    const bossAlive = boss?.alive;
+
+    // No enemies at all
+    if (aliveAdds.length === 0 && !bossAlive) return null;
+
+    // No adds — just target boss (or nothing)
+    if (aliveAdds.length === 0) return bossAlive ? boss : null;
+
+    // No boss — just target adds
+    if (!bossAlive) return AIController.findLowestHpEnemy(enemies);
+
+    // Boss + adds coexist — SMART SPLIT
+
+    // Boss near death (< 10% HP): everyone finishes boss
+    if (boss.hp / boss.maxHp < 0.10) return boss;
+
+    // Tanks: always on boss
+    if (role === 'frontline') return boss;
+
+    // Mages: always clear adds first (AoE efficiency)
+    if (role === 'backline_dps') {
+      return AIController.findClosestEnemy(char, aliveAdds, null) || boss;
+    }
+
+    // Frontline DPS: split based on add count
+    // If many adds (>= 6): all frontline DPS help clear adds
+    if (aliveAdds.length >= 6) {
+      return AIController.findClosestEnemy(char, aliveAdds, null) || boss;
+    }
+
+    // Few adds (< 6): assign some DPS to adds based on char index parity
+    // Characters with odd hash target adds, even target boss
+    // This ensures a natural split without coordination
+    const charHash = char.id.charCodeAt(0) + char.id.charCodeAt(char.id.length - 1);
+    if (charHash % 3 === 0) {
+      // This DPS focuses adds
+      return AIController.findClosestEnemy(char, aliveAdds, null) || boss;
+    }
+    // Other DPS stays on boss
+    return boss;
   }
 
   // ═══════════════════════════════════════════════════════

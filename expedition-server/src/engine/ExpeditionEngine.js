@@ -61,6 +61,9 @@ export class ExpeditionEngine {
     this.bossesKilled = 0;
     this.totalDeaths = 0;
 
+    // Essences collected per player: Map<username, { guerre, arcanique, gardienne }>
+    this.playerEssences = new Map();
+
     // Tick management
     this.tickInterval = null;
     this.tickCount = 0;
@@ -104,6 +107,7 @@ export class ExpeditionEngine {
     this.rezUsedThisCombat = new Set();
     this.bossesKilled = 0;
     this.totalDeaths = 0;
+    this.playerEssences = new Map();
     this.tickCount = 0;
     this.lastSnapshotTime = 0;
     console.log('[Expedition] Engine reset to idle');
@@ -146,8 +150,8 @@ export class ExpeditionEngine {
       return;
     }
 
-    // Generate encounter sequence (3 bosses for Phase 1)
-    this.encounters = generateEncounterSequence(3);
+    // Generate encounter sequence (15 bosses for V2)
+    this.encounters = generateEncounterSequence(EXPEDITION.TOTAL_BOSSES);
     this.currentEncounterIndex = 0;
 
     // Assign initial formation (no boss yet → linear fallback)
@@ -256,9 +260,41 @@ export class ExpeditionEngine {
     const encounter = this.encounters[this.currentEncounterIndex];
     console.log(`[Expedition] Victory! Encounter ${this.currentEncounterIndex + 1}/${this.encounters.length} (${encounter.type})`);
 
-    if (encounter.type === 'boss') {
+    const isBoss = encounter.type === 'boss';
+    if (isBoss) {
       this.bossesKilled++;
       this.broadcast({ type: 'boss_killed', bossName: encounter.bossName, bossIndex: encounter.bossIndex });
+    }
+
+    // Roll essence drops (from killed mobs + boss)
+    const mobKills = this.currentMobs.filter(m => !m.alive).map(m => ({
+      templateKey: m.templateKey,
+      elite: m.elite || false,
+    }));
+    const essences = LootEngine.rollEssenceDrops(mobKills, isBoss);
+    const totalEssences = essences.guerre + essences.arcanique + essences.gardienne;
+
+    // Distribute essences equally among alive players
+    if (totalEssences > 0) {
+      const alivePlayers = this.getAlivePlayers();
+      if (alivePlayers.length > 0) {
+        for (const player of alivePlayers) {
+          if (!this.playerEssences.has(player.username)) {
+            this.playerEssences.set(player.username, { guerre: 0, arcanique: 0, gardienne: 0 });
+          }
+          const pEss = this.playerEssences.get(player.username);
+          // Each player gets the full essence drop (not split — rewarding group content)
+          pEss.guerre += essences.guerre;
+          pEss.arcanique += essences.arcanique;
+          pEss.gardienne += essences.gardienne;
+        }
+        this.broadcast({
+          type: 'essence_drop',
+          essences,
+          perPlayer: true,
+          playerCount: alivePlayers.length,
+        });
+      }
     }
 
     // Roll loot
@@ -602,9 +638,11 @@ export class ExpeditionEngine {
       }
     }
 
-    // Reset formation for combat (arc around boss if present)
-    // Exclude resting characters from combat
+    // Initialize passive engine for this combat (set bonuses, weapon passives)
     const combatCharacters = this.characters.filter(c => c.alive && !this.restingCharacters.has(c.id));
+    this.combatEngine.initCombat(combatCharacters);
+
+    // Reset formation for combat (arc around boss if present)
     AIController.assignFormation(combatCharacters, this.currentBoss);
 
     // Move resting characters offscreen (far left, safe)
@@ -699,6 +737,7 @@ export class ExpeditionEngine {
       encounters: this.encounters,
       characters: this.characters.map(c => c.serialize()),
       srSelections: Array.from(this.srSelections.entries()),
+      playerEssences: Array.from(this.playerEssences.entries()),
     };
 
     await db.saveExpeditionSnapshot(this.expeditionId, snapshot);
@@ -734,8 +773,9 @@ export class ExpeditionEngine {
       }
     }).filter(Boolean);
 
-    // Restore SR selections
+    // Restore SR selections and essences
     this.srSelections = new Map(snapshot.srSelections || []);
+    this.playerEssences = new Map(snapshot.playerEssences || []);
 
     console.log(`[Expedition] Restored! Status: ${this.status}, ${this.characters.length} characters, encounter ${this.currentEncounterIndex}/${this.encounters.length}`);
 

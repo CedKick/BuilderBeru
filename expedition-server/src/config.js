@@ -16,12 +16,16 @@ export const SERVER = {
 export const EXPEDITION = {
   MAX_PLAYERS: 30,
   HUNTERS_PER_PLAYER: 3,
-  MAX_DURATION_HOURS: 24,
-  LAUNCH_HOUR: 19,              // 19h daily
-  REGISTRATION_OPEN_HOURS: 12,  // Opens 12h before launch
+  MAX_DURATION_HOURS: 17,       // 19h -> 11h59 next day = ~17h max
+  LAUNCH_HOUR: 19,              // 19h Paris daily
+  END_HOUR: 11,                 // 11h59 next day (hard stop)
+  END_MINUTE: 59,
+  REGISTRATION_OPEN_HOUR: 12,   // Opens at 12h05 (after end + cleanup)
+  REGISTRATION_OPEN_MINUTE: 5,
   MIN_PLAYERS_TO_START: 1,      // Dev=1, Prod=5
-  TOTAL_BOSSES: 15,             // Phase 1: only 3 implemented
+  TOTAL_BOSSES: 15,             // V2: 15 bosses across 3 zones
   STATE_SAVE_INTERVAL_SEC: 60,  // Snapshot to DB every 60s
+  TIMEZONE: 'Europe/Paris',
 };
 
 // ─── 2D Combat ────────────────────────────────────────────

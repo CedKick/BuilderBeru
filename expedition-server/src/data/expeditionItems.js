@@ -65,6 +65,7 @@ export const EXPEDITION_ITEMS = [
   { id: 'exp_mat_wood', name: 'Bois Ancien', type: 'material', slot: null, rarity: 'common', binding: 'tradeable', stats: null, description: 'Materiau de craft' },
   { id: 'exp_mat_stone', name: 'Pierre Enchantee', type: 'material', slot: null, rarity: 'common', binding: 'tradeable', stats: null, description: 'Materiau de craft' },
   { id: 'exp_mat_shadow_dust', name: 'Poussiere d\'Ombre', type: 'material', slot: null, rarity: 'uncommon', binding: 'tradeable', stats: null, description: 'Materiau de craft rare' },
+  { id: 'exp_mat_void_crystal', name: 'Cristal du Neant', type: 'material', slot: null, rarity: 'rare', binding: 'tradeable', stats: null, description: 'Materiau de craft endgame (Zone Neant)' },
   { id: 'exp_mat_essence', name: 'Essence de Boss', type: 'material', slot: null, rarity: 'rare', binding: 'tradeable', stats: null, description: 'Tombe des boss uniquement' },
 
   // ══════════════════════════════════════════════════════

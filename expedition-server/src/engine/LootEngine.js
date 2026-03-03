@@ -1,15 +1,18 @@
 import { LOOT } from '../config.js';
 import { getLootTable } from '../data/lootTables.js';
 import { getItemById } from '../data/expeditionItems.js';
+import { getSetById } from '../data/expeditionSets.js';
+import { getWeaponById } from '../data/expeditionWeapons.js';
+import { rollEssenceDrop } from '../data/essenceSystem.js';
 
 // ── Loot Engine ──
-// Handles drop rolling, SR priority, /100 rolls, and wipe steal penalties.
+// Handles drop rolling, SR priority, /100 rolls, wipe steal, and essence drops.
 
 export class LootEngine {
 
   // ═══════════════════════════════════════════════════════
   // Roll drops from a loot table
-  // Returns: [{ itemId, itemName, rarity, binding }]
+  // Returns: [{ itemId, itemName, rarity, binding, type, slot, stats, setId?, weaponId? }]
   // ═══════════════════════════════════════════════════════
   static rollDrops(lootTableId) {
     const table = getLootTable(lootTableId);
@@ -19,6 +22,43 @@ export class LootEngine {
     for (const entry of table) {
       const roll = Math.random() * 100;
       if (roll < entry.dropChance) {
+        // Set piece drop — resolve from expeditionSets
+        if (entry.setId) {
+          const set = getSetById(entry.setId);
+          if (set) {
+            drops.push({
+              itemId: entry.itemId,
+              itemName: `Piece: ${set.name}`,
+              rarity: set.rarity,
+              binding: set.binding,
+              type: 'set_piece',
+              slot: null,
+              stats: {},
+              setId: entry.setId,
+            });
+          }
+          continue;
+        }
+
+        // Weapon drop — resolve from expeditionWeapons
+        if (entry.weaponId) {
+          const weapon = getWeaponById(entry.weaponId);
+          if (weapon) {
+            drops.push({
+              itemId: entry.itemId,
+              itemName: weapon.name,
+              rarity: weapon.rarity,
+              binding: weapon.binding,
+              type: 'weapon',
+              slot: 'weapon',
+              stats: { atk_flat: weapon.atk, ...(weapon.bonus || {}) },
+              weaponId: entry.weaponId,
+            });
+          }
+          continue;
+        }
+
+        // Regular item — resolve from expeditionItems
         const item = getItemById(entry.itemId);
         if (item) {
           drops.push({
@@ -35,6 +75,27 @@ export class LootEngine {
       }
     }
     return drops;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // Roll essence drops from killed mobs/boss
+  // mobKills: [{ templateKey, elite }], isBoss: boolean
+  // Returns: { guerre: N, arcanique: N, gardienne: N }
+  // ═══════════════════════════════════════════════════════
+  static rollEssenceDrops(mobKills, isBoss = false) {
+    const essences = { guerre: 0, arcanique: 0, gardienne: 0 };
+
+    if (isBoss) {
+      const drop = rollEssenceDrop(null, false, true);
+      if (drop) essences[drop.type] += drop.amount;
+    }
+
+    for (const mob of mobKills) {
+      const drop = rollEssenceDrop(mob.templateKey, mob.elite || false, false);
+      if (drop) essences[drop.type] += drop.amount;
+    }
+
+    return essences;
   }
 
   // ═══════════════════════════════════════════════════════

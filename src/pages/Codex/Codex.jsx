@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Search, Swords, BookOpen, ArrowLeft, Users, Shield, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Swords, BookOpen, ArrowLeft, Users, Shield, Zap, MapPin } from 'lucide-react';
 import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwakeningBonuses, computeWeaponBonuses,
   ARTIFACT_SETS, RAID_ARTIFACT_SETS, ARC2_ARTIFACT_SETS, ULTIME_ARTIFACT_SETS, ALL_ARTIFACT_SETS,
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL, RARITY_SUB_COUNT,
 } from '../ShadowColosseum/equipmentData';
 import { CHIBIS, SPRITES, ELEMENTS, RARITY, STAT_META, getSkillManaCost } from '../ShadowColosseum/colosseumCore';
+import { EXPEDITION_SETS, EXPEDITION_WEAPONS, EXPEDITION_UNIQUES, EXPEDITION_ESSENCES, ESSENCE_EXCHANGE, EXPEDITION_BOSSES } from '../ShadowColosseum/expeditionCodexData';
 import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars, getAwakeningPassives } from '../ShadowColosseum/raidData';
 
 // ═══════════════════════════════════════════════════════════════
@@ -145,6 +146,7 @@ const CODEX_TABS = [
   { id: 'weapons',   label: 'Armes',       Icon: Swords },
   { id: 'artifacts', label: 'Artefacts',   Icon: Shield },
   { id: 'mechanics', label: 'Mecaniques',  Icon: Zap },
+  { id: 'expedition', label: 'Expedition', Icon: MapPin },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -1278,6 +1280,214 @@ export default function Codex() {
               <p className="text-[11px] text-gray-500">Avantage : ×1.3 degats | Desavantage : ×0.75 degats | Lumiere/Ombre : avantage mutuel ×1.3</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ═══ EXPEDITION TAB ═══ */}
+      {activeTab === 'expedition' && (
+        <div className="space-y-8">
+
+          {/* ─── Section: SETS ─── */}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">Sets Expedition (25)</div>
+
+            {/* Big Sets */}
+            <div className="text-[10px] font-bold uppercase tracking-wider text-yellow-400 mb-2 mt-4">Gros Sets (10) — Passifs puissants, class-specific</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              {Object.values(EXPEDITION_SETS).filter(s => s.big).map(s => (
+                <div key={s.id} className={`p-3.5 rounded-xl border text-left ${s.border} ${s.bg}`}>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl">{s.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-bold ${s.color}`}>{s.name}</div>
+                      <div className="text-[10px] text-gray-500">{s.desc}</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {s.targetClass.map(c => (
+                      <span key={c} className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800/60 text-gray-400 font-medium">{c}</span>
+                    ))}
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+                      s.rarity === 'legendaire' ? 'bg-yellow-900/30 text-yellow-400' : 'bg-purple-900/30 text-purple-400'
+                    }`}>{s.rarity}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800/60 text-gray-500">{s.zone}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800/60 text-gray-500">{s.binding}</span>
+                  </div>
+                  <div className="mt-2 space-y-0.5">
+                    <div className="text-[10px] text-green-400">2p : {s.bonus2Desc}</div>
+                    <div className="text-[10px] text-blue-400">4p : {s.bonus4Desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Medium Sets by zone */}
+            {['foret', 'abysses', 'neant'].map(zone => {
+              const zoneSets = Object.values(EXPEDITION_SETS).filter(s => !s.big && s.zone === zone);
+              if (zoneSets.length === 0) return null;
+              const zoneLabel = { foret: 'Foret (Boss 1-5)', abysses: 'Abysses (Boss 6-10)', neant: 'Neant (Boss 11-15)' }[zone];
+              const zoneColor = { foret: 'text-green-400', abysses: 'text-cyan-400', neant: 'text-purple-400' }[zone];
+              return (
+                <div key={zone} className="mb-6">
+                  <div className={`text-[10px] font-bold uppercase tracking-wider ${zoneColor} mb-2`}>Sets Moyens — {zoneLabel}</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {zoneSets.map(s => (
+                      <div key={s.id} className={`p-3 rounded-xl border text-left ${s.border} ${s.bg}`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{s.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-[11px] font-bold ${s.color}`}>{s.name}</div>
+                            <div className="text-[9px] text-gray-500">{s.desc}</div>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {s.targetClass.map(c => (
+                            <span key={c} className="text-[9px] px-1 py-0.5 rounded bg-gray-800/60 text-gray-400">{c}</span>
+                          ))}
+                          <span className={`text-[9px] px-1 py-0.5 rounded ${
+                            s.rarity === 'epique' ? 'bg-purple-900/30 text-purple-300' : 'bg-blue-900/30 text-blue-300'
+                          }`}>{s.rarity}</span>
+                        </div>
+                        <div className="mt-1.5 space-y-0.5">
+                          <div className="text-[10px] text-green-400">2p : {s.bonus2Desc}</div>
+                          <div className="text-[10px] text-blue-400">4p : {s.bonus4Desc}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ─── Section: WEAPONS ─── */}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">Armes Expedition (10)</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Object.values(EXPEDITION_WEAPONS).sort((a, b) => b.atk - a.atk).map(w => {
+                const elColor = { fire: 'text-orange-400', water: 'text-cyan-400', shadow: 'text-purple-400', light: 'text-yellow-300' }[w.element] || 'text-gray-400';
+                return (
+                  <div key={w.id} className="p-3.5 rounded-xl border border-red-500/20 bg-red-500/5 text-left">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{w.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-red-400">{w.name}</div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-gray-300">ATK {w.atk}</span>
+                          <span className={`text-[10px] ${elColor}`}>{w.element}</span>
+                          <span className="text-[10px] text-gray-500">{w.weaponType}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-900/30 text-red-300">{w.rarity}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-[10px] text-amber-400">Bonus: {w.bonusDesc}</div>
+                    <div className="mt-1 text-[10px] text-blue-300">Passif: {w.passiveDesc}</div>
+                    <div className="mt-1 text-[9px] text-gray-500">
+                      Drop: Boss {w.dropBoss + 1} ({w.dropBossName}) — {w.dropChance}% | {w.binding}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ─── Section: UNIQUE ARTIFACTS ─── */}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">Artefacts Uniques (20)</div>
+            {[1, 2, 3].map(tier => {
+              const tierUniques = Object.values(EXPEDITION_UNIQUES).filter(u => u.tier === tier);
+              if (tierUniques.length === 0) return null;
+              const tierLabel = { 1: 'Tier 1 — Premiers pas (Boss 1-3)', 2: 'Tier 2 — Progression (Boss 4-8)', 3: 'Tier 3 — Endgame (Boss 9-15)' }[tier];
+              const tierColor = { 1: 'text-green-400', 2: 'text-blue-400', 3: 'text-amber-400' }[tier];
+              return (
+                <div key={tier} className="mb-6">
+                  <div className={`text-[10px] font-bold uppercase tracking-wider ${tierColor} mb-2`}>{tierLabel}</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {tierUniques.map(u => (
+                      <div key={u.id} className={`p-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 text-left`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{u.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-[11px] font-bold ${u.color}`}>{u.name}</div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[9px] text-gray-500">{u.slot}</span>
+                              <span className="text-[9px] px-1 py-0.5 rounded bg-yellow-900/30 text-yellow-400">{u.rarity}</span>
+                              <span className="text-[9px] text-gray-600">{u.binding}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-1.5 text-[10px] text-amber-300">Stats: {u.statsDesc}</div>
+                        <div className="mt-0.5 text-[10px] text-blue-300">Passif: {u.passiveDesc}</div>
+                        <div className="mt-1 text-[9px] text-gray-500 italic">Obtention: {u.achievementDesc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ─── Section: ESSENCES ─── */}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">Essences (3 types)</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              {EXPEDITION_ESSENCES.map(e => (
+                <div key={e.id} className={`p-3 rounded-xl border border-gray-700/30 ${e.bg}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">{e.icon}</span>
+                    <span className={`text-sm font-bold ${e.color}`}>{e.name}</span>
+                  </div>
+                  <div className="text-[10px] text-gray-300">{e.desc}</div>
+                  <div className="text-[9px] text-gray-500 mt-1">{e.dropRate}</div>
+                </div>
+              ))}
+            </div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Echange PNJ Forgeron</div>
+            <div className="flex flex-wrap gap-2">
+              {ESSENCE_EXCHANGE.map(ex => (
+                <div key={ex.item} className="px-3 py-1.5 rounded-lg bg-gray-800/40 border border-gray-700/20 text-[10px] text-gray-300">
+                  {ex.icon} {ex.item} — <span className="text-amber-400">{ex.cost} essences</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ─── Section: BOSS LIST ─── */}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">15 Boss Expedition</div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[10px]">
+                <thead>
+                  <tr className="text-gray-500 border-b border-gray-700/30">
+                    <th className="text-left py-1 px-2">#</th>
+                    <th className="text-left py-1 px-2">Nom</th>
+                    <th className="text-left py-1 px-2">Zone</th>
+                    <th className="text-right py-1 px-2">HP</th>
+                    <th className="text-right py-1 px-2">DEF</th>
+                    <th className="text-right py-1 px-2">ATK</th>
+                    <th className="text-right py-1 px-2">Enrage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {EXPEDITION_BOSSES.map(b => {
+                    const zoneColor = { Foret: 'text-green-400', Abysses: 'text-cyan-400', Neant: 'text-purple-400' }[b.zone] || 'text-gray-400';
+                    return (
+                      <tr key={b.idx} className="border-b border-gray-800/30 hover:bg-gray-800/20">
+                        <td className="py-1.5 px-2 text-gray-500 font-bold">{b.idx + 1}</td>
+                        <td className="py-1.5 px-2 text-gray-200 font-medium">{b.name}</td>
+                        <td className={`py-1.5 px-2 ${zoneColor}`}>{b.zone}</td>
+                        <td className="py-1.5 px-2 text-right text-red-400 font-bold">{b.hp}</td>
+                        <td className="py-1.5 px-2 text-right text-blue-400">{b.def}</td>
+                        <td className="py-1.5 px-2 text-right text-orange-400">{b.atk}</td>
+                        <td className="py-1.5 px-2 text-right text-gray-400">{b.enrage}s</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       )}
     </div>

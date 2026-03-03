@@ -1,15 +1,24 @@
 import { COMBAT } from '../config.js';
 import { AIController } from './AIController.js';
+import { PassiveEngine } from './PassiveEngine.js';
 import { Mob } from '../entities/Mob.js';
 import { MOB_TEMPLATES } from '../data/mobTemplates.js';
 
 // ── CombatEngine2D ──
 // Handles a single combat encounter (mob wave or boss fight).
 // Called by ExpeditionEngine for each tick during combat phase.
+// Integrates PassiveEngine for set/weapon passive processing.
 
 export class CombatEngine2D {
   constructor() {
     this.events = [];  // Events generated this tick (for spectator broadcast)
+    this.passives = new PassiveEngine();
+  }
+
+  // Called once at the start of each combat encounter
+  initCombat(characters) {
+    this.passives.initCombat(characters);
+    this.passives.setCharacters(characters);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -49,6 +58,11 @@ export class CombatEngine2D {
       this.moveCharacter(char, dt);
     }
 
+    // 5. Passive periodic effects (DoTs, regen, mega-heals)
+    const allEnemies = [...mobs.filter(m => m.alive)];
+    if (boss?.alive) allEnemies.push(boss);
+    this.passives.tick(dt, aliveChars, allEnemies, this.events);
+
     // Check end conditions again after all actions
     const stillAlive = characters.filter(c => c.alive);
     const mobsLeft = mobs.filter(m => m.alive);
@@ -76,7 +90,7 @@ export class CombatEngine2D {
         break;
 
       case 'skill':
-        this.performSkill(char, action);
+        this.performSkill(char, action, allies);
         break;
     }
   }
@@ -98,7 +112,9 @@ export class CombatEngine2D {
   }
 
   // Check if an attack crits
-  checkCrit(critRate, targetRes) {
+  checkCrit(critRate, targetRes, charId) {
+    // Passives can force a crit
+    if (this.passives.checkGuaranteedCrit(charId)) return true;
     const effectiveCrit = Math.max(0, Math.min(100, critRate - targetRes * 0.5));
     return Math.random() * 100 < effectiveCrit;
   }
@@ -109,24 +125,51 @@ export class CombatEngine2D {
   performAttack(char, target, power) {
     if (!char.alive || !target.alive) return;
 
-    const atk = char.getEffectiveAtk();
+    // Get ATK multiplier from passives (Titan Fury stacks, etc.)
+    const atkMult = this.passives.getAtkMultiplier(char.id);
+    const atk = Math.floor(char.getEffectiveAtk() * atkMult);
     let damage = this.calculateDamage(atk, power, target.def);
-    const isCrit = this.checkCrit(char.crit, target.res || 0);
+
+    // Void Vulnerable debuff (+25% dmg from all sources)
+    if (this.passives.isVoidVulnerable(target.id)) {
+      damage = Math.floor(damage * 1.25);
+    }
+
+    const isCrit = this.checkCrit(char.crit, target.res || 0, char.id);
     if (isCrit) damage = Math.floor(damage * COMBAT.CRIT_MULTIPLIER);
+
+    // Passive on-take-damage hook (damage reduction for target if it's a character)
+    if (target.expeditionGear) {
+      const { damageReduction } = this.passives.onTakeDamage(target, char, damage, isCrit, this.events);
+      damage = Math.max(1, damage - damageReduction);
+    }
 
     const actualDmg = target.takeDamage ? target.takeDamage(damage) : damage;
     char.stats.damageDealt += actualDmg;
+
+    // Passive on-hit hook
+    const { bonusDamage } = this.passives.onHit(char, target, actualDmg, isCrit, this.events);
+    if (bonusDamage > 0 && target.alive) {
+      const bonusActual = target.takeDamage ? target.takeDamage(bonusDamage) : bonusDamage;
+      char.stats.damageDealt += bonusActual;
+    }
+
+    // Passive on-crit hook
+    if (isCrit) {
+      this.passives.onCrit(char, target, actualDmg, this.events);
+    }
 
     this.events.push({
       type: 'damage',
       source: char.id,
       target: target.id,
-      amount: actualDmg,
+      amount: actualDmg + bonusDamage,
       crit: isCrit,
     });
 
     if (!target.alive) {
       char.stats.kills++;
+      this.passives.onKill(char, target, this.events);
       this.events.push({ type: 'kill', killer: char.id, target: target.id, targetName: target.name });
     }
   }
@@ -134,12 +177,15 @@ export class CombatEngine2D {
   // ═══════════════════════════════════════════════════════
   // Character uses a skill
   // ═══════════════════════════════════════════════════════
-  performSkill(char, action) {
+  performSkill(char, action, allies) {
     const { skill, target, isHeal, selfBuff } = action;
     if (!char.alive) return;
 
-    // Consume mana
-    if (skill.manaCost) {
+    // Passive on-skill-cast hook (free cast, double damage)
+    const castResult = this.passives.onSkillCast(char, skill, this.events);
+
+    // Consume mana (unless free cast from passive)
+    if (skill.manaCost && !castResult.freeCast) {
       if (skill.consumeAllMana) {
         char.mana = 0;
       } else if (!char.useMana(skill.manaCost)) {
@@ -154,15 +200,34 @@ export class CombatEngine2D {
 
     // Heal skill
     if (isHeal && target && skill.healPercent) {
-      const healAmount = Math.floor(target.maxHp * skill.healPercent / 100);
-      const actualHeal = target.heal(healAmount);
+      const baseHeal = Math.floor(target.maxHp * skill.healPercent / 100);
+      const { bonusHeal, shieldAmount } = this.passives.onHeal(char, target, baseHeal, this.events);
+      const totalHeal = baseHeal + bonusHeal;
+      const actualHeal = target.heal(totalHeal);
       char.stats.healingDone += actualHeal;
+
+      // Process splash heals from passive events
+      for (const evt of this.events) {
+        if (evt.type === 'passive_splash_heal' && evt.charId === char.id) {
+          // Find 2 closest injured allies (excluding primary target)
+          const injured = (allies || [])
+            .filter(a => a.alive && a.id !== target.id && a.hp < a.maxHp)
+            .sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))
+            .slice(0, evt.count || 2);
+          for (const ally of injured) {
+            const splash = ally.heal(evt.amount);
+            char.stats.healingDone += splash;
+          }
+        }
+      }
+
       this.events.push({
         type: 'heal',
         source: char.id,
         target: target.id,
         amount: actualHeal,
         skillName: skill.name,
+        shield: shieldAmount > 0 ? shieldAmount : undefined,
       });
       return;
     }
@@ -219,25 +284,46 @@ export class CombatEngine2D {
 
     // Offensive damage
     if (skill.power > 0 && target?.alive) {
-      const atk = char.getEffectiveAtk();
-      let damage = this.calculateDamage(atk, skill.power, target.def || 0);
-      const isCrit = this.checkCrit(char.crit, target.res || 0);
+      const atkMult = this.passives.getAtkMultiplier(char.id);
+      const atk = Math.floor(char.getEffectiveAtk() * atkMult);
+      let skillPower = skill.power;
+
+      // Nova Arcanique 4th spell = double damage
+      if (castResult.doubleDamage) skillPower *= 2;
+
+      let damage = this.calculateDamage(atk, skillPower, target.def || 0);
+
+      // Void Vulnerable
+      if (this.passives.isVoidVulnerable(target.id)) {
+        damage = Math.floor(damage * 1.25);
+      }
+
+      const isCrit = this.checkCrit(char.crit, target.res || 0, char.id);
       if (isCrit) damage = Math.floor(damage * COMBAT.CRIT_MULTIPLIER);
 
       const actualDmg = target.takeDamage ? target.takeDamage(damage) : damage;
       char.stats.damageDealt += actualDmg;
 
+      // Passive hooks
+      const { bonusDamage } = this.passives.onHit(char, target, actualDmg, isCrit, this.events);
+      if (bonusDamage > 0 && target.alive) {
+        const bonusActual = target.takeDamage ? target.takeDamage(bonusDamage) : bonusDamage;
+        char.stats.damageDealt += bonusActual;
+      }
+      if (isCrit) this.passives.onCrit(char, target, actualDmg, this.events);
+
       this.events.push({
         type: 'skill_damage',
         source: char.id,
         target: target.id,
-        amount: actualDmg,
+        amount: actualDmg + bonusDamage,
         crit: isCrit,
         skillName: skill.name,
       });
 
       if (!target.alive) {
         char.stats.kills++;
+        this.passives.onKill(char, target, this.events);
         this.events.push({ type: 'kill', killer: char.id, target: target.id, targetName: target.name });
       }
     }
@@ -267,7 +353,11 @@ export class CombatEngine2D {
     if (mob.attackTimer <= 0) {
       mob.attackTimer = mob.attackInterval;
       const damage = this.calculateDamage(mob.atk, 100, 0);  // Raw damage, target applies own DEF
-      const actualDmg = target.takeDamage(damage);
+
+      // Check passive damage reduction on target
+      const { damageReduction } = this.passives.onTakeDamage(target, mob, damage, false, this.events);
+      const finalDmg = Math.max(1, damage - damageReduction);
+      const actualDmg = target.takeDamage(finalDmg);
 
       this.events.push({
         type: 'mob_attack',
@@ -277,7 +367,17 @@ export class CombatEngine2D {
       });
 
       if (!target.alive) {
-        this.events.push({ type: 'death', characterId: target.id, killedBy: mob.id });
+        // Check death prevention passives
+        const deathResult = this.passives.onDeath(target, mob, this.events);
+        if (deathResult.preventDeath) {
+          target.alive = true;
+          target.hp = Math.floor(target.maxHp * deathResult.rezHpPercent / 100);
+          if (deathResult.bonusDef > 0) {
+            target.addBuff('def', Math.floor(target.def * deathResult.bonusDef / 100), deathResult.bonusDefDuration, 'passive_rez');
+          }
+        } else {
+          this.events.push({ type: 'death', characterId: target.id, killedBy: mob.id });
+        }
       }
     }
   }
@@ -344,7 +444,12 @@ export class CombatEngine2D {
         const dist = Math.abs(boss.x - target.x);
         if (dist < COMBAT.MELEE_RANGE * 2) {
           const damage = this.calculateDamage(boss.atk, boss.autoAttackPower, 0);
-          const actualDmg = target.takeDamage(damage);
+
+          // Passive damage reduction
+          const { damageReduction } = this.passives.onTakeDamage(target, boss, damage, false, this.events);
+          const finalDmg = Math.max(1, damage - damageReduction);
+          const actualDmg = target.takeDamage(finalDmg);
+
           this.events.push({
             type: 'boss_attack',
             source: boss.id,
@@ -352,7 +457,16 @@ export class CombatEngine2D {
             amount: actualDmg,
           });
           if (!target.alive) {
-            this.events.push({ type: 'death', characterId: target.id, killedBy: boss.id });
+            const deathResult = this.passives.onDeath(target, boss, this.events);
+            if (deathResult.preventDeath) {
+              target.alive = true;
+              target.hp = Math.floor(target.maxHp * deathResult.rezHpPercent / 100);
+              if (deathResult.bonusDef > 0) {
+                target.addBuff('def', Math.floor(target.def * deathResult.bonusDef / 100), deathResult.bonusDefDuration, 'passive_rez');
+              }
+            } else {
+              this.events.push({ type: 'death', characterId: target.id, killedBy: boss.id });
+            }
           }
         }
       }
@@ -391,48 +505,65 @@ export class CombatEngine2D {
           const dist = Math.abs(boss.x - c.x);
           if (dist <= pattern.range && c.x >= boss.x - pattern.range) {
             const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
-            const actualDmg = c.takeDamage(damage);
+            const { damageReduction } = this.passives.onTakeDamage(c, boss, damage, false, this.events);
+            const actualDmg = c.takeDamage(Math.max(1, damage - damageReduction));
             this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
-            if (!c.alive) this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
+            if (!c.alive) {
+              const dr = this.passives.onDeath(c, boss, this.events);
+              if (dr.preventDeath) { c.alive = true; c.hp = Math.floor(c.maxHp * dr.rezHpPercent / 100); }
+              else this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
+            }
           }
         }
         break;
       }
 
       case 'aoe_melee': {
-        // Hits all characters near boss
         for (const c of aliveChars) {
           if (Math.abs(boss.x - c.x) <= pattern.range) {
             const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
-            const actualDmg = c.takeDamage(damage);
+            const { damageReduction } = this.passives.onTakeDamage(c, boss, damage, false, this.events);
+            const actualDmg = c.takeDamage(Math.max(1, damage - damageReduction));
             this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
-            if (!c.alive) this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
+            if (!c.alive) {
+              const dr = this.passives.onDeath(c, boss, this.events);
+              if (dr.preventDeath) { c.alive = true; c.hp = Math.floor(c.maxHp * dr.rezHpPercent / 100); }
+              else this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
+            }
           }
         }
         break;
       }
 
       case 'aoe_ranged': {
-        // Targets backline characters (lowest X positions)
         const sorted = [...aliveChars].sort((a, b) => a.x - b.x);
         const backlineCount = Math.max(1, Math.floor(sorted.length * 0.3));
         const targets = sorted.slice(0, backlineCount);
         for (const c of targets) {
           const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
-          const actualDmg = c.takeDamage(damage);
+          const { damageReduction } = this.passives.onTakeDamage(c, boss, damage, false, this.events);
+          const actualDmg = c.takeDamage(Math.max(1, damage - damageReduction));
           this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
-          if (!c.alive) this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
+          if (!c.alive) {
+            const dr = this.passives.onDeath(c, boss, this.events);
+            if (dr.preventDeath) { c.alive = true; c.hp = Math.floor(c.maxHp * dr.rezHpPercent / 100); }
+            else this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
+          }
         }
         break;
       }
 
       case 'aoe_all': {
-        // Hits everyone
         for (const c of aliveChars) {
           const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
-          const actualDmg = c.takeDamage(damage);
+          const { damageReduction } = this.passives.onTakeDamage(c, boss, damage, false, this.events);
+          const actualDmg = c.takeDamage(Math.max(1, damage - damageReduction));
           this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
-          if (!c.alive) this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
+          if (!c.alive) {
+            const dr = this.passives.onDeath(c, boss, this.events);
+            if (dr.preventDeath) { c.alive = true; c.hp = Math.floor(c.maxHp * dr.rezHpPercent / 100); }
+            else this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
+          }
         }
         // Boss heals if specified
         if (pattern.healPercent) {

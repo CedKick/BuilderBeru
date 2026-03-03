@@ -92,7 +92,7 @@ export const WAVE_COMPOSITIONS = {
     { mobs: [{ t: 'orc', count: 8 }, { t: 'skeleton', count: 18 }] },
     { mobs: [{ t: 'goblin', count: 16 }, { t: 'skeleton', count: 14 }, { t: 'dark_mage', count: 6 }] },
   ],
-  // Before Boss 3 (hard) - elite hordes + casters
+  // Before Boss 3-5 (hard) - elite hordes + casters
   tier3: [
     { mobs: [{ t: 'skeleton', count: 22 }, { t: 'orc', count: 8 }] },
     { mobs: [{ t: 'orc', count: 10 }, { t: 'dark_mage', count: 8 }] },
@@ -100,5 +100,13 @@ export const WAVE_COMPOSITIONS = {
     { mobs: [{ t: 'orc', count: 10 }, { t: 'goblin', count: 18 }] },
     { mobs: [{ t: 'golem', count: 4 }, { t: 'orc', count: 8 }, { t: 'dark_mage', count: 8 }, { t: 'skeleton', count: 12 }] },
     { mobs: [{ t: 'golem', count: 6 }, { t: 'orc', count: 6 }, { t: 'dark_mage', count: 10 }] },
+  ],
+  // Before Boss 10+ (brutal) - all elites, max casters
+  tier4: [
+    { mobs: [{ t: 'golem', count: 8 }, { t: 'orc', count: 10 }, { t: 'dark_mage', count: 10 }] },
+    { mobs: [{ t: 'orc', count: 14 }, { t: 'dark_mage', count: 12 }] },
+    { mobs: [{ t: 'golem', count: 10 }, { t: 'dark_mage', count: 12 }] },
+    { mobs: [{ t: 'golem', count: 6 }, { t: 'orc', count: 12 }, { t: 'dark_mage', count: 10 }, { t: 'skeleton', count: 14 }] },
+    { mobs: [{ t: 'orc', count: 16 }, { t: 'golem', count: 8 }, { t: 'dark_mage', count: 8 }] },
   ],
 };
