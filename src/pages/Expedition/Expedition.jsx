@@ -192,6 +192,7 @@ export default function Expedition() {
   // UI
   const [showSpectator, setShowSpectator] = useState(false);
   const [showCodexOverlay, setShowCodexOverlay] = useState(false);
+  const [expandedPlayer, setExpandedPlayer] = useState(null);
   const isAdminReset = new URLSearchParams(window.location.search).has('reset');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -856,28 +857,61 @@ export default function Expedition() {
             </span>
           </div>
           <div className="space-y-2">
-            {entries.map((entry, i) => (
-              <div key={i} className="bg-[#0f0f1a] rounded-lg px-3 py-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-200">{entry.username}</span>
-                  <span className="text-xs text-gray-500">{entry.characterIds?.length || 0} hunters</span>
+            {entries.map((entry, i) => {
+              const isExpanded = expandedPlayer === entry.username;
+              return (
+                <div key={i} className="bg-[#0f0f1a] rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setExpandedPlayer(isExpanded ? null : entry.username)}
+                    className="w-full px-3 py-2 flex items-center justify-between hover:bg-white/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ChevronRight className={`w-3.5 h-3.5 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                      <span className="text-sm font-medium text-gray-200">{entry.username}</span>
+                    </div>
+                    <span className="text-xs text-gray-500">{entry.characterIds?.length || 0} hunters</span>
+                  </button>
+                  {isExpanded && (
+                    <div className="px-3 pb-3 border-t border-gray-800/50">
+                      {/* Hunter team */}
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {(entry.characterIds || []).map((hId) => {
+                          const h = HUNTERS[hId];
+                          if (!h) return null;
+                          const ec = ELEMENT_COLORS[h.element] || ELEMENT_COLORS.fire;
+                          const classLabels = { tank: 'Tank', fighter: 'Fighter', assassin: 'Assassin', mage: 'Mage', support: 'Support' };
+                          return (
+                            <div key={hId} className={`flex items-center gap-1.5 ${ec.bg} ${ec.border} border rounded-lg px-2 py-1`}>
+                              {h.sprite && <img src={h.sprite} alt="" className="w-6 h-6 rounded-full object-cover" />}
+                              <div className="flex flex-col">
+                                <span className={`text-xs font-medium ${ec.text}`}>{h.name}</span>
+                                <span className="text-[9px] text-gray-500">{classLabels[h.class] || h.class}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* SR items */}
+                      {entry.srItems && entry.srItems.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-gray-800/30">
+                          <span className="text-[10px] text-gray-600 mr-1 self-center">SR:</span>
+                          {entry.srItems.map((itemId, j) => {
+                            const info = srItemLookup[itemId];
+                            const rs = RARITY_STYLES[info?.rarity] || RARITY_STYLES.common;
+                            return (
+                              <span key={j} className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded ${rs.badge}`}>
+                                <Star className="w-2.5 h-2.5 fill-current" />
+                                {info?.name || itemId}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {entry.srItems && entry.srItems.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {entry.srItems.map((itemId, j) => {
-                      const info = srItemLookup[itemId];
-                      const rs = RARITY_STYLES[info?.rarity] || RARITY_STYLES.common;
-                      return (
-                        <span key={j} className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded ${rs.badge}`}>
-                          <Star className="w-2.5 h-2.5 fill-current" />
-                          {info?.name || itemId}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
