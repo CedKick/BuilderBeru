@@ -10126,6 +10126,51 @@ export default function ShadowColosseum() {
                       );
                     })()}
 
+                    {/* Set Artifact Shop — 500 red hammers → 1 chosen set, random slot */}
+                    {(() => {
+                      const setCost = 500;
+                      const canBuySet = redHammers >= setCost;
+                      const buySetPiece = (setId) => {
+                        if (redHammers < setCost) return;
+                        const artifact = generateSetArtifact(setId);
+                        const slotName = ARTIFACT_SLOTS[artifact.slotId]?.name || artifact.slotId;
+                        setData(prev => {
+                          const newH = { ...prev.hammers };
+                          newH.marteau_rouge = (newH.marteau_rouge || 0) - setCost;
+                          return { ...prev, hammers: newH, artifactInventory: trimArtifactInventory([...(prev.artifactInventory || []), artifact]) };
+                        });
+                        showToast(`${ARTIFACT_SETS[setId]?.icon || ''} ${ARTIFACT_SETS[setId]?.name} — ${slotName} obtenu !`, '#f59e0b');
+                      };
+                      return (
+                        <div className="mt-3 p-3 rounded-xl border border-red-500/20 bg-red-900/10 transition-all">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="text-3xl">{'\uD83D\uDEE1\uFE0F'}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-black text-red-300">Artefacts de Set</div>
+                              <div className="text-normal-responsive text-gray-400 mt-0.5">Choisis ton set, piece aleatoire (mythique)</div>
+                            </div>
+                            <div className="text-small-responsive text-red-400 font-bold">{'\uD83D\uDD34'} {setCost}/piece</div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {Object.entries(ARTIFACT_SETS).map(([setId, s]) => (
+                              <button key={setId} onClick={() => buySetPiece(setId)} disabled={!canBuySet}
+                                className={`p-2 rounded-lg border text-left transition-all ${canBuySet
+                                  ? `${s.border} ${s.bg} hover:brightness-125`
+                                  : 'border-gray-700/20 bg-gray-900/10 opacity-30 cursor-not-allowed'}`}>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-base">{s.icon}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className={`text-normal-responsive font-bold ${s.color} truncate`}>{s.name}</div>
+                                    <div className="text-tiny-responsive text-gray-500">{s.bonus2Desc} / {s.bonus4Desc}</div>
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Ultimate Artifact — 1000 red hammers → 1 random ultimate set piece */}
                     {(() => {
                       const ultCost = 1000;
