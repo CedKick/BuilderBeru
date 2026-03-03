@@ -41,18 +41,19 @@ export const COMBAT = {
   HEALER_RANGE: 500,
 
   // Formation
-  FORMATION_SPACING: 30,
+  FORMATION_SPACING: 55,
   FRONTLINE_BASE_X: 600,    // Where frontliners start
   BACKLINE_OFFSET: -300,    // Backline is 300px behind frontline
 
   // Vertical lanes (Y) — visual depth separation by role
+  // Positive Y = closer to camera (lower on screen), Negative = further back (higher)
   LANE_Y: {
-    frontline:      0,      // Tanks at center ground
-    frontline_dps: -20,     // Fighters slightly above
-    backline_dps:  -50,     // Mages further up
-    backline_heal: -70,     // Healers at the very back
+    frontline:      40,     // Tanks at front (closest to camera, lower on screen)
+    frontline_dps:  15,     // Fighters/Assassins right behind tanks
+    backline_dps:  -30,     // Mages in the back
+    backline_heal: -65,     // Healers at the very back (highest on screen)
   },
-  LANE_Y_JITTER: 15,        // +/- random Y per character within lane
+  LANE_Y_JITTER: 20,        // +/- random Y per character within lane
 
   // Auto-attack intervals (seconds)
   MELEE_ATTACK_INTERVAL: 1.0,

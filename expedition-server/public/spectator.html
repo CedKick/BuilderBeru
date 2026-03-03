@@ -62,8 +62,8 @@
       cursor: pointer; font-size: 12px;
       transition: right 0.3s ease;
     }
-    #toggle-stats.panel-open { right: 286px; }
-    #toggle-stats.panel-closed { right: 8px; }
+    #toggle-stats.panel-open { right: 286px; transition: right 0.3s ease; }
+    #toggle-stats.panel-closed { right: 8px; transition: right 0.3s ease; }
 
     .stats-tabs {
       display: flex; border-bottom: 1px solid #333;
@@ -181,6 +181,15 @@
     .log-info .log-text { color: #888; }
     .log-buff .log-text { color: #60a5fa; }
 
+    /* ── Panel Resize Handle ── */
+    #panel-resize {
+      position: absolute; left: -4px; top: 0; bottom: 0; width: 8px;
+      cursor: col-resize; z-index: 15;
+    }
+    #panel-resize:hover, #panel-resize.active {
+      background: rgba(168, 85, 247, 0.3);
+    }
+
     #connection-status {
       position: fixed; top: 70px; left: 10px;
       font-size: 12px; padding: 4px 8px; border-radius: 8px;
@@ -210,12 +219,14 @@
   </div>
 
   <div id="stats-panel">
+    <div id="panel-resize"></div>
     <div class="stats-tabs">
       <button class="stats-tab active" data-tab="dps">DPS</button>
       <button class="stats-tab" data-tab="heals">Heals</button>
       <button class="stats-tab" data-tab="received">Recus</button>
       <button class="stats-tab" data-tab="crits">Crits</button>
       <button class="stats-tab" data-tab="graph">Graphe</button>
+      <button class="stats-tab" data-tab="timeline">Timeline</button>
     </div>
     <div class="stats-list" id="stats-list"></div>
     <div id="graph-container">
@@ -330,7 +341,7 @@ const interpPositions = {};
 const LERP_SPEED = 10;
 
 // Camera (Phase 2)
-const camera = { x: 0, y: 0, zoom: 0.5, targetZoom: 0.5, minZoom: 0.2, maxZoom: 1.5, autoFollow: true };
+const camera = { x: 0, y: 0, zoom: 0.5, targetZoom: 0.5, minZoom: 0.15, maxZoom: 2.5, autoFollow: true };
 let isPanning = false, panStart = { x: 0, y: 0 };
 
 // Speech bubbles (Phase 5)
@@ -353,6 +364,22 @@ let marchNarrative = null;
 let logEntries = [];
 let activeLogFilter = 'all';
 let logEventCount = 0;
+
+// VFX particles (spell effects, projectiles, impacts)
+const vfxParticles = [];
+
+// Character info popup (click to see stats)
+let selectedCharInfo = null;
+
+// Timeline events
+const timelineEvents = [];
+
+// Stats panel resize
+let statsPanelWidth = 280;
+let isResizingPanel = false;
+
+// Dead character tracking
+const deadCharTimers = {};  // id -> deathTime
 
 // Stars canvas cache (Phase 3)
 let starsCanvas = null;
@@ -624,12 +651,42 @@ document.querySelectorAll('.stats-tab').forEach(tab => {
       graphEl.classList.add('active');
       listEl.style.display = 'none';
       renderDpsGraph();
+    } else if (activeStatsTab === 'timeline') {
+      graphEl.classList.remove('active');
+      listEl.style.display = '';
+      renderTimeline();
     } else {
       graphEl.classList.remove('active');
       listEl.style.display = '';
       renderStatsPanel();
     }
   });
+});
+
+// Panel Resize
+const panelResize = document.getElementById('panel-resize');
+panelResize.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  isResizingPanel = true;
+  panelResize.classList.add('active');
+  document.body.style.cursor = 'col-resize';
+});
+document.addEventListener('mousemove', (e) => {
+  if (!isResizingPanel) return;
+  const newW = Math.max(200, Math.min(700, window.innerWidth - e.clientX));
+  statsPanelWidth = newW;
+  const panel = document.getElementById('stats-panel');
+  panel.style.width = newW + 'px';
+  document.getElementById('canvas-container').style.right = (statsPanelOpen ? newW : 0) + 'px';
+  toggleBtn.style.right = (statsPanelOpen ? newW + 6 : 8) + 'px';
+  resizeCanvas();
+});
+document.addEventListener('mouseup', () => {
+  if (isResizingPanel) {
+    isResizingPanel = false;
+    panelResize.classList.remove('active');
+    document.body.style.cursor = '';
+  }
 });
 
 // Combat Log Filters (Phase 6)
@@ -687,14 +744,14 @@ canvas.addEventListener('click', (e) => {
   const rect = canvas.getBoundingClientRect();
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
-  const groundY = canvas.height * 0.7;
+  const groundY = canvas.height * GROUND_Y_RATIO;
 
   let closest = null, closestDist = Infinity;
   for (const char of (state.characters || [])) {
     if (!char.alive) continue;
     const ip = interpPositions[char.id];
     const sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
-    const charY = (char.y || 0) * camera.zoom;
+    const charY = (char.y || 0) * camera.zoom + CHAR_Y_OFFSET;
     const sy = groundY + charY;
     const dist = Math.sqrt((mx - sx) ** 2 + (my - (sy - 20)) ** 2);
     if (dist < 30 && dist < closestDist) {
@@ -704,9 +761,16 @@ canvas.addEventListener('click', (e) => {
   }
 
   if (closest) {
-    showBubble(closest);
+    // Toggle: if already selected, deselect. Otherwise show popup + bubble
+    if (selectedCharInfo?.charId === closest.id) {
+      selectedCharInfo = null;
+    } else {
+      selectedCharInfo = { charId: closest.id, timer: 15 };
+      showBubble(closest);
+    }
   } else {
     activeBubble = null;
+    selectedCharInfo = null;
   }
 });
 
@@ -795,15 +859,18 @@ function handleMessage(msg) {
         addLogEntry('boss', `BOSS: ${msg.bossName} apparait!`);
         startBossIntro(msg.bossName);
         showTvCommentary('boss_appear');
+        addTimelineEvent('boss', null, { text: `Boss: ${msg.bossName}` });
       } else {
         addLogEntry('info', `Vague de mobs! (${msg.mobCount} ennemis)`);
         showTvCommentary('combat_start');
+        addTimelineEvent('phase', null, { text: `Combat — ${msg.mobCount} mobs` });
       }
       break;
 
     case 'boss_killed':
       addLogEntry('boss', `BOSS VAINCU: ${msg.bossName}!`);
       showTvCommentary('victory');
+      addTimelineEvent('kill', null, { killer: 'Equipe', target: msg.bossName });
       break;
 
     case 'march_start':
@@ -817,13 +884,16 @@ function handleMessage(msg) {
       break;
 
     case 'loot_roll_start':
-      lootRollState = { results: msg.results || [], currentIndex: -1, revealTimer: 1.5, phase: 'waiting' };
+      lootRollState = { results: msg.results || [], currentIndex: -1, revealTimer: 2.5, phase: 'waiting' };
       for (const r of msg.results || []) {
+        const RARITY_COLORS = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#eab308' };
         if (r.stolen) {
           addLogEntry('death', `Les monstres ont vole [${r.itemName}]!`);
+          addTimelineEvent('loot', null, { itemName: r.itemName, winner: 'Monstres', stolen: true, rarityColor: RARITY_COLORS[r.rarity] });
         } else if (r.winnerUsername) {
           const srTag = r.srWinner ? ' (SR)' : '';
           addLogEntry('loot', `[${r.itemName}] (${r.rarity}) -> ${r.winnerUsername} (${r.winnerRoll})${srTag}`);
+          addTimelineEvent('loot', null, { itemName: r.itemName, winner: r.winnerUsername, stolen: false, rarityColor: RARITY_COLORS[r.rarity] });
         }
       }
       break;
@@ -849,6 +919,13 @@ function handleEvent(ev) {
       addFloating(ev.target, text, color, size);
       triggerAnim(ev.target, 'hit', 0.15);
       triggerAnim(ev.source, 'attack', 0.2);
+      // VFX
+      if (ev.type === 'skill_damage') {
+        spawnVFX('magic', ev.source, ev.target, { color: ELEMENT_COLORS[findEntity(ev.source)?.element] || '#a855f7' });
+      } else {
+        spawnVFX('projectile', ev.source, ev.target);
+      }
+      if (ev.crit) spawnVFX('crit_burst', ev.source, ev.target);
       const src = ensureStats(ev.source);
       src.dmgDealt += ev.amount;
       src.totalHits++;
@@ -867,6 +944,8 @@ function handleEvent(ev) {
     case 'pattern_damage': {
       addFloating(ev.target, `-${ev.amount}`, '#ff6b6b', 16);
       triggerAnim(ev.target, 'hit', 0.15);
+      if (ev.type === 'pattern_damage') spawnVFX('boss_aoe', ev.source || '', ev.target);
+      else spawnVFX('impact', ev.source || '', ev.target, { color: '#ff4444' });
       ensureStats(ev.target).dmgReceived += ev.amount;
       maybeAutoQuip('hit', ev.target);
       // Wipe check
@@ -879,6 +958,7 @@ function handleEvent(ev) {
     case 'heal': {
       addFloating(ev.target, `+${ev.amount}`, '#22c55e', 16);
       triggerAnim(ev.target, 'heal', 0.3);
+      spawnVFX('heal', ev.source, ev.target);
       addLogEntry('heal', `${getName(ev.source)} soigne ${getName(ev.target)} (+${formatNumber(ev.amount)})`);
       ensureStats(ev.source).healsGiven += ev.amount;
       ensureStats(ev.target).healsReceived += ev.amount;
@@ -887,10 +967,12 @@ function handleEvent(ev) {
     case 'death':
       addLogEntry('death', `${getName(ev.characterId)} est mort!`);
       triggerAnim(ev.characterId, 'death', 1.0);
+      addTimelineEvent('death', null, { name: getName(ev.characterId), charId: ev.characterId });
       break;
     case 'kill':
       addLogEntry('kill', `${getName(ev.killer)} tue ${ev.targetName}!`);
       ensureStats(ev.killer).kills++;
+      addTimelineEvent('kill', null, { killer: getName(ev.killer), target: ev.targetName });
       break;
     case 'boss_pattern':
       addLogEntry('boss', `[${ev.name}] telegraph ${ev.telegraphTime}s!`);
@@ -987,6 +1069,292 @@ function formatNumber(n) {
   return String(Math.floor(n));
 }
 
+// ═══════════════════════════════════════════════════════════
+// VFX SYSTEM — Projectiles, magic circles, impacts, heals
+// ═══════════════════════════════════════════════════════════
+function spawnVFX(type, sourceId, targetId, options = {}) {
+  if (!state) return;
+  const srcIp = interpPositions[sourceId];
+  const tgtIp = interpPositions[targetId];
+  const src = findEntity(sourceId);
+  const tgt = findEntity(targetId);
+  const sx = srcIp?.x ?? src?.x ?? 0;
+  const sy = srcIp?.y ?? src?.y ?? 0;
+  const tx = tgtIp?.x ?? tgt?.x ?? 0;
+  const ty = tgtIp?.y ?? tgt?.y ?? 0;
+
+  switch (type) {
+    case 'projectile': {
+      vfxParticles.push({ type: 'projectile', x: sx, y: sy, tx, ty, color: options.color || '#ef4444', size: options.size || 5, trail: [], life: 0.35, maxLife: 0.35 });
+      break;
+    }
+    case 'magic': {
+      vfxParticles.push({ type: 'magic_circle', x: tx, y: ty, color: options.color || '#a855f7', life: 0.5, maxLife: 0.5 });
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * (80 + Math.random() * 50), vy: Math.sin(a) * (50 + Math.random() * 30), color: options.color || '#a855f7', size: 2 + Math.random() * 2, life: 0.4 + Math.random() * 0.2, maxLife: 0.6 });
+      }
+      break;
+    }
+    case 'heal': {
+      for (let i = 0; i < 6; i++) {
+        vfxParticles.push({ type: 'rise', x: tx + (Math.random() - 0.5) * 25, y: ty, vy: -(25 + Math.random() * 35), color: '#22c55e', size: 2.5 + Math.random() * 2, life: 0.7 + Math.random() * 0.3, maxLife: 1.0 });
+      }
+      vfxParticles.push({ type: 'heal_ring', x: tx, y: ty, color: '#22c55e', life: 0.4, maxLife: 0.4 });
+      break;
+    }
+    case 'impact': {
+      for (let i = 0; i < 5; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = 40 + Math.random() * 70;
+        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd * 0.6, color: options.color || '#ef4444', size: 2 + Math.random() * 2, life: 0.25 + Math.random() * 0.2, maxLife: 0.45 });
+      }
+      break;
+    }
+    case 'crit_burst': {
+      vfxParticles.push({ type: 'shockwave', x: tx, y: ty, color: '#fbbf24', life: 0.45, maxLife: 0.45 });
+      for (let i = 0; i < 12; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = 80 + Math.random() * 100;
+        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd * 0.5 - 20, color: Math.random() > 0.5 ? '#fbbf24' : '#fff', size: 2.5 + Math.random() * 3, life: 0.4 + Math.random() * 0.3, maxLife: 0.7 });
+      }
+      break;
+    }
+    case 'boss_aoe': {
+      vfxParticles.push({ type: 'shockwave', x: tx, y: ty, color: '#dc2626', life: 0.6, maxLife: 0.6 });
+      for (let i = 0; i < 15; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = 60 + Math.random() * 120;
+        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd * 0.4 - 30, color: '#ff4444', size: 3 + Math.random() * 3, life: 0.4 + Math.random() * 0.3, maxLife: 0.7 });
+      }
+      break;
+    }
+  }
+}
+
+function drawVFX(dt, groundY) {
+  for (let i = vfxParticles.length - 1; i >= 0; i--) {
+    const p = vfxParticles[i];
+    p.life -= dt;
+    if (p.life <= 0) { vfxParticles.splice(i, 1); continue; }
+    const alpha = Math.min(1, p.life / (p.maxLife * 0.3));
+    const progress = 1 - p.life / p.maxLife;
+
+    switch (p.type) {
+      case 'projectile': {
+        const t = progress / 1;
+        const px = p.x + (p.tx - p.x) * t;
+        const py = p.y + (p.ty - p.y) * t;
+        const sx = px * camera.zoom - camera.x;
+        const sy = groundY + py * camera.zoom + CHAR_Y_OFFSET;
+        // Trail
+        p.trail.push({ x: sx, y: sy, a: 1 });
+        if (p.trail.length > 6) p.trail.shift();
+        ctx.save();
+        for (let j = 0; j < p.trail.length; j++) {
+          const tp = p.trail[j];
+          tp.a *= 0.7;
+          ctx.globalAlpha = tp.a * 0.5;
+          ctx.fillStyle = p.color;
+          ctx.beginPath(); ctx.arc(tp.x, tp.y, p.size * 0.5, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(sx, sy, p.size, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(sx, sy, p.size * 0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+        break;
+      }
+      case 'magic_circle': {
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + p.y * camera.zoom + CHAR_Y_OFFSET;
+        const r = 20 + progress * 25;
+        ctx.save(); ctx.globalAlpha = alpha * 0.5;
+        ctx.strokeStyle = p.color; ctx.lineWidth = 2;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.arc(sx, sy - 15, r, 0, Math.PI * 2); ctx.stroke();
+        // Inner rotating lines
+        for (let j = 0; j < 4; j++) {
+          const a = (j / 4) * Math.PI * 2 + progress * Math.PI * 3;
+          ctx.beginPath();
+          ctx.moveTo(sx + Math.cos(a) * r * 0.3, sy - 15 + Math.sin(a) * r * 0.3);
+          ctx.lineTo(sx + Math.cos(a) * r * 0.9, sy - 15 + Math.sin(a) * r * 0.9);
+          ctx.stroke();
+        }
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'spark': {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.vy += 80 * dt; // gravity
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + p.y * camera.zoom + CHAR_Y_OFFSET;
+        ctx.save(); ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 4;
+        ctx.beginPath(); ctx.arc(sx, sy, p.size * (0.5 + alpha * 0.5), 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'rise': {
+        p.y += p.vy * dt;
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + p.y * camera.zoom + CHAR_Y_OFFSET;
+        ctx.save(); ctx.globalAlpha = alpha * 0.7;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 6;
+        ctx.beginPath(); ctx.arc(sx, sy, p.size, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'heal_ring': {
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + p.y * camera.zoom + CHAR_Y_OFFSET;
+        const r = 10 + progress * 30;
+        ctx.save(); ctx.globalAlpha = alpha * 0.4;
+        ctx.strokeStyle = p.color; ctx.lineWidth = 2;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.arc(sx, sy - 15, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'shockwave': {
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + p.y * camera.zoom + CHAR_Y_OFFSET;
+        const r = progress * 60;
+        ctx.save(); ctx.globalAlpha = alpha * 0.35;
+        ctx.strokeStyle = p.color; ctx.lineWidth = 3;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 15;
+        ctx.beginPath(); ctx.arc(sx, sy - 15, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+    }
+  }
+  // Cap VFX pool
+  if (vfxParticles.length > 150) vfxParticles.splice(0, vfxParticles.length - 150);
+}
+
+// ═══════════════════════════════════════════════════════════
+// DEAD CHARACTER MARKER
+// ═══════════════════════════════════════════════════════════
+function drawDeadMarker(char, sx, sy) {
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  drawCharacterSprite(char, sx, sy);
+  ctx.globalAlpha = 0.6;
+  // Red X over character
+  ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2.5;
+  const s = CHAR_SIZE * 0.35;
+  ctx.beginPath();
+  ctx.moveTo(sx - s, sy - CHAR_SIZE * 0.7 - s); ctx.lineTo(sx + s, sy - CHAR_SIZE * 0.7 + s);
+  ctx.moveTo(sx + s, sy - CHAR_SIZE * 0.7 - s); ctx.lineTo(sx - s, sy - CHAR_SIZE * 0.7 + s);
+  ctx.stroke();
+  // Skull emoji
+  ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#dc2626';
+  ctx.fillText('\u{1F480}', sx, sy - CHAR_SIZE - 6);
+  ctx.restore();
+  // Name
+  ctx.fillStyle = '#555'; ctx.font = '8px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(char.name, sx, sy - CHAR_SIZE - 18);
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHARACTER INFO POPUP (click to see live stats)
+// ═══════════════════════════════════════════════════════════
+function drawCharacterPopup(dt) {
+  if (!selectedCharInfo) return;
+  const char = findEntity(selectedCharInfo.charId);
+  if (!char) { selectedCharInfo = null; return; }
+
+  selectedCharInfo.timer -= dt;
+  if (selectedCharInfo.timer <= 0) { selectedCharInfo = null; return; }
+
+  const ip = interpPositions[selectedCharInfo.charId];
+  const groundY = canvas.height * GROUND_Y_RATIO;
+  let sx, sy;
+  if (state?.status === 'campfire' && campfireLayout?.positions[selectedCharInfo.charId]) {
+    const cp = campfireLayout.positions[selectedCharInfo.charId];
+    sx = cp.x; sy = cp.y;
+  } else {
+    sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
+    sy = groundY + ((ip?.y ?? char.y ?? 0) * camera.zoom) + CHAR_Y_OFFSET;
+  }
+
+  const stats = charStats[selectedCharInfo.charId];
+  const popW = 180, popH = 130;
+  const px = Math.max(5, Math.min(canvas.width - popW - 5, sx - popW / 2));
+  const py = sy - CHAR_SIZE - popH - 25;
+
+  const alpha = selectedCharInfo.timer < 0.5 ? selectedCharInfo.timer / 0.5 : 1;
+  ctx.save(); ctx.globalAlpha = alpha * 0.95;
+
+  // Background
+  ctx.fillStyle = 'rgba(10, 10, 25, 0.93)';
+  roundRect(ctx, px, py, popW, popH, 10); ctx.fill();
+  const elemColor = ELEMENT_COLORS[char.element] || '#888';
+  ctx.strokeStyle = elemColor; ctx.lineWidth = 1.5;
+  roundRect(ctx, px, py, popW, popH, 10); ctx.stroke();
+
+  // Header
+  ctx.fillStyle = elemColor; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'left';
+  const roleLabel = { frontline: 'Tank', frontline_dps: 'Fighter', backline_dps: 'Mage', backline_heal: 'Healer' };
+  ctx.fillText(`${char.name} (${roleLabel[char.role] || char.role})`, px + 8, py + 16);
+  ctx.fillStyle = '#888'; ctx.font = '9px sans-serif';
+  ctx.fillText(`${char.username || ''}`, px + 8, py + 28);
+
+  // HP/Mana bars
+  const barY = py + 34;
+  ctx.fillStyle = '#1a1a2e'; ctx.fillRect(px + 8, barY, popW - 16, 6);
+  const hpRatio = char.alive ? Math.max(0, char.hp / char.maxHp) : 0;
+  ctx.fillStyle = hpRatio > 0.6 ? '#22c55e' : hpRatio > 0.3 ? '#f59e0b' : '#ef4444';
+  ctx.fillRect(px + 8, barY, (popW - 16) * hpRatio, 6);
+  ctx.fillStyle = '#aaa'; ctx.font = '8px sans-serif';
+  ctx.fillText(`HP ${formatNumber(char.hp)}/${formatNumber(char.maxHp)}`, px + 8, barY + 14);
+
+  if (char.maxMana) {
+    ctx.fillStyle = '#1a1a2e'; ctx.fillRect(px + popW / 2, barY + 8, popW / 2 - 8, 4);
+    ctx.fillStyle = '#3b82f6'; ctx.fillRect(px + popW / 2, barY + 8, (popW / 2 - 8) * Math.max(0, (char.mana || 0) / char.maxMana), 4);
+    ctx.fillStyle = '#6b8fcc'; ctx.font = '8px sans-serif';
+    ctx.fillText(`MP ${Math.floor(char.mana || 0)}`, px + popW / 2, barY + 22);
+  }
+
+  // Stats
+  const lineY = barY + 30;
+  ctx.font = '9px sans-serif';
+  const dps = stats ? (stats.dmgDealt / Math.max(1, (state?.elapsedTime || 1))) : 0;
+  const lines = [
+    { l: 'DPS', v: formatNumber(dps) + '/s', c: '#ef4444' },
+    { l: 'Degats', v: formatNumber(stats?.dmgDealt || 0), c: '#ff8888' },
+    { l: 'Soins', v: formatNumber(stats?.healsGiven || 0), c: '#22c55e' },
+    { l: 'Kills', v: String(stats?.kills || 0), c: '#f59e0b' },
+    { l: 'Crits', v: `${stats?.crits || 0} (max: ${formatNumber(stats?.maxCrit || 0)})`, c: '#fbbf24' },
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillStyle = '#666'; ctx.textAlign = 'left';
+    ctx.fillText(lines[i].l, px + 8, lineY + i * 13);
+    ctx.fillStyle = lines[i].c; ctx.textAlign = 'right';
+    ctx.fillText(lines[i].v, px + popW - 8, lineY + i * 13);
+  }
+
+  // Arrow pointing down
+  ctx.fillStyle = 'rgba(10, 10, 25, 0.93)';
+  ctx.beginPath();
+  ctx.moveTo(sx - 6, py + popH); ctx.lineTo(sx + 6, py + popH); ctx.lineTo(sx, py + popH + 8);
+  ctx.closePath(); ctx.fill();
+
+  ctx.restore();
+}
+
+function addTimelineEvent(type, time, data) {
+  timelineEvents.push({ type, time: time || state?.elapsedTime || 0, ...data });
+  if (timelineEvents.length > 500) timelineEvents.shift();
+}
+
 function showTvCommentary(category) {
   const pool = TV_COMMENTARY[category];
   if (!pool) return;
@@ -1004,7 +1372,7 @@ function setupCampfireLayout() {
   if (!state) return;
   const aliveChars = state.characters.filter(c => c.alive);
   const centerX = canvas.width / 2;
-  const centerY = canvas.height * 0.7 - 30;
+  const centerY = canvas.height * GROUND_Y_RATIO + 15;
   const radius = Math.min(180, 40 + aliveChars.length * 6);
   campfireLayout = { positions: {}, centerX, centerY };
   aliveChars.forEach((c, i) => {
@@ -1037,11 +1405,11 @@ const TAB_COLORS = { dps: '#ef4444', heals: '#22c55e', received: '#f59e0b', crit
 let statsRenderTimer = null;
 function scheduleStatsRender() {
   if (statsRenderTimer) return;
-  statsRenderTimer = setTimeout(() => { statsRenderTimer = null; if (activeStatsTab === 'graph') renderDpsGraph(); else renderStatsPanel(); }, 500);
+  statsRenderTimer = setTimeout(() => { statsRenderTimer = null; if (activeStatsTab === 'graph') renderDpsGraph(); else if (activeStatsTab === 'timeline') renderTimeline(); else renderStatsPanel(); }, 500);
 }
 
 function renderStatsPanel() {
-  if (!statsPanelOpen || activeStatsTab === 'graph') return;
+  if (!statsPanelOpen || activeStatsTab === 'graph' || activeStatsTab === 'timeline') return;
   const list = document.getElementById('stats-list');
   const entries = Object.entries(combatStats).filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'));
 
@@ -1119,12 +1487,74 @@ function renderDpsGraph() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// TIMELINE
+// ═══════════════════════════════════════════════════════════
+function renderTimeline() {
+  if (!statsPanelOpen || activeStatsTab !== 'timeline') return;
+  const list = document.getElementById('stats-list');
+
+  // Collect unique players
+  const players = new Set();
+  for (const c of (state?.characters || [])) { if (c.username) players.add(c.username); }
+
+  // Build timeline HTML
+  let html = '<div style="padding:4px;font-size:10px;">';
+
+  // Player filter
+  html += '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;">';
+  html += '<span class="tl-filter active" data-player="all" style="padding:1px 6px;border-radius:8px;border:1px solid #555;cursor:pointer;font-size:9px;color:#aaa;background:rgba(168,85,247,0.15);border-color:#a855f7;color:#c084fc">Tous</span>';
+  for (const p of players) {
+    html += `<span class="tl-filter" data-player="${p}" style="padding:1px 6px;border-radius:8px;border:1px solid #333;cursor:pointer;font-size:9px;color:#888">${p}</span>`;
+  }
+  html += '</div>';
+
+  // Events in reverse order (newest first)
+  const events = [...timelineEvents].reverse().slice(0, 100);
+  const typeIcons = { death: '\u{1F480}', kill: '\u2694', loot: '\u{1F381}', phase: '\u{1F3C1}', boss: '\u{1F451}' };
+  const typeColors = { death: '#dc2626', kill: '#f59e0b', loot: '#a855f7', phase: '#3b82f6', boss: '#eab308' };
+
+  if (events.length === 0) {
+    html += '<div style="color:#555;text-align:center;padding:20px">Aucun evenement</div>';
+  } else {
+    for (const ev of events) {
+      const icon = typeIcons[ev.type] || '\u2022';
+      const color = typeColors[ev.type] || '#888';
+      let text = '';
+      switch (ev.type) {
+        case 'death': text = `<span style="color:#dc2626">${ev.name} est mort!</span>`; break;
+        case 'kill': text = `<span style="color:#f59e0b">${ev.killer}</span> <span style="color:#888">tue</span> <span style="color:#ccc">${ev.target}</span>`; break;
+        case 'loot': text = `<span style="color:${ev.rarityColor || '#888'}">${ev.itemName}</span> → <span style="color:#22c55e">${ev.winner}</span>${ev.stolen ? ' <span style="color:#dc2626">(VOLE!)</span>' : ''}`; break;
+        case 'phase': text = `<span style="color:#60a5fa">${ev.text}</span>`; break;
+        case 'boss': text = `<span style="color:#eab308">${ev.text}</span>`; break;
+        default: text = ev.text || '';
+      }
+      html += `<div style="display:flex;gap:4px;align-items:baseline;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03)"><span style="color:#555;font-family:monospace;font-size:9px;min-width:30px">${formatTime(ev.time)}</span><span style="font-size:11px">${icon}</span><span style="flex:1;font-size:10px">${text}</span></div>`;
+    }
+  }
+  html += '</div>';
+  list.innerHTML = html;
+
+  // Filter click handlers
+  list.querySelectorAll('.tl-filter').forEach(f => {
+    f.addEventListener('click', () => {
+      list.querySelectorAll('.tl-filter').forEach(ff => {
+        ff.style.background = 'transparent'; ff.style.borderColor = '#333'; ff.style.color = '#888';
+      });
+      f.style.background = 'rgba(168,85,247,0.15)'; f.style.borderColor = '#a855f7'; f.style.color = '#c084fc';
+      // Filter: would need to re-render with filtered events
+      // For now just visual feedback
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
 // RENDERING
 // ═══════════════════════════════════════════════════════════
 
-const GROUND_Y_RATIO = 0.7;
+const GROUND_Y_RATIO = 0.78;
 const CHAR_SIZE = 40;
 const BOSS_SIZE = 80;
+const CHAR_Y_OFFSET = 15;  // Push all entities down onto the ground plane
 
 let lastTime = performance.now();
 
@@ -1218,7 +1648,7 @@ function render() {
     if (!mob.alive) continue;
     const ip = interpPositions[mob.id];
     const sx = (ip ? ip.x : mob.x) * camera.zoom - camera.x;
-    const entityY = (ip?.y ?? mob.y ?? 0) * camera.zoom;
+    const entityY = (ip?.y ?? mob.y ?? 0) * camera.zoom + CHAR_Y_OFFSET;
     const sy = groundY + entityY;
     if (sx < -100 || sx > canvas.width + 100) continue;
     drawCalls.push({ sy, fn: () => drawMob(mob, sx, sy) });
@@ -1229,7 +1659,7 @@ function render() {
     const b = state.boss;
     const ip = interpPositions[b.id];
     const sx = (ip ? ip.x : b.x) * camera.zoom - camera.x;
-    const entityY = (ip?.y ?? b.y ?? 0) * camera.zoom;
+    const entityY = (ip?.y ?? b.y ?? 0) * camera.zoom + CHAR_Y_OFFSET;
     const sy = groundY + entityY;
     drawCalls.push({ sy, fn: () => drawBoss(b, sx, sy) });
   }
@@ -1238,7 +1668,7 @@ function render() {
   for (const char of (state.characters || [])) {
     const ip = interpPositions[char.id];
     const sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
-    const entityY = (ip?.y ?? char.y ?? 0) * camera.zoom;
+    const entityY = (ip?.y ?? char.y ?? 0) * camera.zoom + CHAR_Y_OFFSET;
     let sy = groundY + entityY;
 
     // Campfire override positions
@@ -1267,7 +1697,7 @@ function render() {
     if (!entity) continue;
     const ip = interpPositions[ra.targetId];
     const sx = (ip ? ip.x : entity.x) * camera.zoom - camera.x;
-    const sy = groundY + ((ip?.y ?? entity.y ?? 0) * camera.zoom);
+    const sy = groundY + ((ip?.y ?? entity.y ?? 0) * camera.zoom) + CHAR_Y_OFFSET;
     const progress = 1 - ra.timer / 2.0;
     ctx.save();
     ctx.globalAlpha = 0.5 + progress * 0.3;
@@ -1287,6 +1717,12 @@ function render() {
     ctx.restore();
   }
 
+  // ── VFX Particles (spells, impacts, heals) ──
+  drawVFX(dt, groundY);
+
+  // ── Character Info Popup ──
+  drawCharacterPopup(dt);
+
   // ── Speech Bubble (Phase 5) ──
   if (activeBubble) {
     activeBubble.timer -= dt;
@@ -1301,7 +1737,7 @@ function render() {
     f.life -= dt; f.y += f.vy * dt; f.vy *= 0.97;
     if (f.life <= 0) { floatingNumbers.splice(i, 1); continue; }
     const sx = f.x * camera.zoom - camera.x;
-    const entityY = (f.entityY || 0) * camera.zoom;
+    const entityY = (f.entityY || 0) * camera.zoom + CHAR_Y_OFFSET;
     const sy = groundY + entityY + f.y;
     const alpha = Math.min(1, f.life / 0.5);
     ctx.globalAlpha = alpha;
@@ -1615,12 +2051,16 @@ function drawCharacterFull(char, sx, sy, dt) {
   const anim = animStates[char.id];
 
   if (!char.alive) {
-    if (anim?.type !== 'death') return;
-    ctx.save();
-    ctx.globalAlpha = Math.max(0, anim.timer / 1.0) * 0.5;
-    const deathOffset = (1.0 - anim.timer) * 15;
-    drawCharacterSprite(char, sx, sy + deathOffset);
-    ctx.restore();
+    if (anim?.type === 'death') {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, anim.timer / 1.0) * 0.5;
+      const deathOffset = (1.0 - anim.timer) * 15;
+      drawCharacterSprite(char, sx, sy + deathOffset);
+      ctx.restore();
+      return;
+    }
+    // After death animation: show ghost marker
+    drawDeadMarker(char, sx, sy);
     return;
   }
 
@@ -1696,7 +2136,7 @@ function drawBubble() {
     sx = cp.x; sy = cp.y - CHAR_SIZE - 20;
   } else {
     sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
-    sy = canvas.height * 0.7 + ((ip?.y ?? char.y ?? 0) * camera.zoom) - CHAR_SIZE - 20;
+    sy = canvas.height * GROUND_Y_RATIO + ((ip?.y ?? char.y ?? 0) * camera.zoom) + CHAR_Y_OFFSET - CHAR_SIZE - 20;
   }
 
   const charsToShow = Math.min(activeBubble.text.length, Math.floor(activeBubble.charIndex));
@@ -1739,12 +2179,12 @@ function drawLootRoll(dt) {
     lootRollState.currentIndex++;
     if (lootRollState.currentIndex >= lootRollState.results.length) { lootRollState.phase = 'done'; return; }
     lootRollState.phase = 'revealing';
-    lootRollState.revealTimer = 3.5;
+    lootRollState.revealTimer = 6;
   }
 
   if (lootRollState.phase === 'revealing' && lootRollState.currentIndex >= 0) {
     const item = lootRollState.results[lootRollState.currentIndex];
-    const elapsed = 3.5 - lootRollState.revealTimer;
+    const elapsed = 6 - lootRollState.revealTimer;
     drawLootCard(item, elapsed);
   }
 
@@ -1775,8 +2215,8 @@ function drawLootCard(item, elapsed) {
   const rarityColor = RARITY_COLORS[item.rarity] || '#888';
 
   ctx.save();
-  if (elapsed < 0.5) {
-    const t = elapsed / 0.5;
+  if (elapsed < 0.8) {
+    const t = elapsed / 0.8;
     ctx.translate(cx, cy); ctx.scale(t * t, t * t); ctx.rotate((1 - t) * Math.PI); ctx.translate(-cx, -cy);
   }
 
@@ -1785,7 +2225,7 @@ function drawLootCard(item, elapsed) {
   roundRect(ctx, cx - cardW / 2, cy - cardH / 2, cardW, cardH, 12); ctx.fill();
 
   // Rarity border glow
-  if (elapsed > 0.5) {
+  if (elapsed > 0.8) {
     ctx.shadowColor = rarityColor; ctx.shadowBlur = 15;
   }
   ctx.strokeStyle = rarityColor; ctx.lineWidth = 3;
@@ -1793,7 +2233,7 @@ function drawLootCard(item, elapsed) {
   ctx.shadowBlur = 0;
 
   // Item name
-  if (elapsed > 0.5) {
+  if (elapsed > 0.8) {
     ctx.fillStyle = rarityColor; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(item.itemName || '???', cx, cy - 25);
     ctx.fillStyle = '#888'; ctx.font = '11px sans-serif';
@@ -1801,21 +2241,21 @@ function drawLootCard(item, elapsed) {
   }
 
   // Roll animation
-  if (elapsed > 1.2 && !item.stolen) {
-    const rollElapsed = elapsed - 1.2;
-    const displayRoll = rollElapsed > 1.0 ? item.winnerRoll : Math.floor(Math.random() * 100);
+  if (elapsed > 2.0 && !item.stolen) {
+    const rollElapsed = elapsed - 2.0;
+    const displayRoll = rollElapsed > 1.5 ? item.winnerRoll : Math.floor(Math.random() * 100);
     ctx.fillStyle = '#fff'; ctx.font = 'bold 30px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(displayRoll, cx, cy + 20);
   }
 
   // Winner
-  if (elapsed > 2.5 && item.winnerUsername) {
+  if (elapsed > 4.0 && item.winnerUsername) {
     ctx.fillStyle = item.srWinner ? '#fbbf24' : '#22c55e'; ctx.font = 'bold 14px sans-serif';
     ctx.fillText(`${item.winnerUsername}${item.srWinner ? ' (SR!)' : ''}`, cx, cy + 48);
   }
 
   // Stolen
-  if (item.stolen && elapsed > 1.0) {
+  if (item.stolen && elapsed > 2.0) {
     ctx.fillStyle = '#dc2626'; ctx.font = 'bold 16px sans-serif';
     ctx.fillText('VOLE PAR LES MONSTRES!', cx, cy + 20);
   }
