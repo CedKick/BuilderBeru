@@ -11165,6 +11165,28 @@ export default function ShadowColosseum() {
               )}
             </div>
 
+            {/* ─── Unlock All Artifacts ──────────────────────── */}
+            {(data.artifactInventory || []).some(a => a.locked) && (
+              <div className="mb-4">
+                <button
+                  onClick={() => {
+                    const lockedCount = (data.artifactInventory || []).filter(a => a.locked).length;
+                    if (!confirm(`Debloquer ${lockedCount} artefact${lockedCount > 1 ? 's' : ''} ? Ils pourront etre vendus/nettoyes.`)) return;
+                    setData(prev => ({
+                      ...prev,
+                      artifactInventory: (prev.artifactInventory || []).map(a => a.locked ? { ...a, locked: false } : a),
+                    }));
+                    showToast(`\uD83D\uDD13 ${lockedCount} artefact${lockedCount > 1 ? 's' : ''} debloque${lockedCount > 1 ? 's' : ''}`, '#f59e0b');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15 transition-all"
+                >
+                  <span>{'\uD83D\uDD13'}</span>
+                  <span className="text-sm font-bold text-amber-300">Tout debloquer</span>
+                  <span className="text-normal-responsive text-gray-500">({(data.artifactInventory || []).filter(a => a.locked).length} bloques)</span>
+                </button>
+              </div>
+            )}
+
             {/* ─── Beru Scout ──────────────────────── */}
             <div className="mb-4">
               <button
