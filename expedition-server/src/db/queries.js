@@ -236,3 +236,22 @@ export async function upsertSet(set) {
     [set.id, set.name, JSON.stringify(set.bonus2pc), JSON.stringify(set.bonus4pc)]
   );
 }
+
+// ═══════════════════════════════════════════════════════════
+// PLAYER INVENTORY (from user_storage — shared Neon DB)
+// ═══════════════════════════════════════════════════════════
+
+export async function getPlayerInventory(username) {
+  // user_storage uses device_id, so we join through the users table
+  const result = await query(
+    `SELECT s.data FROM users u
+     JOIN user_storage s ON s.device_id = u.device_id
+     WHERE LOWER(u.username) = LOWER($1) AND s.storage_key = 'shadow_colosseum_raid'`,
+    [username]
+  );
+  if (result.rows.length === 0) return [];
+  const data = typeof result.rows[0].data === 'string'
+    ? JSON.parse(result.rows[0].data)
+    : result.rows[0].data;
+  return data?.expeditionInventory || [];
+}

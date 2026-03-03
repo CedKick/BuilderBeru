@@ -2,7 +2,7 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { SERVER, ADMIN } from './config.js';
+import { SERVER, ADMIN, EXPEDITION } from './config.js';
 import { ExpeditionEngine } from './engine/ExpeditionEngine.js';
 import { ExpeditionWSServer } from './network/WebSocketServer.js';
 import { HttpApi } from './network/HttpApi.js';
@@ -147,11 +147,102 @@ async function boot() {
       }
     }
 
+    // 7. Start daily scheduler (auto-registration at 12h05, auto-launch at 19h Paris)
+    startDailyScheduler();
+
     console.log('[Boot] Ready!');
   } catch (err) {
     console.error('[Boot] Fatal error:', err);
     process.exit(1);
   }
+}
+
+// ── Daily scheduler: auto-registration at 12h05 + auto-launch at 19h Paris ──
+let autoRegistrationFired = false;
+let autoLaunchFired = false;
+
+function startDailyScheduler() {
+  setInterval(async () => {
+    try {
+      if (!expeditionEngine) return;
+
+      const now = new Date();
+      const parisNow = new Date(now.toLocaleString('en-US', { timeZone: EXPEDITION.TIMEZONE }));
+      const hour = parisNow.getHours();
+      const minute = parisNow.getMinutes();
+
+      // Reset flags daily (at midnight)
+      if (hour === 0 && minute < 2) {
+        autoRegistrationFired = false;
+        autoLaunchFired = false;
+      }
+
+      // ── Auto-registration at 12h05 Paris ──
+      // Opens a new expedition for registration if the previous one is done
+      if (hour === EXPEDITION.REGISTRATION_OPEN_HOUR && minute >= EXPEDITION.REGISTRATION_OPEN_MINUTE && minute < EXPEDITION.REGISTRATION_OPEN_MINUTE + 2 && !autoRegistrationFired) {
+        autoRegistrationFired = true;
+
+        const existing = await db.getCurrentExpedition();
+
+        // Only create new if no expedition or previous one is finished/wiped
+        if (!existing || existing.status === 'finished' || existing.status === 'wiped') {
+          // Reset engine if it was in finished/wiped state
+          if (expeditionEngine.status !== 'idle') {
+            expeditionEngine.reset();
+          }
+
+          // Mark old expedition as done if needed
+          if (existing && (existing.status === 'finished' || existing.status === 'wiped')) {
+            // Already finalized, just ensure it's closed
+          }
+
+          // Create fresh expedition for today
+          const newExp = await db.createExpedition('Expedition I', new Date());
+          await db.updateExpeditionStatus(newExp.id, 'registration');
+          console.log(`[AutoReg] 12h05 Paris — Nouvelle expedition #${newExp.id} ouverte aux inscriptions!`);
+        } else if (existing.status === 'registration') {
+          console.log(`[AutoReg] Expedition #${existing.id} deja en inscription, OK`);
+        } else {
+          console.log(`[AutoReg] Expedition #${existing.id} still active (${existing.status}), skipping`);
+        }
+      }
+
+      // ── Auto-launch at 19h00 Paris ──
+      if (hour === EXPEDITION.LAUNCH_HOUR && minute < 2 && !autoLaunchFired) {
+        autoLaunchFired = true;
+
+        // Engine must be idle (waiting for a start command)
+        if (expeditionEngine.status !== 'idle') {
+          console.log(`[AutoLaunch] Engine not idle (${expeditionEngine.status}), skipping`);
+          return;
+        }
+
+        const expedition = await db.getCurrentExpedition();
+        if (!expedition || expedition.status !== 'registration') {
+          console.log('[AutoLaunch] No expedition in registration at 19h, skipping');
+          return;
+        }
+
+        const entries = await db.getEntries(expedition.id);
+        if (entries.length < EXPEDITION.MIN_PLAYERS_TO_START) {
+          console.log(`[AutoLaunch] Not enough players (${entries.length}/${EXPEDITION.MIN_PLAYERS_TO_START}), skipping`);
+          return;
+        }
+
+        console.log(`[AutoLaunch] 19h Paris — Starting expedition #${expedition.id} with ${entries.length} players!`);
+        await expeditionEngine.start(expedition.id, entries);
+        console.log('[AutoLaunch] Expedition started!');
+      }
+    } catch (err) {
+      console.error('[Scheduler] Error:', err.message);
+    }
+  }, 30_000); // Check every 30 seconds
+
+  // Log schedule
+  const now = new Date();
+  const parisNow = new Date(now.toLocaleString('en-US', { timeZone: EXPEDITION.TIMEZONE }));
+  console.log(`[Scheduler] Active — inscriptions a ${EXPEDITION.REGISTRATION_OPEN_HOUR}h${String(EXPEDITION.REGISTRATION_OPEN_MINUTE).padStart(2,'0')}, lancement a ${EXPEDITION.LAUNCH_HOUR}h (Paris)`);
+  console.log(`[Scheduler] Heure Paris actuelle: ${parisNow.getHours()}h${String(parisNow.getMinutes()).padStart(2,'0')}`);
 }
 
 boot();

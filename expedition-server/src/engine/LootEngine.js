@@ -3,6 +3,7 @@ import { getLootTable } from '../data/lootTables.js';
 import { getItemById } from '../data/expeditionItems.js';
 import { getSetById } from '../data/expeditionSets.js';
 import { getWeaponById } from '../data/expeditionWeapons.js';
+import { getUniqueById } from '../data/expeditionUniques.js';
 import { rollEssenceDrop } from '../data/essenceSystem.js';
 
 // ── Loot Engine ──
@@ -56,6 +57,23 @@ export class LootEngine {
         stats: set.bonus2pc || {},
         setId: entry.setId,
         setName: set.name,
+        dropChance: entry.dropChance,
+      };
+    }
+
+    // Unique artifact — resolve from expeditionUniques
+    if (entry.uniqueId) {
+      const uniq = getUniqueById(entry.uniqueId);
+      if (!uniq) return null;
+      return {
+        itemId: entry.itemId,
+        itemName: entry.name || uniq.name,
+        rarity: entry.rarity || uniq.rarity,
+        binding: uniq.binding,
+        type: 'unique',
+        slot: uniq.slot,
+        stats: uniq.stats || {},
+        uniqueId: entry.uniqueId,
         dropChance: entry.dropChance,
       };
     }

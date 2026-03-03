@@ -15,8 +15,10 @@ export class AIController {
     character.updateBuffs(dt);
     character.attackTimer -= dt;
 
-    // Passive mana regen (1 mana/sec for non-support, 3/sec for support)
-    const manaRegen = character.hunterClass === 'support' ? 3 : 1;
+    // Passive mana regen (2 mana/sec for non-support, 8/sec for support)
+    const baseManaRegen = character.hunterClass === 'support' ? 8 : 2;
+    const bonusPct = character._manaRegenBonus || 0;  // from sets/weapons
+    const manaRegen = baseManaRegen * (1 + bonusPct / 100);
     character.regenMana(manaRegen * dt);
 
     switch (character.role) {
@@ -420,7 +422,7 @@ export class AIController {
     for (let i = 1; i < char.skills.length; i++) {
       const s = char.skills[i];
       if (s.cooldown <= 0 && s.healSelf !== undefined) {
-        const manaCost = Math.floor(char.maxMana * 0.2);
+        const manaCost = Math.floor(char.maxMana * 0.12);  // 12% max mana (was 20%)
         if (char.mana >= manaCost) {
           return { ...s, index: i, manaCost, healPercent: s.healSelf };
         }

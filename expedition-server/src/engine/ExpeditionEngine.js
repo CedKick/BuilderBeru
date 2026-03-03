@@ -9,6 +9,8 @@ import { ExpeditionBoss } from '../entities/ExpeditionBoss.js';
 import { MOB_TEMPLATES } from '../data/mobTemplates.js';
 import { getBossDefinition } from '../data/bossDefinitions.js';
 import * as db from '../db/queries.js';
+import { getItemById } from '../data/expeditionItems.js';
+import { EXPEDITION_WEAPONS } from '../data/expeditionWeapons.js';
 
 // ── ExpeditionEngine ──
 // Central state machine that orchestrates the entire expedition lifecycle.
@@ -154,6 +156,9 @@ export class ExpeditionEngine {
       console.error('[Expedition] No valid characters, cannot start');
       return;
     }
+
+    // Load expedition gear from player inventories and apply to characters
+    await this.loadPlayerGear(entries);
 
     // Generate encounter sequence (15 bosses for V2)
     this.encounters = generateEncounterSequence(EXPEDITION.TOTAL_BOSSES);
@@ -699,6 +704,126 @@ export class ExpeditionEngine {
   }
 
   // ═══════════════════════════════════════════════════════
+  // GEAR LOADING — Fetch inventory from DB, auto-equip, apply stats
+  // ═══════════════════════════════════════════════════════
+
+  async loadPlayerGear(entries) {
+    const seenPlayers = new Set();
+    for (const entry of entries) {
+      if (seenPlayers.has(entry.username)) continue;
+      seenPlayers.add(entry.username);
+
+      try {
+        const inventory = await db.getPlayerInventory(entry.username);
+        const gear = this.computeGear(inventory);
+
+        // Apply gear to all characters of this player
+        for (const char of this.characters) {
+          if (char.username !== entry.username) continue;
+          char.expeditionGear = gear.expeditionGear;
+          char.weaponEffects = gear.weaponEffects;
+
+          // Apply flat stats from equipped items
+          if (gear.bonusStats.atk_flat) char.atk += gear.bonusStats.atk_flat;
+          if (gear.bonusStats.def_flat) char.def += gear.bonusStats.def_flat;
+          if (gear.bonusStats.hp_flat) {
+            char.maxHp += gear.bonusStats.hp_flat;
+            char.hp = char.maxHp;
+          }
+          if (gear.bonusStats.spd_flat) char.spd += gear.bonusStats.spd_flat;
+          if (gear.bonusStats.crit_rate) char.crit += gear.bonusStats.crit_rate;
+          if (gear.bonusStats.res_flat) char.res += gear.bonusStats.res_flat;
+
+          // Apply passive stat modifiers from weapon effects
+          for (const eff of gear.weaponEffects) {
+            if (eff.type === 'lifesteal') char._lifesteal = (char._lifesteal || 0) + eff.value;
+            if (eff.type === 'heal_bonus') char._healBonus = (char._healBonus || 0) + eff.value;
+            if (eff.type === 'mana_regen') char._manaRegenBonus = (char._manaRegenBonus || 0) + eff.value;
+          }
+        }
+
+        const setCount = Object.keys(gear.expeditionGear.sets).length;
+        if (setCount > 0 || gear.expeditionGear.weaponId) {
+          console.log(`[Expedition] ${entry.username} gear: ${setCount} sets, weapon=${gear.expeditionGear.weaponId || 'none'}, +${gear.bonusStats.atk_flat || 0} ATK`);
+        }
+      } catch (err) {
+        console.warn(`[Expedition] Failed to load gear for ${entry.username}:`, err.message);
+      }
+    }
+  }
+
+  computeGear(inventory) {
+    if (!inventory || !inventory.length) {
+      return { expeditionGear: { sets: {}, weaponId: null }, bonusStats: {}, weaponEffects: [] };
+    }
+
+    // Count set pieces
+    const sets = {};
+    for (const item of inventory) {
+      if (item.setId) {
+        sets[item.setId] = (sets[item.setId] || 0) + 1;
+      }
+    }
+
+    // Find mythique weapon (from expeditionWeapons.js)
+    let mythiqueWeaponId = null;
+    for (const item of inventory) {
+      // Check if item has explicit weaponId (mythique)
+      if (item.weaponId && EXPEDITION_WEAPONS[item.weaponId]) {
+        mythiqueWeaponId = item.weaponId;
+        break;
+      }
+      // Check by itemId pattern: exp_weapon_<weaponId>
+      if (item.type === 'weapon' && item.itemId?.startsWith('exp_weapon_')) {
+        const wpnId = item.itemId.replace('exp_weapon_', '');
+        if (EXPEDITION_WEAPONS[wpnId]) {
+          mythiqueWeaponId = wpnId;
+          break;
+        }
+      }
+    }
+
+    // Auto-equip best items per slot (by rarity then stat sum)
+    const rarityOrder = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythique: 5 };
+    const slots = ['helm', 'chest', 'gloves', 'boots', 'weapon'];
+    const equipped = {};
+
+    for (const slot of slots) {
+      const candidates = inventory.filter(i => i.slot === slot && i.stats);
+      candidates.sort((a, b) => {
+        const rd = (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
+        if (rd !== 0) return rd;
+        const sumStats = (s) => Object.values(s || {}).reduce((acc, v) => acc + v, 0);
+        return sumStats(b.stats) - sumStats(a.stats);
+      });
+      if (candidates.length > 0) equipped[slot] = candidates[0];
+    }
+
+    // Sum flat stats from all equipped items
+    const bonusStats = {};
+    for (const item of Object.values(equipped)) {
+      if (item.stats) {
+        for (const [stat, val] of Object.entries(item.stats)) {
+          bonusStats[stat] = (bonusStats[stat] || 0) + val;
+        }
+      }
+    }
+
+    // Get weapon effects from equipped regular weapon
+    let weaponEffects = [];
+    if (equipped.weapon) {
+      const itemDef = getItemById(equipped.weapon.itemId);
+      if (itemDef?.effects) weaponEffects = itemDef.effects;
+    }
+
+    return {
+      expeditionGear: { sets, weaponId: mythiqueWeaponId },
+      bonusStats,
+      weaponEffects,
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════
   // HELPERS
   // ═══════════════════════════════════════════════════════
 
@@ -734,6 +859,7 @@ export class ExpeditionEngine {
       type: 'expedition_state',
       status: this.status,
       elapsedTime: Math.floor(this.elapsedSeconds),
+      maxDuration: EXPEDITION.MAX_DURATION_HOURS * 3600,
       encounterIndex: this.currentEncounterIndex,
       totalEncounters: this.encounters.length,
       bossesKilled: this.bossesKilled,
@@ -872,6 +998,8 @@ export class ExpeditionEngine {
         slot: r.slot || null,
         stats: r.stats || {},
         setId: r.setId || null,
+        weaponId: r.weaponId || null,
+        uniqueId: r.uniqueId || null,
         encounterIndex: this.currentEncounterIndex,
       });
     }

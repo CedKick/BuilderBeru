@@ -38,6 +38,9 @@ export class ExpeditionBoss {
     this.patternPhase = null;   // 'telegraph' | 'execute' | null
     this.globalPatternCooldown = 0;
 
+    // Debuffs
+    this.debuffs = [];
+
     // Target tracking
     this.targetId = null;
 
@@ -158,8 +161,42 @@ export class ExpeditionBoss {
     }
   }
 
-  // Stub: bosses don't track buffs/debuffs but skills may target them
+  // Stub: buff system
   addBuff() {}
+
+  // ── Debuffs ──────────────────────────────────────────────
+
+  addDebuff(type, value, duration, source, maxStacks = 1) {
+    const existing = this.debuffs.find(d => d.type === type && d.source === source);
+    if (existing) {
+      if (maxStacks > 1 && existing.stacks < maxStacks) {
+        existing.stacks++;
+        existing.duration = Math.max(existing.duration, duration);
+      } else {
+        existing.duration = duration;
+        existing.value = value;
+      }
+    } else {
+      this.debuffs.push({ type, value, duration, source, stacks: 1, maxStacks });
+    }
+  }
+
+  updateDebuffs(dt) {
+    for (let i = this.debuffs.length - 1; i >= 0; i--) {
+      this.debuffs[i].duration -= dt;
+      if (this.debuffs[i].duration <= 0) this.debuffs.splice(i, 1);
+    }
+  }
+
+  getDebuffValue(type) {
+    let total = 0;
+    for (const d of this.debuffs) {
+      if (d.type === type) total += d.value * (d.stacks || 1);
+    }
+    return total;
+  }
+
+  isStunned() { return this.debuffs.some(d => d.type === 'stun' && d.duration > 0); }
 
   // ── Serialization ───────────────────────────────────────
 

@@ -66,6 +66,13 @@ export class ExpeditionCharacter {
     // Buffs: [{ type, value, duration, source }]
     this.buffs = [];
 
+    // Debuffs: [{ type, value, duration, source, stacks, maxStacks }]
+    this.debuffs = [];
+
+    // Expedition gear (loaded from inventory, used by PassiveEngine)
+    this.expeditionGear = null;  // { sets: { setId: count }, weaponId: string|null }
+    this.weaponEffects = [];     // Effects from equipped regular weapon
+
     // Auto-attack timer
     this.attackTimer = 0;
     const isRanged = this.role === 'backline_dps' || this.role === 'backline_heal';
@@ -132,6 +139,48 @@ export class ExpeditionCharacter {
         this.buffs.splice(i, 1);
       }
     }
+  }
+
+  // ── Debuffs ──────────────────────────────────────────────
+
+  addDebuff(type, value, duration, source, maxStacks = 1) {
+    const existing = this.debuffs.find(d => d.type === type && d.source === source);
+    if (existing) {
+      if (maxStacks > 1 && existing.stacks < maxStacks) {
+        existing.stacks++;
+        existing.duration = Math.max(existing.duration, duration);
+      } else {
+        existing.duration = duration;
+        existing.value = value;
+      }
+    } else {
+      this.debuffs.push({ type, value, duration, source, stacks: 1, maxStacks });
+    }
+  }
+
+  updateDebuffs(dt) {
+    for (let i = this.debuffs.length - 1; i >= 0; i--) {
+      this.debuffs[i].duration -= dt;
+      if (this.debuffs[i].duration <= 0) {
+        this.debuffs.splice(i, 1);
+      }
+    }
+  }
+
+  getDebuffValue(type) {
+    let total = 0;
+    for (const d of this.debuffs) {
+      if (d.type === type) total += d.value * (d.stacks || 1);
+    }
+    return total;
+  }
+
+  isStunned() {
+    return this.debuffs.some(d => d.type === 'stun' && d.duration > 0);
+  }
+
+  isSilenced() {
+    return this.debuffs.some(d => d.type === 'silence' && d.duration > 0);
   }
 
   // ── Cooldowns ───────────────────────────────────────────
@@ -201,6 +250,9 @@ export class ExpeditionCharacter {
       buffs: this.buffs,
       skills: this.skills.map(s => ({ name: s.name, cooldown: s.cooldown, cdMax: s.cdMax })),
       stats: { ...this.stats },
+      debuffs: this.debuffs,
+      expeditionGear: this.expeditionGear,
+      weaponEffects: this.weaponEffects,
     };
   }
 
@@ -227,6 +279,9 @@ export class ExpeditionCharacter {
       }
     }
     char.stats = data.stats || { damageDealt: 0, healingDone: 0, kills: 0, deaths: 0 };
+    char.debuffs = data.debuffs || [];
+    char.expeditionGear = data.expeditionGear || null;
+    char.weaponEffects = data.weaponEffects || [];
     return char;
   }
 }

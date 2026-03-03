@@ -5240,6 +5240,17 @@ export default function ShadowColosseum() {
             </Link>
           )}
 
+          {/* Expedition Button */}
+          <Link to="/expedition"
+            className="block mb-4 p-3 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-900/30 to-yellow-900/30 hover:from-amber-900/50 hover:to-yellow-900/50 transition-all text-center group">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xl">{'\u2694\uFE0F'}</span>
+              <span className="font-bold text-amber-400 group-hover:text-amber-300">EXPEDITION</span>
+              <span className="text-xs text-gray-400">— 30 Hunters vs 15 Boss</span>
+            </div>
+            <p className="text-normal-responsive text-gray-500 mt-0.5">Expedition quotidienne ! Inscris tes hunters et regarde le combat en direct !</p>
+          </Link>
+
           {/* PVE Multi Button */}
           <button
             onClick={() => setView('pve_multi')}

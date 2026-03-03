@@ -1,4 +1,27 @@
 import { EXPEDITION, ADMIN, LOOT } from '../config.js';
+
+// ── Compute next launch time (19h Paris) ──
+function getNextLaunchTime() {
+  const now = new Date();
+  const paris = new Date(now.toLocaleString('en-US', { timeZone: EXPEDITION.TIMEZONE }));
+  const diff = now.getTime() - paris.getTime();
+
+  // Today at 19h Paris
+  const launch = new Date(paris);
+  launch.setHours(EXPEDITION.LAUNCH_HOUR, 0, 0, 0);
+  const launchUTC = new Date(launch.getTime() + diff);
+
+  // If already past 19h today, next launch is tomorrow
+  if (now >= launchUTC) {
+    launchUTC.setDate(launchUTC.getDate() + 1);
+  }
+  return launchUTC;
+}
+
+function getRegistrationCutoff() {
+  const launch = getNextLaunchTime();
+  return new Date(launch.getTime() - 60 * 1000); // 1 minute before launch (18h59)
+}
 import * as db from '../db/queries.js';
 import { getSRableItems, EXPEDITION_ITEMS, getItemById } from '../data/expeditionItems.js';
 import { HUNTERS } from '../data/hunterData.js';
@@ -77,6 +100,9 @@ export class HttpApi {
       success: true,
       expedition: expedition || null,
       live: engineStatus,
+      launchTime: getNextLaunchTime().toISOString(),
+      registrationCutoff: getRegistrationCutoff().toISOString(),
+      serverTime: new Date().toISOString(),
     }));
   }
 
@@ -111,6 +137,12 @@ export class HttpApi {
 
     if (expedition.status !== 'registration') {
       return this.badRequest(res, 'Registration is closed for this expedition');
+    }
+
+    // Check registration cutoff (18h59 Paris — 1min before launch)
+    const cutoff = getRegistrationCutoff();
+    if (new Date() >= cutoff) {
+      return this.badRequest(res, 'Inscriptions fermees ! Lancement imminent...');
     }
 
     // Check total character slots (30 max across all players)

@@ -166,10 +166,20 @@ export default function Expedition() {
   const [maxCharacters, setMaxCharacters] = useState(30);
   const [bossLootData, setBossLootData] = useState([]);
 
-  // Registration form
-  const [username, setUsername] = useState(() => localStorage.getItem('expedition_username') || '');
+  // Registration form — username auto-loaded from account
+  const [username] = useState(() => {
+    try {
+      const auth = JSON.parse(localStorage.getItem('builderberu_auth_user') || 'null');
+      return auth?.username || localStorage.getItem('expedition_username') || '';
+    } catch { return localStorage.getItem('expedition_username') || ''; }
+  });
   const [selectedHunters, setSelectedHunters] = useState([]);
   const [selectedSRs, setSelectedSRs] = useState([]);
+
+  // Countdown & launch times
+  const [launchTime, setLaunchTime] = useState(null);
+  const [registrationCutoff, setRegistrationCutoff] = useState(null);
+  const [countdown, setCountdown] = useState('');
 
   // SR / Boss Loot UI
   const [showBossLoot, setShowBossLoot] = useState(false);
@@ -183,6 +193,7 @@ export default function Expedition() {
   // UI
   const [showSpectator, setShowSpectator] = useState(false);
   const [showCodexOverlay, setShowCodexOverlay] = useState(false);
+  const isAdminReset = new URLSearchParams(window.location.search).has('reset');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -254,6 +265,8 @@ export default function Expedition() {
       ]);
       setExpedition(currentRes.expedition);
       setLiveStatus(currentRes.live);
+      if (currentRes.launchTime) setLaunchTime(new Date(currentRes.launchTime));
+      if (currentRes.registrationCutoff) setRegistrationCutoff(new Date(currentRes.registrationCutoff));
       setEntries(entriesRes.entries || []);
       setTotalCharacters(entriesRes.totalCharacters || 0);
       setMaxCharacters(entriesRes.maxCharacters || 30);
@@ -287,8 +300,16 @@ export default function Expedition() {
   };
 
   const register = async () => {
-    if (!username.trim() || selectedHunters.length === 0) {
-      setError('Choisis un pseudo et au moins 1 hunter');
+    if (!username.trim()) {
+      setError('Connecte-toi a ton compte BuilderBeru d\'abord');
+      return;
+    }
+    if (selectedHunters.length === 0) {
+      setError('Choisis au moins 1 hunter');
+      return;
+    }
+    if (isRegistrationClosed) {
+      setError('Inscriptions fermees ! Lancement imminent...');
       return;
     }
     try {
@@ -464,6 +485,28 @@ export default function Expedition() {
     }
   }, [error, success]);
 
+  // ── Countdown timer to 19h ──
+  useEffect(() => {
+    if (!launchTime) return;
+    const tick = () => {
+      const now = Date.now();
+      const diff = launchTime.getTime() - now;
+      if (diff <= 0) {
+        setCountdown('Lancement...');
+        return;
+      }
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1000);
+      setCountdown(`${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [launchTime]);
+
+  const isRegistrationClosed = registrationCutoff && Date.now() >= registrationCutoff.getTime();
+
   // ═══════════════════════════════════════════
   // RENDER: Login
   // ═══════════════════════════════════════════
@@ -582,7 +625,7 @@ export default function Expedition() {
               <Eye className="w-4 h-4" /> Regarder le combat
             </button>
           )}
-          {expedition && (
+          {expedition && isAdminReset && (
             <button
               onClick={resetExpedition}
               disabled={loading}
@@ -650,7 +693,25 @@ export default function Expedition() {
             <StatCard icon={Clock} label="Temps" value={formatTime(liveStatus.elapsedSeconds)} />
           </div>
         )}
-        {isRegistration && (
+        {isRegistration && launchTime && (
+          <div className="mt-3 bg-[#0f0f1a] border border-amber-500/30 rounded-lg p-3 flex items-center justify-between">
+            <div>
+              <p className="text-amber-400 text-sm font-medium">
+                {isRegistrationClosed ? 'Inscriptions fermees — lancement imminent !' : 'Inscriptions ouvertes'}
+              </p>
+              <p className="text-gray-500 text-xs mt-0.5">
+                {isRegistrationClosed
+                  ? 'L\'expedition demarre automatiquement a 19h'
+                  : `Inscris tes hunters avant 18h59`}
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-amber-300 font-mono">{countdown}</div>
+              <div className="text-[10px] text-gray-500">avant lancement</div>
+            </div>
+          </div>
+        )}
+        {isRegistration && !launchTime && (
           <p className="text-blue-400 text-sm mt-2">Inscription ouverte - inscris tes hunters ci-dessous</p>
         )}
         {!expedition && (
@@ -680,16 +741,19 @@ export default function Expedition() {
             </span>
           </div>
 
-          {/* Username */}
+          {/* Username (auto from account) */}
           <div className="mb-4">
-            <label className="text-sm text-gray-400 mb-1 block">Pseudo</label>
-            <input
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder="Ton pseudo"
-              className="w-full bg-[#0f0f1a] border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:border-purple-500 focus:outline-none text-sm"
-            />
+            <label className="text-sm text-gray-400 mb-1 block">Joueur</label>
+            {username ? (
+              <div className="flex items-center gap-2 bg-[#0f0f1a] border border-green-700/50 rounded-lg px-3 py-2">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-green-400 font-medium text-sm">{username}</span>
+              </div>
+            ) : (
+              <div className="bg-[#0f0f1a] border border-red-700/50 rounded-lg px-3 py-2 text-red-400 text-sm">
+                Connecte-toi a ton compte BuilderBeru pour t'inscrire
+              </div>
+            )}
           </div>
 
           {/* Hunter Selection - Real hunters from account */}
@@ -817,11 +881,24 @@ export default function Expedition() {
           {/* Register Button */}
           <button
             onClick={register}
-            disabled={loading || !username.trim() || selectedHunters.length === 0}
-            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+            disabled={loading || !username.trim() || selectedHunters.length === 0 || isRegistrationClosed}
+            className={`w-full font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-colors ${
+              isRegistrationClosed
+                ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 text-white'
+            }`}
           >
-            <Plus className="w-4 h-4" />
-            {loading ? 'Inscription...' : "S'inscrire"}
+            {isRegistrationClosed ? (
+              <>
+                <Lock className="w-4 h-4" />
+                Inscriptions fermees (18h59)
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                {loading ? 'Inscription...' : "S'inscrire"}
+              </>
+            )}
           </button>
         </div>
       )}

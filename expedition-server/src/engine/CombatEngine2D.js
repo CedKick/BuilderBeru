@@ -37,20 +37,39 @@ export class CombatEngine2D {
       return { status: 'victory', events: this.events };
     }
 
-    // 1. Character AI decisions
+    // 0. Update buffs/debuffs for all entities
     for (const char of aliveChars) {
+      char.updateBuffs(dt);
+      char.updateDebuffs(dt);
+      char.updateCooldowns(dt);
+    }
+    for (const mob of aliveMobs) {
+      if (mob.updateDebuffs) mob.updateDebuffs(dt);
+    }
+    if (boss?.alive && boss.updateDebuffs) boss.updateDebuffs(dt);
+
+    // 1. Character AI decisions (stunned chars skip their turn)
+    for (const char of aliveChars) {
+      if (char.isStunned()) continue;
       const action = AIController.decide(char, aliveChars, aliveMobs, boss, dt);
-      if (action) this.executeAction(char, action, characters, mobs, boss);
+      if (action) {
+        // Silenced chars can't use skills
+        if (action.type === 'skill' && char.isSilenced()) continue;
+        this.executeAction(char, action, characters, mobs, boss);
+      }
     }
 
-    // 2. Mob AI
+    // 2. Mob AI (stunned mobs skip)
     for (const mob of aliveMobs) {
+      if (mob.isStunned && mob.isStunned()) continue;
       this.tickMob(mob, aliveChars, dt);
     }
 
-    // 3. Boss AI
+    // 3. Boss AI (stunned boss skips)
     if (boss?.alive) {
-      this.tickBoss(boss, aliveChars, mobs, dt);
+      if (!(boss.isStunned && boss.isStunned())) {
+        this.tickBoss(boss, aliveChars, mobs, dt);
+      }
     }
 
     // 4. Move characters toward their targets
@@ -62,6 +81,9 @@ export class CombatEngine2D {
     const allEnemies = [...mobs.filter(m => m.alive)];
     if (boss?.alive) allEnemies.push(boss);
     this.passives.tick(dt, aliveChars, allEnemies, this.events);
+
+    // 6. Process bleed DoTs on all entities
+    this.processBleedDots(dt, [...characters, ...mobs, ...(boss ? [boss] : [])]);
 
     // Check end conditions again after all actions
     const stillAlive = characters.filter(c => c.alive);
@@ -98,12 +120,15 @@ export class CombatEngine2D {
   // ═══════════════════════════════════════════════════════
   // Damage Calculation (identical to Manaya raid)
   // ═══════════════════════════════════════════════════════
-  calculateDamage(attackerAtk, power, defenderDef) {
+  calculateDamage(attackerAtk, power, defenderDef, armorPenPct = 0) {
     // Base damage
     const baseDmg = attackerAtk * (power / 100);
 
+    // Apply armor penetration (reduces effective DEF)
+    const effectiveDef = defenderDef * (1 - Math.min(armorPenPct, 100) / 100);
+
     // DEF reduction: CONSTANT / (CONSTANT + DEF)
-    const defMult = COMBAT.DEF_CONSTANT / (COMBAT.DEF_CONSTANT + Math.max(0, defenderDef));
+    const defMult = COMBAT.DEF_CONSTANT / (COMBAT.DEF_CONSTANT + Math.max(0, effectiveDef));
 
     // Variance (0.95 - 1.05)
     const variance = COMBAT.VARIANCE_MIN + Math.random() * (COMBAT.VARIANCE_MAX - COMBAT.VARIANCE_MIN);
@@ -128,11 +153,48 @@ export class CombatEngine2D {
     // Get ATK multiplier from passives (Titan Fury stacks, etc.)
     const atkMult = this.passives.getAtkMultiplier(char.id);
     const atk = Math.floor(char.getEffectiveAtk() * atkMult);
-    let damage = this.calculateDamage(atk, power, target.def);
+
+    // Calculate armor penetration from weapon effects
+    let armorPen = this.getArmorPen(char);
+
+    // Execute on kill bonus: next hit ignores 30% DEF
+    if (char._executeNextHit) {
+      armorPen += char._executeNextHit.armorPen;
+      if (char._executeNextHit.antiHealDuration) {
+        target.addDebuff('anti_heal', 100, char._executeNextHit.antiHealDuration, char.id);
+      }
+      char._executeNextHit = null;
+    }
+
+    // Apply def_shred debuff on target
+    const defShred = target.getDebuffValue ? target.getDebuffValue('def_shred') : 0;
+    const effectiveDef = Math.max(0, (target.def || 0) * (1 - defShred / 100));
+
+    let damage = this.calculateDamage(atk, power, effectiveDef, armorPen);
 
     // Void Vulnerable debuff (+25% dmg from all sources)
     if (this.passives.isVoidVulnerable(target.id)) {
       damage = Math.floor(damage * 1.25);
+    }
+
+    // Hemorrhage debuff (+25% dmg from all sources at 3 bleed stacks)
+    if (target.debuffs) {
+      const bleedDebuffs = target.debuffs.filter(d => d.type === 'bleed');
+      const totalStacks = bleedDebuffs.reduce((sum, d) => sum + (d.stacks || 1), 0);
+      // Check if any weapon effect has hemorrhage with matching stacks
+      for (const eff of (char.weaponEffects || [])) {
+        if (eff.type === 'hemorrhage' && totalStacks >= eff.stacks) {
+          damage = Math.floor(damage * (1 + eff.dmgAmp / 100));
+          break;
+        }
+      }
+      // Bleed amp: if target has 2+ bleeds, bonus DMG
+      for (const eff of (char.weaponEffects || [])) {
+        if (eff.type === 'bleed_amp' && totalStacks >= eff.threshold) {
+          damage = Math.floor(damage * (1 + eff.bonus / 100));
+          break;
+        }
+      }
     }
 
     const isCrit = this.checkCrit(char.crit, target.res || 0, char.id);
@@ -149,13 +211,23 @@ export class CombatEngine2D {
 
     // Passive on-hit hook
     const { bonusDamage } = this.passives.onHit(char, target, actualDmg, isCrit, this.events);
-    if (bonusDamage > 0 && target.alive) {
-      const bonusActual = target.takeDamage ? target.takeDamage(bonusDamage) : bonusDamage;
+    let totalBonus = bonusDamage;
+    if (totalBonus > 0 && target.alive) {
+      const bonusActual = target.takeDamage ? target.takeDamage(totalBonus) : totalBonus;
       char.stats.damageDealt += bonusActual;
     }
 
-    // Passive on-crit hook
+    // Weapon effects: on_hit (stun, bleed, anti-heal, silence, double strike)
+    const weaponResult = this.processWeaponEffects(char, target, actualDmg, isCrit, 'on_hit');
+    if (weaponResult.bonusDamage > 0 && target.alive) {
+      const wpnBonus = target.takeDamage ? target.takeDamage(weaponResult.bonusDamage) : weaponResult.bonusDamage;
+      char.stats.damageDealt += wpnBonus;
+      totalBonus += wpnBonus;
+    }
+
+    // Weapon effects: on_crit
     if (isCrit) {
+      this.processWeaponEffects(char, target, actualDmg, true, 'on_crit');
       this.passives.onCrit(char, target, actualDmg, this.events);
     }
 
@@ -163,13 +235,14 @@ export class CombatEngine2D {
       type: 'damage',
       source: char.id,
       target: target.id,
-      amount: actualDmg + bonusDamage,
+      amount: actualDmg + totalBonus,
       crit: isCrit,
     });
 
     if (!target.alive) {
       char.stats.kills++;
       this.passives.onKill(char, target, this.events);
+      this.processWeaponEffects(char, target, actualDmg, isCrit, 'on_kill');
       this.events.push({ type: 'kill', killer: char.id, target: target.id, targetName: target.name });
     }
   }
@@ -200,7 +273,14 @@ export class CombatEngine2D {
 
     // Heal skill
     if (isHeal && target && skill.healPercent) {
-      const baseHeal = Math.floor(target.maxHp * skill.healPercent / 100);
+      let baseHeal = Math.floor(target.maxHp * skill.healPercent / 100);
+
+      // Anti-heal debuff reduces healing received
+      const antiHealPct = target.getDebuffValue ? target.getDebuffValue('anti_heal') : 0;
+      if (antiHealPct > 0) {
+        baseHeal = Math.floor(baseHeal * Math.max(0, 1 - antiHealPct / 100));
+      }
+
       const { bonusHeal, shieldAmount } = this.passives.onHeal(char, target, baseHeal, this.events);
       const totalHeal = baseHeal + bonusHeal;
       const actualHeal = target.heal(totalHeal);
@@ -600,6 +680,147 @@ export class CombatEngine2D {
           });
         }
         break;
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // Weapon Effects Processing (regular weapons from expeditionItems)
+  // ═══════════════════════════════════════════════════════
+  processWeaponEffects(attacker, target, damage, isCrit, trigger) {
+    const effects = attacker.weaponEffects;
+    if (!effects || effects.length === 0) return { bonusDamage: 0 };
+    let bonusDamage = 0;
+
+    for (const eff of effects) {
+      // Match trigger (effects without trigger are passive/always-on)
+      if (eff.trigger && eff.trigger !== trigger) continue;
+
+      switch (eff.type) {
+        case 'stun':
+          if (Math.random() * 100 < eff.chance && target.addDebuff) {
+            target.addDebuff('stun', 0, eff.duration, attacker.id);
+            this.events.push({ type: 'debuff_applied', source: attacker.id, target: target.id, debuffType: 'stun', duration: eff.duration });
+          }
+          break;
+
+        case 'bleed':
+          if (target.addDebuff) {
+            target.addDebuff('bleed', eff.value, eff.duration, attacker.id, eff.maxStacks || 1);
+            this.events.push({ type: 'debuff_applied', source: attacker.id, target: target.id, debuffType: 'bleed', value: eff.value });
+          }
+          break;
+
+        case 'anti_heal':
+          if (target.addDebuff) {
+            const dur = (isCrit && eff.critDuration) ? eff.critDuration : eff.duration;
+            target.addDebuff('anti_heal', eff.value, dur, attacker.id);
+          }
+          break;
+
+        case 'silence':
+          if (Math.random() * 100 < eff.chance && target.addDebuff) {
+            target.addDebuff('silence', 0, eff.duration, attacker.id);
+            this.events.push({ type: 'debuff_applied', source: attacker.id, target: target.id, debuffType: 'silence', duration: eff.duration });
+          }
+          break;
+
+        case 'def_shred':
+          if (target.addDebuff) {
+            if (!eff.condition || (eff.condition === 'stunned' && target.isStunned && target.isStunned())) {
+              target.addDebuff('def_shred', eff.value, eff.duration, attacker.id);
+            }
+          }
+          break;
+
+        case 'double_strike':
+          if (Math.random() * 100 < eff.chance) {
+            bonusDamage += Math.floor(damage * 0.7);
+            this.events.push({ type: 'passive_proc', charId: attacker.id, passive: 'double_strike', message: 'Double frappe!' });
+          }
+          break;
+
+        case 'atk_on_kill': {
+          // Only process on kill trigger
+          if (trigger !== 'on_kill') break;
+          const stacks = attacker._weaponAtkStacks || 0;
+          if (stacks < (eff.max || 999)) {
+            attacker._weaponAtkStacks = stacks + eff.value;
+            const bonus = Math.floor(attacker.atk * eff.value / 100);
+            attacker.addBuff('atk', bonus, 999, 'weapon_atk_kill');
+            this.events.push({ type: 'passive_proc', charId: attacker.id, passive: 'atk_on_kill', message: `ATK +${eff.value}%` });
+          }
+          break;
+        }
+
+        case 'execute_on_kill':
+          if (trigger !== 'on_kill') break;
+          attacker._executeNextHit = { armorPen: eff.armorPen, antiHealDuration: eff.antiHealDuration };
+          this.events.push({ type: 'passive_proc', charId: attacker.id, passive: 'execute_ready', message: 'Prochain coup perce les armures!' });
+          break;
+
+        case 'cd_reset':
+          if (trigger !== 'on_kill') break;
+          let longestIdx = -1, longestCd = 0;
+          for (let i = 0; i < attacker.skills.length; i++) {
+            if (attacker.skills[i].cooldown > longestCd) {
+              longestCd = attacker.skills[i].cooldown;
+              longestIdx = i;
+            }
+          }
+          if (longestIdx >= 0) attacker.skills[longestIdx].cooldown = 0;
+          break;
+
+        case 'hit_count_aoe': {
+          if (trigger !== 'on_hit') break;
+          attacker._hitCountAoe = (attacker._hitCountAoe || 0) + 1;
+          if (attacker._hitCountAoe >= eff.hitCount) {
+            attacker._hitCountAoe = 0;
+            const aoeDmg = Math.floor(attacker.getEffectiveAtk() * eff.power / 100);
+            this.events.push({ type: 'passive_aoe', charId: attacker.id, passive: 'weapon_aoe', damage: aoeDmg, radius: eff.radius });
+            // Apply atk_debuff and anti_heal to all enemies in radius (simplified: applied to target)
+            for (const otherEff of effects) {
+              if (otherEff.type === 'atk_debuff' && target.addDebuff) {
+                target.addDebuff('atk_shred', otherEff.value, otherEff.duration, attacker.id);
+              }
+              if (otherEff.type === 'anti_heal' && target.addDebuff) {
+                target.addDebuff('anti_heal', otherEff.value, otherEff.duration, attacker.id);
+              }
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    return { bonusDamage };
+  }
+
+  // Get total armor penetration from weapon effects
+  getArmorPen(char) {
+    let pen = 0;
+    for (const eff of (char.weaponEffects || [])) {
+      if (eff.type === 'armor_pen') pen += eff.value;
+    }
+    return pen;
+  }
+
+  // Process bleed DoTs on all entities each tick
+  processBleedDots(dt, entities) {
+    for (const entity of entities) {
+      if (!entity.alive || !entity.debuffs) continue;
+      for (const d of entity.debuffs) {
+        if (d.type === 'bleed') {
+          const bleedDmg = Math.floor(entity.maxHp * d.value * (d.stacks || 1) / 100 * dt);
+          if (bleedDmg > 0) {
+            entity.hp = Math.max(0, entity.hp - bleedDmg);
+            if (entity.hp <= 0 && entity.alive) {
+              entity.alive = false;
+              if (entity.stats) entity.stats.deaths = (entity.stats.deaths || 0) + 1;
+              this.events.push({ type: 'bleed_kill', target: entity.id, targetName: entity.name });
+            }
+          }
+        }
       }
     }
   }

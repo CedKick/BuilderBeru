@@ -16,13 +16,13 @@ export const SERVER = {
 export const EXPEDITION = {
   MAX_CHARACTERS: 30,       // Total hunters across all players (e.g. 5 players × 6 = 30)
   HUNTERS_PER_PLAYER: 6,
-  MAX_DURATION_HOURS: 17,       // 19h -> 11h59 next day = ~17h max
+  MAX_DURATION_HOURS: 12,       // 19h -> 7h next day = 12h max
   LAUNCH_HOUR: 19,              // 19h Paris daily
-  END_HOUR: 11,                 // 11h59 next day (hard stop)
-  END_MINUTE: 59,
+  END_HOUR: 7,                  // 7h next day (hard stop after 12h)
+  END_MINUTE: 0,
   REGISTRATION_OPEN_HOUR: 12,   // Opens at 12h05 (after end + cleanup)
   REGISTRATION_OPEN_MINUTE: 5,
-  MIN_PLAYERS_TO_START: 1,      // Dev=1, Prod=5
+  MIN_PLAYERS_TO_START: 1,      // Dev=1, Prod=3
   TOTAL_BOSSES: 15,             // V2: 15 bosses across 3 zones
   STATE_SAVE_INTERVAL_SEC: 60,  // Snapshot to DB every 60s
   TIMEZONE: 'Europe/Paris',
@@ -85,8 +85,8 @@ export const COMBAT = {
 // ─── Campfire ─────────────────────────────────────────────
 export const CAMPFIRE = {
   DURATION_SEC: 45,
-  HP_REGEN_PERCENT: 20,
-  MANA_REGEN_PERCENT: 50,
+  HP_REGEN_PERCENT: 30,       // 20 -> 30% HP regen at campfire
+  MANA_REGEN_PERCENT: 80,     // 50 -> 80% mana regen at campfire
   HEALER_REZ_PER_COMBAT: 1,
   REZ_HP_PERCENT: 30,
 };
