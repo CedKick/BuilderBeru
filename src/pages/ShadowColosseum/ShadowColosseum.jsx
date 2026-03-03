@@ -10001,7 +10001,7 @@ export default function ShadowColosseum() {
                     <div className="text-small-responsive text-gray-400 mt-0.5">{'\uD83D\uDCB0'} 1000 = 1</div>
                   </button>
                   <div className="flex gap-0.5">
-                    {[1, 10, 100].map(qty => {
+                    {[1, 10, 100, 10000].map(qty => {
                       const cost = 1000 * qty;
                       const affordable = Math.min(qty, Math.floor(coins / 1000));
                       return (
@@ -10012,7 +10012,7 @@ export default function ShadowColosseum() {
                           showToast(`\uD83E\uDDEA +${affordable} Alkahest`, '#a78bfa');
                         }} disabled={coins < 1000}
                           className="flex-1 py-0.5 rounded-lg text-tiny-responsive font-bold border border-purple-500/15 bg-purple-500/5 hover:bg-purple-500/20 active:bg-purple-500/30 disabled:opacity-30 transition-all text-purple-400 select-none">
-                          x{qty}
+                          x{qty >= 1000 ? `${qty/1000}k` : qty}
                         </button>
                       );
                     })}
@@ -10032,7 +10032,7 @@ export default function ShadowColosseum() {
                     <div className="text-small-responsive text-gray-400 mt-0.5">{'\uD83D\uDCB0'} 1000 = 10</div>
                   </button>
                   <div className="flex gap-0.5">
-                    {[1, 10, 100].map(qty => {
+                    {[1, 10, 100, 10000].map(qty => {
                       const affordable = Math.min(qty, Math.floor(coins / 1000));
                       return (
                         <button key={qty} onClick={() => {
@@ -10042,7 +10042,7 @@ export default function ShadowColosseum() {
                           showToast(`\uD83D\uDD34 +${10 * affordable} Marteaux Rouges`, '#ef4444');
                         }} disabled={coins < 1000}
                           className="flex-1 py-0.5 rounded-lg text-tiny-responsive font-bold border border-red-500/15 bg-red-500/5 hover:bg-red-500/20 active:bg-red-500/30 disabled:opacity-30 transition-all text-red-400 select-none">
-                          x{qty}
+                          x{qty >= 1000 ? `${qty/1000}k` : qty}
                         </button>
                       );
                     })}
@@ -12758,6 +12758,28 @@ export default function ShadowColosseum() {
       {artifactSetDetail && (() => {
         const s = ALL_ARTIFACT_SETS[artifactSetDetail];
         if (!s) return null;
+        // Find equipped pieces of this set on current chibi (if in equip view)
+        const detailChibiId = manageTarget;
+        const detailEquipped = detailChibiId ? (data.artifacts[detailChibiId] || {}) : {};
+        const setPieces = SLOT_ORDER
+          .filter(slotId => detailEquipped[slotId]?.set === artifactSetDetail)
+          .map(slotId => ({ slotId, art: detailEquipped[slotId] }));
+        const setPieceCount = setPieces.length;
+
+        const unequipSetPieces = (count) => {
+          // Unequip 'count' pieces of this set (removes from the end to preserve lower tiers)
+          const toRemove = setPieces.slice(setPieceCount - count);
+          setData(prev => {
+            const prevEquipped = { ...(prev.artifacts[detailChibiId] || {}) };
+            const prevInv = [...prev.artifactInventory];
+            for (const { slotId } of toRemove) {
+              if (prevEquipped[slotId]) { prevInv.push(prevEquipped[slotId]); delete prevEquipped[slotId]; }
+            }
+            return { ...prev, artifacts: { ...prev.artifacts, [detailChibiId]: prevEquipped }, artifactInventory: prevInv };
+          });
+          setArtifactSetDetail(null);
+        };
+
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setArtifactSetDetail(null)}>
             <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -12785,7 +12807,7 @@ export default function ShadowColosseum() {
                 {s.passive2 && <div className="text-normal-responsive text-purple-300 mt-1 italic">Passif actif en combat</div>}
               </div>
               {/* 4-piece bonus */}
-              <div className={`p-3 rounded-xl border ${s.border} ${s.bg}`}>
+              <div className={`p-3 rounded-xl border ${s.border} ${s.bg} mb-2`}>
                 <div className="flex items-center gap-2 mb-1">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-normal-responsive font-black ${s.bg} ${s.color}`}>4</div>
                   <span className={`text-xs font-bold ${s.color}`}>Bonus 4 Pieces</span>
@@ -12793,6 +12815,41 @@ export default function ShadowColosseum() {
                 <div className="text-sm text-white font-bold">{s.bonus4Desc}</div>
                 {s.passive4 && <div className="text-normal-responsive text-purple-300 mt-1 italic">Passif actif en combat</div>}
               </div>
+              {/* 8-piece bonus (if exists) */}
+              {s.bonus8Desc && (
+                <div className={`p-3 rounded-xl border ${s.border} ${s.bg} mb-2`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-normal-responsive font-black ${s.bg} ${s.color}`}>8</div>
+                    <span className={`text-xs font-bold ${s.color}`}>Bonus 8 Pieces</span>
+                  </div>
+                  <div className="text-sm text-white font-bold">{s.bonus8Desc}</div>
+                  {s.passive8 && <div className="text-normal-responsive text-purple-300 mt-1 italic">Passif actif en combat</div>}
+                </div>
+              )}
+              {/* Unequip set pieces buttons */}
+              {detailChibiId && setPieceCount >= 2 && (
+                <div className="mt-3 pt-3 border-t border-gray-700/30">
+                  <div className="text-small-responsive text-gray-500 mb-2">{setPieceCount} piece{setPieceCount > 1 ? 's' : ''} equipee{setPieceCount > 1 ? 's' : ''}</div>
+                  <div className="flex gap-2 flex-wrap">
+                    {setPieceCount >= 8 && (
+                      <button onClick={() => unequipSetPieces(4)}
+                        className="flex-1 py-1.5 px-3 rounded-lg bg-orange-600/20 text-orange-300 text-small-responsive font-bold hover:bg-orange-600/40 transition-colors border border-orange-500/20">
+                        Retirer 4p (garder 4p)
+                      </button>
+                    )}
+                    {setPieceCount >= 4 && setPieceCount < 8 && (
+                      <button onClick={() => unequipSetPieces(2)}
+                        className="flex-1 py-1.5 px-3 rounded-lg bg-orange-600/20 text-orange-300 text-small-responsive font-bold hover:bg-orange-600/40 transition-colors border border-orange-500/20">
+                        Retirer 2p (garder 2p)
+                      </button>
+                    )}
+                    <button onClick={() => unequipSetPieces(setPieceCount)}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-red-600/20 text-red-300 text-small-responsive font-bold hover:bg-red-600/40 transition-colors border border-red-500/20">
+                      Retirer tout le set ({setPieceCount}p)
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </div>
         );
