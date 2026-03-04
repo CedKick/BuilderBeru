@@ -1509,7 +1509,7 @@ export default function PvpLive() {
     if (!skill || skill.cd > 0) return;
     if (skill.manaCost && unit.mana < skill.manaCost) return;
 
-    if (skill.healSelf) {
+    if (skill.healSelf || skill.healTeam) {
       if (mode === 'online') onlineBattleAction(skillIdx, entry.idx, 'self');
       executeAction(battle, unit, skill, unit, 'player');
     } else if (skill.buffAtk || skill.buffDef || skill.buffSpd) {
@@ -1570,9 +1570,16 @@ export default function PvpLive() {
       }
     }
 
-    // Apply heal
+    // Apply heal (self)
     if (res.healed > 0) {
       attacker.hp = Math.min(attacker.maxHp, attacker.hp + res.healed);
+    }
+    // Apply healTeam (all alive allies)
+    if (res.healTeam > 0) {
+      const allies = side === 'player' ? playerTeam : beruTeam;
+      allies.filter(a => a.alive).forEach(a => {
+        a.hp = Math.min(a.maxHp, a.hp + res.healTeam);
+      });
     }
 
     // Push damage/heal popups for the floating numbers
@@ -1582,6 +1589,12 @@ export default function PvpLive() {
     }
     if (res.healed > 0) {
       setDamagePopups(prev => [...prev, { id: now + '_heal', fighterId: attacker.id, value: res.healed, isCrit: false, type: 'heal', timestamp: now }]);
+    }
+    if (res.healTeam > 0) {
+      const allies = side === 'player' ? playerTeam : beruTeam;
+      allies.filter(a => a.alive).forEach(a => {
+        setDamagePopups(prev => [...prev, { id: now + '_ht_' + a.id, fighterId: a.id, value: res.healTeam, isCrit: false, type: 'heal', timestamp: now }]);
+      });
     }
 
     // Apply buff
@@ -1840,11 +1853,15 @@ export default function PvpLive() {
 
   const estimateDamage = useCallback((attacker, skill, defender) => {
     if (!attacker || !skill || !defender) return null;
-    if (skill.power <= 0 && !skill.healSelf && !skill.healAlly) return null;
+    if (skill.power <= 0 && !skill.healSelf && !skill.healAlly && !skill.healTeam) return null;
 
     if (skill.healSelf > 0) {
       const healAmt = Math.floor(attacker.maxHp * skill.healSelf / 100);
       return { type: 'heal', value: healAmt };
+    }
+    if (skill.healTeam > 0) {
+      const healAmt = Math.floor(attacker.maxHp * skill.healTeam / 100);
+      return { type: 'heal', value: healAmt, isTeam: true };
     }
     if (skill.healAlly > 0) {
       return { type: 'heal', value: Math.floor(attacker.maxHp * (skill.healAlly || skill.power || 10) / 100) };
@@ -2091,7 +2108,8 @@ export default function PvpLive() {
                 <span className={sk.cd > 0 ? 'text-gray-600' : 'text-gray-300'}>{sk.name} {sk.isUltimate ? '★' : ''}</span>
                 <div className="flex gap-1.5 text-gray-500">
                   {sk.power > 0 && <span className="text-red-400">P:{sk.power}</span>}
-                  {sk.healSelf > 0 && <span className="text-green-400">+{sk.healSelf}%HP</span>}
+                  {sk.healSelf > 0 && <span className="text-green-400">+{sk.healSelf}%HP <span className="text-[7px] text-gray-500">(Self)</span></span>}
+                  {sk.healTeam > 0 && <span className="text-emerald-400">+{sk.healTeam}%HP <span className="text-[7px] text-cyan-400">(Team)</span></span>}
                   {sk.healAlly > 0 && <span className="text-green-400">Heal</span>}
                   {sk.buffAtk > 0 && <span className="text-orange-400">ATK+{sk.buffAtk}%</span>}
                   {sk.debuffDef > 0 && <span className="text-purple-400">-{sk.debuffDef}%DEF</span>}
@@ -3112,7 +3130,8 @@ export default function PvpLive() {
                     <p className="text-xs font-medium">{sk.name}</p>
                     <div className="flex gap-2 text-[9px] text-gray-400 mt-0.5">
                       {sk.power > 0 && <span className="text-red-400">P:{sk.power}</span>}
-                      {sk.healSelf > 0 && <span className="text-green-400">+{sk.healSelf}%HP</span>}
+                      {sk.healSelf > 0 && <span className="text-green-400">+{sk.healSelf}%HP <span className="text-[7px] text-gray-500">(Self)</span></span>}
+                  {sk.healTeam > 0 && <span className="text-emerald-400">+{sk.healTeam}%HP <span className="text-[7px] text-cyan-400">(Team)</span></span>}
                       {sk.buffAtk > 0 && <span className="text-orange-400">ATK+{sk.buffAtk}%</span>}
                       {sk.buffDef > 0 && <span className="text-blue-400">DEF+{sk.buffDef}%</span>}
                       {sk.debuffDef > 0 && <span className="text-purple-400">-{sk.debuffDef}%DEF</span>}
@@ -3123,7 +3142,8 @@ export default function PvpLive() {
                     {(() => {
                       const defaultTarget = beruTeam.find(f => f.alive);
                       const est = defaultTarget && sk.power > 0 ? estimateDamage(activeUnit, sk, defaultTarget) :
-                                  sk.healSelf > 0 ? { type: 'heal', value: Math.floor(activeUnit.maxHp * sk.healSelf / 100) } : null;
+                                  sk.healSelf > 0 ? { type: 'heal', value: Math.floor(activeUnit.maxHp * sk.healSelf / 100) } :
+                                  sk.healTeam > 0 ? { type: 'heal', value: Math.floor(activeUnit.maxHp * sk.healTeam / 100), isTeam: true } : null;
                       if (!est) return null;
                       return (
                         <p className={`text-[9px] mt-0.5 font-bold ${est.type === 'heal' ? 'text-green-400' : 'text-red-400'}`}>

@@ -1543,6 +1543,26 @@ export default function RaidMode() {
         if (shLog) { shLog.totalHealing = (shLog.totalHealing || 0) + healAmt; shLog.healReceived = (shLog.healReceived || 0) + healAmt; }
       }
 
+      // healTeam: heal all alive allies
+      if (result.healTeam > 0) {
+        state.chibis.filter(c => c.alive).forEach(c => {
+          let healAmt = result.healTeam;
+          const hcP = c.passives?.find(p => p.type === 'healCrit');
+          if (hcP) {
+            healAmt = Math.floor(healAmt * (1 + (hcP.healBoostPct || 0.30)));
+            if (Math.random() < (hcP.critChance || 0.10)) healAmt *= 2;
+          }
+          c.hp = Math.min(c.maxHp, c.hp + healAmt);
+          if (healReceivedWindowTracker.current[c.id] !== undefined) healReceivedWindowTracker.current[c.id] += healAmt;
+          const hLog = detailedLogsRef.current[c.id];
+          if (hLog) { hLog.healReceived = (hLog.healReceived || 0) + healAmt; }
+        });
+        if (healWindowTracker.current[chibi.id] !== undefined) healWindowTracker.current[chibi.id] += result.healTeam * state.chibis.filter(c => c.alive).length;
+        const htLog = detailedLogsRef.current[chibi.id];
+        if (htLog) { htLog.totalHealing = (htLog.totalHealing || 0) + result.healTeam * state.chibis.filter(c => c.alive).length; }
+        logEntries.push({ text: `${chibi.name} soigne l'equipe +${result.healTeam} PV`, time: elapsed, type: 'heal' });
+      }
+
       // Apply buff/debuff
       if (result.buff) chibi.buffs.push({ ...result.buff });
       if (result.debuff) state.boss.buffs.push({ ...result.debuff });

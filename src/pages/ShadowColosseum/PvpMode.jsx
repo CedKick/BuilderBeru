@@ -141,7 +141,7 @@ function aiPickSkillPvp(entity, strategy) {
 
   if (playstyle === 'aggressive') {
     // Self-heal only if critical (< 15%)
-    if (hpPct < 0.15) { const heal = avail.find(s => s.healSelf); if (heal) return heal; }
+    if (hpPct < 0.15) { const heal = avail.find(s => s.healSelf || s.healTeam); if (heal) return heal; }
     // Buff rarely (20%)
     if (entity.buffs.length === 0) { const buff = avail.find(s => s.buffAtk || s.buffDef); if (buff && Math.random() < 0.2) return buff; }
     // Strongest nuke (90%)
@@ -152,7 +152,7 @@ function aiPickSkillPvp(entity, strategy) {
 
   if (playstyle === 'defensive') {
     // Self-heal generously (< 60%)
-    if (hpPct < 0.60) { const heal = avail.find(s => s.healSelf); if (heal) return heal; }
+    if (hpPct < 0.60) { const heal = avail.find(s => s.healSelf || s.healTeam); if (heal) return heal; }
     // Buff eagerly (80%)
     if (entity.buffs.length === 0) { const buff = avail.find(s => s.buffAtk || s.buffDef); if (buff && Math.random() < 0.8) return buff; }
     // Moderate nuke (50%)
@@ -1342,6 +1342,23 @@ export default function PvpMode() {
           if (!log) return prev;
           return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + healAmt, healReceived: (log.healReceived || 0) + healAmt } };
         });
+      }
+
+      // healTeam: heal all alive allies (support team heal)
+      if (result.healTeam > 0) {
+        allies.filter(a => a.alive).forEach(a => {
+          let healAmt = result.healTeam;
+          const hcP = a.passives?.find(p => p.type === 'healCrit');
+          if (hcP) {
+            healAmt = Math.floor(healAmt * (1 + (hcP.healBoostPct || 0.30)));
+            if (Math.random() < (hcP.critChance || 0.10)) healAmt *= 2;
+          }
+          a.hp = Math.min(a.maxHp, a.hp + healAmt);
+          addVfx('heal', { targetId: a.id });
+          if (healReceivedWindowTracker.current[a.id] !== undefined) healReceivedWindowTracker.current[a.id] += healAmt;
+        });
+        if (healWindowTracker.current[unit.id] !== undefined) healWindowTracker.current[unit.id] += result.healTeam * allies.filter(a => a.alive).length;
+        logEntries.push({ text: `${unit.name} soigne l'equipe +${result.healTeam} PV`, time: elapsed, type: 'heal' });
       }
 
       // Strategy-aware buff targeting: prioritize buffPriority allies

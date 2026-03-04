@@ -892,6 +892,25 @@ export default function TrainingDummy() {
         if (hsLog) { hsLog.totalHealing = (hsLog.totalHealing || 0) + healAmt; hsLog.healReceived = (hsLog.healReceived || 0) + healAmt; }
         logEntries.push({ text: `${fighter.name} se soigne +${healAmt} PV`, time: elapsed, type: 'heal' });
       }
+      // healTeam: heal all alive allies
+      if (result.healTeam > 0) {
+        aliveFighters.forEach(a => {
+          let healAmt = result.healTeam;
+          const hcP = a.passives?.find(p => p.type === 'healCrit');
+          if (hcP) {
+            healAmt = Math.floor(healAmt * (1 + (hcP.healBoostPct || 0.30)));
+            if (Math.random() < (hcP.critChance || 0.10)) healAmt *= 2;
+          }
+          a.hp = Math.min(a.maxHp, a.hp + healAmt);
+          if (healReceivedWindowTracker.current[a.id] !== undefined) healReceivedWindowTracker.current[a.id] += healAmt;
+          const hLog = detailedLogsRef.current[a.id];
+          if (hLog) { hLog.healReceived = (hLog.healReceived || 0) + healAmt; }
+        });
+        if (healWindowTracker.current[fighter.id] !== undefined) healWindowTracker.current[fighter.id] += result.healTeam * aliveFighters.length;
+        const htLog = detailedLogsRef.current[fighter.id];
+        if (htLog) { htLog.totalHealing = (htLog.totalHealing || 0) + result.healTeam * aliveFighters.length; }
+        logEntries.push({ text: `${fighter.name} soigne l'equipe +${result.healTeam} PV`, time: elapsed, type: 'heal' });
+      }
 
       // Megumin manaRestore: restore X% of max mana after attack
       if (skill.manaRestore && fighter.maxMana > 0) {
@@ -1489,6 +1508,11 @@ export default function TrainingDummy() {
     if (result.healed > 0) {
       fighter.hp = Math.min(fighter.maxHp, fighter.hp + result.healed);
       log.push({ text: `💚 ${fighter.name} se soigne +${fmt(result.healed)} PV (${fmt(fighter.hp)}/${fmt(fighter.maxHp)})`, type: 'heal', id: Date.now() + 0.515 });
+    }
+    // healTeam: logged only (detailed view is single-target sim)
+    if (result.healTeam > 0) {
+      fighter.hp = Math.min(fighter.maxHp, fighter.hp + result.healTeam);
+      log.push({ text: `💚 ${fighter.name} soigne l'equipe +${fmt(result.healTeam)} PV/allie`, type: 'heal', id: Date.now() + 0.516 });
     }
 
     // Megumin manaRestore: restore X% of max mana after attack

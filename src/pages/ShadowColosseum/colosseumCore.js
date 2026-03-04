@@ -73,7 +73,7 @@ export const getSkillManaCost = (skill, maxMana = 0) => {
   if (skill.manaCost !== undefined) return skill.manaCost;
   if (skill.cdMax === 0) return 0; // Basic attacks always free
   // Heal skills: 10% of max mana (min 30)
-  const healValue = (skill.healSelf || 0) + (skill.healAlly || 0);
+  const healValue = (skill.healSelf || 0) + (skill.healAlly || 0) + (skill.healTeam || 0);
   if (healValue > 0) return Math.max(30, Math.floor(maxMana * 0.10));
   // Pure buff skills (no damage): 5% of max mana (min 15)
   const buffValue = (skill.buffAtk || 0) + (skill.buffDef || 0) + (skill.buffSpd || 0)
@@ -422,6 +422,7 @@ export const applySkillUpgrades = (skill, upgradeLevel) => {
     if (s.buffAtk) s.buffAtk = Math.floor(s.buffAtk * 1.25);
     if (s.buffDef) s.buffDef = Math.floor(s.buffDef * 1.25);
     if (s.healSelf) s.healSelf = Math.floor(s.healSelf * 1.25);
+    if (s.healTeam) s.healTeam = Math.floor(s.healTeam * 1.25);
     if (s.debuffDef) s.debuffDef = Math.floor(s.debuffDef * 1.2);
   }
   if (upgradeLevel >= 2) {
@@ -432,6 +433,7 @@ export const applySkillUpgrades = (skill, upgradeLevel) => {
     if (s.buffAtk) s.buffAtk = Math.floor(s.buffAtk * 1.3);
     if (s.buffDef) s.buffDef = Math.floor(s.buffDef * 1.3);
     if (s.healSelf) s.healSelf = Math.floor(s.healSelf * 1.3);
+    if (s.healTeam) s.healTeam = Math.floor(s.healTeam * 1.3);
     if (s.debuffDef) s.debuffDef = Math.floor(s.debuffDef * 1.3);
   }
   return s;
@@ -440,7 +442,7 @@ export const applySkillUpgrades = (skill, upgradeLevel) => {
 export const getUpgradeDesc = (skill, tierIdx) => {
   if (tierIdx === 1) return 'Cooldown -1';
   if (skill.power > 0) return tierIdx === 0 ? 'DMG +30%' : 'DMG +25%';
-  if (skill.healSelf) return tierIdx === 0 ? 'Soin +25%' : 'Soin +30%';
+  if (skill.healSelf || skill.healTeam) return tierIdx === 0 ? 'Soin +25%' : 'Soin +30%';
   if (skill.buffAtk || skill.buffDef) return tierIdx === 0 ? 'Buff +25%' : 'Buff +30%';
   if (skill.debuffDef) return tierIdx === 0 ? 'Debuff +20%' : 'Debuff +30%';
   return tierIdx === 0 ? 'Effet +25%' : 'Effet +30%';
@@ -566,6 +568,8 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
   // Mages/Supports: Intel boosts heals (+1% per 10 Intel)
   const intelHealMult = attacker.isMage && attacker.maxMana ? 1 + attacker.maxMana / 1000 : 1;
   if (skill.healSelf) res.healed = Math.floor(attacker.maxHp * skill.healSelf / 100 * healBonusMult * intelHealMult);
+  // healTeam: % maxHP of caster, applied to all living allies (by the combat mode)
+  if (skill.healTeam) res.healTeam = Math.floor(attacker.maxHp * skill.healTeam / 100 * healBonusMult * intelHealMult);
   if (skill.buffAtk) res.buff = { stat: 'atk', value: skill.buffAtk / 100, turns: skill.buffDur || 3 };
   if (skill.buffDef) res.buff = { stat: 'def', value: skill.buffDef / 100, turns: skill.buffDur || 3 };
   if (skill.debuffDef) res.debuff = { stat: 'def', value: -(skill.debuffDef / 100), turns: skill.debuffDur || 2 };
@@ -579,7 +583,8 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
   if (res.isCrit) parts.push('CRITIQUE !');
   parts.push(`${attacker.name} utilise ${skill.name} !`);
   if (res.damage > 0) parts.push(`-${fmtNum(res.damage)} PV`);
-  if (res.healed > 0) parts.push(`+${fmtNum(res.healed)} soins`);
+  if (res.healed > 0) parts.push(`+${fmtNum(res.healed)} soins (self)`);
+  if (res.healTeam > 0) parts.push(`+${fmtNum(res.healTeam)} soins (equipe)`);
   if (res.buff) parts.push(`${res.buff.stat.toUpperCase()} +${Math.round(res.buff.value * 100)}%`);
   if (res.debuff) parts.push(`DEF ennemi ${Math.round(res.debuff.value * 100)}%`);
   if (res.shieldTeam) parts.push(`🛡️ +${fmtNum(res.shieldTeam)} Shield equipe`);
@@ -590,7 +595,7 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
 export const aiPickSkill = (entity) => {
   const avail = entity.skills.filter(s => s.cd === 0);
   if (entity.hp < entity.maxHp * 0.35) {
-    const heal = avail.find(s => s.healSelf);
+    const heal = avail.find(s => s.healSelf || s.healTeam);
     if (heal) return heal;
   }
   if (entity.buffs.length === 0) {
@@ -609,7 +614,7 @@ export const aiPickSkillSupport = (entity, allies) => {
   if (aliveAllies.length > 0) {
     const lowest = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
     if (lowest.hp / lowest.maxHp < 0.75) {
-      const healSkill = avail.find(s => s.healSelf || s.healAlly);
+      const healSkill = avail.find(s => s.healSelf || s.healAlly || s.healTeam);
       if (healSkill) return { skill: healSkill, healTarget: lowest };
     }
   }
@@ -678,7 +683,7 @@ export const computeDamagePreview = (attacker, skill, defender, tb = {}) => {
 
 // ─── ARC II Smart Enemy AI ───────────────────────────────────
 export const inferEnemyRole = (enemy) => {
-  const hasHeal = enemy.skills.some(s => s.healAlly || s.healSelf);
+  const hasHeal = enemy.skills.some(s => s.healAlly || s.healSelf || s.healTeam);
   const hasBuff = enemy.skills.some(s => s.buffAllyAtk || s.buffAllyDef);
   const hasDebuff = enemy.skills.some(s => s.debuffAtk || s.debuffSpd || s.antiHeal || s.poison);
   if (hasHeal || hasBuff) return 'support';

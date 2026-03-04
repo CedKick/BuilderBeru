@@ -1737,7 +1737,7 @@ export default function ShadowColosseum() {
           : (fighter.mana || 0) >= (skill.manaCost || 0);
       if (!skill || skill.cd > 0 || !manaOk) return prev;
 
-      const isPureSupport = skill.power === 0 && (skill.buffAtk || skill.buffDef || skill.healSelf || skill.grantExtraTurn);
+      const isPureSupport = skill.power === 0 && (skill.buffAtk || skill.buffDef || skill.healSelf || skill.healTeam || skill.grantExtraTurn);
       b.pendingSkill = skillIdx;
 
       if (isPureSupport) {
@@ -1824,15 +1824,24 @@ export default function ShadowColosseum() {
         if (skill.buffAtk) ally.buffs.push({ stat: 'atk', value: skill.buffAtk / 100, dur: skill.buffDur || 2 });
         if (skill.buffDef) ally.buffs.push({ stat: 'def', value: skill.buffDef / 100, dur: skill.buffDur || 2 });
         const isAntiHealed = ally.buffs.some(bf => bf.type === 'antiHeal');
-        if (skill.healSelf && !isAntiHealed) {
-          ally.hp = Math.min(ally.maxHp, ally.hp + Math.floor(ally.maxHp * skill.healSelf / 100));
-        } else if (skill.healSelf && isAntiHealed) {
+        const healPct = skill.healSelf || skill.healTeam || 0;
+        if (healPct && !isAntiHealed) {
+          if (skill.healTeam) {
+            // Team heal: heal ALL alive allies
+            b.team.filter(a => a.alive).forEach(a => {
+              const ahAH = a.buffs.some(bf => bf.type === 'antiHeal');
+              if (!ahAH) a.hp = Math.min(a.maxHp, a.hp + Math.floor(a.maxHp * healPct / 100));
+            });
+          } else {
+            ally.hp = Math.min(ally.maxHp, ally.hp + Math.floor(ally.maxHp * healPct / 100));
+          }
+        } else if (healPct && isAntiHealed) {
           b.log.unshift({ msg: `🚫 Soin bloque sur ${ally.name} ! (Anti-Heal)`, type: 'player' });
         }
         if (skill.cdMax > 0) skill.cd = skill.cdMax;
         fighter.mana = Math.min(fighter.maxMana || 100, (fighter.mana || 0) + (fighter.manaRegen || 5));
 
-        const effectText = skill.healSelf ? `Soin ${ally.name}` : `Buff ${ally.name}`;
+        const effectText = (skill.healSelf || skill.healTeam) ? (skill.healTeam ? `Soin equipe` : `Soin ${ally.name}`) : `Buff ${ally.name}`;
         b.log.unshift({ msg: `${fighter.name} → ${skill.name} → ${effectText}`, type: 'player' });
 
         // ─── Grant Extra Turn + Free Cast (Mayuri's Convergence) ───
@@ -2224,7 +2233,7 @@ export default function ShadowColosseum() {
 
         // ═══ SELF TARGET (self-buff/self-heal) ═══
         if (aiResult.targetType === 'self') {
-          if (skill.healSelf) enemy.hp = Math.min(enemy.maxHp, enemy.hp + Math.floor(enemy.maxHp * skill.healSelf / 100));
+          if (skill.healSelf || skill.healTeam) enemy.hp = Math.min(enemy.maxHp, enemy.hp + Math.floor(enemy.maxHp * (skill.healSelf || skill.healTeam) / 100));
           if (skill.buffAtk) enemy.buffs.push({ stat: 'atk', value: skill.buffAtk / 100, dur: skill.buffDur || 2 });
           if (skill.buffDef) enemy.buffs.push({ stat: 'def', value: skill.buffDef / 100, dur: skill.buffDur || 2 });
           if (skill.buffSpd) enemy.buffs.push({ stat: 'spd', value: skill.buffSpd / 100, dur: skill.buffDur || 2 });
@@ -6446,7 +6455,8 @@ export default function ShadowColosseum() {
                                 if (sk.power > 0) tags.push({ t: `${sk.power}%`, c: 'text-red-300' });
                                 if (sk.buffAtk) tags.push({ t: `ATK+${sk.buffAtk}`, c: 'text-green-300' });
                                 if (sk.buffDef) tags.push({ t: `DEF+${sk.buffDef}`, c: 'text-blue-300' });
-                                if (sk.healSelf) tags.push({ t: `Heal`, c: 'text-emerald-300' });
+                                if (sk.healSelf) tags.push({ t: `Heal (Self)`, c: 'text-emerald-300' });
+                                if (sk.healTeam) tags.push({ t: `Heal (Team)`, c: 'text-cyan-300' });
                                 if (sk.debuffDef) tags.push({ t: `DEF-${sk.debuffDef}`, c: 'text-orange-300' });
                                 return (
                                   <span key={si} className="px-1 py-0.5 rounded bg-gray-700/50 text-tiny-responsive text-gray-400">
@@ -6946,7 +6956,8 @@ export default function ShadowColosseum() {
                     if (sk.buffAtk) parts.push(`ATK +${sk.buffAtk}%`);
                     if (sk.buffDef) parts.push(`DEF +${sk.buffDef}%`);
                     if (sk.buffSpd) parts.push(`SPD +${sk.buffSpd}%`);
-                    if (sk.healSelf) parts.push(`Soin ${sk.healSelf}%`);
+                    if (sk.healSelf) parts.push(`Soin ${sk.healSelf}% (Self)`);
+                    if (sk.healTeam) parts.push(`Soin ${sk.healTeam}% (Team)`);
                     if (sk.debuffDef) parts.push(`DEF -${sk.debuffDef}%`);
                     if (sk.selfDamage) parts.push(`Cout ${sk.selfDamage}% PV`);
                     if (sk.selfStunTurns) parts.push(`Stun ${sk.selfStunTurns}T`);
@@ -7037,7 +7048,8 @@ export default function ShadowColosseum() {
                     if (sk.buffSpd) parts.push(`SPD +${sk.buffSpd}%`);
                     if (sk.buffAllyAtk) parts.push(`Allie ATK +${sk.buffAllyAtk}%`);
                     if (sk.buffAllyDef) parts.push(`Allie DEF +${sk.buffAllyDef}%`);
-                    if (sk.healSelf) parts.push(`Soin ${sk.healSelf}%`);
+                    if (sk.healSelf) parts.push(`Soin ${sk.healSelf}% (Self)`);
+                    if (sk.healTeam) parts.push(`Soin ${sk.healTeam}% (Team)`);
                     if (sk.healAlly) parts.push(`Soin allie ${sk.healAlly}%`);
                     if (sk.debuffDef) parts.push(`DEF -${sk.debuffDef}%`);
                     if (sk.debuffAtk) parts.push(`ATK -${sk.debuffAtk}%`);
@@ -7146,7 +7158,7 @@ export default function ShadowColosseum() {
                       : sk.manaThreshold ? !((activeChar.mana || 0) >= (activeChar.maxMana || 1) * sk.manaThreshold || (activeChar.mana || 0) >= (sk.manaCost || 0))
                       : sk.manaCost > 0 && activeChar.mana < sk.manaCost;
                     const blocked = onCd || noMana;
-                    const isPureSupport = sk.power === 0 && (sk.buffAtk || sk.buffDef || sk.healSelf);
+                    const isPureSupport = sk.power === 0 && (sk.buffAtk || sk.buffDef || sk.healSelf || sk.healTeam);
                     const isUlti = !!sk.isUltimate;
                     return (
                       <button key={i}
@@ -7165,7 +7177,8 @@ export default function ShadowColosseum() {
                           {sk.manaScaling ? `DMG: ${getManaScaledPower(activeChar.mana || 0, sk)}%` : sk.power > 0 ? `DMG: ${sk.power}%` : ''}
                           {sk.buffAtk ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}ATK +${sk.buffAtk}%` : ''}
                           {sk.buffDef ? `${sk.power > 0 || sk.buffAtk || sk.manaScaling ? ' ' : ''}DEF +${sk.buffDef}%` : ''}
-                          {sk.healSelf ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}Soin ${sk.healSelf}%` : ''}
+                          {sk.healSelf ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}Soin ${sk.healSelf}% (Self)` : ''}
+                          {sk.healTeam ? `Soin ${sk.healTeam}% (Team)` : ''}
                           {sk.debuffDef ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}DEF -${sk.debuffDef}%` : ''}
                         </div>
                         {isPureSupport && <div className="text-[7px] mt-0.5 text-green-400/80">{'\uD83D\uDC9A'} Alli{'\u00e9'}</div>}
@@ -8458,7 +8471,8 @@ export default function ShadowColosseum() {
                               {sk.power > 0 ? `DMG:${sk.power}%` : ''}
                               {sk.buffAtk ? `ATK+${sk.buffAtk}%` : ''}
                               {sk.buffDef ? `DEF+${sk.buffDef}%` : ''}
-                              {sk.healSelf ? `Soin ${sk.healSelf}%` : ''}
+                              {sk.healSelf ? `Soin ${sk.healSelf}% (Self)` : ''}
+                              {sk.healTeam ? `Soin ${sk.healTeam}% (Team)` : ''}
                             </div>
                             <div className="text-small-responsive text-amber-400 mt-0.5">Remplacer</div>
                           </button>
@@ -11847,7 +11861,8 @@ export default function ShadowColosseum() {
           if (sk.power > 0) tags.push({ label: `${sk.power}% DMG`, color: 'text-red-400' });
           if (sk.buffAtk) tags.push({ label: `ATK+${sk.buffAtk}%`, color: 'text-green-400' });
           if (sk.buffDef) tags.push({ label: `DEF+${sk.buffDef}%`, color: 'text-blue-400' });
-          if (sk.healSelf) tags.push({ label: `Heal ${sk.healSelf}%`, color: 'text-emerald-400' });
+          if (sk.healSelf) tags.push({ label: `Heal ${sk.healSelf}% (Self)`, color: 'text-emerald-400' });
+          if (sk.healTeam) tags.push({ label: `Heal ${sk.healTeam}% (Team)`, color: 'text-cyan-400' });
           if (sk.debuffDef) tags.push({ label: `DEF-${sk.debuffDef}%`, color: 'text-orange-400' });
           if (sk.cdMax > 0) tags.push({ label: `CD:${sk.cdMax}`, color: 'text-gray-400' });
           return tags;
