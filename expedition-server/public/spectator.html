@@ -995,8 +995,35 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 const ELEMENT_COLORS = { fire: '#f97316', water: '#3b82f6', shadow: '#a855f7', light: '#facc15', dark: '#6366f1' };
+const ELEMENT_COLORS_DARK = { fire: '#c2410c', water: '#1d4ed8', shadow: '#7c3aed', light: '#ca8a04', dark: '#4338ca' };
+const ELEMENT_COLORS_LIGHT = { fire: '#fdba74', water: '#93c5fd', shadow: '#c4b5fd', light: '#fef08a', dark: '#a5b4fc' };
 const ROLE_SHAPES = { frontline: 'square', frontline_dps: 'triangle', backline_dps: 'diamond', backline_heal: 'circle' };
 const ROLE_ICONS = { frontline: '\u{1F6E1}', frontline_dps: '\u2694', backline_dps: '\u2728', backline_heal: '\u2764' };
+
+// ═══════════════════════════════════════════════════════════
+// SCREEN SHAKE SYSTEM
+// ═══════════════════════════════════════════════════════════
+let screenShake = { x: 0, y: 0, intensity: 0, duration: 0, timer: 0 };
+function triggerScreenShake(intensity, duration) {
+  if (intensity > screenShake.intensity) {
+    screenShake = { x: 0, y: 0, intensity, duration, timer: duration };
+  }
+}
+function updateScreenShake(dt) {
+  if (screenShake.timer <= 0) { screenShake.x = 0; screenShake.y = 0; return; }
+  screenShake.timer -= dt;
+  const decay = screenShake.timer / screenShake.duration;
+  const i = screenShake.intensity * decay;
+  screenShake.x = (Math.random() - 0.5) * 2 * i;
+  screenShake.y = (Math.random() - 0.5) * 2 * i;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DPS TRACKING FOR INTERACTIONS
+// ═══════════════════════════════════════════════════════════
+let dpsRankTracker = { top1: null, top2: null, lastSwapTime: 0 };
+let lastTrashTalkTime = 0;
+let lastReactionTime = 0;
 
 // ═══════════════════════════════════════════════════════════
 // DIALOGUE POOLS (Phase 5)
@@ -1200,6 +1227,356 @@ const CAMPFIRE_DIALOGUES = [
   ]},
 ];
 
+// ═══════════════════════════════════════════════════════════
+// TRASH TALK & INTERACTION SYSTEM
+// ═══════════════════════════════════════════════════════════
+
+const TRASH_TALK_DPS = [
+  "Vous faites quoi les autres? C'est moi qui fais tout ici!",
+  "Encore top DPS... je m'ennuie.",
+  "{other} tu veux que je te prete de l'ATK?",
+  "A ce stade je suis pas DPS, je suis THE DPS.",
+  "Y'a un concours de DPS? Ah pardon, j'ai deja gagne.",
+  "{other}, t'inquiete je carry pour deux.",
+  "Mon DPS chart ressemble a une montagne. Le votre a une plaine.",
+  "C'est ca la puissance d'un vrai chasseur.",
+];
+
+const TRASH_TALK_HEALER = [
+  "Sans moi vous seriez tous morts depuis le boss 1.",
+  "Je heal plus que vous faites de degats combines...",
+  "C'est epuisant d'etre le seul bon healer ici.",
+  "Remerciez-moi. Maintenant. Serieusement.",
+  "{dps} fait peut-etre le DPS, mais c'est moi qui le maintiens en vie.",
+  "Mon mana, MA decision. Comportez-vous.",
+];
+
+const TRASH_TALK_LOW_DPS = [
+  "{topDps} te met la misere, {lowDps}!",
+  "{lowDps} ton DPS c'est celui d'un minion non?",
+  "Quelqu'un verifie si {lowDps} est AFK?",
+];
+
+const LOW_DPS_DEFENSE = [
+  "C'est de la strategie! Je garde mes cooldowns!",
+  "Quality over quantity, MON build est optimal.",
+  "Je fais les degats importants, pas les petits chiffres.",
+  "Au moins MOI je meurs pas toutes les 30 secondes.",
+];
+
+const DEATH_REACTIONS = [
+  "Nooon {dead}!",
+  "On l'a perdu! {dead} est tombe!",
+  "RIP {dead}... F dans le chat.",
+  "{dead}! Tiens bon, on va te rez!",
+  "Et merde, {dead} est down...",
+  "Qui heal {dead}?! ...ah. Trop tard.",
+];
+
+const CLUTCH_HEAL_THANKS = [
+  "MERCI {healer}! J'etais a un poil!",
+  "{healer} t'es un DIEU!",
+  "*tremble* Merci {healer}, j'ai vu ma vie defiler...",
+  "CLUTCH! {healer} best healer ever!",
+];
+
+const BOSS_KILL_CELEBRATIONS = [
+  "GG! On l'a eu!",
+  "FACILE! ...bon ok c'etait chaud.",
+  "QUI EST LE BOSS MAINTENANT?!",
+  "Un de moins! On enchaine!",
+  "VICTOIRE! *danse de la victoire*",
+  "Allez le prochain! Je suis chaud!",
+];
+
+const RIVALRY_SWAP = [
+  "He {old}, c'est MOI le top DPS maintenant!",
+  "Pousse-toi {old}, le vrai DPS c'est la!",
+  "{old} tu t'es endormi? Je t'ai depasse!",
+];
+
+const RIVALRY_RESPONSE = [
+  "Profite bien {new}, ca va pas durer.",
+  "Mouais... attends le prochain boss.",
+  "*regarde son DPS* Ok je vais devoir tryhard.",
+];
+
+// Boss trash talk — bosses address players by username!
+const BOSS_TRASH_TALK = {
+  generic: [
+    "Vous etes venus mourir? Comme c'est aimable.",
+    "{player}... ton courage est admirable. Mais inutile.",
+    "Vous croyez vraiment pouvoir me vaincre? Pauvres mortels.",
+    "Ha! {player} me chatouille avec ses attaques!",
+    "Continuez a me frapper, ca m'amuse.",
+  ],
+  taunt_tank: [
+    "{tank}... ton bouclier ne te sauvera pas.",
+    "C'est toi le tank, {tank}? Comme c'est... mignon.",
+    "{tank} encaisse bien. Voyons combien de temps ca dure.",
+  ],
+  taunt_healer: [
+    "Inutile de soigner, {healer}. Je frapperai plus fort.",
+    "{healer}, tes heals ne font que retarder l'inevitable.",
+    "Tu gueris tes allies, {healer}? JE VAIS LES BRISER PLUS VITE.",
+  ],
+  taunt_dps: [
+    "{dps}... c'est tout ce que tu as? Pitoyable.",
+    "Ah, {dps} frappe fort! ...pour un insecte.",
+    "{dps}, tes degats m'ennuient. Essaie plus fort.",
+  ],
+  low_hp: [
+    "Non... NON! Comment osez-vous?!",
+    "IMPOSSIBLE! Des mortels... me font souffrir?!",
+    "Vous allez PAYER pour ca!",
+    "RAAAAGH! JE REFUSE DE TOMBER!",
+  ],
+  enrage: [
+    "ASSEZ! VOUS ALLEZ TOUS MOURIR!",
+    "C'EST FINI POUR VOUS! *s'enflamme de rage*",
+    "MAINTENANT VOUS ALLEZ CONNAITRE LA VRAIE PUISSANCE!",
+  ],
+};
+
+// Megumin-specific Easter egg
+const MEGUMIN_JOKES = [
+  "Fun fact: Un joueur avait pas pris Megumin dans son equipe... Boss 7, a 4% de le tuer. UNE Explosion de plus, c'etait GG. La morale? TOUJOURS. PRENDRE. MEGUMIN.",
+  "EXPLOSION! ...Megumin dans le chat. Respect.",
+  "Le saviez-vous? Megumin fait plus de DPS en un cast que certains en tout le combat.",
+];
+
+// ═══════════════════════════════════════════════════════════
+// INTERACTION ENGINE
+// ═══════════════════════════════════════════════════════════
+
+function getTopDps() {
+  if (!state?.characters) return [];
+  return state.characters
+    .filter(c => c.alive && c.role !== 'backline_heal')
+    .map(c => ({ ...c, dps: combatStats[c.id]?.dmgDealt || 0 }))
+    .sort((a, b) => b.dps - a.dps);
+}
+
+function getTopHealers() {
+  if (!state?.characters) return [];
+  return state.characters
+    .filter(c => c.alive && c.role === 'backline_heal')
+    .map(c => ({ ...c, heals: combatStats[c.id]?.healsGiven || 0 }))
+    .sort((a, b) => b.heals - a.heals);
+}
+
+function showBubbleFor(charId, text, duration = 5) {
+  activeBubble = { charId, text, timer: duration, charIndex: 0 };
+}
+
+function maybeTrashTalk() {
+  const now = Date.now();
+  if (now - lastTrashTalkTime < 35000) return; // 35s cooldown
+  if (activeBubble && activeBubble.timer > 1) return;
+  if (state?.status !== 'combat') return;
+  if (Math.random() > 0.15) return; // 15% check per call
+
+  const dpsRank = getTopDps();
+  const healRank = getTopHealers();
+  if (dpsRank.length < 2) return;
+
+  lastTrashTalkTime = now;
+  const roll = Math.random();
+
+  if (roll < 0.3 && dpsRank[0].dps > 0) {
+    // Top DPS brags
+    let line = TRASH_TALK_DPS[Math.floor(Math.random() * TRASH_TALK_DPS.length)];
+    line = line.replace('{other}', dpsRank[1].name);
+    showBubbleFor(dpsRank[0].id, line);
+  } else if (roll < 0.5 && healRank.length > 0 && healRank[0].heals > 0) {
+    // Top healer brags
+    let line = TRASH_TALK_HEALER[Math.floor(Math.random() * TRASH_TALK_HEALER.length)];
+    line = line.replace('{dps}', dpsRank[0].name);
+    showBubbleFor(healRank[0].id, line);
+  } else if (roll < 0.65 && dpsRank.length >= 3) {
+    // Low DPS gets roasted
+    const lowDps = dpsRank[dpsRank.length - 1];
+    let line = TRASH_TALK_LOW_DPS[Math.floor(Math.random() * TRASH_TALK_LOW_DPS.length)];
+    line = line.replace('{topDps}', dpsRank[0].name).replace('{lowDps}', lowDps.name);
+    showBubbleFor(dpsRank[0].id, line, 4);
+    // Schedule defense response
+    setTimeout(() => {
+      if (state?.status !== 'combat') return;
+      const defense = LOW_DPS_DEFENSE[Math.floor(Math.random() * LOW_DPS_DEFENSE.length)];
+      showBubbleFor(lowDps.id, defense, 4);
+    }, 5000);
+  } else if (roll < 0.8) {
+    // Boss trash talks a player
+    maybeBossTrashTalk();
+  } else {
+    // Megumin Easter egg (rare)
+    const hasMegumin = state.characters.some(c => c.name?.toLowerCase().includes('megumin'));
+    if (!hasMegumin && Math.random() < 0.3) {
+      showTvCommentary('megumin_missing');
+    }
+  }
+}
+
+function maybeBossTrashTalk() {
+  if (!state?.boss?.alive) return;
+  const boss = state.boss;
+  const players = state.characters.filter(c => c.alive);
+  if (players.length === 0) return;
+
+  const bossHpRatio = boss.hp / boss.maxHp;
+  let pool;
+  if (bossHpRatio < 0.15) pool = BOSS_TRASH_TALK.low_hp;
+  else if (boss.enraged) pool = BOSS_TRASH_TALK.enrage;
+  else {
+    const roll = Math.random();
+    const tanks = players.filter(c => c.role === 'frontline');
+    const healers = players.filter(c => c.role === 'backline_heal');
+    const dpsList = players.filter(c => c.role !== 'frontline' && c.role !== 'backline_heal');
+    if (roll < 0.3 && tanks.length > 0) {
+      pool = BOSS_TRASH_TALK.taunt_tank;
+      const target = tanks[Math.floor(Math.random() * tanks.length)];
+      let line = pool[Math.floor(Math.random() * pool.length)].replace('{tank}', target.username || target.name);
+      activeBubble = { charId: boss.id, text: line, timer: 4, charIndex: 0, isBoss: true };
+      return;
+    } else if (roll < 0.5 && healers.length > 0) {
+      pool = BOSS_TRASH_TALK.taunt_healer;
+      const target = healers[Math.floor(Math.random() * healers.length)];
+      let line = pool[Math.floor(Math.random() * pool.length)].replace('{healer}', target.username || target.name);
+      activeBubble = { charId: boss.id, text: line, timer: 4, charIndex: 0, isBoss: true };
+      return;
+    } else if (roll < 0.7 && dpsList.length > 0) {
+      pool = BOSS_TRASH_TALK.taunt_dps;
+      const target = dpsList[Math.floor(Math.random() * dpsList.length)];
+      let line = pool[Math.floor(Math.random() * pool.length)].replace('{dps}', target.username || target.name);
+      activeBubble = { charId: boss.id, text: line, timer: 4, charIndex: 0, isBoss: true };
+      return;
+    }
+    pool = BOSS_TRASH_TALK.generic;
+  }
+
+  const target = players[Math.floor(Math.random() * players.length)];
+  let line = pool[Math.floor(Math.random() * pool.length)].replace('{player}', target.username || target.name);
+  activeBubble = { charId: boss.id, text: line, timer: 4, charIndex: 0, isBoss: true };
+}
+
+function maybeDeathReaction(deadCharId) {
+  const now = Date.now();
+  if (now - lastReactionTime < 8000) return;
+  if (!state?.characters) return;
+  const deadChar = findEntity(deadCharId);
+  if (!deadChar) return;
+
+  lastReactionTime = now;
+  const alive = state.characters.filter(c => c.alive && c.id !== deadCharId);
+  if (alive.length === 0) return;
+
+  // TV commentary for milestones
+  const totalAlive = alive.length;
+  const totalChars = state.characters.length;
+  if (totalAlive <= totalChars * 0.5 && totalAlive > totalChars * 0.5 - 2) showTvCommentary('half_dead');
+
+  // First blood
+  const totalDeaths = state.characters.filter(c => !c.alive).length;
+  if (totalDeaths === 1) showTvCommentary('first_blood');
+
+  // Pick a reactor (prefer healers)
+  const healers = alive.filter(c => c.role === 'backline_heal');
+  const reactor = healers.length > 0 && Math.random() < 0.6 ? healers[0] : alive[Math.floor(Math.random() * alive.length)];
+  const line = DEATH_REACTIONS[Math.floor(Math.random() * DEATH_REACTIONS.length)].replace('{dead}', deadChar.name);
+
+  setTimeout(() => showBubbleFor(reactor.id, line, 3.5), 1500);
+}
+
+function maybeClutchHealReaction(targetId, healerId) {
+  const target = findEntity(targetId);
+  const healer = findEntity(healerId);
+  if (!target || !healer || !target.alive) return;
+  const hpRatio = target.hp / target.maxHp;
+  if (hpRatio > 0.15) return; // only react if still dangerously low (was lower before heal)
+  if (Math.random() > 0.4) return;
+
+  showTvCommentary('healer_clutch');
+  const line = CLUTCH_HEAL_THANKS[Math.floor(Math.random() * CLUTCH_HEAL_THANKS.length)].replace('{healer}', healer.name);
+  setTimeout(() => showBubbleFor(targetId, line, 3.5), 2000);
+}
+
+function checkDpsRivalry() {
+  const dpsRank = getTopDps();
+  if (dpsRank.length < 2) return;
+  const now = Date.now();
+  const newTop1 = dpsRank[0].id;
+  const newTop2 = dpsRank[1].id;
+
+  if (dpsRankTracker.top1 && dpsRankTracker.top1 !== newTop1 && now - dpsRankTracker.lastSwapTime > 60000) {
+    // Top DPS changed!
+    dpsRankTracker.lastSwapTime = now;
+    const newChamp = findEntity(newTop1);
+    const oldChamp = findEntity(dpsRankTracker.top1);
+    if (newChamp && oldChamp) {
+      const line = RIVALRY_SWAP[Math.floor(Math.random() * RIVALRY_SWAP.length)].replace('{old}', oldChamp.name);
+      showBubbleFor(newTop1, line, 4);
+      setTimeout(() => {
+        const resp = RIVALRY_RESPONSE[Math.floor(Math.random() * RIVALRY_RESPONSE.length)].replace('{new}', newChamp.name);
+        showBubbleFor(dpsRankTracker.top1, resp, 4);
+      }, 5000);
+    }
+  }
+  dpsRankTracker.top1 = newTop1;
+  dpsRankTracker.top2 = newTop2;
+}
+
+// Campfire conversations (pairs of lines for 2 characters)
+function getCampfireConversation(char1, char2) {
+  const conversations = [
+    // DPS vs Healer
+    { roles: ['frontline_dps', 'backline_heal'], lines: [
+      ["T'as vu mon DPS sur le dernier boss? Record personnel!", "Ouais et t'as vu mes heals pour te garder en vie? Record aussi."],
+      ["Heal moi en prio la prochaine fois!", "Heal en prio celui qui meurt le plus? T'es sur?"],
+      ["Je fais tout le DPS ici.", "Et moi je fais en sorte que tu sois vivant POUR faire ce DPS."],
+    ]},
+    // Tank vs DPS
+    { roles: ['frontline', 'frontline_dps'], lines: [
+      ["Arrete de pull les mobs avant moi!", "C'est pas ma faute si je fais trop de degats!"],
+      ["Reste derriere moi au prochain combat.", "Non. Le danger c'est la ou sont les crits."],
+      ["Tu prends l'aggro une fois de plus et je te laisse tanker.", "...deal."],
+    ]},
+    // Mage vs Mage
+    { roles: ['backline_dps', 'backline_dps'], lines: [
+      ["Mon element est clairement superieur au tien.", "Ah oui? Regardons le DPS chart."],
+      ["On devrait combiner nos AoE au prochain fight.", "Tu veux dire TU combines avec MON AoE."],
+    ]},
+    // Tank vs Healer
+    { roles: ['frontline', 'backline_heal'], lines: [
+      ["J'ai failli mourir 3 fois la-bas.", "Je sais. C'est moi qui t'ai sauve. Les 3 fois."],
+      ["Merci pour les heals.", "...attends tu viens de dire merci? *note dans son journal*"],
+      ["On fait une bonne equipe.", "Toi tu encaisses, moi je repare. Comme d'hab."],
+    ]},
+    // Generic (any roles)
+    { roles: null, lines: [
+      ["Tu penses qu'on va y arriver?", "Avec cette equipe? On a nos chances."],
+      ["Ce feu me rappelle la maison.", "Ta maison est dans un donjon?"],
+      ["C'est quoi ton plus grand regret dans ce raid?", "Avoir accepte de venir."],
+      ["On devrait faire ca plus souvent.", "Quasi mourir dans un donjon? Non merci."],
+      ["T'as peur du prochain boss?", "Peur? Non. Terreur absolue? Peut-etre un peu."],
+    ]},
+  ];
+
+  // Find matching conversation
+  const roleMatches = conversations.filter(c =>
+    c.roles === null ||
+    (c.roles.includes(char1.role) && c.roles.includes(char2.role))
+  );
+  const pool = roleMatches.length > 0 ? roleMatches : conversations.filter(c => c.roles === null);
+  const chosen = pool[Math.floor(Math.random() * pool.length)];
+  const pair = chosen.lines[Math.floor(Math.random() * chosen.lines.length)];
+
+  // Replace {name} references
+  return [
+    pair[0].replace('{name}', char2.name),
+    pair[1].replace('{name}', char1.name),
+  ];
+}
+
 // Rez-specific dialogues (triggered when healer rezzes someone)
 const REZ_DIALOGUES = [
   "Allez debout {target}, on a besoin de toi!",
@@ -1235,27 +1612,142 @@ const REST_DIALOGUES = {
 // BOSS INTROS (Phase 9)
 // ═══════════════════════════════════════════════════════════
 const BOSS_INTROS = {
+  // ── Zone 1: Foret Ancienne (Boss 1-3) ──
   'Gardien de la Foret': {
     lines: ["La terre tremble sous vos pieds...", "Des racines enormes surgissent du sol...", "LE GARDIEN DE LA FORET SE REVEILLE!"],
-    subtitle: "Premier boss — Ne sous-estimez pas la nature.",
+    subtitle: "Boss 1 — Ne sous-estimez pas la nature.",
   },
   'Sentinelle de Pierre': {
     lines: ["Un silence glacial envahit la caverne...", "Les murs commencent a bouger...", "LA SENTINELLE DE PIERRE S'ANIME!"],
-    subtitle: "Deuxieme boss — La pierre ne connait pas la pitie.",
+    subtitle: "Boss 2 — La pierre ne connait pas la pitie.",
   },
   'Seigneur Ombre': {
     lines: ["L'obscurite vous engloutit...", "Vous ne voyez plus vos allies...", "Une voix resonne: 'Vous osez me defier?'", "LE SEIGNEUR OMBRE EMERGE DES TENEBRES!"],
-    subtitle: "Boss final — Seuls les plus forts survivront.",
+    subtitle: "Boss 3 — Le Seigneur des Ombres ne pardonne pas.",
+  },
+  // ── Zone 2: Foret Profonde (Boss 4-5) ──
+  'Ancien des Racines': {
+    lines: ["Les arbres millénaires grondent de colere...", "Le sol se fissure, des racines gigantesques percent la terre...", "L'ANCIEN DES RACINES EMERGE!"],
+    subtitle: "Boss 4 — Plus vieux que la foret elle-meme.",
+  },
+  'Reine Sylvestre': {
+    lines: ["Un parfum enivrant emplit l'air...", "Des fleurs carnivores s'ouvrent autour de vous...", "La Reine de la Foret vous observe de son trone d'epines...", "LA REINE SYLVESTRE DESCEND!"],
+    subtitle: "Boss 5 — Sa beaute est aussi mortelle que ses epines.",
+  },
+  // ── Zone 3: Abysses (Boss 6-7) ──
+  'Leviathan': {
+    lines: ["L'eau commence a monter...", "Un grondement venant des profondeurs fait vibrer les murs...", "Des tentacules immenses fracassent les rochers!", "LE LEVIATHAN SURGIT DES ABYSSES!"],
+    subtitle: "Boss 6 — Le Terreur des Profondeurs.",
+  },
+  'Sorcier Abyssal': {
+    lines: ["Des runes maudites brillent dans l'obscurite...", "Une voix ancestrale murmure des incantations interdites...", "LE SORCIER ABYSSAL SE MATERIALISE!"],
+    subtitle: "Boss 7 — Maitre des arts sombres oublies.",
+  },
+  // ── Zone 4: Citadelle (Boss 8-10) ──
+  'Titan de Fer': {
+    lines: ["Le sol tremble sous des pas mecaniques...", "Des engrenages geants tournent dans les murs...", "LE TITAN DE FER ACTIVE SES SYSTEMES!"],
+    subtitle: "Boss 8 — Une forteresse vivante.",
+  },
+  'Hydre Venimeuse': {
+    lines: ["Un sifflement venimeux emplit la salle...", "Trois paires d'yeux brillent dans la penombre...", "L'HYDRE VENIMEUSE DEPLOIE SES TETES!"],
+    subtitle: "Boss 9 — Coupez une tete, deux repoussent.",
+  },
+  'Roi des Profondeurs': {
+    lines: ["Les eaux s'ecartent devant lui...", "Un trident ancien brille d'une lumiere maudite...", "Agenouillez-vous devant votre roi.", "LE ROI DES PROFONDEURS RECLAME SON DU!"],
+    subtitle: "Boss 10 — Souverain absolu de l'abime.",
+  },
+  // ── Zone 5: Neant (Boss 11-12) ──
+  'Spectre Originel': {
+    lines: ["La realite se distord...", "Vos ombres se retournent contre vous...", "Le Spectre etait la depuis le debut. Vous ne l'aviez jamais vu.", "LE SPECTRE ORIGINEL BRISE LE VOILE!"],
+    subtitle: "Boss 11 — Il existait avant la lumiere elle-meme.",
+  },
+  'Archonte du Vide': {
+    lines: ["L'espace se contracte autour de vous...", "Les lois de la physique cessent de s'appliquer...", "Tout ce que vous connaissez... n'existe plus.", "L'ARCHONTE DU VIDE OUVRE LA SINGULARITE!"],
+    subtitle: "Boss 12 — La ou meme la lumiere n'ose pas aller.",
+  },
+  // ── Zone 6: Trone (Boss 13-15) ──
+  'Dragon du Chaos': {
+    lines: ["Le ciel se dechire en deux...", "Des flammes multicolores pleuvent du neant...", "Un rugissement fait trembler les dimensions!", "LE DRAGON DU CHAOS DESCEND SUR LE MONDE!"],
+    subtitle: "Boss 13 — Destruction incarnee.",
+  },
+  'Monarque Eternel': {
+    lines: ["Le temps s'arrete...", "Une figure immense se dessine dans l'eternite...", "'Votre resistance est... amusante.'", "LE MONARQUE ETERNEL BRISE LE SABLIER DU TEMPS!"],
+    subtitle: "Boss 14 — Seigneur du Temps, Gardien de l'Infini.",
+  },
+  'Sung Il-Hwan': {
+    lines: ["...", "Une presence ecrasante envahit l'espace.", "Vous sentez chaque fibre de votre etre trembler.", "'Montrez-moi de quoi sont capables les chasseurs de cette generation.'", "SUNG IL-HWAN, LE CHASSEUR SUPREME, SE DRESSE FACE A VOUS!"],
+    subtitle: "Boss Final — Le plus grand chasseur de tous les temps.",
   },
 };
 
 const TV_COMMENTARY = {
-  combat_start: ["Le combat commence!", "C'est parti!", "Que le carnage commence!"],
-  boss_appear: ["Un BOSS approche!", "Preparez-vous...", "C'est l'heure du boss!"],
-  crit_big: ["COUP CRITIQUE DEVASTATEUR!", "INCROYABLE!", "IL L'A DETRUIT!"],
-  wipe_near: ["L'equipe est en danger!", "C'EST LA PANIQUE!"],
-  victory: ["VICTOIRE!", "Le boss est TOMBE!", "MAGNIFIQUE!"],
+  combat_start: ["Le combat commence!", "C'est parti!", "Que le carnage commence!", "EN AVANT!"],
+  boss_appear: ["Un BOSS approche!", "Preparez-vous...", "C'est l'heure du boss!", "BOSS INCOMING!"],
+  crit_big: ["COUP CRITIQUE DEVASTATEUR!", "INCROYABLE!", "IL L'A DETRUIT!", "QUELLE FRAPPE!", "CA C'EST UN CRIT!"],
+  wipe_near: ["L'equipe est en danger!", "C'EST LA PANIQUE!", "IL NE RESTE PLUS QUE QUELQUES SURVIVANTS!"],
+  victory: ["VICTOIRE!", "Le boss est TOMBE!", "MAGNIFIQUE!", "ILS L'ONT FAIT!"],
+  healer_clutch: ["LE HEAL DE LA DERNIERE SECONDE!", "CLUTCH HEAL! IL ETAIT A 1HP!", "LE HEALER SAUVE TOUT LE MONDE!"],
+  tank_down: ["LE TANK EST TOMBE! QUI VA PRENDRE L'AGGRO?!", "SANS TANK C'EST LA FIN!"],
+  comeback: ["ILS SE RELEVENT! QUEL RETOUR!", "LE COMEBACK! ILS Y CROIENT ENCORE!"],
+  speed_kill: ["CE BOSS A ETE PULVERISE!", "SPEED KILL! CA C'ETAIT RAPIDE!", "EASY GG!"],
+  boss_enrage: ["LE BOSS ENTRE EN RAGE! ATTENTION!", "ENRAGE! CA VA FAIRE MAL!", "IL S'ENERVE!"],
+  first_blood: ["PREMIERE VICTIME! Ca commence mal...", "FIRST BLOOD! Le raid perd un membre!"],
+  half_dead: ["LA MOITIE DE L'EQUIPE EST TOMBEE!", "50% DE PERTES! CA TOURNE MAL!"],
+  milestone_boss5: ["5 BOSS ELIMINES! L'equipe tient bon!", "Mi-parcours! La difficulte monte!"],
+  milestone_boss10: ["10 BOSS! On entre dans l'endgame!", "LE NEANT APPROCHE! Plus que 5 boss!"],
+  milestone_boss13: ["ZONE FINALE! Le Trone du Chaos!", "LES 3 DERNIERS BOSS! TOUT SE JOUE MAINTENANT!"],
+  megumin_missing: [
+    "Vous savez, y'a un joueur qui avait pas pris Megumin dans son equipe... On etait a 4% du boss 7. UNE Explosion de plus, c'etait GG. N'oubliez jamais: TOUJOURS prendre Megumin.",
+    "Info: Megumin a pas ete pick par tout le monde. Je dis ca, je dis rien... mais son EXPLOSION peut faire la difference.",
+  ],
 };
+
+// Zone-specific march narratives (selected based on encounter index)
+const MARCH_NARRATIVES_BY_ZONE = {
+  forest: [
+    "Les arbres millénaires murmurent sur votre passage...",
+    "Des lucioles magiques eclairent le sentier...",
+    "Le sol craque sous vos pieds. La foret vous observe.",
+    "Des racines anciennes se tordent dans l'obscurite...",
+    "L'odeur de mousse et de terre humide emplit l'air.",
+  ],
+  abyss: [
+    "L'eau suinte des murs... quelque chose vit la-dessous.",
+    "La lumiere ne penetre plus ici. Seul le son de gouttes brise le silence.",
+    "Des poissons luminescents nagent dans l'air charge de mana...",
+    "Les abysses n'ont pas de fond. Du moins, personne n'est revenu pour le confirmer.",
+    "Un courant glacial vous enveloppe. Les profondeurs appellent.",
+  ],
+  citadel: [
+    "Des engrenages geants tournent au rythme d'un coeur mecanique...",
+    "Les murs d'acier resonent de vos pas. Quelqu'un — ou quelque chose — ecoute.",
+    "De la vapeur s'echappe des conduits. La citadelle vit.",
+    "Des armures vides sont alignees le long des couloirs. Certaines bougent encore.",
+    "Le sol vibre. La prochaine salle pourrait etre la derniere.",
+  ],
+  void: [
+    "La realite se distord. Le haut et le bas n'ont plus de sens.",
+    "Vos ombres ne vous suivent plus. Elles vous precedent.",
+    "Le temps s'ecoule differemment ici. Chaque seconde dure une eternite.",
+    "Des fragments de dimensions brisees flottent autour de vous.",
+    "Le Neant murmure votre nom. Il vous connait deja.",
+  ],
+  throne: [
+    "Vous etes arrives au bout du monde connu.",
+    "L'air brule de puissance divine. Chaque pas est un combat.",
+    "Des statues de chasseurs legendaires bordent le chemin. Ils ont tous echoue.",
+    "Le Trone du Chaos est proche. Il n'y aura pas de retour.",
+    "C'est ici que tout se termine. Pour eux... ou pour vous.",
+  ],
+};
+
+function getZoneForEncounter(encounterIndex) {
+  if (encounterIndex < 6) return 'forest';
+  if (encounterIndex < 14) return 'abyss';
+  if (encounterIndex < 20) return 'citadel';
+  if (encounterIndex < 24) return 'void';
+  return 'throne';
+}
 
 const MARCH_NARRATIVES = [
   "L'equipe avance prudemment dans les tenebres...",
@@ -1709,6 +2201,20 @@ function handleMessage(msg) {
     case 'boss_killed': {
       addLogEntry('boss', `BOSS VAINCU: ${msg.bossName}!`);
       showTvCommentary('victory');
+      // Celebration bubble from random alive char
+      const celebAlive = (state?.characters || []).filter(c => c.alive);
+      if (celebAlive.length > 0) {
+        const celebChar = celebAlive[Math.floor(Math.random() * celebAlive.length)];
+        setTimeout(() => showBubbleFor(celebChar.id, BOSS_KILL_CELEBRATIONS[Math.floor(Math.random() * BOSS_KILL_CELEBRATIONS.length)], 4), 1500);
+      }
+      // Milestone commentary
+      const bossCount = (bossEncounterHistory?.length || 0) + 1;
+      if (bossCount === 5) setTimeout(() => showTvCommentary('milestone_boss5'), 4000);
+      else if (bossCount === 10) setTimeout(() => showTvCommentary('milestone_boss10'), 4000);
+      else if (bossCount === 13) setTimeout(() => showTvCommentary('milestone_boss13'), 4000);
+      // Speed kill check
+      const killTime = msg.combatTime || currentEncounterCombatTime;
+      if (killTime < 30) setTimeout(() => showTvCommentary('speed_kill'), 3000);
       addTimelineEvent('kill', null, { killer: 'Equipe', target: msg.bossName });
       // Save per-boss encounter stats
       const bossEntry = {
@@ -1753,10 +2259,16 @@ function handleMessage(msg) {
       break;
     }
 
-    case 'march_start':
+    case 'march_start': {
       addLogEntry('info', `En marche... prochain: ${msg.nextEncounter}`);
-      marchNarrative = { text: MARCH_NARRATIVES[Math.floor(Math.random() * MARCH_NARRATIVES.length)], timer: 8 };
+      // Zone-specific narrative based on encounter progress
+      const zone = getZoneForEncounter(state?.currentEncounter || 0);
+      const zoneLines = MARCH_NARRATIVES_BY_ZONE[zone] || MARCH_NARRATIVES;
+      const genericLines = MARCH_NARRATIVES;
+      const allLines = [...zoneLines, ...genericLines];
+      marchNarrative = { text: allLines[Math.floor(Math.random() * allLines.length)], timer: 8 };
       break;
+    }
 
     case 'campfire_start':
       addLogEntry('info', `Campfire! Repos ${msg.duration}s...`);
@@ -1840,8 +2352,9 @@ function handleEvent(ev) {
       const srcEntity = findEntity(ev.source);
       const elemDmgColor = ELEMENT_COLORS[srcEntity?.element] || '#ef4444';
       const color = ev.crit ? '#fbbf24' : elemDmgColor;
-      const text = ev.crit ? `CRIT ${ev.amount}` : `-${ev.amount}`;
-      addFloating(ev.target, text, color, size);
+      const critSize = ev.crit ? (ev.amount > 30000 ? 28 : 24) : size;
+      const text = ev.crit ? `CRIT! ${formatNumber(ev.amount)}` : `-${formatNumber(ev.amount)}`;
+      addFloating(ev.target, text, color, critSize);
       triggerAnim(ev.target, 'hit', 0.15);
       triggerAnim(ev.source, 'attack', 0.2);
       // VFX
@@ -1850,7 +2363,10 @@ function handleEvent(ev) {
       } else {
         spawnVFX('projectile', ev.source, ev.target);
       }
-      if (ev.crit) spawnVFX('crit_burst', ev.source, ev.target);
+      if (ev.crit) {
+        spawnVFX('crit_burst', ev.source, ev.target);
+        triggerScreenShake(ev.amount > 30000 ? 4 : 2, 0.2);
+      }
       const src = ensureStats(ev.source);
       src.dmgDealt += ev.amount;
       src.totalHits++;
@@ -1862,6 +2378,8 @@ function handleEvent(ev) {
       }
       ensureStats(ev.target).dmgReceived += ev.amount;
       maybeAutoQuip('damage', ev.source);
+      maybeTrashTalk();
+      checkDpsRivalry();
       break;
     }
     case 'mob_attack':
@@ -1869,8 +2387,12 @@ function handleEvent(ev) {
     case 'pattern_damage': {
       addFloating(ev.target, `-${ev.amount}`, '#ff6b6b', 16);
       triggerAnim(ev.target, 'hit', 0.15);
-      if (ev.type === 'pattern_damage') spawnVFX('boss_aoe', ev.source || '', ev.target);
-      else spawnVFX('impact', ev.source || '', ev.target, { color: '#ff4444' });
+      if (ev.type === 'pattern_damage') {
+        spawnVFX('boss_aoe', ev.source || '', ev.target);
+        triggerScreenShake(ev.amount > 20000 ? 8 : 5, 0.4);
+      } else {
+        spawnVFX('impact', ev.source || '', ev.target, { color: '#ff4444' });
+      }
       ensureStats(ev.target).dmgReceived += ev.amount;
       maybeAutoQuip('hit', ev.target);
       // Wipe check
@@ -1887,13 +2409,17 @@ function handleEvent(ev) {
       addLogEntry('heal', `${getName(ev.source)} soigne ${getName(ev.target)} (+${formatNumber(ev.amount)})`);
       ensureStats(ev.source).healsGiven += ev.amount;
       ensureStats(ev.target).healsReceived += ev.amount;
+      maybeClutchHealReaction(ev.target, ev.source);
       break;
     }
     case 'death':
       ensureStats(ev.characterId).deaths++;
       addLogEntry('death', `${getName(ev.characterId)} est mort!`);
       triggerAnim(ev.characterId, 'death', 1.0);
+      spawnVFX('death', ev.characterId, ev.characterId);
       addTimelineEvent('death', null, { name: getName(ev.characterId), charId: ev.characterId });
+      // Reaction from nearby allies
+      maybeDeathReaction(ev.characterId);
       break;
     case 'kill':
       addLogEntry('kill', `${getName(ev.killer)} tue ${ev.targetName}!`);
@@ -2017,51 +2543,108 @@ function spawnVFX(type, sourceId, targetId, options = {}) {
   const sy = srcIp?.y ?? src?.y ?? 0;
   const tx = tgtIp?.x ?? tgt?.x ?? 0;
   const ty = tgtIp?.y ?? tgt?.y ?? 0;
+  const elem = src?.element || 'fire';
+  const elemColor = options.color || ELEMENT_COLORS[elem] || '#ef4444';
+  const elemDark = ELEMENT_COLORS_DARK[elem] || elemColor;
+  const elemLight = ELEMENT_COLORS_LIGHT[elem] || '#fff';
 
   switch (type) {
     case 'projectile': {
-      vfxParticles.push({ type: 'projectile', x: sx, y: sy, tx, ty, color: options.color || '#ef4444', size: options.size || 5, trail: [], life: 0.35, maxLife: 0.35 });
+      // Elemental projectile with element-specific trail
+      vfxParticles.push({ type: 'projectile', x: sx, y: sy, tx, ty, color: elemColor, colorLight: elemLight, element: elem, size: options.size || 6, trail: [], life: 0.4, maxLife: 0.4 });
+      // Extra trail particles per element
+      if (elem === 'fire') {
+        for (let i = 0; i < 3; i++) vfxParticles.push({ type: 'rise', x: sx, y: sy, vy: -(30 + Math.random() * 40), color: Math.random() > 0.5 ? '#f97316' : '#fbbf24', size: 2 + Math.random() * 2, life: 0.2 + Math.random() * 0.15, maxLife: 0.35 });
+      } else if (elem === 'shadow') {
+        for (let i = 0; i < 4; i++) vfxParticles.push({ type: 'shrink', x: sx + (Math.random() - 0.5) * 15, y: sy + (Math.random() - 0.5) * 10, color: '#7c3aed', size: 4 + Math.random() * 3, life: 0.3, maxLife: 0.3 });
+      }
       break;
     }
     case 'magic': {
-      vfxParticles.push({ type: 'magic_circle', x: tx, y: ty, color: options.color || '#a855f7', life: 0.5, maxLife: 0.5 });
-      for (let i = 0; i < 8; i++) {
-        const a = (i / 8) * Math.PI * 2;
-        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * (80 + Math.random() * 50), vy: Math.sin(a) * (50 + Math.random() * 30), color: options.color || '#a855f7', size: 2 + Math.random() * 2, life: 0.4 + Math.random() * 0.2, maxLife: 0.6 });
+      // Element-themed magic circle
+      vfxParticles.push({ type: 'magic_circle', x: tx, y: ty, color: elemColor, element: elem, life: 0.6, maxLife: 0.6 });
+      const sparkCount = 10;
+      for (let i = 0; i < sparkCount; i++) {
+        const a = (i / sparkCount) * Math.PI * 2;
+        const c = Math.random() > 0.3 ? elemColor : elemLight;
+        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * (80 + Math.random() * 60), vy: Math.sin(a) * (50 + Math.random() * 40), color: c, size: 2 + Math.random() * 2.5, life: 0.4 + Math.random() * 0.25, maxLife: 0.65 });
       }
+      // Element-specific extras
+      if (elem === 'fire') {
+        for (let i = 0; i < 6; i++) vfxParticles.push({ type: 'rise', x: tx + (Math.random() - 0.5) * 30, y: ty, vy: -(50 + Math.random() * 60), color: Math.random() > 0.4 ? '#f97316' : '#fbbf24', size: 3 + Math.random() * 3, life: 0.5 + Math.random() * 0.3, maxLife: 0.8 });
+      } else if (elem === 'water') {
+        vfxParticles.push({ type: 'water_splash', x: tx, y: ty, life: 0.5, maxLife: 0.5 });
+      } else if (elem === 'shadow') {
+        vfxParticles.push({ type: 'shadow_vortex', x: tx, y: ty, life: 0.7, maxLife: 0.7 });
+      } else if (elem === 'light') {
+        vfxParticles.push({ type: 'light_burst', x: tx, y: ty, life: 0.5, maxLife: 0.5 });
+      }
+      triggerScreenShake(2, 0.15);
       break;
     }
     case 'heal': {
-      for (let i = 0; i < 6; i++) {
-        vfxParticles.push({ type: 'rise', x: tx + (Math.random() - 0.5) * 25, y: ty, vy: -(25 + Math.random() * 35), color: '#22c55e', size: 2.5 + Math.random() * 2, life: 0.7 + Math.random() * 0.3, maxLife: 1.0 });
+      // Enhanced heal: cross + ring + more particles
+      for (let i = 0; i < 10; i++) {
+        vfxParticles.push({ type: 'rise', x: tx + (Math.random() - 0.5) * 30, y: ty, vy: -(25 + Math.random() * 45), color: Math.random() > 0.3 ? '#22c55e' : '#86efac', size: 2 + Math.random() * 3, life: 0.7 + Math.random() * 0.4, maxLife: 1.1 });
       }
-      vfxParticles.push({ type: 'heal_ring', x: tx, y: ty, color: '#22c55e', life: 0.4, maxLife: 0.4 });
+      vfxParticles.push({ type: 'heal_ring', x: tx, y: ty, color: '#22c55e', life: 0.5, maxLife: 0.5 });
+      vfxParticles.push({ type: 'heal_cross', x: tx, y: ty, life: 0.6, maxLife: 0.6 });
       break;
     }
     case 'impact': {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 7; i++) {
         const a = Math.random() * Math.PI * 2;
-        const spd = 40 + Math.random() * 70;
-        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd * 0.6, color: options.color || '#ef4444', size: 2 + Math.random() * 2, life: 0.25 + Math.random() * 0.2, maxLife: 0.45 });
+        const spd = 50 + Math.random() * 80;
+        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd * 0.6, color: options.color || '#ef4444', size: 2 + Math.random() * 2.5, life: 0.25 + Math.random() * 0.2, maxLife: 0.45 });
       }
       break;
     }
     case 'crit_burst': {
-      vfxParticles.push({ type: 'shockwave', x: tx, y: ty, color: '#fbbf24', life: 0.45, maxLife: 0.45 });
-      for (let i = 0; i < 12; i++) {
+      // MASSIVE crit effect
+      vfxParticles.push({ type: 'shockwave', x: tx, y: ty, color: '#fbbf24', life: 0.55, maxLife: 0.55 });
+      vfxParticles.push({ type: 'shockwave', x: tx, y: ty, color: '#fff', life: 0.35, maxLife: 0.35 }); // double ring
+      for (let i = 0; i < 30; i++) {
         const a = Math.random() * Math.PI * 2;
-        const spd = 80 + Math.random() * 100;
-        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd * 0.5 - 20, color: Math.random() > 0.5 ? '#fbbf24' : '#fff', size: 2.5 + Math.random() * 3, life: 0.4 + Math.random() * 0.3, maxLife: 0.7 });
+        const spd = 80 + Math.random() * 140;
+        const colors = ['#fbbf24', '#fff', '#f59e0b', elemColor];
+        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd * 0.5 - 30, color: colors[Math.floor(Math.random() * colors.length)], size: 2.5 + Math.random() * 3.5, life: 0.4 + Math.random() * 0.4, maxLife: 0.8 });
       }
+      vfxParticles.push({ type: 'flash', x: tx, y: ty, life: 0.12, maxLife: 0.12 });
+      triggerScreenShake(3, 0.2);
       break;
     }
     case 'boss_aoe': {
-      vfxParticles.push({ type: 'shockwave', x: tx, y: ty, color: '#dc2626', life: 0.6, maxLife: 0.6 });
+      vfxParticles.push({ type: 'shockwave', x: tx, y: ty, color: '#dc2626', life: 0.7, maxLife: 0.7 });
+      vfxParticles.push({ type: 'shockwave', x: tx, y: ty, color: '#ff6b6b', life: 0.5, maxLife: 0.5 });
+      for (let i = 0; i < 20; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = 60 + Math.random() * 150;
+        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd * 0.4 - 40, color: Math.random() > 0.3 ? '#ff4444' : '#ff8888', size: 3 + Math.random() * 4, life: 0.4 + Math.random() * 0.35, maxLife: 0.75 });
+      }
+      triggerScreenShake(6, 0.4);
+      break;
+    }
+    case 'death': {
+      // Dissolution particles in element color
+      const deathColor = ELEMENT_COLORS[tgt?.element] || '#888';
       for (let i = 0; i < 15; i++) {
         const a = Math.random() * Math.PI * 2;
-        const spd = 60 + Math.random() * 120;
-        vfxParticles.push({ type: 'spark', x: tx, y: ty, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd * 0.4 - 30, color: '#ff4444', size: 3 + Math.random() * 3, life: 0.4 + Math.random() * 0.3, maxLife: 0.7 });
+        const spd = 20 + Math.random() * 50;
+        vfxParticles.push({ type: 'shrink', x: tx + (Math.random() - 0.5) * 20, y: ty + (Math.random() - 0.5) * 15, vx: Math.cos(a) * spd, vy: -(20 + Math.random() * 40), color: deathColor, size: 3 + Math.random() * 4, life: 0.8 + Math.random() * 0.5, maxLife: 1.3 });
       }
+      break;
+    }
+    case 'buff': {
+      // Rising arrows around character
+      const buffColor = options.color || '#22d3ee';
+      for (let i = 0; i < 5; i++) {
+        vfxParticles.push({ type: 'buff_arrow', x: tx + (Math.random() - 0.5) * 25, y: ty + 10, vy: -(60 + Math.random() * 30), color: buffColor, size: 3, life: 0.6 + Math.random() * 0.3, maxLife: 0.9 });
+      }
+      break;
+    }
+    case 'taunt': {
+      // Aggro circle around tank
+      vfxParticles.push({ type: 'taunt_ring', x: tx, y: ty, life: 1.0, maxLife: 1.0 });
       break;
     }
   }
@@ -2077,27 +2660,41 @@ function drawVFX(dt, groundY) {
 
     switch (p.type) {
       case 'projectile': {
-        const t = progress / 1;
+        const t = progress;
         const px = p.x + (p.tx - p.x) * t;
         const py = p.y + (p.ty - p.y) * t;
         const sx = px * camera.zoom - camera.x;
         const sy = groundY + entityScreenY(py);
-        // Trail
+        // Elemental trail variations
         p.trail.push({ x: sx, y: sy, a: 1 });
-        if (p.trail.length > 6) p.trail.shift();
+        if (p.trail.length > 8) p.trail.shift();
         ctx.save();
         for (let j = 0; j < p.trail.length; j++) {
           const tp = p.trail[j];
-          tp.a *= 0.7;
-          ctx.globalAlpha = tp.a * 0.5;
+          tp.a *= 0.65;
+          ctx.globalAlpha = tp.a * 0.6;
           ctx.fillStyle = p.color;
-          ctx.beginPath(); ctx.arc(tp.x, tp.y, p.size * 0.5, 0, Math.PI * 2); ctx.fill();
+          const trailSize = p.size * (0.3 + 0.4 * (j / p.trail.length));
+          // Water: wavy trail
+          const waveOff = p.element === 'water' ? Math.sin(j * 1.5 + progress * 10) * 4 : 0;
+          ctx.beginPath(); ctx.arc(tp.x, tp.y + waveOff, trailSize, 0, Math.PI * 2); ctx.fill();
         }
+        // Main projectile glow
         ctx.globalAlpha = 1;
-        ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 14;
         ctx.fillStyle = p.color;
         ctx.beginPath(); ctx.arc(sx, sy, p.size, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#fff';
+        // Light element: beam line
+        if (p.element === 'light') {
+          ctx.globalAlpha = 0.3;
+          ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 2;
+          const bsx = p.x * camera.zoom - camera.x;
+          const bsy = groundY + entityScreenY(p.y);
+          ctx.beginPath(); ctx.moveTo(bsx, bsy); ctx.lineTo(sx, sy); ctx.stroke();
+        }
+        // White core
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = p.colorLight || '#fff';
         ctx.beginPath(); ctx.arc(sx, sy, p.size * 0.4, 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0;
         ctx.restore();
@@ -2106,71 +2703,200 @@ function drawVFX(dt, groundY) {
       case 'magic_circle': {
         const sx = p.x * camera.zoom - camera.x;
         const sy = groundY + entityScreenY(p.y);
-        const r = 20 + progress * 25;
-        ctx.save(); ctx.globalAlpha = alpha * 0.5;
+        const r = 20 + progress * 30;
+        ctx.save(); ctx.globalAlpha = alpha * 0.6;
         ctx.strokeStyle = p.color; ctx.lineWidth = 2;
-        ctx.shadowColor = p.color; ctx.shadowBlur = 12;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 16;
         ctx.beginPath(); ctx.arc(sx, sy - 15, r, 0, Math.PI * 2); ctx.stroke();
-        // Inner rotating lines
-        for (let j = 0; j < 4; j++) {
-          const a = (j / 4) * Math.PI * 2 + progress * Math.PI * 3;
+        // Inner rotating runes (6 lines)
+        const lines = p.element === 'shadow' ? 6 : 4;
+        for (let j = 0; j < lines; j++) {
+          const a = (j / lines) * Math.PI * 2 + progress * Math.PI * 4;
           ctx.beginPath();
-          ctx.moveTo(sx + Math.cos(a) * r * 0.3, sy - 15 + Math.sin(a) * r * 0.3);
+          ctx.moveTo(sx + Math.cos(a) * r * 0.2, sy - 15 + Math.sin(a) * r * 0.2);
           ctx.lineTo(sx + Math.cos(a) * r * 0.9, sy - 15 + Math.sin(a) * r * 0.9);
           ctx.stroke();
+        }
+        // Shadow vortex: second spinning ring
+        if (p.element === 'shadow') {
+          ctx.globalAlpha = alpha * 0.3;
+          ctx.beginPath(); ctx.arc(sx, sy - 15, r * 0.6, 0, Math.PI * 2); ctx.stroke();
         }
         ctx.shadowBlur = 0; ctx.restore();
         break;
       }
       case 'spark': {
         p.x += p.vx * dt; p.y += p.vy * dt;
-        p.vy += 80 * dt; // gravity
+        p.vy += 80 * dt;
         const sx = p.x * camera.zoom - camera.x;
         const sy = groundY + entityScreenY(p.y);
         ctx.save(); ctx.globalAlpha = alpha;
         ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color; ctx.shadowBlur = 4;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 6;
         ctx.beginPath(); ctx.arc(sx, sy, p.size * (0.5 + alpha * 0.5), 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0; ctx.restore();
         break;
       }
       case 'rise': {
         p.y += p.vy * dt;
+        if (p.vx) p.x += p.vx * dt;
         const sx = p.x * camera.zoom - camera.x;
         const sy = groundY + entityScreenY(p.y);
+        ctx.save(); ctx.globalAlpha = alpha * 0.8;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.arc(sx, sy, p.size * (0.3 + alpha * 0.7), 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'shrink': {
+        // Shadow dissolve particles — shrink and fade
+        if (p.vx) p.x += p.vx * dt;
+        if (p.vy) p.y += p.vy * dt;
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + entityScreenY(p.y);
+        const shrinkSize = p.size * (1 - progress);
         ctx.save(); ctx.globalAlpha = alpha * 0.7;
         ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color; ctx.shadowBlur = 6;
-        ctx.beginPath(); ctx.arc(sx, sy, p.size, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.arc(sx, sy, Math.max(0.5, shrinkSize), 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0; ctx.restore();
         break;
       }
       case 'heal_ring': {
         const sx = p.x * camera.zoom - camera.x;
         const sy = groundY + entityScreenY(p.y);
-        const r = 10 + progress * 30;
-        ctx.save(); ctx.globalAlpha = alpha * 0.4;
-        ctx.strokeStyle = p.color; ctx.lineWidth = 2;
-        ctx.shadowColor = p.color; ctx.shadowBlur = 10;
+        const r = 10 + progress * 35;
+        ctx.save(); ctx.globalAlpha = alpha * 0.5;
+        ctx.strokeStyle = p.color; ctx.lineWidth = 2.5;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 14;
         ctx.beginPath(); ctx.arc(sx, sy - 15, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'heal_cross': {
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + entityScreenY(p.y) - 15;
+        const s = 12 * (1 - progress * 0.3);
+        ctx.save(); ctx.globalAlpha = alpha * 0.6;
+        ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 3;
+        ctx.shadowColor = '#22c55e'; ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.moveTo(sx, sy - s); ctx.lineTo(sx, sy + s); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(sx - s, sy); ctx.lineTo(sx + s, sy); ctx.stroke();
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'water_splash': {
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + entityScreenY(p.y);
+        ctx.save(); ctx.globalAlpha = alpha * 0.5;
+        // Multiple concentric water ripples
+        for (let r = 0; r < 3; r++) {
+          const rad = 10 + (progress * 40) + r * 12;
+          ctx.strokeStyle = r === 0 ? '#3b82f6' : '#93c5fd';
+          ctx.lineWidth = 2 - r * 0.5;
+          ctx.shadowColor = '#3b82f6'; ctx.shadowBlur = 8;
+          ctx.beginPath(); ctx.arc(sx, sy - 10, rad, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'shadow_vortex': {
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + entityScreenY(p.y) - 15;
+        const r = 25 + progress * 15;
+        ctx.save(); ctx.globalAlpha = alpha * 0.5;
+        // Spinning dark spiral
+        ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2;
+        ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 15;
+        for (let s = 0; s < 3; s++) {
+          ctx.beginPath();
+          const startAngle = (s / 3) * Math.PI * 2 + progress * Math.PI * 6;
+          ctx.arc(sx, sy, r * (0.4 + s * 0.2), startAngle, startAngle + Math.PI * 0.8);
+          ctx.stroke();
+        }
+        // Dark center
+        ctx.globalAlpha = alpha * 0.3;
+        ctx.fillStyle = '#1e1b4b';
+        ctx.beginPath(); ctx.arc(sx, sy, r * 0.5 * (1 - progress * 0.5), 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'light_burst': {
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + entityScreenY(p.y) - 15;
+        ctx.save(); ctx.globalAlpha = alpha * 0.6;
+        // Golden rays
+        ctx.strokeStyle = '#facc15'; ctx.lineWidth = 2;
+        ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 15;
+        const rays = 8;
+        for (let r = 0; r < rays; r++) {
+          const a = (r / rays) * Math.PI * 2 + progress * Math.PI;
+          const len = 15 + progress * 30;
+          ctx.beginPath();
+          ctx.moveTo(sx + Math.cos(a) * 5, sy + Math.sin(a) * 5);
+          ctx.lineTo(sx + Math.cos(a) * len, sy + Math.sin(a) * len);
+          ctx.stroke();
+        }
+        // Central flash
+        ctx.globalAlpha = alpha * 0.4;
+        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, 20 + progress * 20);
+        grad.addColorStop(0, '#fef9c3'); grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.fillRect(sx - 50, sy - 50, 100, 100);
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'flash': {
+        // White screen flash (crit emphasis)
+        ctx.save(); ctx.globalAlpha = alpha * 0.15;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        break;
+      }
+      case 'buff_arrow': {
+        p.y += p.vy * dt;
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + entityScreenY(p.y);
+        ctx.save(); ctx.globalAlpha = alpha * 0.7;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 6;
+        // Arrow pointing up
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - 4); ctx.lineTo(sx - 3, sy + 2); ctx.lineTo(sx + 3, sy + 2);
+        ctx.closePath(); ctx.fill();
+        ctx.shadowBlur = 0; ctx.restore();
+        break;
+      }
+      case 'taunt_ring': {
+        const sx = p.x * camera.zoom - camera.x;
+        const sy = groundY + entityScreenY(p.y);
+        const r = 30 + Math.sin(progress * Math.PI * 4) * 5;
+        ctx.save(); ctx.globalAlpha = alpha * 0.4;
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 12;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath(); ctx.arc(sx, sy - 10, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
         ctx.shadowBlur = 0; ctx.restore();
         break;
       }
       case 'shockwave': {
         const sx = p.x * camera.zoom - camera.x;
         const sy = groundY + entityScreenY(p.y);
-        const r = progress * 60;
-        ctx.save(); ctx.globalAlpha = alpha * 0.35;
+        const r = progress * 70;
+        ctx.save(); ctx.globalAlpha = alpha * 0.4;
         ctx.strokeStyle = p.color; ctx.lineWidth = 3;
-        ctx.shadowColor = p.color; ctx.shadowBlur = 15;
+        ctx.shadowColor = p.color; ctx.shadowBlur = 18;
         ctx.beginPath(); ctx.arc(sx, sy - 15, r, 0, Math.PI * 2); ctx.stroke();
         ctx.shadowBlur = 0; ctx.restore();
         break;
       }
     }
   }
-  // Cap VFX pool
-  if (vfxParticles.length > 150) vfxParticles.splice(0, vfxParticles.length - 150);
+  // Cap VFX pool (raised for more particles)
+  if (vfxParticles.length > 300) vfxParticles.splice(0, vfxParticles.length - 300);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2871,6 +3597,9 @@ function render() {
   // Update animation states
   for (const id in animStates) { animStates[id].timer -= dt; if (animStates[id].timer <= 0) delete animStates[id]; }
 
+  // Screen shake
+  updateScreenShake(dt);
+
   // Smooth zoom
   camera.zoom += (camera.targetZoom - camera.zoom) * Math.min(1, 8 * dt);
 
@@ -2928,6 +3657,12 @@ function render() {
 
   // ── PARALLAX BACKGROUND (Phase 3) ──
   drawParallax(groundY);
+
+  // Apply screen shake offset
+  if (screenShake.timer > 0) {
+    ctx.save();
+    ctx.translate(screenShake.x, screenShake.y);
+  }
 
   // ── CAMPFIRE (Phase 8) ──
   if (state.status === 'campfire') {
@@ -3127,21 +3862,62 @@ function render() {
     ctx.shadowBlur = 0;
   }
 
-  // ── Campfire dialogues (Phase 8) ──
+  // ── Campfire dialogues (Phase 8) — enriched with conversations ──
   if (state.status === 'campfire') {
     campfireDialogueTimer -= dt;
     if (campfireDialogueTimer <= 0 && (!activeBubble || activeBubble.timer <= 0)) {
       campfireDialogueTimer = 5 + Math.random() * 4;
       const alive = state.characters.filter(c => c.alive);
       if (alive.length > 0) {
-        const char = alive[Math.floor(Math.random() * alive.length)];
-        const pool = CAMPFIRE_DIALOGUES.find(d => d.role === char.role);
-        if (pool) {
-          activeBubble = { charId: char.id, text: pool.lines[Math.floor(Math.random() * pool.lines.length)], timer: 5.0, charIndex: 0 };
+        const roll = Math.random();
+
+        if (roll < 0.25 && alive.length >= 2) {
+          // CONVERSATION: two characters talk to each other
+          const char1 = alive[Math.floor(Math.random() * alive.length)];
+          const char2 = alive.filter(c => c.id !== char1.id)[Math.floor(Math.random() * (alive.length - 1))];
+          if (char2) {
+            const convos = getCampfireConversation(char1, char2);
+            showBubbleFor(char1.id, convos[0], 4);
+            if (convos[1]) setTimeout(() => showBubbleFor(char2.id, convos[1], 4), 5000);
+            campfireDialogueTimer = 12;
+          }
+        } else if (roll < 0.4 && bossEncounterHistory.length > 0) {
+          // Reference last combat
+          const lastBoss = bossEncounterHistory[bossEncounterHistory.length - 1];
+          const char = alive[Math.floor(Math.random() * alive.length)];
+          const combatRefs = [
+            `${lastBoss.bossName} etait costaud... J'ai cru qu'on allait pas y arriver.`,
+            `Ce combat contre ${lastBoss.bossName} m'a epuise. Et le prochain sera pire.`,
+            `Vous avez vu quand ${lastBoss.bossName} a fait son attaque speciale?! J'ai eu la peur de ma vie!`,
+            `On a mis ${lastBoss.combatTime || '?'}s pour ${lastBoss.bossName}. On peut faire mieux.`,
+            `${lastBoss.bossName} de battu! Ca c'est du travail d'equipe!`,
+          ];
+          showBubbleFor(char.id, combatRefs[Math.floor(Math.random() * combatRefs.length)], 5);
+        } else if (roll < 0.55 && state.totalEncounters > 0) {
+          // Tease next boss
+          const char = alive[Math.floor(Math.random() * alive.length)];
+          const teases = [
+            "J'ai entendu dire que le prochain boss est encore plus fort...",
+            "Profitez du repos. Le pire est devant nous.",
+            "Vous sentez ca? L'air est different. Quelque chose de puissant nous attend.",
+            "On devrait elaborer une strategie pour le prochain combat... Nah, UNGA BUNGA.",
+            "Est-ce que les healers ont assez de mana pour le prochain? ...Personne? Super.",
+          ];
+          showBubbleFor(char.id, teases[Math.floor(Math.random() * teases.length)], 5);
+        } else {
+          // Classic monologue (original system)
+          const char = alive[Math.floor(Math.random() * alive.length)];
+          const pool = CAMPFIRE_DIALOGUES.find(d => d.role === char.role);
+          if (pool) {
+            showBubbleFor(char.id, pool.lines[Math.floor(Math.random() * pool.lines.length)], 5);
+          }
         }
       }
     }
   }
+
+  // Restore screen shake offset
+  if (screenShake.timer > 0) ctx.restore();
 
   // ── Party HUD (top-left) ──
   drawPartyHUD();
@@ -3467,43 +4243,66 @@ function drawCharacterSprite(char, sx, sy) {
 function drawBubble() {
   if (!activeBubble) return;
   const char = findEntity(activeBubble.charId);
-  if (!char) { activeBubble = null; return; }
+  // For boss bubbles, also check the boss entity
+  const isBoss = activeBubble.isBoss || false;
+  const entity = char || (isBoss && state?.boss ? state.boss : null);
+  if (!entity) { activeBubble = null; return; }
   const ip = interpPositions[activeBubble.charId];
   let sx, sy;
   if (state?.status === 'campfire' && campfireLayout?.positions[activeBubble.charId]) {
     const cp = campfireLayout.positions[activeBubble.charId];
     sx = cp.x; sy = cp.y - CHAR_SIZE - 20;
+  } else if (isBoss && state?.boss) {
+    const bossIp = interpPositions[state.boss.id];
+    sx = ((bossIp?.x ?? state.boss.x) * camera.zoom - camera.x);
+    sy = canvas.height * GROUND_Y_RATIO + entityScreenY(bossIp?.y ?? state.boss.y ?? 0) - 90 - 30;
   } else {
-    sx = (ip ? ip.x : char.x) * camera.zoom - camera.x;
-    sy = canvas.height * GROUND_Y_RATIO + entityScreenY(ip?.y ?? char.y ?? 0) - CHAR_SIZE - 20;
+    sx = (ip ? ip.x : entity.x) * camera.zoom - camera.x;
+    sy = canvas.height * GROUND_Y_RATIO + entityScreenY(ip?.y ?? entity.y ?? 0) - CHAR_SIZE - 20;
   }
 
   const charsToShow = Math.min(activeBubble.text.length, Math.floor(activeBubble.charIndex));
   const visibleText = activeBubble.text.substring(0, charsToShow);
+  // Speaker identity line: "HunterName (Username)" or "BossName" for boss
+  const speakerLine = isBoss
+    ? `[BOSS] ${entity.name || 'Boss'}`
+    : `${entity.name} (${entity.username || '???'})`;
   ctx.font = '11px sans-serif';
-  const textW = ctx.measureText(activeBubble.text).width;
-  const bubbleW = Math.min(200, textW + 20);
-  const bubbleH = 30;
+  const textW = Math.max(ctx.measureText(activeBubble.text).width, ctx.measureText(speakerLine).width);
+  const bubbleW = Math.min(260, textW + 24);
+  const bubbleH = 44;
   const alpha = activeBubble.timer < 0.5 ? activeBubble.timer / 0.5 : 1;
 
   ctx.save(); ctx.globalAlpha = alpha * 0.92;
 
-  // Background
-  ctx.fillStyle = 'rgba(15, 15, 35, 0.92)';
+  // Background — red-tinted for boss
+  ctx.fillStyle = isBoss ? 'rgba(40, 10, 10, 0.95)' : 'rgba(15, 15, 35, 0.94)';
   roundRect(ctx, sx - bubbleW / 2, sy - bubbleH, bubbleW, bubbleH, 8); ctx.fill();
 
-  // Border
-  const elemColor = ELEMENT_COLORS[char.element] || '#888';
-  ctx.strokeStyle = elemColor + '80'; ctx.lineWidth = 1;
+  // Border with element color (red for boss)
+  const elemColor = isBoss ? '#dc2626' : (ELEMENT_COLORS[entity.element] || '#888');
+  ctx.strokeStyle = isBoss ? '#dc262690' : elemColor + '90'; ctx.lineWidth = isBoss ? 2 : 1.5;
   roundRect(ctx, sx - bubbleW / 2, sy - bubbleH, bubbleW, bubbleH, 8); ctx.stroke();
 
-  // Triangle
-  ctx.fillStyle = 'rgba(15, 15, 35, 0.92)';
+  // Small accent on top-left
+  ctx.fillStyle = elemColor;
+  ctx.beginPath(); ctx.arc(sx - bubbleW / 2 + 10, sy - bubbleH + 10, 3, 0, Math.PI * 2); ctx.fill();
+
+  // Triangle pointer
+  ctx.fillStyle = isBoss ? 'rgba(40, 10, 10, 0.95)' : 'rgba(15, 15, 35, 0.94)';
   ctx.beginPath(); ctx.moveTo(sx - 5, sy); ctx.lineTo(sx + 5, sy); ctx.lineTo(sx, sy + 6); ctx.closePath(); ctx.fill();
 
-  // Text
+  // Speaker name
+  ctx.fillStyle = isBoss ? '#ef4444' : elemColor; ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(speakerLine, sx, sy - bubbleH + 14);
+
+  // Separator line
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(sx - bubbleW / 2 + 6, sy - bubbleH + 19); ctx.lineTo(sx + bubbleW / 2 - 6, sy - bubbleH + 19); ctx.stroke();
+
+  // Dialogue text
   ctx.fillStyle = '#e0e0e0'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText(visibleText, sx, sy - bubbleH / 2 + 4);
+  ctx.fillText(visibleText, sx, sy - bubbleH + 34);
   ctx.restore();
 }
 
