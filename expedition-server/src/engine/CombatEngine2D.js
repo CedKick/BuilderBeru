@@ -267,6 +267,9 @@ export class CombatEngine2D {
     // Passive on-skill-cast hook (free cast, double damage)
     const castResult = this.passives.onSkillCast(char, skill, this.events);
 
+    // Reset idle mana regen counter (skill was cast)
+    char._ticksSinceSkill = 0;
+
     // Consume mana (unless free cast from passive)
     if (skill.manaCost && !castResult.freeCast) {
       if (skill.consumeAllMana) {

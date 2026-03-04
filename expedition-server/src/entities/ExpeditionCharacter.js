@@ -275,6 +275,7 @@ export class ExpeditionCharacter {
     // Reset combat-specific tracking
     this.diedThisCombat = false;
     this.attackTimer = 0;
+    this._ticksSinceSkill = 0;  // Reset idle mana regen tracker
   }
 
   // ── Movement ────────────────────────────────────────────

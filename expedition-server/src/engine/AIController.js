@@ -13,10 +13,21 @@ export class AIController {
     // Update attack timer (cooldowns & buffs already updated in CombatEngine2D.tick)
     character.attackTimer -= dt;
 
-    // Passive mana regen (2 mana/sec for non-support, 8/sec for support)
-    const baseManaRegen = character.hunterClass === 'support' ? 8 : 2;
+    // ── Passive mana regen: % of maxMana per second (scales with pool size) ──
+    // Base: Non-support 3%/sec, Support 5%/sec
+    // Idle boost: if no skill cast for 3s → ×2, 6s → ×3, 10s → ×4 (accelerating recovery)
+    const baseManaRegenPct = character.hunterClass === 'support' ? 0.05 : 0.03;
     const bonusPct = character._manaRegenBonus || 0;  // from sets/weapons
-    const manaRegen = baseManaRegen * (1 + bonusPct / 100);
+
+    // Track idle time (ticks since last skill cast)
+    character._ticksSinceSkill = (character._ticksSinceSkill || 0) + 1;
+    const idleSec = character._ticksSinceSkill * dt;
+    let idleMultiplier = 1;
+    if (idleSec >= 10) idleMultiplier = 4;       // 10s+ idle → ×4 regen
+    else if (idleSec >= 6) idleMultiplier = 3;   // 6s idle → ×3 regen
+    else if (idleSec >= 3) idleMultiplier = 2;   // 3s idle → ×2 regen
+
+    const manaRegen = character.maxMana * baseManaRegenPct * (1 + bonusPct / 100) * idleMultiplier;
     character.regenMana(manaRegen * dt);
 
     switch (character.role) {
@@ -149,6 +160,10 @@ export class AIController {
       }
     }
 
+    // Mana reservation: healers save mana for heals when running low
+    const manaRatio = char.mana / char.maxMana;
+    const canAffordBuff = manaRatio >= 0.5;  // Only buff if mana > 50%
+
     // PRIORITY 1: Emergency heal (ally below 30% HP, proximity-weighted)
     const criticalAlly = AIController.findBestHealTarget(allies, char, 0.3, 0.3);
     if (criticalAlly) {
@@ -156,9 +171,9 @@ export class AIController {
       if (healSkill) return { type: 'skill', skill: healSkill, target: criticalAlly, isHeal: true };
     }
 
-    // PRIORITY 2: Buff def on low HP ally (proximity-weighted)
+    // PRIORITY 2: Buff def on low HP ally — ONLY if mana is comfortable (>50%)
     const injuredAlly = AIController.findBestHealTarget(allies, char, 0.6, 0.3);
-    if (injuredAlly) {
+    if (injuredAlly && canAffordBuff) {
       const defBuff = AIController.findSkillWithBuff(char, 'buffDef');
       if (defBuff) return { type: 'skill', skill: defBuff, target: injuredAlly };
     }
@@ -169,7 +184,7 @@ export class AIController {
       if (healSkill) return { type: 'skill', skill: healSkill, target: injuredAlly, isHeal: true };
     }
 
-    // PRIORITY 4: Contribute damage (low priority)
+    // PRIORITY 4: Contribute damage — ONLY auto-attacks (free, no mana spent on DPS)
     const target = boss?.alive ? boss : AIController.findLowestHpEnemy(enemies);
     if (target && char.attackTimer <= 0) {
       const dist = Math.abs(char.x - target.x);

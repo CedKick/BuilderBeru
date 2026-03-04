@@ -8,7 +8,7 @@ function getNextLaunchTime() {
 
   // Today at 19h Paris
   const launch = new Date(paris);
-  launch.setHours(EXPEDITION.LAUNCH_HOUR, 0, 0, 0);
+  launch.setHours(EXPEDITION.LAUNCH_HOUR, EXPEDITION.LAUNCH_MINUTE || 0, 0, 0);
   const launchUTC = new Date(launch.getTime() + diff);
 
   // If already past 19h today, next launch is tomorrow

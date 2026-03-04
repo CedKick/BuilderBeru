@@ -17,7 +17,8 @@ export const EXPEDITION = {
   MAX_CHARACTERS: 100,      // Total hunters across all players (up to ~16 players × 6)
   HUNTERS_PER_PLAYER: 6,
   MAX_DURATION_HOURS: 12,       // 19h -> 7h next day = 12h max
-  LAUNCH_HOUR: 22,              // TEMP: 22h Paris for tonight's test (normally 19h)
+  LAUNCH_HOUR: 22,              // TEMP: 22h40 Paris for tonight's test (normally 19h)
+  LAUNCH_MINUTE: 40,            // TEMP: launch at 22h40 (normally 0)
   END_HOUR: 7,                  // 7h next day (hard stop)
   END_MINUTE: 0,
   REGISTRATION_OPEN_HOUR: 12,   // Opens at 12h05 (after end + cleanup)

@@ -207,8 +207,9 @@ function startDailyScheduler() {
         }
       }
 
-      // ── Auto-launch at 19h00 Paris ──
-      if (hour === EXPEDITION.LAUNCH_HOUR && minute < 2 && !autoLaunchFired) {
+      // ── Auto-launch at configured hour:minute Paris ──
+      const launchMin = EXPEDITION.LAUNCH_MINUTE || 0;
+      if (hour === EXPEDITION.LAUNCH_HOUR && minute >= launchMin && minute < launchMin + 2 && !autoLaunchFired) {
         autoLaunchFired = true;
 
         // Engine must be idle (waiting for a start command)
@@ -241,7 +242,8 @@ function startDailyScheduler() {
   // Log schedule
   const now = new Date();
   const parisNow = new Date(now.toLocaleString('en-US', { timeZone: EXPEDITION.TIMEZONE }));
-  console.log(`[Scheduler] Active — inscriptions a ${EXPEDITION.REGISTRATION_OPEN_HOUR}h${String(EXPEDITION.REGISTRATION_OPEN_MINUTE).padStart(2,'0')}, lancement a ${EXPEDITION.LAUNCH_HOUR}h (Paris)`);
+  const lMin = EXPEDITION.LAUNCH_MINUTE || 0;
+  console.log(`[Scheduler] Active — inscriptions a ${EXPEDITION.REGISTRATION_OPEN_HOUR}h${String(EXPEDITION.REGISTRATION_OPEN_MINUTE).padStart(2,'0')}, lancement a ${EXPEDITION.LAUNCH_HOUR}h${lMin ? String(lMin).padStart(2,'0') : ''} (Paris)`);
   console.log(`[Scheduler] Heure Paris actuelle: ${parisNow.getHours()}h${String(parisNow.getMinutes()).padStart(2,'0')}`);
 }
 
