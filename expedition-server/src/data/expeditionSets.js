@@ -324,10 +324,212 @@ export const MEDIUM_SETS = {
 };
 
 // ═══════════════════════════════════════════════════════════
+// SHADOW COLOSSEUM BASE SETS (8 — stats pures)
+// ═══════════════════════════════════════════════════════════
+
+export const SC_ARTIFACT_SETS = {
+  infamie_chaotique: {
+    id: 'infamie_chaotique', name: 'Infamie Chaotique',
+    zone: 'sc', rarity: 'epic', binding: 'lqe', targetClass: ['all'],
+    bonus2pc: { atk_pct: 12 },
+    bonus4pc: { crit_dmg_pct: 25 },
+  },
+  volonte_de_fer: {
+    id: 'volonte_de_fer', name: 'Volonte de Fer',
+    zone: 'sc', rarity: 'epic', binding: 'lqe', targetClass: ['all'],
+    bonus2pc: { def_pct: 15 },
+    bonus4pc: { hp_pct: 20 },
+  },
+  flamme_maudite: {
+    id: 'flamme_maudite', name: 'Flamme Maudite',
+    zone: 'sc', rarity: 'epic', binding: 'lqe', targetClass: ['all'],
+    bonus2pc: { crit_rate: 8 },
+    bonus4pc: { fire_dmg_pct: 20 },
+  },
+  maree_eternelle: {
+    id: 'maree_eternelle', name: 'Maree Eternelle',
+    zone: 'sc', rarity: 'epic', binding: 'lqe', targetClass: ['all'],
+    bonus2pc: { res_flat: 10 },
+    bonus4pc: { water_dmg_pct: 20 },
+  },
+  ombre_souveraine: {
+    id: 'ombre_souveraine', name: 'Ombre Souveraine',
+    zone: 'sc', rarity: 'epic', binding: 'lqe', targetClass: ['all'],
+    bonus2pc: { atk_pct: 8 },
+    bonus4pc: { shadow_dmg_pct: 25 },
+  },
+  benediction_celeste: {
+    id: 'benediction_celeste', name: 'Benediction Celeste',
+    zone: 'sc', rarity: 'epic', binding: 'lqe', targetClass: ['all'],
+    bonus2pc: { hp_pct: 12 },
+    bonus4pc: { heal_pct: 30 },
+  },
+  expertise_bestiale: {
+    id: 'expertise_bestiale', name: 'Expertise Bestiale',
+    zone: 'sc', rarity: 'epic', binding: 'lqe', targetClass: ['all'],
+    bonus2pc: { spd_pct: 10 },
+    bonus4pc: { all_dmg_pct: 12 },
+  },
+  eclat_angelique: {
+    id: 'eclat_angelique', name: 'Eclat Angelique',
+    zone: 'sc', rarity: 'epic', binding: 'lqe', targetClass: ['all'],
+    bonus2pc: { res_flat: 8 },
+    bonus4pc: { def_pen: 15 },
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+// SHADOW COLOSSEUM RAID SETS (8 — passifs complexes)
+// ═══════════════════════════════════════════════════════════
+
+export const SC_RAID_SETS = {
+  sacrifice_martyr: {
+    id: 'sacrifice_martyr', name: 'Sacrifice du Martyr',
+    zone: 'sc_raid', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'martyr_aura', description: 'ATK -30%, ATK allies +15%' },
+    bonus4pc: { passive: 'martyr_heal', description: 'Allie <30% PV: soigne 20% PV max (1x/allie)' },
+  },
+  fureur_desespoir: {
+    id: 'fureur_desespoir', name: 'Fureur du Desespoir',
+    zone: 'sc_raid', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'desperate_fury', description: '+0.8% DMG par 1% PV manquant' },
+    bonus4pc: { passive: 'last_stand', description: '<25% PV: crits garantis + ignore 25% DEF' },
+  },
+  chaines_destin: {
+    id: 'chaines_destin', name: 'Chaines du Destin',
+    zone: 'sc_raid', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'chain_lifesteal', description: '15% chance voler 12% DMG en PV' },
+    bonus4pc: { passive: 'chain_heal_crit', description: 'Soins +30%, 10% chance soin crit (x2)' },
+  },
+  echo_temporel: {
+    id: 'echo_temporel', name: 'Echo Temporel',
+    zone: 'sc_raid', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'echo_cd', description: '20% chance -1 CD apres attaque' },
+    bonus4pc: { passive: 'echo_free_mana', description: 'Tous les 3 sorts: prochain = 0 mana' },
+  },
+  aura_commandeur: {
+    id: 'aura_commandeur', name: 'Aura du Commandeur',
+    zone: 'sc_raid', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'commander_def', description: '+10% DEF tous allies' },
+    bonus4pc: { passive: 'commander_crit', description: 'Debut combat: allies +20 CRIT 8s' },
+  },
+  voile_ombre: {
+    id: 'voile_ombre', name: "Voile de l'Ombre",
+    zone: 'sc_raid', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'shadow_dodge', description: '12% chance esquiver une attaque' },
+    bonus4pc: { passive: 'shadow_counter', description: 'Si esquive: contre-attaque a 80% power' },
+  },
+  source_arcanique: {
+    id: 'source_arcanique', name: 'Source Arcanique',
+    zone: 'sc_raid', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { mana_max_pct: 30 },
+    bonus4pc: { mana_regen_pct: 50, mana_cost_reduce: 20 },
+  },
+  flamme_interieure: {
+    id: 'flamme_interieure', name: 'Flamme Interieure',
+    zone: 'sc_raid', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'inner_flame_stack', description: '+3% DMG par attaque (max 10 stacks)' },
+    bonus4pc: { passive: 'inner_flame_release', description: 'A 10 stacks: crit garanti +50% DMG' },
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+// ARC2 SETS (5 — adaptes pour expedition)
+// ═══════════════════════════════════════════════════════════
+
+export const SC_ARC2_SETS = {
+  toughness: {
+    id: 'toughness', name: 'Toughness',
+    zone: 'arc2', rarity: 'epic', binding: 'lqe', targetClass: ['all'],
+    bonus2pc: { crit_rate: 8 },
+    bonus4pc: { crit_dmg_pct: 32 },
+  },
+  burning_curse: {
+    id: 'burning_curse', name: 'Burning Curse',
+    zone: 'arc2', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'curse', description: 'DMG +10%, DMG recus +20%, +0.1% DMG/tick (max 100)' },
+    bonus4pc: { passive: 'enhanced_curse', description: 'DMG +20%, rescue heal 25% si <25% HP (1x)' },
+  },
+  burning_greed: {
+    id: 'burning_greed', name: 'Burning Greed',
+    zone: 'arc2', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'greed', description: 'Sur crit: CRIT +1%/stack (max 10)' },
+    bonus4pc: { passive: 'enhanced_greed', description: 'Sur crit: CRIT +2%/stack (max 10)' },
+  },
+  iron_will: {
+    id: 'iron_will', name: 'Iron Will',
+    zone: 'arc2', rarity: 'epic', binding: 'lqe', targetClass: ['all'],
+    bonus2pc: { def_pct: 8 },
+    bonus4pc: { passive: 'iron_will', description: 'Sur skill: DEF +5%/use (max 5x). Skill DMG +50%' },
+  },
+  chaotic_infamy: {
+    id: 'chaotic_infamy', name: 'Chaotic Infamy',
+    zone: 'arc2', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'infamy_stack', description: 'Par skill: basic DMG +1.5%/stack (max 20), DMG recus +1%/stack' },
+    bonus4pc: { passive: 'enhanced_infamy', description: 'Basic DMG +2.5%/stack, mana +5% (CD 8s)' },
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+// ULTIME SETS (9 — puissants passifs endgame)
+// ═══════════════════════════════════════════════════════════
+
+export const SC_ULTIME_SETS = {
+  rage_eternelle: {
+    id: 'rage_eternelle', name: 'Rage Eternelle',
+    zone: 'ultime', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { atk_pct: 12, passive: 'eternal_rage_stack', description: 'Chaque attaque: ATK +1% (max 15 stacks)' },
+    bonus4pc: { passive: 'eternal_rage_release', description: 'A 15 stacks: CRIT garanti + DMG +40%, ignore 15% DEF' },
+  },
+  gardien_celeste: {
+    id: 'gardien_celeste', name: 'Gardien Celeste',
+    zone: 'ultime', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { def_pct: 15, hp_pct: 10, passive: 'celestial_shield', description: 'Debut combat: bouclier 20% HP max' },
+    bonus4pc: { passive: 'celestial_wrath', description: 'Bouclier intact: +25% DMG. Brise: heal 30% + DEF +20% 10s' },
+  },
+  siphon_vital: {
+    id: 'siphon_vital', name: 'Siphon Vital',
+    zone: 'ultime', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'vital_siphon', description: '25% chance voler 15% DMG, surcharge PV = bouclier (max 20%)' },
+    bonus4pc: { passive: 'vital_surge', description: 'PV>80%: DMG +30%. PV<30%: lifesteal 100% 2 ticks (CD 10s)' },
+  },
+  tempete_arcane: {
+    id: 'tempete_arcane', name: 'Tempete Arcane',
+    zone: 'ultime', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { mana_max_pct: 40, passive: 'arcane_tempest', description: 'Skills: DMG +2% par 10% mana restant' },
+    bonus4pc: { passive: 'arcane_overload', description: 'Mana plein: prochain skill x2 DMG (CD 5 sorts). Regen +80%' },
+  },
+  equilibre_supreme: {
+    id: 'equilibre_supreme', name: 'Equilibre Supreme',
+    zone: 'ultime', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { atk_pct: 8, def_pct: 8, hp_pct: 8, crit_rate: 5, crit_dmg_pct: 10 },
+    bonus4pc: { passive: 'supreme_balance', description: 'Stat la plus basse +25%. Tous les 20s: all stats +10% 8s' },
+  },
+  pacte_ombres: {
+    id: 'pacte_ombres', name: 'Pacte des Ombres',
+    zone: 'ultime', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { passive: 'shadow_pact', description: 'ATK -50%, ATK allies +150%' },
+    bonus4pc: { passive: 'shadow_pact_raid', description: 'DMG +25% pour tout le raid' },
+  },
+  esprit_transcendant: {
+    id: 'esprit_transcendant', name: 'Esprit Transcendant',
+    zone: 'ultime', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { int_pct: 30, mana_regen_pct: 25, passive: 'transcendent_stack', description: 'Chaque skill: INT +2% (max 10 stacks)' },
+    bonus4pc: { passive: 'transcendent_release', description: 'A 10 stacks: ignore 25% DEF + DMG x1.5, reset' },
+  },
+  resonance_arcanique: {
+    id: 'resonance_arcanique', name: 'Resonance Arcanique',
+    zone: 'ultime', rarity: 'legendary', binding: 'lqr', targetClass: ['all'],
+    bonus2pc: { int_pct: 20, mana_cost_reduce: 25, passive: 'arcane_resonance', description: 'Mana-scaling skills: +15% puissance' },
+    bonus4pc: { passive: 'arcane_adaptive', description: 'Mana>60%: crit garanti. Mana<30%: regen x3 3s (CD 20s)' },
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════
 
-export const ALL_SETS = { ...BIG_SETS, ...MEDIUM_SETS };
+export const ALL_SETS = { ...BIG_SETS, ...MEDIUM_SETS, ...SC_ARTIFACT_SETS, ...SC_RAID_SETS, ...SC_ARC2_SETS, ...SC_ULTIME_SETS };
 
 export function getSetById(setId) {
   return ALL_SETS[setId] || null;

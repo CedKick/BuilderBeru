@@ -154,8 +154,8 @@ export class CombatEngine2D {
     const atkMult = this.passives.getAtkMultiplier(char.id);
     const atk = Math.floor(char.getOffensiveStat() * atkMult);
 
-    // Calculate armor penetration from weapon effects
-    let armorPen = this.getArmorPen(char);
+    // Calculate armor penetration from weapon effects + set bonuses
+    let armorPen = this.getArmorPen(char) + (char._defPen || 0);
 
     // Execute on kill bonus: next hit ignores 30% DEF
     if (char._executeNextHit) {
@@ -198,7 +198,10 @@ export class CombatEngine2D {
     }
 
     const isCrit = this.checkCrit(char.crit, target.res || 0, char.id);
-    if (isCrit) damage = Math.floor(damage * COMBAT.CRIT_MULTIPLIER);
+    if (isCrit) {
+      const critMult = COMBAT.CRIT_MULTIPLIER + (char._critDmgBonus || 0) / 100;
+      damage = Math.floor(damage * critMult);
+    }
 
     // Passive on-take-damage hook (damage reduction for target if it's a character)
     if (target.expeditionGear) {
@@ -371,7 +374,8 @@ export class CombatEngine2D {
       // Nova Arcanique 4th spell = double damage
       if (castResult.doubleDamage) skillPower *= 2;
 
-      let damage = this.calculateDamage(atk, skillPower, target.def || 0);
+      const skillArmorPen = (char._defPen || 0) + (castResult.defIgnore ? castResult.defIgnore * 100 : 0);
+      let damage = this.calculateDamage(atk, skillPower, target.def || 0, skillArmorPen);
 
       // Void Vulnerable
       if (this.passives.isVoidVulnerable(target.id)) {
@@ -379,7 +383,10 @@ export class CombatEngine2D {
       }
 
       const isCrit = this.checkCrit(char.crit, target.res || 0, char.id);
-      if (isCrit) damage = Math.floor(damage * COMBAT.CRIT_MULTIPLIER);
+      if (isCrit) {
+        const critMult = COMBAT.CRIT_MULTIPLIER + (char._critDmgBonus || 0) / 100;
+        damage = Math.floor(damage * critMult);
+      }
 
       const actualDmg = target.takeDamage ? target.takeDamage(damage) : damage;
       char.stats.damageDealt += actualDmg;

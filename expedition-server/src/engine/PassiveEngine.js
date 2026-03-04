@@ -53,7 +53,117 @@ export class PassiveEngine {
         windRushFirstAttack: true,
         bastionRezUsed: false,
         ghostBladeNextIgnoreDef: false,
+        // ── SC/Raid/ARC2/Ultime set state ──
+        innerFlameStacks: 0,
+        innerFlameDmgMult: 0,
+        eternalRageStacks: 0,
+        eternalRageCritTimer: 0,
+        celestialShieldHp: 0,
+        celestialShieldActive: false,
+        siphonEmergencyCD: 0,
+        siphonEmergencyActive: false,
+        equilibreTimer: 0,
+        equilibreBuffActive: false,
+        curseDmgStacks: 0,
+        curseRescueUsed: false,
+        greedCritStacks: 0,
+        ironWillStacks: 0,
+        infamyStacks: 0,
+        infamyManaCD: 0,
+        echoSpellCount: 0,
+        transcendentStacks: 0,
+        arcaneOverloadReady: false,
+        arcaneOverloadCD: 0,
+        arcaneAdaptiveRegenCD: 0,
+        arcaneAdaptiveRegenActive: false,
+        dodgeCounterReady: false,
+        commanderApplied: false,
+        shadowPactApplied: false,
+        martyrHealUsed: new Map(), // targetId -> used
       });
+
+      // ── Apply combat-start passives ──
+
+      // Gardien Celeste: shield 20% HP at start
+      if (this.has2pcPassive(char.id, 'celestial_shield')) {
+        const shield = Math.floor(char.maxHp * 0.20);
+        const cs = this.state.get(char.id);
+        cs.celestialShieldHp = shield;
+        cs.celestialShieldActive = true;
+      }
+    }
+
+    // ── Post-init team passives (need all chars loaded) ──
+    for (const char of characters) {
+      const s = this.state.get(char.id);
+      if (!s) continue;
+
+      // Sacrifice du Martyr 2pc: self ATK -30%, ally ATK +15%
+      if (this.has2pcPassive(char.id, 'martyr_aura')) {
+        char.atk = Math.floor(char.atk * 0.70);
+        for (const ally of characters) {
+          if (ally.id !== char.id && ally.username === char.username) {
+            ally.atk = Math.floor(ally.atk * 1.15);
+          }
+        }
+      }
+
+      // Pacte des Ombres 2pc: self ATK -50%, allies ATK +150%
+      if (this.has2pcPassive(char.id, 'shadow_pact') && !s.shadowPactApplied) {
+        s.shadowPactApplied = true;
+        char.atk = Math.floor(char.atk * 0.50);
+        for (const ally of characters) {
+          if (ally.id !== char.id && ally.username === char.username) {
+            ally.atk = Math.floor(ally.atk * 2.50); // +150%
+          }
+        }
+      }
+
+      // Pacte des Ombres 4pc: raid-wide DMG +25%
+      if (this.hasPassive(char.id, 'shadow_pact_raid')) {
+        for (const ally of characters) {
+          ally._allDmgBonus = (ally._allDmgBonus || 0) + 25;
+        }
+      }
+
+      // Aura du Commandeur 2pc: allies +10% DEF
+      if (this.has2pcPassive(char.id, 'commander_def')) {
+        for (const ally of characters) {
+          if (ally.id !== char.id) {
+            ally.def = Math.floor(ally.def * 1.10);
+          }
+        }
+      }
+
+      // Aura du Commandeur 4pc: allies +20 CRIT for 8s
+      if (this.hasPassive(char.id, 'commander_crit') && !s.commanderApplied) {
+        s.commanderApplied = true;
+        for (const ally of characters) {
+          if (ally.id !== char.id) {
+            ally.addBuff('crit', 20, 8, 'commander_crit');
+          }
+        }
+      }
+
+      // Equilibre Supreme 4pc: stat la plus basse +25%
+      if (this.hasPassive(char.id, 'supreme_balance')) {
+        const stats = { atk: char.atk, def: char.def, spd: char.spd };
+        const lowest = Object.entries(stats).sort((a, b) => a[1] - b[1])[0];
+        if (lowest) {
+          const boost = Math.floor(lowest[1] * 0.25);
+          char[lowest[0]] += boost;
+        }
+      }
+
+      // Burning Curse 2pc: DMG +10% (applied as allDmg), DMG taken +20%
+      if (this.has2pcPassive(char.id, 'curse')) {
+        char._allDmgBonus = (char._allDmgBonus || 0) + 10;
+        char._curseDmgTaken = 20;
+      }
+      // Burning Curse 4pc: DMG +20% instead
+      if (this.hasPassive(char.id, 'enhanced_curse')) {
+        char._allDmgBonus = (char._allDmgBonus || 0) + 10; // +10 more (total 20)
+      }
     }
   }
 
@@ -94,6 +204,33 @@ export class PassiveEngine {
       }
       if (b.mana_regen_pct) char._manaRegenBonus = (char._manaRegenBonus || 0) + b.mana_regen_pct;
       if (b.lifesteal_pct) char._lifesteal = (char._lifesteal || 0) + b.lifesteal_pct;
+      // New stat keys for SC/Raid/ARC2/Ultime sets
+      if (b.crit_dmg_pct) char._critDmgBonus = (char._critDmgBonus || 0) + b.crit_dmg_pct;
+      if (b.fire_dmg_pct) char._elemDmgBonus = (char._elemDmgBonus || 0) + (char.element === 'fire' ? b.fire_dmg_pct : 0);
+      if (b.water_dmg_pct) char._elemDmgBonus = (char._elemDmgBonus || 0) + (char.element === 'water' ? b.water_dmg_pct : 0);
+      if (b.shadow_dmg_pct) char._elemDmgBonus = (char._elemDmgBonus || 0) + (char.element === 'shadow' ? b.shadow_dmg_pct : 0);
+      if (b.all_dmg_pct) char._allDmgBonus = (char._allDmgBonus || 0) + b.all_dmg_pct;
+      if (b.def_pen) char._defPen = (char._defPen || 0) + b.def_pen;
+      if (b.res_flat) char.res = (char.res || 0) + b.res_flat;
+      if (b.int_pct && char.int) char.int = Math.floor(char.int * (1 + b.int_pct / 100));
+      if (b.mana_cost_reduce) char._manaCostReduce = (char._manaCostReduce || 0) + b.mana_cost_reduce;
+    }
+
+    // Also apply 4pc stat-only bonuses (sets without passive, just stats)
+    for (const s of activeSets) {
+      if (!s.has4pc) continue;
+      const b4 = s.setDef.bonus4pc;
+      if (!b4 || b4.passive) continue; // Skip sets that have passive (handled in hooks)
+      if (b4.crit_dmg_pct) char._critDmgBonus = (char._critDmgBonus || 0) + b4.crit_dmg_pct;
+      if (b4.hp_pct) { char.maxHp = Math.floor(char.maxHp * (1 + b4.hp_pct / 100)); char.hp = char.maxHp; }
+      if (b4.fire_dmg_pct) char._elemDmgBonus = (char._elemDmgBonus || 0) + (char.element === 'fire' ? b4.fire_dmg_pct : 0);
+      if (b4.water_dmg_pct) char._elemDmgBonus = (char._elemDmgBonus || 0) + (char.element === 'water' ? b4.water_dmg_pct : 0);
+      if (b4.shadow_dmg_pct) char._elemDmgBonus = (char._elemDmgBonus || 0) + (char.element === 'shadow' ? b4.shadow_dmg_pct : 0);
+      if (b4.all_dmg_pct) char._allDmgBonus = (char._allDmgBonus || 0) + b4.all_dmg_pct;
+      if (b4.def_pen) char._defPen = (char._defPen || 0) + b4.def_pen;
+      if (b4.heal_pct) char._healBonus = (char._healBonus || 0) + b4.heal_pct;
+      if (b4.mana_regen_pct) char._manaRegenBonus = (char._manaRegenBonus || 0) + b4.mana_regen_pct;
+      if (b4.mana_cost_reduce) char._manaCostReduce = (char._manaCostReduce || 0) + b4.mana_cost_reduce;
     }
   }
 
@@ -101,6 +238,12 @@ export class PassiveEngine {
     const s = this.state.get(charId);
     if (!s) return false;
     return s.activeSets.some(set => set.has4pc && set.setDef.bonus4pc?.passive === passiveId);
+  }
+
+  has2pcPassive(charId, passiveId) {
+    const s = this.state.get(charId);
+    if (!s) return false;
+    return s.activeSets.some(set => set.has2pc && set.setDef.bonus2pc?.passive === passiveId);
   }
 
   hasWeapon(charId, weaponId) {
@@ -189,7 +332,95 @@ export class PassiveEngine {
     // ── WIND RUSH (Ailes du Vent): first attack = guaranteed crit ──
     if (this.hasPassive(char.id, 'wind_rush') && s.windRushFirstAttack) {
       s.windRushFirstAttack = false;
-      // The guaranteed crit is handled by checkGuaranteedCrit, mark is consumed
+    }
+
+    // ── FLAMME INTERIEURE 2pc: +3% DMG per stack (max 10) ──
+    if (this.has2pcPassive(char.id, 'inner_flame_stack')) {
+      s.innerFlameStacks = Math.min(10, s.innerFlameStacks + 1);
+      s.innerFlameDmgMult = s.innerFlameStacks * 0.03;
+      bonusDamage += Math.floor(damage * s.innerFlameDmgMult);
+    }
+    // FLAMME INTERIEURE 4pc: at 10 stacks crit + DMG +50%
+    if (this.hasPassive(char.id, 'inner_flame_release') && s.innerFlameStacks >= 10) {
+      bonusDamage += Math.floor(damage * 0.50);
+      s.innerFlameStacks = 0;
+      s.innerFlameDmgMult = 0;
+      events.push({ type: 'passive_proc', charId: char.id, passive: 'inner_flame_burst', message: 'Flamme Interieure: Explosion x1.5!' });
+    }
+
+    // ── RAGE ETERNELLE 2pc: ATK +1% per hit (max 15) ──
+    if (this.has2pcPassive(char.id, 'eternal_rage_stack')) {
+      s.eternalRageStacks = Math.min(15, s.eternalRageStacks + 1);
+      char.addBuff('atk', Math.floor(char.atk * 0.01 * s.eternalRageStacks), 999, 'eternal_rage');
+    }
+    // RAGE ETERNELLE 4pc: at 15 stacks crit + DMG +40% + ignore 15% DEF
+    if (this.hasPassive(char.id, 'eternal_rage_release') && s.eternalRageStacks >= 15 && s.eternalRageCritTimer <= 0) {
+      s.eternalRageCritTimer = 5;
+      s.eternalRageStacks = 0;
+      bonusDamage += Math.floor(damage * 0.40);
+      events.push({ type: 'passive_proc', charId: char.id, passive: 'eternal_rage_burst', message: 'Rage Eternelle: Crits + DMG +40%!' });
+    }
+    if (s.eternalRageCritTimer > 0) {
+      bonusDamage += Math.floor(damage * 0.15); // Simulate 15% DEF ignore
+    }
+
+    // ── FUREUR DU DESESPOIR 2pc: +0.8% DMG per 1% HP missing ──
+    if (this.has2pcPassive(char.id, 'desperate_fury')) {
+      const missingPct = 1 - (char.hp / char.maxHp);
+      bonusDamage += Math.floor(damage * missingPct * 0.008 * 100);
+    }
+
+    // ── CHAINES DU DESTIN 2pc: 15% chance lifesteal 12% ──
+    if (this.has2pcPassive(char.id, 'chain_lifesteal') && Math.random() < 0.15) {
+      const steal = Math.floor((damage + bonusDamage) * 0.12);
+      if (steal > 0 && char.alive) char.heal(steal);
+    }
+
+    // ── SIPHON VITAL 2pc: 25% chance lifesteal 15% + overheal shield ──
+    if (this.has2pcPassive(char.id, 'vital_siphon') && Math.random() < 0.25) {
+      const steal = Math.floor((damage + bonusDamage) * 0.15);
+      if (steal > 0 && char.alive) {
+        const before = char.hp;
+        char.heal(steal);
+        const overheal = steal - (char.hp - before);
+        if (overheal > 0) {
+          const shieldMax = Math.floor(char.maxHp * 0.20);
+          char._overHealShield = Math.min(shieldMax, (char._overHealShield || 0) + overheal);
+        }
+      }
+    }
+    // SIPHON VITAL 4pc: HP > 80% = DMG +30%
+    if (this.hasPassive(char.id, 'vital_surge') && char.hp / char.maxHp > 0.80) {
+      bonusDamage += Math.floor(damage * 0.30);
+    }
+
+    // ── GARDIEN CELESTE 4pc: shield intact = +25% DMG ──
+    if (this.hasPassive(char.id, 'celestial_wrath') && s.celestialShieldActive) {
+      bonusDamage += Math.floor(damage * 0.25);
+    }
+
+    // ── ECHO TEMPOREL 2pc: 20% chance -1 CD after attack ──
+    if (this.has2pcPassive(char.id, 'echo_cd') && Math.random() < 0.20) {
+      for (const skill of char.skills) {
+        if (skill.cooldown > 0) { skill.cooldown = Math.max(0, skill.cooldown - 1); break; }
+      }
+    }
+
+    // ── BURNING CURSE: +0.1% DMG per tick stacked ──
+    if (this.has2pcPassive(char.id, 'curse')) {
+      s.curseDmgStacks = Math.min(100, s.curseDmgStacks + 0.1);
+      bonusDamage += Math.floor(damage * s.curseDmgStacks / 100);
+    }
+
+    // ── TEMPETE ARCANE 2pc: DMG +2% per 10% mana remaining ──
+    if (this.has2pcPassive(char.id, 'arcane_tempest')) {
+      const manaPercent10 = Math.floor((char.mana / char.maxMana) * 10);
+      bonusDamage += Math.floor(damage * manaPercent10 * 0.02);
+    }
+
+    // ── ARCANE RESONANCE 2pc: mana-scaling bonus +15% ──
+    if (this.has2pcPassive(char.id, 'arcane_resonance')) {
+      bonusDamage += Math.floor(damage * 0.15);
     }
 
     return { bonusDamage };
@@ -227,6 +458,13 @@ export class PassiveEngine {
       s.caladBurningTargets = s.caladBurningTargets || new Set();
       s.caladBurningTargets.add(target.id);
       events.push({ type: 'passive_proc', charId: char.id, passive: 'caladbolg_burn', target: target.id });
+    }
+
+    // ── BURNING GREED: CRIT +1%/+2% per stack (max 10) ──
+    if (this.has2pcPassive(char.id, 'greed')) {
+      const increment = this.hasPassive(char.id, 'enhanced_greed') ? 2 : 1;
+      s.greedCritStacks = Math.min(10, s.greedCritStacks + increment);
+      char.addBuff('crit', s.greedCritStacks, 999, 'burning_greed');
     }
   }
 
@@ -301,6 +539,11 @@ export class PassiveEngine {
       events.push({ type: 'passive_aoe', charId: char.id, passive: 'void_voice_explode', damage: aoeDmg, radius: 120 });
       s.voidVoiceDots.delete(target.id);
     }
+
+    // ── RAGE ETERNELLE: +3 stacks on kill ──
+    if (this.has2pcPassive(char.id, 'eternal_rage_stack')) {
+      s.eternalRageStacks = Math.min(15, s.eternalRageStacks + 3);
+    }
   }
 
   // ═══════════════════════════════════════════════════════
@@ -343,6 +586,15 @@ export class PassiveEngine {
     // ── HARMONIE CELESTE: casting spell = +5% ATK to allies in 300px ──
     if (this.hasPassive(healer.id, 'celestial_harmony')) {
       events.push({ type: 'passive_proc', charId: healer.id, passive: 'harmony_atk_buff', radius: 300, value: 5 });
+    }
+
+    // ── CHAINES DU DESTIN 4pc: heal +30%, 10% crit heal x2 ──
+    if (this.hasPassive(healer.id, 'chain_heal_crit')) {
+      bonusHeal += Math.floor(healAmount * 0.30);
+      if (Math.random() < 0.10) {
+        bonusHeal += healAmount;
+        events.push({ type: 'passive_proc', charId: healer.id, passive: 'chain_crit_heal', target: target.id });
+      }
     }
 
     return { bonusHeal, shieldAmount };
@@ -397,6 +649,53 @@ export class PassiveEngine {
       }
     }
 
+    // ── VOILE DE L'OMBRE 2pc: 12% dodge ──
+    if (this.has2pcPassive(char.id, 'shadow_dodge') && Math.random() < 0.12) {
+      damageReduction = rawDamage; // Full dodge
+      events.push({ type: 'passive_proc', charId: char.id, passive: 'shadow_dodge_proc', message: 'Voile: Esquive!' });
+      // 4pc: counter-attack on dodge
+      if (this.hasPassive(char.id, 'shadow_counter') && attacker) {
+        const counterDmg = Math.floor(char.getOffensiveStat() * 0.80);
+        events.push({ type: 'passive_aoe', charId: char.id, passive: 'shadow_counter', damage: counterDmg, radius: 0, target: attacker.id });
+      }
+    }
+
+    // ── GARDIEN CELESTE: shield absorbs damage ──
+    if (s.celestialShieldActive && s.celestialShieldHp > 0) {
+      const absorbed = Math.min(s.celestialShieldHp, rawDamage - damageReduction);
+      s.celestialShieldHp -= absorbed;
+      damageReduction += absorbed;
+      if (s.celestialShieldHp <= 0) {
+        s.celestialShieldActive = false;
+        // 4pc: shield broken = heal 30% + DEF +20% 10s
+        if (this.hasPassive(char.id, 'celestial_wrath')) {
+          char.heal(Math.floor(char.maxHp * 0.30));
+          char.addBuff('def', Math.floor(char.def * 0.20), 10, 'celestial_wrath');
+          events.push({ type: 'passive_proc', charId: char.id, passive: 'celestial_shield_break', message: 'Gardien Celeste: Bouclier brise! Heal + DEF!' });
+        }
+      }
+    }
+
+    // ── BURNING CURSE: DMG taken +20% ──
+    if (char._curseDmgTaken) {
+      damageReduction -= Math.floor(rawDamage * char._curseDmgTaken / 100); // Negative = more damage
+    }
+
+    // ── FUREUR DU DESESPOIR 4pc: <25% HP = guaranteed crit (handled in checkGuaranteedCrit) ──
+    // DEF ignore handled via bonusDamage in onHit
+
+    // ── BURNING CURSE 4pc rescue: heal 25% if <25% HP (1x) ──
+    if (this.hasPassive(char.id, 'enhanced_curse') && !s.curseRescueUsed) {
+      if (char.hp / char.maxHp < 0.25) {
+        s.curseRescueUsed = true;
+        char.heal(Math.floor(char.maxHp * 0.25));
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'curse_rescue', message: 'Burning Curse: Rescue!' });
+      }
+    }
+
+    // ── SACRIFICE DU MARTYR 4pc: ally <30% HP = heal 20% (1x per ally) ──
+    // (Checked in tick for all allies)
+
     return { damageReduction };
   }
 
@@ -432,9 +731,19 @@ export class PassiveEngine {
       return { preventDeath: true, rezHpPercent: 10, bonusDef: 0, bonusDefDuration: 0 };
     }
 
+    // ── SIPHON VITAL 4pc: <30% HP = lifesteal 100% for 2 ticks (CD 10s) ──
+    if (this.hasPassive(char.id, 'vital_surge') && s.siphonEmergencyCD <= 0) {
+      if (char.hp / char.maxHp < 0.30) {
+        s.siphonEmergencyCD = 10;
+        char._lifesteal = (char._lifesteal || 0) + 100;
+        s.siphonEmergencyActive = true;
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'siphon_emergency', message: 'Siphon Vital: Lifesteal 100%!' });
+        return { preventDeath: true, rezHpPercent: 5, bonusDef: 0, bonusDefDuration: 0 };
+      }
+    }
+
     // ── AEGIS WEAPON: ally death = +30% ATK, +20% DEF for allies ──
     if (attacker) {
-      // Check all allies for Aegis weapon
       for (const [charId, cs] of this.state) {
         if (charId !== char.id && cs.weaponDef?.id === 'aegis_weapon') {
           events.push({ type: 'passive_proc', charId, passive: 'aegis_ally_death', message: 'Aegis: Allie tombe! ATK +30%!' });
@@ -464,6 +773,24 @@ export class PassiveEngine {
     // Ailes du Vent: first attack = crit
     if (this.hasPassive(charId, 'wind_rush') && s.windRushFirstAttack) {
       return true;
+    }
+
+    // Rage Eternelle: burst window
+    if (s.eternalRageCritTimer > 0) return true;
+
+    // Flamme Interieure 4pc: at 10 stacks guaranteed crit
+    if (this.hasPassive(charId, 'inner_flame_release') && s.innerFlameStacks >= 10) return true;
+
+    // Fureur du Desespoir 4pc: <25% HP = guaranteed crit
+    if (this.hasPassive(charId, 'last_stand')) {
+      const char = this.findChar(charId);
+      if (char && char.hp / char.maxHp < 0.25) return true;
+    }
+
+    // Resonance Arcanique 4pc: mana > 60% = guaranteed crit
+    if (this.hasPassive(charId, 'arcane_adaptive')) {
+      const char = this.findChar(charId);
+      if (char && char.mana / char.maxMana > 0.60) return true;
     }
 
     return false;
@@ -499,6 +826,64 @@ export class PassiveEngine {
       return { freeCast: true };
     }
 
+    // ── ECHO TEMPOREL 4pc: every 3 spells, next = free ──
+    if (this.hasPassive(char.id, 'echo_free_mana')) {
+      s.echoSpellCount++;
+      if (s.echoSpellCount >= 3) {
+        s.echoSpellCount = 0;
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'echo_free', message: 'Echo Temporel: Sort gratuit!' });
+        return { freeCast: true };
+      }
+    }
+
+    // ── IRON WILL 4pc: DEF +5% per skill (max 5x), skill DMG +50% ──
+    if (this.hasPassive(char.id, 'iron_will')) {
+      if (s.ironWillStacks < 5) {
+        s.ironWillStacks++;
+        char.def = Math.floor(char.def * 1.05);
+      }
+      // DMG bonus handled via getAtkMultiplier
+    }
+
+    // ── CHAOTIC INFAMY: stack basic DMG per skill ──
+    if (this.has2pcPassive(char.id, 'infamy_stack') || this.hasPassive(char.id, 'enhanced_infamy')) {
+      s.infamyStacks = Math.min(20, s.infamyStacks + 1);
+      // 4pc: mana +5% (CD 8s)
+      if (this.hasPassive(char.id, 'enhanced_infamy') && s.infamyManaCD <= 0) {
+        s.infamyManaCD = 8;
+        char.regenMana(Math.floor(char.maxMana * 0.05));
+      }
+    }
+
+    // ── ESPRIT TRANSCENDANT 2pc: stack INT +2% per skill (max 10) ──
+    if (this.has2pcPassive(char.id, 'transcendent_stack')) {
+      s.transcendentStacks = Math.min(10, s.transcendentStacks + 1);
+      if (char.int) char.int = Math.floor(char.int * 1.02);
+    }
+    // 4pc: at 10 stacks ignore 25% DEF + DMG x1.5, reset
+    if (this.hasPassive(char.id, 'transcendent_release') && s.transcendentStacks >= 10) {
+      s.transcendentStacks = 0;
+      events.push({ type: 'passive_proc', charId: char.id, passive: 'transcendent_burst', message: 'Esprit Transcendant: DMG x1.5!' });
+      return { freeCast: false, doubleDamage: true, defIgnore: 0.25 };
+    }
+
+    // ── TEMPETE ARCANE 4pc: mana plein = next skill x2 DMG (CD 5 casts) ──
+    if (this.hasPassive(char.id, 'arcane_overload')) {
+      if (s.arcaneOverloadCD > 0) {
+        s.arcaneOverloadCD--;
+      } else if (char.mana >= char.maxMana * 0.95) {
+        s.arcaneOverloadCD = 5;
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'arcane_overload', message: 'Tempete Arcane: Skill x2!' });
+        return { freeCast: false, doubleDamage: true };
+      }
+    }
+
+    // ── Mana cost reduction ──
+    const manaCostReduce = char._manaCostReduce || 0;
+    if (manaCostReduce > 0) {
+      return { freeCast: false, manaCostMult: 1 - manaCostReduce / 100 };
+    }
+
     return { freeCast: false };
   }
 
@@ -517,6 +902,10 @@ export class PassiveEngine {
       if (s.cdExcaliburSave > 0) s.cdExcaliburSave -= dt;
       if (s.cdGungnirCrit > 0) s.cdGungnirCrit -= dt;
       if (s.cdHarmonieMegaHeal > 0) s.cdHarmonieMegaHeal -= dt;
+      if (s.eternalRageCritTimer > 0) s.eternalRageCritTimer -= dt;
+      if (s.siphonEmergencyCD > 0) s.siphonEmergencyCD -= dt;
+      if (s.infamyManaCD > 0) s.infamyManaCD -= dt;
+      if (s.arcaneAdaptiveRegenCD > 0) s.arcaneAdaptiveRegenCD -= dt;
       for (const [targetId, cd] of s.cdVitalAutoHeal) {
         s.cdVitalAutoHeal.set(targetId, cd - dt);
         if (cd - dt <= 0) s.cdVitalAutoHeal.delete(targetId);
@@ -591,6 +980,52 @@ export class PassiveEngine {
           char.addBuff('def', Math.floor(char.def * 0.10), 5, 'pack_bond');
         }
       }
+
+      // ── EQUILIBRE SUPREME 4pc: every 20s all stats +10% for 8s ──
+      if (this.hasPassive(char.id, 'supreme_balance')) {
+        s.equilibreTimer += dt;
+        if (s.equilibreTimer >= 20) {
+          s.equilibreTimer = 0;
+          char.addBuff('atk', Math.floor(char.atk * 0.10), 8, 'supreme_balance');
+          char.addBuff('def', Math.floor(char.def * 0.10), 8, 'supreme_balance');
+          char.addBuff('spd', Math.floor(char.spd * 0.10), 8, 'supreme_balance');
+          events.push({ type: 'passive_proc', charId: char.id, passive: 'supreme_balance_tick', message: 'Equilibre Supreme: All stats +10%!' });
+        }
+      }
+
+      // ── SACRIFICE DU MARTYR 4pc: ally <30% HP = heal 20% (1x/ally) ──
+      if (this.hasPassive(char.id, 'martyr_heal')) {
+        for (const ally of characters) {
+          if (!ally.alive || ally.id === char.id) continue;
+          if (ally.hp / ally.maxHp < 0.30 && !s.martyrHealUsed.get(ally.id)) {
+            s.martyrHealUsed.set(ally.id, true);
+            ally.heal(Math.floor(ally.maxHp * 0.20));
+            events.push({ type: 'passive_proc', charId: char.id, passive: 'martyr_heal', target: ally.id, message: 'Sacrifice du Martyr: Soin allie!' });
+          }
+        }
+      }
+
+      // ── RESONANCE ARCANIQUE 4pc: mana < 30% = regen x3 3s (CD 20s) ──
+      if (this.hasPassive(char.id, 'arcane_adaptive') && s.arcaneAdaptiveRegenCD <= 0) {
+        if (char.mana / char.maxMana < 0.30) {
+          s.arcaneAdaptiveRegenCD = 20;
+          s.arcaneAdaptiveRegenActive = true;
+          events.push({ type: 'passive_proc', charId: char.id, passive: 'arcane_regen_burst', message: 'Resonance Arcanique: Regen x3!' });
+        }
+      }
+      // Apply regen x3 when active (3s window)
+      if (s.arcaneAdaptiveRegenActive && s.arcaneAdaptiveRegenCD > 17) {
+        char.regenMana(Math.floor(char.maxMana * 0.05 * dt)); // Aggressive regen
+      } else {
+        s.arcaneAdaptiveRegenActive = false;
+      }
+
+      // ── SIPHON VITAL: deactivate emergency lifesteal after 2s ──
+      if (s.siphonEmergencyActive && s.siphonEmergencyCD <= 8) {
+        // Was at CD=10, now 2s passed
+        s.siphonEmergencyActive = false;
+        char._lifesteal = Math.max(0, (char._lifesteal || 0) - 100);
+      }
     }
   }
 
@@ -621,6 +1056,24 @@ export class PassiveEngine {
       if (char && char.mana / char.maxMana > 0.80) {
         mult += 0.20;
       }
+    }
+
+    // Iron Will 4pc: skill DMG +50%
+    if (this.hasPassive(charId, 'iron_will')) {
+      mult += 0.50;
+    }
+
+    // Chaotic Infamy: basic DMG bonus from stacks
+    if (s.infamyStacks > 0) {
+      const pctPerStack = this.hasPassive(charId, 'enhanced_infamy') ? 0.025 : 0.015;
+      mult += s.infamyStacks * pctPerStack;
+    }
+
+    // Elem/All DMG bonuses (from set stats)
+    const char = this.findChar(charId);
+    if (char) {
+      if (char._elemDmgBonus) mult += char._elemDmgBonus / 100;
+      if (char._allDmgBonus) mult += char._allDmgBonus / 100;
     }
 
     return mult;
