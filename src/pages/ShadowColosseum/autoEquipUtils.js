@@ -435,6 +435,94 @@ export function autoEquipSetFirst(hunterClass, hunterElement, allArtifacts) {
 }
 
 // ---------------------------------------------------------------------------
+// 4b. User-Directed Auto-Equip (manual set plan)
+// ---------------------------------------------------------------------------
+
+/**
+ * Auto-equip with a user-specified set plan.
+ * @param {string} hunterClass
+ * @param {string} hunterElement
+ * @param {Array} allArtifacts - combined pool (equipped + inventory)
+ * @param {Array} userPlan - [{ set: 'infamie_chaotique', n: 4 }, { set: 'lame_fantome', n: 2 }, ...]
+ * @returns {{ assigned: Object, usedUids: Set, setLabels: string }}
+ */
+export function autoEquipWithUserPlan(hunterClass, hunterElement, allArtifacts, userPlan) {
+  // Index artifacts by slot and set
+  const bySlot = {};
+  const bySlotAndSet = {};
+  SLOT_ORDER.forEach(s => { bySlot[s] = []; });
+  allArtifacts.forEach(a => {
+    if (bySlot[a.slot]) bySlot[a.slot].push(a);
+  });
+
+  SLOT_ORDER.forEach(s => {
+    bySlot[s].sort((a, b) => scoreArtifactRaw(b, hunterClass, hunterElement) - scoreArtifactRaw(a, hunterClass, hunterElement));
+    bySlotAndSet[s] = {};
+    bySlot[s].forEach(a => {
+      if (!bySlotAndSet[s][a.set]) bySlotAndSet[s][a.set] = [];
+      bySlotAndSet[s][a.set].push(a);
+    });
+  });
+
+  // Evaluate the user plan
+  const assigned = {};
+  const usedUids = new Set();
+
+  const slotsRemaining = new Set(SLOT_ORDER);
+  for (const { set: setId, n: needed } of userPlan) {
+    const slotCandidates = [...slotsRemaining]
+      .map(s => {
+        const arts = (bySlotAndSet[s][setId] || []).filter(a => !usedUids.has(a.uid));
+        return { slot: s, best: arts[0] || null, score: arts[0] ? scoreArtifactRaw(arts[0], hunterClass, hunterElement) : -999 };
+      })
+      .filter(sc => sc.best)
+      .sort((a, b) => {
+        const aBestRaw = bySlot[a.slot].find(x => !usedUids.has(x.uid));
+        const bBestRaw = bySlot[b.slot].find(x => !usedUids.has(x.uid));
+        const aLoss = (aBestRaw ? scoreArtifactRaw(aBestRaw, hunterClass, hunterElement) : 0) - a.score;
+        const bLoss = (bBestRaw ? scoreArtifactRaw(bBestRaw, hunterClass, hunterElement) : 0) - b.score;
+        return aLoss - bLoss;
+      });
+
+    let placed = 0;
+    for (const sc of slotCandidates) {
+      if (placed >= needed) break;
+      if (!slotsRemaining.has(sc.slot)) continue;
+      assigned[sc.slot] = sc.best;
+      usedUids.add(sc.best.uid);
+      slotsRemaining.delete(sc.slot);
+      placed++;
+    }
+  }
+
+  // Fill remaining slots with best raw artifacts
+  for (const slot of slotsRemaining) {
+    const best = bySlot[slot].find(a => !usedUids.has(a.uid));
+    if (best) {
+      assigned[slot] = best;
+      usedUids.add(best.uid);
+    }
+  }
+
+  // Generate set labels
+  const setCounts = {};
+  Object.values(assigned).forEach(a => {
+    if (a?.set) setCounts[a.set] = (setCounts[a.set] || 0) + 1;
+  });
+  const setLabels = Object.entries(setCounts)
+    .filter(([, cnt]) => cnt >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .map(([sId, cnt]) => {
+      const sd = ALL_ARTIFACT_SETS[sId];
+      const bonusTag = cnt >= 8 ? '8p' : cnt >= 4 ? '4p' : '2p';
+      return `${sd?.icon || ''} ${sd?.name || sId} (${bonusTag})`;
+    })
+    .join(' + ');
+
+  return { assigned, usedUids, setLabels };
+}
+
+// ---------------------------------------------------------------------------
 // 5. analyzeEquipment function (for Conseil Beru)
 // ---------------------------------------------------------------------------
 

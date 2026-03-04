@@ -64,7 +64,7 @@ import {
   ELEMENT_SET_MAP, CLASS_SET_TIERS, CLASS_IDEAL_STATS, STAT_COLOR_MAP,
   resolveSetId, getResolvedTiers, getSetTier, getStatColor,
   scoreArtifact as scoreArtifactShared, scoreArtifactRaw,
-  setBonus2Value, setBonus4Value, autoEquipSetFirst, analyzeEquipment as analyzeEquipmentShared,
+  setBonus2Value, setBonus4Value, autoEquipSetFirst, autoEquipWithUserPlan, analyzeEquipment as analyzeEquipmentShared,
 } from './autoEquipUtils';
 
 // ─── StoryTypewriter — char-by-char text reveal ──────────────
@@ -806,6 +806,7 @@ export default function ShadowColosseum() {
   const [beruAdvice, setBeruAdvice] = useState(null); // Beru Advisor analysis result
   const [eqInvFilter, setEqInvFilter] = useState({ slot: null, set: null, type: null }); // filters for equipment view inventory
   const [equipDetailSlot, setEquipDetailSlot] = useState(null); // slotId for equipment view detail panel
+  const [autoEquipPopup, setAutoEquipPopup] = useState(null); // null=closed, { sets: {} }=open
   const [rosterSort, setRosterSort] = useState('ilevel'); // 'ilevel' | 'level' | 'name'
   const [rosterFilterElem, setRosterFilterElem] = useState(null); // element id or null
   const [searchQuery, setSearchQuery] = useState(''); // search filter by name
@@ -9392,53 +9393,11 @@ export default function ShadowColosseum() {
                     {'\uD83D\uDD28'} Max +20
                   </button>
                 )}
-                {/* Auto-equip button — set-first algorithm */}
+                {/* Auto-equip button — opens set selection popup */}
                 {data.artifactInventory.length > 0 && (
                   <button
-                    onClick={() => {
-                      const hClass = HUNTERS[id]?.class || 'fighter';
-                      const hElement = c.element || 'fire';
-
-                      // Pool: currently equipped + inventory
-                      const prevEquipped = data.artifacts[id] || {};
-                      let pool = [...data.artifactInventory];
-                      SLOT_ORDER.forEach(slotId => {
-                        if (prevEquipped[slotId]) pool.push(prevEquipped[slotId]);
-                      });
-
-                      // Run shared set-first algorithm
-                      const { assigned, usedUids, setLabels } = autoEquipSetFirst(hClass, hElement, pool);
-
-                      // Update state
-                      const newInv = pool.filter(a => !usedUids.has(a.uid));
-                      setData(prev => ({
-                        ...prev,
-                        artifacts: { ...prev.artifacts, [id]: assigned },
-                        artifactInventory: newInv,
-                      }));
-
-                      // Check reroll advice
-                      const idealStats = CLASS_IDEAL_STATS[hClass] || CLASS_IDEAL_STATS.fighter;
-                      const rerollSlots = [];
-                      Object.entries(assigned).forEach(([slot, art]) => {
-                        if (!art) return;
-                        if (idealStats.mainStats[slot] && art.mainStat !== idealStats.mainStats[slot]) {
-                          const curName = MAIN_STAT_VALUES[art.mainStat]?.name || art.mainStat;
-                          const idealName = MAIN_STAT_VALUES[idealStats.mainStats[slot]]?.name || idealStats.mainStats[slot];
-                          rerollSlots.push(`${ARTIFACT_SLOTS[slot]?.name}: ${curName} -> ${idealName}`);
-                        }
-                      });
-
-                      let msg = setLabels || 'Meilleurs artefacts equipes !';
-                      if (rerollSlots.length > 0) {
-                        msg += ` | Reroll: ${rerollSlots.slice(0, 3).join(', ')}${rerollSlots.length > 3 ? '...' : ''}`;
-                      }
-
-                      window.dispatchEvent(new CustomEvent('beru-react', {
-                        detail: { message: msg, mood: rerollSlots.length > 2 ? 'thinking' : 'happy' }
-                      }));
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 text-normal-responsive font-bold text-cyan-300 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all"
+                    onClick={() => setAutoEquipPopup(prev => prev ? null : { sets: {} })}
+                    className={`px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border text-normal-responsive font-bold text-cyan-300 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all ${autoEquipPopup ? 'border-cyan-400 ring-1 ring-cyan-400/30' : 'border-cyan-500/30'}`}
                   >
                     {'\u2728'} Auto-Equip
                   </button>
@@ -9468,6 +9427,139 @@ export default function ShadowColosseum() {
                 )}
                 </div>
               </div>
+
+              {/* ─── Auto-Equip Set Selection Popup ──────────────────────── */}
+              {autoEquipPopup && (() => {
+                const hClass = HUNTERS[id]?.class || 'fighter';
+                const hElement = c.element || 'fire';
+                const totalPieces = Object.values(autoEquipPopup.sets).reduce((s, n) => s + n, 0);
+                // Count available artifacts per set in pool
+                const prevEquipped = data.artifacts[id] || {};
+                const pool = [...data.artifactInventory];
+                SLOT_ORDER.forEach(slotId => { if (prevEquipped[slotId]) pool.push(prevEquipped[slotId]); });
+                const setAvailCount = {};
+                pool.forEach(a => { setAvailCount[a.set] = (setAvailCount[a.set] || 0) + 1; });
+
+                const handleSetClick = (setId) => {
+                  setAutoEquipPopup(prev => {
+                    const current = prev.sets[setId] || 0;
+                    const has8p = ALL_ARTIFACT_SETS[setId]?.bonus8Desc;
+                    const next = current === 0 ? 2 : current === 2 ? 4 : (current === 4 && has8p) ? 8 : 0;
+                    const newSets = { ...prev.sets };
+                    if (next === 0) delete newSets[setId]; else newSets[setId] = next;
+                    return { ...prev, sets: newSets };
+                  });
+                };
+
+                const executeAutoEquip = (useUserPlan) => {
+                  const { assigned, usedUids, setLabels } = useUserPlan
+                    ? autoEquipWithUserPlan(hClass, hElement, pool, Object.entries(autoEquipPopup.sets).map(([setId, n]) => ({ set: setId, n })))
+                    : autoEquipSetFirst(hClass, hElement, pool);
+
+                  const newInv = pool.filter(a => !usedUids.has(a.uid));
+                  setData(prev => ({
+                    ...prev,
+                    artifacts: { ...prev.artifacts, [id]: assigned },
+                    artifactInventory: newInv,
+                  }));
+
+                  const idealStats = CLASS_IDEAL_STATS[hClass] || CLASS_IDEAL_STATS.fighter;
+                  const rerollSlots = [];
+                  Object.entries(assigned).forEach(([slot, art]) => {
+                    if (!art) return;
+                    if (idealStats.mainStats[slot] && art.mainStat !== idealStats.mainStats[slot]) {
+                      const curName = MAIN_STAT_VALUES[art.mainStat]?.name || art.mainStat;
+                      const idealName = MAIN_STAT_VALUES[idealStats.mainStats[slot]]?.name || idealStats.mainStats[slot];
+                      rerollSlots.push(`${ARTIFACT_SLOTS[slot]?.name}: ${curName} -> ${idealName}`);
+                    }
+                  });
+
+                  let msg = setLabels || 'Meilleurs artefacts equipes !';
+                  if (rerollSlots.length > 0) {
+                    msg += ` | Reroll: ${rerollSlots.slice(0, 3).join(', ')}${rerollSlots.length > 3 ? '...' : ''}`;
+                  }
+
+                  window.dispatchEvent(new CustomEvent('beru-react', {
+                    detail: { message: msg, mood: rerollSlots.length > 2 ? 'thinking' : 'happy' }
+                  }));
+                  setAutoEquipPopup(null);
+                };
+
+                return (
+                  <motion.div
+                    initial={{ y: -10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="mb-4 p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-900/20 to-blue-900/20"
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{'\u2728'}</span>
+                        <span className="text-medium-responsive font-bold text-cyan-300">Auto-Equip — Choisis tes sets</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-black px-2 py-0.5 rounded-full ${totalPieces === 8 ? 'bg-green-500/20 text-green-300 border border-green-500/30' : totalPieces > 8 ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-gray-700/30 text-gray-400 border border-gray-600/30'}`}>
+                          {totalPieces}/8
+                        </span>
+                        <button onClick={() => setAutoEquipPopup(null)} className="text-gray-500 hover:text-gray-300 text-xs">{'\u2715'}</button>
+                      </div>
+                    </div>
+
+                    {/* Set Grid */}
+                    <div className="grid grid-cols-2 gap-1.5 mb-3">
+                      {Object.entries(ALL_ARTIFACT_SETS).map(([setId, setDef]) => {
+                        const selected = autoEquipPopup.sets[setId] || 0;
+                        const avail = setAvailCount[setId] || 0;
+                        return (
+                          <button
+                            key={setId}
+                            onClick={() => handleSetClick(setId)}
+                            className={`relative flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${
+                              selected > 0
+                                ? `${setDef.border || 'border-cyan-500/50'} ${setDef.bg || 'bg-cyan-500/15'} ring-1 ring-current`
+                                : 'border-gray-700/30 bg-gray-800/20 hover:bg-gray-700/30'
+                            }`}
+                          >
+                            <span className="text-xs">{setDef.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className={`text-tiny-responsive font-bold truncate ${selected > 0 ? (setDef.color || 'text-cyan-300') : 'text-gray-400'}`}>
+                                {setDef.name}
+                              </div>
+                              <div className="text-tiny-responsive text-gray-600">{avail} dispo</div>
+                            </div>
+                            {selected > 0 && (
+                              <span className={`text-tiny-responsive font-black px-1.5 py-0.5 rounded-full ${setDef.bg || 'bg-cyan-500/20'} ${setDef.color || 'text-cyan-300'}`}>
+                                {selected}p
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => executeAutoEquip(true)}
+                        disabled={totalPieces !== 8}
+                        className={`flex-1 py-2 rounded-lg font-bold text-sm transition-all ${
+                          totalPieces === 8
+                            ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-500/20'
+                            : 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                        }`}
+                      >
+                        {'\u2728'} Equiper ({totalPieces}/8)
+                      </button>
+                      <button
+                        onClick={() => executeAutoEquip(false)}
+                        className="px-3 py-2 rounded-lg bg-purple-600/30 border border-purple-500/30 text-sm font-bold text-purple-300 hover:bg-purple-600/50 transition-all"
+                      >
+                        {'\uD83E\uDD16'} Auto (IA)
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })()}
 
               {/* Beru Advisor Panel */}
               {beruAdvice && HUNTERS[id] && (() => {
