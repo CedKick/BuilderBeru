@@ -5,6 +5,32 @@
 
 export const CHANGELOG = [
   {
+    version: '0.9.8',
+    date: '2026-03-04',
+    title: 'Codex Mecaniques — Guides Complets par Mode',
+    entries: [
+      {
+        category: 'new',
+        items: [
+          'Codex Mecaniques : 6 sous-onglets (Generales, ARC I & II, Raid SC, Raid Manaya, Expedition, PVP)',
+          'Guide ARC : tours SPD, multiplicateur puissance, mana scaling, passifs chasseur',
+          'Guide Raid SC : stats Ant Queen/Manticore, 6 tiers, synergies equipe, faiblesses hebdo',
+          'Guide Raid Manaya : 5 classes, 17 patterns boss, systeme aggro, esquive, set Manaya',
+          'Guide Expedition : scaling stats, roles, formule degats, campfire, armes SC, patterns boss',
+          'Guide PVP : multiplicateurs PVP, power score, IA combat, passifs actifs, soins',
+        ],
+      },
+      {
+        category: 'content',
+        items: [
+          'Formules de degats detaillees pour chaque mode de jeu',
+          'Tableaux de difficulte avec multiplicateurs (Raid SC, Manaya)',
+          'Stats completes des 5 classes Manaya (Tank, Healer, Warrior, Archer, Berserker)',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.7',
     date: '2026-03-04',
     title: 'Nerf ATK Boss, Lance Brise-Tyran & Equilibrage',
