@@ -210,6 +210,7 @@ export default function Codex() {
   const [ownedHunters, setOwnedHunters] = useState(new Set());
   const [raidDataRef, setRaidDataRef] = useState(null);
   const [artifactInventory, setArtifactInventory] = useState([]);
+  const [expeditionInventory, setExpeditionInventory] = useState([]);
 
   useEffect(() => {
     try {
@@ -234,9 +235,37 @@ export default function Codex() {
           hunters.add(typeof e === 'string' ? e : e.id);
         });
         setOwnedHunters(hunters);
+        if (d.expeditionInventory) {
+          setExpeditionInventory(d.expeditionInventory);
+        }
       }
     } catch {}
   }, []);
+
+  // ─── Expedition ownership tracking ───
+  const ownedExpSets = useMemo(() => {
+    const sets = {};
+    for (const item of expeditionInventory) {
+      if (item.setId) sets[item.setId] = (sets[item.setId] || 0) + 1;
+    }
+    return sets;
+  }, [expeditionInventory]);
+
+  const ownedExpWeapons = useMemo(() => {
+    const w = new Set();
+    for (const item of expeditionInventory) {
+      if (item.weaponId) w.add(item.weaponId);
+    }
+    return w;
+  }, [expeditionInventory]);
+
+  const ownedExpUniques = useMemo(() => {
+    const u = new Set();
+    for (const item of expeditionInventory) {
+      if (item.uniqueId) u.add(item.uniqueId);
+    }
+    return u;
+  }, [expeditionInventory]);
 
   // ─── Computed data ───
   const allWeapons = useMemo(() =>
@@ -1310,17 +1339,29 @@ export default function Codex() {
 
           {/* ─── Section: SETS ─── */}
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">Sets Expedition (25)</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3 flex items-center gap-2">
+              Sets Expedition (25)
+              {Object.keys(ownedExpSets).length > 0 && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-900/30 text-green-400 normal-case tracking-normal">
+                  {Object.keys(ownedExpSets).length}/25 obtenus
+                </span>
+              )}
+            </div>
 
             {/* Big Sets */}
             <div className="text-[10px] font-bold uppercase tracking-wider text-yellow-400 mb-2 mt-4">Gros Sets (10) — Passifs puissants, class-specific</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-              {Object.values(EXPEDITION_SETS).filter(s => s.big).map(s => (
-                <div key={s.id} className={`p-3.5 rounded-xl border text-left ${s.border} ${s.bg}`}>
+              {Object.values(EXPEDITION_SETS).filter(s => s.big).map(s => {
+                const owned = ownedExpSets[s.id] || 0;
+                return (
+                <div key={s.id} className={`p-3.5 rounded-xl border text-left ${s.border} ${s.bg} ${owned === 0 ? 'opacity-40' : ''} transition-opacity`}>
                   <div className="flex items-center gap-2.5">
                     <span className="text-2xl">{s.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-bold ${s.color}`}>{s.name}</div>
+                      <div className={`text-sm font-bold ${s.color} flex items-center gap-2`}>
+                        {s.name}
+                        {owned > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-900/40 text-green-400 font-medium">{owned}p</span>}
+                      </div>
                       <div className="text-[10px] text-gray-500">{s.desc}</div>
                     </div>
                   </div>
@@ -1335,11 +1376,12 @@ export default function Codex() {
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800/60 text-gray-500">{s.binding}</span>
                   </div>
                   <div className="mt-2 space-y-0.5">
-                    <div className="text-[10px] text-green-400">2p : {s.bonus2Desc}</div>
-                    <div className="text-[10px] text-blue-400">4p : {s.bonus4Desc}</div>
+                    <div className={`text-[10px] ${owned >= 2 ? 'text-green-400' : 'text-green-400/40'}`}>2p : {s.bonus2Desc}</div>
+                    <div className={`text-[10px] ${owned >= 4 ? 'text-blue-400' : 'text-blue-400/40'}`}>4p : {s.bonus4Desc}</div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Medium Sets by zone */}
@@ -1352,12 +1394,17 @@ export default function Codex() {
                 <div key={zone} className="mb-6">
                   <div className={`text-[10px] font-bold uppercase tracking-wider ${zoneColor} mb-2`}>Sets Moyens — {zoneLabel}</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {zoneSets.map(s => (
-                      <div key={s.id} className={`p-3 rounded-xl border text-left ${s.border} ${s.bg}`}>
+                    {zoneSets.map(s => {
+                      const owned = ownedExpSets[s.id] || 0;
+                      return (
+                      <div key={s.id} className={`p-3 rounded-xl border text-left ${s.border} ${s.bg} ${owned === 0 ? 'opacity-40' : ''} transition-opacity`}>
                         <div className="flex items-center gap-2">
                           <span className="text-xl">{s.icon}</span>
                           <div className="flex-1 min-w-0">
-                            <div className={`text-[11px] font-bold ${s.color}`}>{s.name}</div>
+                            <div className={`text-[11px] font-bold ${s.color} flex items-center gap-2`}>
+                              {s.name}
+                              {owned > 0 && <span className="text-[9px] px-1 py-0.5 rounded bg-green-900/40 text-green-400 font-medium">{owned}p</span>}
+                            </div>
                             <div className="text-[9px] text-gray-500">{s.desc}</div>
                           </div>
                         </div>
@@ -1370,11 +1417,12 @@ export default function Codex() {
                           }`}>{s.rarity}</span>
                         </div>
                         <div className="mt-1.5 space-y-0.5">
-                          <div className="text-[10px] text-green-400">2p : {s.bonus2Desc}</div>
-                          <div className="text-[10px] text-blue-400">4p : {s.bonus4Desc}</div>
+                          <div className={`text-[10px] ${owned >= 2 ? 'text-green-400' : 'text-green-400/40'}`}>2p : {s.bonus2Desc}</div>
+                          <div className={`text-[10px] ${owned >= 4 ? 'text-blue-400' : 'text-blue-400/40'}`}>4p : {s.bonus4Desc}</div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -1383,16 +1431,27 @@ export default function Codex() {
 
           {/* ─── Section: WEAPONS ─── */}
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">Armes Expedition (11)</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3 flex items-center gap-2">
+              Armes Expedition ({Object.keys(EXPEDITION_WEAPONS).length})
+              {ownedExpWeapons.size > 0 && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-900/30 text-green-400 normal-case tracking-normal">
+                  {ownedExpWeapons.size}/{Object.keys(EXPEDITION_WEAPONS).length} obtenues
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {Object.values(EXPEDITION_WEAPONS).sort((a, b) => b.atk - a.atk).map(w => {
                 const elColor = { fire: 'text-orange-400', water: 'text-cyan-400', shadow: 'text-purple-400', light: 'text-yellow-300' }[w.element] || 'text-gray-400';
+                const owned = ownedExpWeapons.has(w.id);
                 return (
-                  <div key={w.id} className="p-3.5 rounded-xl border border-red-500/20 bg-red-500/5 text-left">
+                  <div key={w.id} className={`p-3.5 rounded-xl border border-red-500/20 bg-red-500/5 text-left ${owned ? '' : 'opacity-40'} transition-opacity`}>
                     <div className="flex items-center gap-3">
                       <span className="text-3xl">{w.icon}</span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-red-400">{w.name}</div>
+                        <div className="text-sm font-bold text-red-400 flex items-center gap-2">
+                          {w.name}
+                          {owned && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-900/40 text-green-400 font-medium">Obtenue</span>}
+                        </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[10px] text-gray-300">ATK {w.atk}</span>
                           <span className={`text-[10px] ${elColor}`}>{w.element}</span>
@@ -1414,7 +1473,14 @@ export default function Codex() {
 
           {/* ─── Section: UNIQUE ARTIFACTS ─── */}
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">Artefacts Uniques (20)</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3 flex items-center gap-2">
+              Artefacts Uniques (20)
+              {ownedExpUniques.size > 0 && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-900/30 text-green-400 normal-case tracking-normal">
+                  {ownedExpUniques.size}/20 obtenus
+                </span>
+              )}
+            </div>
             {[1, 2, 3].map(tier => {
               const tierUniques = Object.values(EXPEDITION_UNIQUES).filter(u => u.tier === tier);
               if (tierUniques.length === 0) return null;
@@ -1424,12 +1490,17 @@ export default function Codex() {
                 <div key={tier} className="mb-6">
                   <div className={`text-[10px] font-bold uppercase tracking-wider ${tierColor} mb-2`}>{tierLabel}</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {tierUniques.map(u => (
-                      <div key={u.id} className={`p-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 text-left`}>
+                    {tierUniques.map(u => {
+                      const owned = ownedExpUniques.has(u.id);
+                      return (
+                      <div key={u.id} className={`p-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 text-left ${owned ? '' : 'opacity-40'} transition-opacity`}>
                         <div className="flex items-center gap-2">
                           <span className="text-xl">{u.icon}</span>
                           <div className="flex-1 min-w-0">
-                            <div className={`text-[11px] font-bold ${u.color}`}>{u.name}</div>
+                            <div className={`text-[11px] font-bold ${u.color} flex items-center gap-2`}>
+                              {u.name}
+                              {owned && <span className="text-[9px] px-1 py-0.5 rounded bg-green-900/40 text-green-400 font-medium">Obtenu</span>}
+                            </div>
                             <div className="flex items-center gap-1.5 mt-0.5">
                               <span className="text-[9px] text-gray-500">{u.slot}</span>
                               <span className="text-[9px] px-1 py-0.5 rounded bg-yellow-900/30 text-yellow-400">{u.rarity}</span>
@@ -1441,7 +1512,8 @@ export default function Codex() {
                         <div className="mt-0.5 text-[10px] text-blue-300">Passif: {u.passiveDesc}</div>
                         <div className="mt-1 text-[9px] text-gray-500 italic">Obtention: {u.achievementDesc}</div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
