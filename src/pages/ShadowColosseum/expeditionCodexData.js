@@ -310,6 +310,14 @@ export const EXPEDITION_WEAPONS = {
     dropBoss: 14, dropChance: 0.3,
     get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
   },
+  lance_briseur: {
+    id: 'lance_briseur', name: 'Lance Brise-Tyran', atk: 75,
+    element: null, weaponType: 'polearm', rarity: 'legendary', binding: 'LqR',
+    icon: '🔱', bonusDesc: 'DEF +25, HP +400',
+    passiveDesc: 'Reduit ATK du boss de 30% pendant 8s (CD 20s). Allies 200px: +10% DEF. Ideal pour tanks.',
+    dropBoss: 9, dropChance: 4,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -514,7 +522,7 @@ export const EXPEDITION_BOSSES = [
   // ── ZONE FORET (Boss 1-5) ──
   {
     idx: 0, id: 'forest_guardian', name: 'Gardien de la Foret', zone: 'Foret', icon: '\uD83C\uDF32',
-    hp: 18_400_000, hpDisplay: '18.4M', atk: 2100, def: 35, spd: 40,
+    hp: 18_400_000, hpDisplay: '18.4M', atk: 2100, def: 35, spd: 42,
     regenPct: 1.0, autoAtkPower: 100, enrageTimer: 300, enrageHpPct: 0,
     patterns: [
       { name: 'Cleave Frontal', type: 'frontal', damage: 800, cooldown: 6, telegraphTime: 2.0, range: 200, description: 'Frappe massive sur le frontline' },
@@ -525,7 +533,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 1, id: 'stone_sentinel', name: 'Sentinelle de Pierre', zone: 'Foret', icon: '\uD83E\uDEA8',
-    hp: 27_600_000, hpDisplay: '27.6M', atk: 2900, def: 46, spd: 30,
+    hp: 27_600_000, hpDisplay: '27.6M', atk: 2900, def: 46, spd: 35,
     regenPct: 1.14, autoAtkPower: 120, enrageTimer: 300, enrageHpPct: 0,
     patterns: [
       { name: 'Lancer de Roc', type: 'aoe_ranged', damage: 1000, cooldown: 8, telegraphTime: 2.0, range: 400, aoeRadius: 150, description: 'Rocher lance sur le backline' },
@@ -537,7 +545,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 2, id: 'shadow_lord', name: 'Seigneur Ombre', zone: 'Foret', icon: '\uD83D\uDC7B',
-    hp: 38_000_000, hpDisplay: '38M', atk: 4600, def: 40, spd: 55,
+    hp: 38_000_000, hpDisplay: '38M', atk: 4600, def: 40, spd: 58,
     regenPct: 1.29, autoAtkPower: 150, enrageTimer: 240, enrageHpPct: 20,
     patterns: [
       { name: "Lame d'Ombre", type: 'frontal', damage: 1500, cooldown: 5, telegraphTime: 1.5, range: 250, description: "Lame d'ombre tranchant le frontline" },
@@ -549,7 +557,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 3, id: 'root_ancient', name: 'Ancien des Racines', zone: 'Foret', icon: '\uD83C\uDF33',
-    hp: 53_000_000, hpDisplay: '53M', atk: 4000, def: 58, spd: 25,
+    hp: 53_000_000, hpDisplay: '53M', atk: 4000, def: 58, spd: 32,
     regenPct: 1.43, autoAtkPower: 110, enrageTimer: 300, enrageHpPct: 0,
     patterns: [
       { name: 'Empalement Racinaire', type: 'aoe_melee', damage: 900, cooldown: 6, telegraphTime: 2.5, range: 300, description: 'Racines jaillissant du sol, degats melee' },
@@ -561,7 +569,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 4, id: 'sylvan_queen', name: 'Reine Sylvestre', zone: 'Foret', icon: '\uD83C\uDF3A',
-    hp: 79_000_000, hpDisplay: '79M', atk: 5800, def: 52, spd: 50,
+    hp: 79_000_000, hpDisplay: '79M', atk: 5800, def: 52, spd: 55,
     regenPct: 1.57, autoAtkPower: 130, enrageTimer: 270, enrageHpPct: 15,
     patterns: [
       { name: "Pluie d'Epines", type: 'aoe_ranged', damage: 1100, cooldown: 5, telegraphTime: 1.8, range: 500, aoeRadius: 200, description: "Pluie d'epines sur le backline" },
@@ -574,7 +582,7 @@ export const EXPEDITION_BOSSES = [
   // ── ZONE ABYSSES (Boss 6-10) ──
   {
     idx: 5, id: 'leviathan', name: 'Leviathan', zone: 'Abysses', icon: '\uD83D\uDC19',
-    hp: 114_000_000, hpDisplay: '114M', atk: 7200, def: 72, spd: 35,
+    hp: 114_000_000, hpDisplay: '114M', atk: 7200, def: 72, spd: 42,
     regenPct: 1.71, autoAtkPower: 140, enrageTimer: 300, enrageHpPct: 0,
     patterns: [
       { name: 'Raz-de-Maree', type: 'aoe_all', damage: 1300, cooldown: 7, telegraphTime: 2.5, description: 'Raz-de-maree frappant tout le raid' },
@@ -586,7 +594,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 6, id: 'abyssal_sorcerer', name: 'Sorcier Abyssal', zone: 'Abysses', icon: '\uD83E\uDDD9',
-    hp: 147_000_000, hpDisplay: '147M', atk: 8400, def: 60, spd: 45,
+    hp: 147_000_000, hpDisplay: '147M', atk: 8400, def: 60, spd: 50,
     regenPct: 1.86, autoAtkPower: 120, enrageTimer: 270, enrageHpPct: 0,
     patterns: [
       { name: 'Rayon Maudit', type: 'aoe_ranged', damage: 1600, cooldown: 5, telegraphTime: 1.5, range: 500, aoeRadius: 250, description: 'Rayon maudit ciblant mages et healers' },
@@ -598,7 +606,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 7, id: 'iron_titan', name: 'Titan de Fer', zone: 'Abysses', icon: '\uD83E\uDD16',
-    hp: 200_000_000, hpDisplay: '200M', atk: 6600, def: 96, spd: 20,
+    hp: 200_000_000, hpDisplay: '200M', atk: 6600, def: 96, spd: 30,
     regenPct: 2.0, autoAtkPower: 160, enrageTimer: 300, enrageHpPct: 0,
     patterns: [
       { name: 'Poing de Fer', type: 'frontal', damage: 2000, cooldown: 6, telegraphTime: 2.5, range: 250, description: 'Poing massif ecrasant le frontline' },
@@ -610,7 +618,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 8, id: 'venomous_hydra', name: 'Hydre Venimeuse', zone: 'Abysses', icon: '\uD83D\uDC0D',
-    hp: 265_000_000, hpDisplay: '265M', atk: 9600, def: 72, spd: 50,
+    hp: 265_000_000, hpDisplay: '265M', atk: 9500, def: 72, spd: 55,
     regenPct: 2.14, autoAtkPower: 140, enrageTimer: 240, enrageHpPct: 25,
     patterns: [
       { name: 'Triple Morsure', type: 'frontal', damage: 1600, cooldown: 4, telegraphTime: 1.5, range: 200, description: 'Trois tetes mordent le frontline simultanement' },
@@ -622,7 +630,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 9, id: 'deep_king', name: 'Roi des Profondeurs', zone: 'Abysses', icon: '\uD83D\uDD31',
-    hp: 345_000_000, hpDisplay: '345M', atk: 11000, def: 84, spd: 40,
+    hp: 345_000_000, hpDisplay: '345M', atk: 10500, def: 84, spd: 50,
     regenPct: 2.29, autoAtkPower: 150, enrageTimer: 300, enrageHpPct: 20,
     patterns: [
       { name: 'Jugement Abyssal', type: 'frontal', damage: 2200, cooldown: 6, telegraphTime: 2.0, range: 300, description: 'Jugement royal tranchant le frontline' },
@@ -635,7 +643,7 @@ export const EXPEDITION_BOSSES = [
   // ── ZONE NEANT (Boss 11-15) — Phases speciales ──
   {
     idx: 10, id: 'origin_specter', name: 'Spectre Originel', zone: 'Neant', icon: '\uD83D\uDC7B',
-    hp: 750_000_000, hpDisplay: '750M', atk: 17000, def: 100, spd: 55,
+    hp: 750_000_000, hpDisplay: '750M', atk: 13000, def: 100, spd: 60,
     regenPct: 2.5, autoAtkPower: 160, enrageTimer: 270, enrageHpPct: 20,
     patterns: [
       { name: 'Toucher Spectral', type: 'frontal', damage: 2200, cooldown: 4, telegraphTime: 1.2, range: 250, description: 'Toucher fantomatique traversant les defenses' },
@@ -652,7 +660,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 11, id: 'void_archon', name: 'Archonte du Vide', zone: 'Neant', icon: '\uD83C\uDF0C',
-    hp: 1_400_000_000, hpDisplay: '1.4B', atk: 23000, def: 120, spd: 50,
+    hp: 1_400_000_000, hpDisplay: '1.4B', atk: 16000, def: 120, spd: 58,
     regenPct: 2.6, autoAtkPower: 180, enrageTimer: 300, enrageHpPct: 15,
     patterns: [
       { name: 'Decret du Vide', type: 'frontal', damage: 3000, cooldown: 5, telegraphTime: 2.0, range: 300, description: 'Decret du vide obliterant le frontline' },
@@ -669,7 +677,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 12, id: 'chaos_dragon', name: 'Dragon du Chaos', zone: 'Neant', icon: '\uD83D\uDC32',
-    hp: 2_500_000_000, hpDisplay: '2.5B', atk: 33000, def: 115, spd: 60,
+    hp: 2_500_000_000, hpDisplay: '2.5B', atk: 19000, def: 115, spd: 66,
     regenPct: 2.8, autoAtkPower: 200, enrageTimer: 240, enrageHpPct: 25,
     patterns: [
       { name: 'Souffle du Chaos', type: 'frontal', damage: 3500, cooldown: 6, telegraphTime: 2.0, range: 350, description: 'Souffle chaotique incinerant le frontline' },
@@ -686,7 +694,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 13, id: 'eternal_monarch', name: 'Monarque Eternel', zone: 'Neant', icon: '\uD83D\uDC51',
-    hp: 4_500_000_000, hpDisplay: '4.5B', atk: 48000, def: 140, spd: 50,
+    hp: 4_500_000_000, hpDisplay: '4.5B', atk: 22000, def: 140, spd: 62,
     regenPct: 3.0, autoAtkPower: 220, enrageTimer: 300, enrageHpPct: 15,
     patterns: [
       { name: 'Decret Eternel', type: 'frontal', damage: 4500, cooldown: 5, telegraphTime: 2.0, range: 300, description: 'Decret eternel ecrasant le frontline' },
@@ -703,7 +711,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 14, id: 'sung_ilhwan', name: 'Sung Il-Hwan', zone: 'Neant', icon: '\u2694\uFE0F',
-    hp: 10_000_000_000, hpDisplay: '10B', atk: 75000, def: 130, spd: 65,
+    hp: 10_000_000_000, hpDisplay: '10B', atk: 25000, def: 130, spd: 75,
     regenPct: 3.0, autoAtkPower: 250, enrageTimer: 360, enrageHpPct: 20,
     patterns: [
       { name: 'Frappe du Chasseur Supreme', type: 'frontal', damage: 5000, cooldown: 4, telegraphTime: 1.5, range: 300, description: 'Frappe devastatrice du chasseur supreme' },

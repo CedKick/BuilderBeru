@@ -113,6 +113,8 @@ export const EXPEDITION_ITEMS = [
     effects: [{ type: 'auto_shield', value: 8, interval: 15 }, { type: 'heal_bonus', value: 20 }, { type: 'aura_def', value: 5, radius: 200 }] },
   { id: 'exp_claws_void', name: 'Griffes Spectrales', type: 'weapon', slot: 'weapon', rarity: 'legendary', binding: 'lqr', stats: { atk_flat: 88, spd_flat: 15, crit_rate: 8 }, description: 'Double frappe 20%. Bleed sur crit (3% HP/s, 3s). Kill: reset CD plus long.',
     effects: [{ type: 'double_strike', chance: 20, trigger: 'on_hit' }, { type: 'bleed', value: 3, duration: 3, trigger: 'on_crit' }, { type: 'cd_reset', trigger: 'on_kill' }] },
+  { id: 'exp_lance_briseur', name: 'Lance Brise-Tyran', type: 'weapon', slot: 'weapon', rarity: 'legendary', binding: 'lqr', stats: { atk_flat: 75, def_flat: 25, hp_flat: 400 }, description: 'Reduit ATK du boss de 30% pendant 8s (CD 20s). Allies 200px: +10% DEF. Tank ideal.',
+    effects: [{ type: 'boss_atk_debuff', value: 30, duration: 8, cooldown: 20, trigger: 'on_hit' }, { type: 'aura_def', value: 10, radius: 200 }] },
 
   // ══════════════════════════════════════════════════════
   // MATERIALS — Craft & Trade

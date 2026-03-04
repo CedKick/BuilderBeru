@@ -261,6 +261,12 @@ export class ExpeditionBoss {
 
   isStunned() { return this.debuffs.some(d => d.type === 'stun' && d.duration > 0); }
 
+  getEffectiveAtk() {
+    const shred = this.getDebuffValue('atk_shred');
+    const reduction = Math.min(shred, 40); // cap at -40% ATK
+    return Math.floor(this.atk * (1 - reduction / 100));
+  }
+
   // ── Serialization ───────────────────────────────────────
 
   serialize() {

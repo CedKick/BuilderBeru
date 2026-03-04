@@ -1386,7 +1386,7 @@ export default function Codex() {
 
           {/* ─── Section: WEAPONS ─── */}
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">Armes Expedition (10)</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">Armes Expedition (11)</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {Object.values(EXPEDITION_WEAPONS).sort((a, b) => b.atk - a.atk).map(w => {
                 const elColor = { fire: 'text-orange-400', water: 'text-cyan-400', shadow: 'text-purple-400', light: 'text-yellow-300' }[w.element] || 'text-gray-400';

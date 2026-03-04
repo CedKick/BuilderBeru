@@ -42,6 +42,7 @@ export class CombatEngine2D {
       char.updateBuffs(dt);
       char.updateDebuffs(dt);
       char.updateCooldowns(dt);
+      if (char._bossAtkDebuffCd > 0) char._bossAtkDebuffCd -= dt;
     }
     for (const mob of aliveMobs) {
       if (mob.updateDebuffs) mob.updateDebuffs(dt);
@@ -544,7 +545,7 @@ export class CombatEngine2D {
       if (target) {
         const dist = Math.abs(boss.x - target.x);
         if (dist < COMBAT.MELEE_RANGE * 2) {
-          const damage = this.calculateDamage(boss.atk, boss.autoAttackPower, 0);
+          const damage = this.calculateDamage(boss.getEffectiveAtk(), boss.autoAttackPower, 0);
 
           // Passive damage reduction
           const { damageReduction } = this.passives.onTakeDamage(target, boss, damage, false, this.events);
@@ -605,7 +606,7 @@ export class CombatEngine2D {
         for (const c of aliveChars) {
           const dist = Math.abs(boss.x - c.x);
           if (dist <= pattern.range && c.x >= boss.x - pattern.range) {
-            const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
+            const damage = this.calculateDamage(boss.getEffectiveAtk(), pattern.damage, 0);
             const { damageReduction } = this.passives.onTakeDamage(c, boss, damage, false, this.events);
             const actualDmg = c.takeDamage(Math.max(1, damage - damageReduction));
             this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
@@ -622,7 +623,7 @@ export class CombatEngine2D {
       case 'aoe_melee': {
         for (const c of aliveChars) {
           if (Math.abs(boss.x - c.x) <= pattern.range) {
-            const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
+            const damage = this.calculateDamage(boss.getEffectiveAtk(), pattern.damage, 0);
             const { damageReduction } = this.passives.onTakeDamage(c, boss, damage, false, this.events);
             const actualDmg = c.takeDamage(Math.max(1, damage - damageReduction));
             this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
@@ -641,7 +642,7 @@ export class CombatEngine2D {
         const backlineCount = Math.max(1, Math.floor(sorted.length * 0.3));
         const targets = sorted.slice(0, backlineCount);
         for (const c of targets) {
-          const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
+          const damage = this.calculateDamage(boss.getEffectiveAtk(), pattern.damage, 0);
           const { damageReduction } = this.passives.onTakeDamage(c, boss, damage, false, this.events);
           const actualDmg = c.takeDamage(Math.max(1, damage - damageReduction));
           this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
@@ -656,7 +657,7 @@ export class CombatEngine2D {
 
       case 'aoe_all': {
         for (const c of aliveChars) {
-          const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
+          const damage = this.calculateDamage(boss.getEffectiveAtk(), pattern.damage, 0);
           const { damageReduction } = this.passives.onTakeDamage(c, boss, damage, false, this.events);
           const actualDmg = c.takeDamage(Math.max(1, damage - damageReduction));
           this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
@@ -712,7 +713,7 @@ export class CombatEngine2D {
         }
         if (pattern.damage > 0) {
           for (const c of aliveChars) {
-            const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
+            const damage = this.calculateDamage(boss.getEffectiveAtk(), pattern.damage, 0);
             const { damageReduction } = this.passives.onTakeDamage(c, boss, damage, false, this.events);
             const actualDmg = c.takeDamage(Math.max(1, damage - damageReduction));
             this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
@@ -734,7 +735,7 @@ export class CombatEngine2D {
           const alive = aliveChars.filter(c => c.alive);
           if (alive.length === 0) break;
           const target = alive[Math.floor(Math.random() * alive.length)];
-          const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
+          const damage = this.calculateDamage(boss.getEffectiveAtk(), pattern.damage, 0);
           const { damageReduction } = this.passives.onTakeDamage(target, boss, damage, false, this.events);
           const actualDmg = target.takeDamage(Math.max(1, damage - damageReduction));
           this.events.push({ type: 'pattern_damage', source: boss.id, target: target.id, amount: actualDmg, pattern: pattern.name, hit: i + 1 });
@@ -752,7 +753,7 @@ export class CombatEngine2D {
         const sorted = [...aliveChars].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
         const target = sorted[0];
         if (target) {
-          const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
+          const damage = this.calculateDamage(boss.getEffectiveAtk(), pattern.damage, 0);
           const { damageReduction } = this.passives.onTakeDamage(target, boss, damage, false, this.events);
           const actualDmg = target.takeDamage(Math.max(1, damage - damageReduction));
           this.events.push({ type: 'pattern_damage', source: boss.id, target: target.id, amount: actualDmg, pattern: pattern.name, execute: true });
@@ -853,6 +854,20 @@ export class CombatEngine2D {
           }
           if (longestIdx >= 0) attacker.skills[longestIdx].cooldown = 0;
           break;
+
+        case 'boss_atk_debuff': {
+          if (trigger !== 'on_hit') break;
+          // Cooldown check per attacker
+          const cdKey = '_bossAtkDebuffCd';
+          if (!attacker[cdKey] || attacker[cdKey] <= 0) {
+            if (target.addDebuff) {
+              target.addDebuff('atk_shred', eff.value, eff.duration, attacker.id);
+              attacker[cdKey] = eff.cooldown || 20;
+              this.events.push({ type: 'debuff_applied', source: attacker.id, target: target.id, debuffType: 'atk_shred', value: eff.value, duration: eff.duration });
+            }
+          }
+          break;
+        }
 
         case 'hit_count_aoe': {
           if (trigger !== 'on_hit') break;

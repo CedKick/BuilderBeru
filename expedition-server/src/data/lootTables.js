@@ -424,6 +424,7 @@ export const LOOT_TABLES = {
     // Legendary weapons
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 6 },
     { itemId: 'exp_halberd_void', name: 'Hallebarde du Vide', rarity: 'legendary', dropChance: 4 },
+    { itemId: 'exp_lance_briseur', name: 'Lance Brise-Tyran', rarity: 'legendary', dropChance: 4 },
     // Prev armor
     { itemId: 'exp_abyss_helm', name: 'Couronne des Abysses', rarity: 'epic', dropChance: 14 },
     { itemId: 'exp_abyss_chest', name: 'Cuirasse des Abysses', rarity: 'epic', dropChance: 14 },
@@ -473,6 +474,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_grimoire_void', name: 'Grimoire du Neant', rarity: 'legendary', dropChance: 8 },
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 8 },
     { itemId: 'exp_halberd_void', name: 'Hallebarde du Vide', rarity: 'legendary', dropChance: 6 },
+    { itemId: 'exp_lance_briseur', name: 'Lance Brise-Tyran', rarity: 'legendary', dropChance: 6 },
     // Prev armor
     { itemId: 'exp_magma_helm', name: 'Casque de Magma', rarity: 'epic', dropChance: 14 },
     { itemId: 'exp_magma_chest', name: 'Plastron de Magma', rarity: 'epic', dropChance: 14 },
@@ -519,6 +521,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_claws_void', name: 'Griffes Spectrales', rarity: 'legendary', dropChance: 8 },
     { itemId: 'exp_grimoire_void', name: 'Grimoire du Neant', rarity: 'legendary', dropChance: 6 },
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 6 },
+    { itemId: 'exp_lance_briseur', name: 'Lance Brise-Tyran', rarity: 'legendary', dropChance: 6 },
     // Prev armor
     { itemId: 'exp_magma_helm', name: 'Casque de Magma', rarity: 'epic', dropChance: 14 },
     { itemId: 'exp_abyss_chest', name: 'Cuirasse des Abysses', rarity: 'epic', dropChance: 12 },
@@ -564,6 +567,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_talisman_void', name: 'Talisman Sacre', rarity: 'legendary', dropChance: 8 },
     { itemId: 'exp_claws_void', name: 'Griffes Spectrales', rarity: 'legendary', dropChance: 8 },
     { itemId: 'exp_grimoire_void', name: 'Grimoire du Neant', rarity: 'legendary', dropChance: 6 },
+    { itemId: 'exp_lance_briseur', name: 'Lance Brise-Tyran', rarity: 'legendary', dropChance: 8 },
     // Prev armor
     { itemId: 'exp_abyss_helm', name: 'Couronne des Abysses', rarity: 'epic', dropChance: 14 },
     // Armes mythiques
@@ -611,6 +615,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_claws_void', name: 'Griffes Spectrales', rarity: 'legendary', dropChance: 8 },
     { itemId: 'exp_grimoire_void', name: 'Grimoire du Neant', rarity: 'legendary', dropChance: 8 },
     { itemId: 'exp_talisman_void', name: 'Talisman Sacre', rarity: 'legendary', dropChance: 6 },
+    { itemId: 'exp_lance_briseur', name: 'Lance Brise-Tyran', rarity: 'legendary', dropChance: 8 },
     // Armes mythiques (taux eleves)
     { itemId: 'weapon_muramasa', name: 'Muramasa', rarity: 'mythique', dropChance: 7, weaponId: 'muramasa' },
     { itemId: 'weapon_gungnir', name: 'Gungnir', rarity: 'mythique', dropChance: 4, weaponId: 'gungnir' },
@@ -657,6 +662,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_grimoire_void', name: 'Grimoire du Neant', rarity: 'legendary', dropChance: 8 },
     { itemId: 'exp_claws_void', name: 'Griffes Spectrales', rarity: 'legendary', dropChance: 8 },
     { itemId: 'exp_talisman_void', name: 'Talisman Sacre', rarity: 'legendary', dropChance: 6 },
+    { itemId: 'exp_lance_briseur', name: 'Lance Brise-Tyran', rarity: 'legendary', dropChance: 10 },
     // Armes mythiques (taux maximum — le boss ultime)
     { itemId: 'weapon_excalibur', name: 'Excalibur', rarity: 'mythique', dropChance: 10, weaponId: 'excalibur' },
     { itemId: 'weapon_gram', name: 'Gram', rarity: 'mythique', dropChance: 8, weaponId: 'gram' },

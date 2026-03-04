@@ -5,6 +5,27 @@
 
 export const CHANGELOG = [
   {
+    version: '0.9.7',
+    date: '2026-03-04',
+    title: 'Nerf ATK Boss, Lance Brise-Tyran & Equilibrage',
+    entries: [
+      {
+        category: 'new',
+        items: [
+          'Lance Brise-Tyran : arme legendary, reduit ATK du boss -30% pendant 8s (CD 20s), +10% DEF allies proches',
+        ],
+      },
+      {
+        category: 'balance',
+        items: [
+          'Nerf ATK boss 9-15 : courbe moins exponentielle (boss 15 : 75k → 25k ATK)',
+          'SPD boss augmentee progressivement (boss 15 : 65 → 75 SPD)',
+          'Boss 1-8 : ATK inchangee, SPD legerement augmentee',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.6',
     date: '2026-03-04',
     title: 'Sets Support, Fiches Boss & Equilibrage',
