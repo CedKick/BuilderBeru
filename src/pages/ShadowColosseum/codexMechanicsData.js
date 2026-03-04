@@ -17,7 +17,21 @@ export const MECHANICS_GENERAL = {
         { stat: 'SPD', color: 'text-green-400', desc: "Vitesse. Determine l'ordre des tours (ARC) ou la frequence d'attaque (PvP/Raid)." },
         { stat: 'CRIT', color: 'text-yellow-400', desc: 'Taux critique (max 80%). Chance de coup critique.', formula: 'degats x1.5 + bonusCritDmg' },
         { stat: 'RES', color: 'text-purple-400', desc: 'Resistance (max 70%). Reduit les degats magiques et elementaires.', formula: 'mult = 1 - RES/100' },
-        { stat: 'INTEL', color: 'text-cyan-400', desc: "Intelligence (ex-Mana). Reserve d'energie pour les competences.", formula: 'Intel = 50 + PV/4 + RES×2. Regen: 8/tick + SPD/15' },
+        { stat: 'INTEL', color: 'text-cyan-400', desc: "Intelligence (ex-Mana). Reserve d'energie pour les competences.", formula: 'Intel = 50 + PV/4 + RES×2' },
+      ],
+    },
+    {
+      title: 'Regeneration de Mana',
+      color: 'cyan',
+      lines: [
+        'Formule de base : manaRegen = 5 + floor(SPD / 15), cap SPD bonus a +10',
+        'Exemples : SPD 30 → regen 7/tour | SPD 60 → regen 9 | SPD 150+ → regen 15 (cap)',
+        'ARC I : regen appliquee 1× par tour (apres chaque action)',
+        'ARC II / Raid SC : regen = base × (attackInterval / 3000) par attaque',
+        'PVP : regen = base × (attackInterval / 3000) × 0.75 (25% plus lent qu\'en PvE)',
+        'Expedition : Support 8 mana/sec | Autres classes 2 mana/sec (+ bonus equip %)',
+        'Campfire (Expedition) : +80% du mana max en une fois',
+        'Skill manaRestore : certains skills restaurent X% du mana max apres utilisation',
       ],
     },
     {
@@ -101,6 +115,18 @@ export const MECHANICS_ARC = {
       ],
     },
     {
+      title: 'Cout Mana & Regen (ARC I)',
+      color: 'cyan',
+      lines: [
+        'Basic attack : 0 mana (toujours gratuit)',
+        'Skill heal : 10% du mana max (min 30)',
+        'Skill buff pur (pas de degats) : 5% du mana max (min 15)',
+        'Skill offensif : 5 + puissance/15 + cooldown×3',
+        'Regen : 5 + floor(SPD/15) par tour (cap bonus SPD a +10)',
+        'Exemple : SPD 45 → regen 8/tour, SPD 120 → regen 13/tour',
+      ],
+    },
+    {
       title: 'Tours Supplementaires (SPD)',
       color: 'green',
       lines: [
@@ -117,6 +143,8 @@ export const MECHANICS_ARC = {
         'Les sbires ont 55% des stats du boss de base.',
         'L\'ordre de tour inclut TOUS les combattants vivants, recalcule chaque round.',
         'L\'IA ennemie est role-based : Support (heal allies), Debuffer (affaiblit joueurs), Attacker (focus DPS).',
+        'Mana regen temps reel : base × (attackInterval / 3000) par attaque.',
+        'Un perso lent (interval 6s) regen 2× plus de mana par attaque qu\'un perso rapide (3s).',
       ],
     },
     {
@@ -167,6 +195,19 @@ export const MECHANICS_RAID_SC = {
         '3 chasseurs par equipe, 10 barres de PV par boss.',
         'Duree : 180 secondes (3 minutes). Tick rate : 10 ticks/sec.',
         'Boss attaque toutes les 4 secondes (modifie par SPD/phase).',
+      ],
+    },
+    {
+      title: 'Mana en Raid SC',
+      color: 'cyan',
+      lines: [
+        'Regen par attaque : (5 + SPD/15) × (attackInterval / 3000)',
+        'Un support rapide (SPD 60, interval ~2s) regen ~6 mana par attaque',
+        'Un support lent (SPD 20, interval ~5s) regen ~10 mana par attaque',
+        'Cout des skills : heal 10% mana max (min 30), buff 5% mana max (min 15)',
+        'Attention : les supports avec peu de SPD castent moins souvent mais regen plus par cast',
+        'Soins (healTeam) : cout 0 mana — les supports soignent gratuitement',
+        'Conseil : investir en SPD pour un support augmente sa cadence ET sa regen de base',
       ],
     },
     {
@@ -242,6 +283,18 @@ export const MECHANICS_RAID_MANAYA = {
         '60 TPS (ticks/sec), broadcast a 20 Hz. Arena : 1600×1200 pixels.',
         'Manaya : 15M HP (150 barres), ATK 450, DEF 50, SPD 140.',
         'Enrage a 5% HP ou apres 900s (15 min). 6 phases basees sur % HP.',
+      ],
+    },
+    {
+      title: 'Mana en Raid Manaya',
+      color: 'cyan',
+      lines: [
+        'Tank : 400 Mana max — regen passive (block genere de l\'aggro, pas besoin de spam)',
+        'Healer : 800 Mana max — regen rapide, Heal Circle 80 mana, Zone Heal 120, Rez 200, Purify 100',
+        'Warrior (DPS CAC) : 100 RAGE — pas de mana, systeme RAGE independant (voir section dediee)',
+        'Archer : 500 Mana — Tir Rapide 30, Charge Shot 80, Pluie Fleches 60, Barrage 120',
+        'Berserker : 400 Mana — Charged Attack varie (40-120 selon charge), Whirlwind 150, Rage buff 60',
+        'Regen passive : 2 mana/tick base (varie par classe). Healer regen 3×.',
       ],
     },
     {
@@ -381,6 +434,17 @@ export const MECHANICS_EXPEDITION = {
       ],
     },
     {
+      title: 'Mana en Expedition',
+      color: 'cyan',
+      lines: [
+        'Support : 8 mana/sec (regen passive, sans besoin d\'attaquer)',
+        'Autres classes : 2 mana/sec (regen passive)',
+        'Bonus equipement % : augmente la regen de base',
+        'Campfire : +80% du mana max en une fois (voir section Campfire)',
+        'Les supports beneficient de 4× plus de regen — ils peuvent soigner en continu.',
+      ],
+    },
+    {
       title: 'Campfire (Entre les Boss)',
       color: 'amber',
       lines: [
@@ -471,6 +535,17 @@ export const MECHANICS_PVP = {
         'Commander DEF (+10% allies), Commander CRIT (+20 allies 8s).',
         'Siphon Vital (PV > 80% → +30% DMG), Arcane Tempest (+2% DMG/10% mana restant).',
         'Esquive : 12% chance de dodge. Contre-attaque : 80% des degats renvoyes.',
+      ],
+    },
+    {
+      title: 'Mana en PVP',
+      color: 'cyan',
+      lines: [
+        'Regen par attaque : (5 + SPD/15) × (attackInterval / 3000) × 0.75',
+        'Le facteur ×0.75 rend la regen 25% plus lente qu\'en PvE (empeche le spam de buffs).',
+        'Basic attack : 0 mana | Heal : 10% mana max (min 30) | Buff pur : 5% mana max (min 15)',
+        'Skill offensif : 5 + puissance/15 + cooldown×3',
+        'Les supports doivent gerer leur mana prudemment — moins de regen, memes couts.',
       ],
     },
     {
