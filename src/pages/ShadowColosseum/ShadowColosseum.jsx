@@ -9511,28 +9511,50 @@ export default function ShadowColosseum() {
                         const selected = autoEquipPopup.sets[setId] || 0;
                         const avail = setAvailCount[setId] || 0;
                         return (
-                          <button
-                            key={setId}
-                            onClick={() => handleSetClick(setId)}
-                            className={`relative flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${
-                              selected > 0
-                                ? `${setDef.border || 'border-cyan-500/50'} ${setDef.bg || 'bg-cyan-500/15'} ring-1 ring-current`
-                                : 'border-gray-700/30 bg-gray-800/20 hover:bg-gray-700/30'
-                            }`}
-                          >
-                            <span className="text-xs">{setDef.icon}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className={`text-tiny-responsive font-bold truncate ${selected > 0 ? (setDef.color || 'text-cyan-300') : 'text-gray-400'}`}>
-                                {setDef.name}
+                          <div key={setId} className="relative group">
+                            <button
+                              onClick={() => handleSetClick(setId)}
+                              className={`w-full flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${
+                                selected > 0
+                                  ? `${setDef.border || 'border-cyan-500/50'} ${setDef.bg || 'bg-cyan-500/15'} ring-1 ring-current`
+                                  : 'border-gray-700/30 bg-gray-800/20 hover:bg-gray-700/30'
+                              }`}
+                            >
+                              <span className="text-xs">{setDef.icon}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className={`text-tiny-responsive font-bold truncate ${selected > 0 ? (setDef.color || 'text-cyan-300') : 'text-gray-400'}`}>
+                                  {setDef.name}
+                                </div>
+                                <div className="text-tiny-responsive text-gray-600">{avail} dispo</div>
                               </div>
-                              <div className="text-tiny-responsive text-gray-600">{avail} dispo</div>
+                              {selected > 0 && (
+                                <span className={`text-tiny-responsive font-black px-1.5 py-0.5 rounded-full ${setDef.bg || 'bg-cyan-500/20'} ${setDef.color || 'text-cyan-300'}`}>
+                                  {selected}p
+                                </span>
+                              )}
+                            </button>
+                            {/* Tooltip on hover */}
+                            <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-1 w-52 p-2 rounded-lg border border-gray-600/50 bg-gray-900/95 backdrop-blur-sm shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-150">
+                              <div className={`text-small-responsive font-bold mb-1 ${setDef.color || 'text-cyan-300'}`}>{setDef.icon} {setDef.name}</div>
+                              {setDef.desc && <div className="text-tiny-responsive text-gray-500 mb-1.5 italic">{setDef.desc}</div>}
+                              <div className="space-y-1">
+                                <div className="flex gap-1.5">
+                                  <span className="text-tiny-responsive font-black text-cyan-400 shrink-0">2p</span>
+                                  <span className="text-tiny-responsive text-gray-300">{setDef.bonus2Desc || '—'}</span>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  <span className="text-tiny-responsive font-black text-purple-400 shrink-0">4p</span>
+                                  <span className="text-tiny-responsive text-gray-300">{setDef.bonus4Desc || '—'}</span>
+                                </div>
+                                {setDef.bonus8Desc && (
+                                  <div className="flex gap-1.5">
+                                    <span className="text-tiny-responsive font-black text-yellow-400 shrink-0">8p</span>
+                                    <span className="text-tiny-responsive text-gray-300">{setDef.bonus8Desc}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            {selected > 0 && (
-                              <span className={`text-tiny-responsive font-black px-1.5 py-0.5 rounded-full ${setDef.bg || 'bg-cyan-500/20'} ${setDef.color || 'text-cyan-300'}`}>
-                                {selected}p
-                              </span>
-                            )}
-                          </button>
+                          </div>
                         );
                       })}
                     </div>
