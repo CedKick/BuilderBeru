@@ -63,6 +63,11 @@ export class ExpeditionEngine {
     this.bossesKilled = 0;
     this.totalDeaths = 0;
 
+    // Per-encounter stats history (for spectators & recap)
+    this.encounterHistory = [];  // { encounterIndex, type, bossName, bossIndex, combatTime, totalDmg, totalHeals, totalDeaths, charStats }
+    this.totalCombatTime = 0;
+    this.currentEncounterStartTime = 0;
+
     // Essences collected per player: Map<username, { guerre, arcanique, gardienne }>
     this.playerEssences = new Map();
 
@@ -112,6 +117,9 @@ export class ExpeditionEngine {
     this.rezUsedThisCombat = new Set();
     this.bossesKilled = 0;
     this.totalDeaths = 0;
+    this.encounterHistory = [];
+    this.totalCombatTime = 0;
+    this.currentEncounterStartTime = 0;
     this.playerEssences = new Map();
     this.playerCurrencies = new Map();
     this.tickCount = 0;
@@ -252,6 +260,8 @@ export class ExpeditionEngine {
   // STATE: COMBAT
   // ═══════════════════════════════════════════════════════
   tickCombat(dt) {
+    this.totalCombatTime += dt;
+
     // Exclude resting characters from combat
     const combatChars = this.characters.filter(c => !this.restingCharacters.has(c.id));
     const result = this.combatEngine.tick(combatChars, this.currentMobs, this.currentBoss, dt);
@@ -272,10 +282,53 @@ export class ExpeditionEngine {
     const encounter = this.encounters[this.currentEncounterIndex];
     console.log(`[Expedition] Victory! Encounter ${this.currentEncounterIndex + 1}/${this.encounters.length} (${encounter.type})`);
 
+    // ── Compute per-encounter stats ──
+    const encounterCombatTime = this.elapsedSeconds - this.currentEncounterStartTime;
+    const encounterCharStats = {};
+    let encounterTotalDmg = 0, encounterTotalHeals = 0, encounterTotalDeaths = 0;
+    for (const char of this.characters) {
+      if (this.restingCharacters.has(char.id)) continue;
+      const baseline = char._encounterBaseline || { dmg: 0, heals: 0, kills: 0, deaths: 0 };
+      const dmg = char.stats.damageDealt - baseline.dmg;
+      const heals = (char.stats.healingDone || 0) - baseline.heals;
+      const kills = char.stats.kills - baseline.kills;
+      const deaths = char.stats.deaths - baseline.deaths;
+      encounterTotalDmg += dmg;
+      encounterTotalHeals += heals;
+      encounterTotalDeaths += deaths;
+      if (dmg > 0 || heals > 0 || deaths > 0) {
+        encounterCharStats[char.id] = {
+          name: char.name, hunterId: char.hunterId, element: char.element, username: char.username,
+          dmg, heals, kills, deaths,
+        };
+      }
+    }
+    const encounterEntry = {
+      encounterIndex: this.currentEncounterIndex,
+      type: encounter.type,
+      bossName: encounter.bossName || null,
+      bossIndex: encounter.bossIndex ?? null,
+      combatTime: Math.floor(encounterCombatTime),
+      totalDmg: encounterTotalDmg,
+      totalHeals: encounterTotalHeals,
+      totalDeaths: encounterTotalDeaths,
+      charStats: encounterCharStats,
+    };
+    this.encounterHistory.push(encounterEntry);
+
     const isBoss = encounter.type === 'boss';
     if (isBoss) {
       this.bossesKilled++;
-      this.broadcast({ type: 'boss_killed', bossName: encounter.bossName, bossIndex: encounter.bossIndex });
+      this.broadcast({
+        type: 'boss_killed',
+        bossName: encounter.bossName,
+        bossIndex: encounter.bossIndex,
+        combatTime: encounterEntry.combatTime,
+        totalDmg: encounterEntry.totalDmg,
+        totalHeals: encounterEntry.totalHeals,
+        totalDeaths: encounterEntry.totalDeaths,
+        charStats: encounterEntry.charStats,
+      });
     }
 
     // Roll essence drops (from killed mobs + boss)
@@ -740,6 +793,17 @@ export class ExpeditionEngine {
     // Reset formation for combat (arc around boss if present)
     AIController.assignFormation(combatCharacters, this.currentBoss);
 
+    // Record encounter start for per-boss stats
+    this.currentEncounterStartTime = this.elapsedSeconds;
+    for (const char of combatCharacters) {
+      char._encounterBaseline = {
+        dmg: char.stats.damageDealt,
+        heals: char.stats.healingDone || 0,
+        kills: char.stats.kills,
+        deaths: char.stats.deaths,
+      };
+    }
+
     // Move resting characters offscreen (far left, safe)
     for (const char of this.characters) {
       if (this.restingCharacters.has(char.id)) {
@@ -933,6 +997,12 @@ export class ExpeditionEngine {
       } : null,
       aliveCount: this.characters.filter(c => c.alive).length,
       totalCount: this.characters.length,
+      totalCombatTime: Math.floor(this.totalCombatTime),
+      encounterHistory: this.encounterHistory.filter(e => e.type === 'boss').map(e => ({
+        bossName: e.bossName, bossIndex: e.bossIndex, combatTime: e.combatTime,
+        totalDmg: e.totalDmg, totalHeals: e.totalHeals, totalDeaths: e.totalDeaths,
+        charStats: e.charStats,
+      })),
     });
   }
 
@@ -955,6 +1025,8 @@ export class ExpeditionEngine {
       srSelections: Array.from(this.srSelections.entries()),
       playerEssences: Array.from(this.playerEssences.entries()),
       playerCurrencies: Array.from(this.playerCurrencies.entries()),
+      encounterHistory: this.encounterHistory,
+      totalCombatTime: this.totalCombatTime,
     };
 
     await db.saveExpeditionSnapshot(this.expeditionId, snapshot);
@@ -994,6 +1066,8 @@ export class ExpeditionEngine {
     this.srSelections = new Map(snapshot.srSelections || []);
     this.playerEssences = new Map(snapshot.playerEssences || []);
     this.playerCurrencies = new Map(snapshot.playerCurrencies || []);
+    this.encounterHistory = snapshot.encounterHistory || [];
+    this.totalCombatTime = snapshot.totalCombatTime || 0;
 
     console.log(`[Expedition] Restored! Status: ${this.status}, ${this.characters.length} characters, encounter ${this.currentEncounterIndex}/${this.encounters.length}`);
 

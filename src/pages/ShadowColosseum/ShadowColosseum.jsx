@@ -22,7 +22,7 @@ import {
   TIER_NAMES_SKILL, TIER_COSTS, SP_INTERVAL, MAX_LEVEL,
   statsAt, statsAtFull, xpForLevel, getElementMult, getEffStat, buildSpdTurnOrder,
   applySkillUpgrades, getUpgradeDesc, computeAttack, aiPickSkill, mergeTalentBonuses,
-  ACCOUNT_XP_FOR_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT, accountLevelFromXp, accountAllocationsAtLevel, nextAllocationLevel, MAX_ACCOUNT_LEVEL, sanitizeAccountXp,
+  ACCOUNT_XP_FOR_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT, accountLevelFromXp, accountXpForLevel, accountAllocationsAtLevel, nextAllocationLevel, MAX_ACCOUNT_LEVEL, sanitizeAccountXp,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
   getStarScaledStats, getStarRewardMult, getStarDropBonus, getGuaranteedArtifactRarity,
   calculatePowerScore, getDifficultyRating,
@@ -2501,7 +2501,7 @@ export default function ShadowColosseum() {
       const baseAccountXp = 20 + stage.tier * 12 + (stage.isBoss ? 25 : 0);
       const arc2PrevLvl = accountLevelFromXp(d.accountXp || 0).level;
       const accountXpGain = arc2PrevLvl >= MAX_ACCOUNT_LEVEL ? 0 : Math.floor(baseAccountXp * rMult.accountXp);
-      d.accountXp = (d.accountXp || 0) + accountXpGain;
+      d.accountXp = Math.min((d.accountXp || 0) + accountXpGain, accountXpForLevel(MAX_ACCOUNT_LEVEL));
       // Stage cleared + star record
       if (!d.arc2StagesCleared[stage.id]) d.arc2StagesCleared[stage.id] = { maxStars: 0 };
       if (star > (d.arc2StagesCleared[stage.id].maxStars || 0)) d.arc2StagesCleared[stage.id].maxStars = star;
@@ -3975,7 +3975,7 @@ export default function ShadowColosseum() {
     const prevAccountXp = data.accountXp || 0;
     const prevAccLvl = accountLevelFromXp(prevAccountXp).level;
     const accountXpGain = prevAccLvl >= MAX_ACCOUNT_LEVEL ? 0 : Math.floor(baseAccountXp * rMult.accountXp);
-    const newAccountXp = prevAccountXp + accountXpGain;
+    const newAccountXp = Math.min(prevAccountXp + accountXpGain, accountXpForLevel(MAX_ACCOUNT_LEVEL));
     const newAccLvl = accountLevelFromXp(newAccountXp).level;
     const prevMilestones = accountAllocationsAtLevel(prevAccLvl);
     const newMilestones = accountAllocationsAtLevel(newAccLvl);

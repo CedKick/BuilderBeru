@@ -5,6 +5,29 @@
 
 export const CHANGELOG = [
   {
+    version: '0.9.13',
+    date: '2026-03-04',
+    title: 'Expedition — Synergies & Passifs Equipe',
+    entries: [
+      {
+        category: 'new',
+        items: [
+          'Expedition inscription : panneau Synergies & Passifs affichant les bonus de votre equipe de 6',
+          'Synergies elementaires (Duo +10% ATK, Trinite +20% ATK +10% DEF), Diversite (+5% all stats), Support (PV +10%), Tank (DEF +10%)',
+          'Passifs individuels affiches : permanent, teamAura, healBonus, magicDmg, critDmg, stacking, berserker, etc.',
+          'Passifs d\'eveil (Awakening A1-A5) affiches avec calcul dynamique par equipe',
+        ],
+      },
+      {
+        category: 'balance',
+        items: [
+          'Expedition combat : synergies d\'equipe appliquees cote serveur (memes bonus que Raid SC)',
+          'Les synergies s\'appliquent par joueur (groupe de 6 hunters) et modifient HP/ATK/DEF/SPD/INT',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.12',
     date: '2026-03-04',
     title: 'Ultimate Skills — 48 Hunters + Parchemins Expedition',

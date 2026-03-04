@@ -231,6 +231,46 @@ export class PassiveEngine {
         char._allDmgBonus = (char._allDmgBonus || 0) + 10; // +10 more (total 20)
       }
     }
+
+    // ── Team Synergies (per-player groups of 6) ──
+    // Same synergy system as Raid SC: element duos/trinities, class diversity, support/tank presence
+    const playerGroups = new Map(); // username -> [char, ...]
+    for (const char of characters) {
+      if (!playerGroups.has(char.username)) playerGroups.set(char.username, []);
+      playerGroups.get(char.username).push(char);
+    }
+    for (const [, group] of playerGroups) {
+      const elemCount = {};
+      const classSet = new Set();
+      let hasSupport = false;
+      let hasTank = false;
+      for (const c of group) {
+        elemCount[c.element] = (elemCount[c.element] || 0) + 1;
+        classSet.add(c.hunterClass);
+        if (c.hunterClass === 'support') hasSupport = true;
+        if (c.hunterClass === 'tank') hasTank = true;
+      }
+      const bonuses = { atk: 0, def: 0, hp: 0, spd: 0, allStats: 0 };
+      const maxElem = Math.max(...Object.values(elemCount));
+      if (maxElem >= 3) { bonuses.atk += 20; bonuses.def += 10; }
+      else if (maxElem >= 2) { bonuses.atk += 10; }
+      if (classSet.size >= 3) bonuses.allStats += 5;
+      if (hasSupport) bonuses.hp += 10;
+      if (hasTank) bonuses.def += 10;
+      // Apply synergy bonuses as stat multipliers to each char in this player's group
+      const hpMult  = 1 + (bonuses.hp + bonuses.allStats) / 100;
+      const atkMult = 1 + (bonuses.atk + bonuses.allStats) / 100;
+      const defMult = 1 + (bonuses.def + bonuses.allStats) / 100;
+      const spdMult = 1 + (bonuses.spd + bonuses.allStats) / 100;
+      if (hpMult !== 1 || atkMult !== 1 || defMult !== 1 || spdMult !== 1) {
+        for (const c of group) {
+          if (hpMult !== 1)  { c.maxHp = Math.floor(c.maxHp * hpMult); c.hp = Math.min(c.hp, c.maxHp); }
+          if (atkMult !== 1) { c.atk = Math.floor(c.atk * atkMult); if (c.int) c.int = Math.floor(c.int * atkMult); }
+          if (defMult !== 1)   c.def = Math.floor(c.def * defMult);
+          if (spdMult !== 1)   c.spd = Math.floor(c.spd * spdMult);
+        }
+      }
+    }
   }
 
   computeActiveSets(equippedSets) {

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Swords, Users, Play, Plus, Eye, Clock, Shield, Skull, Trophy, ChevronRight, ChevronDown, ChevronUp, Flame, X, RotateCcw, BookOpen, Star, Gem, Award, Package, ScrollText, Sparkles, Lock } from 'lucide-react';
 
 // ── Import real hunter data from Shadow Colosseum ──
-import { HUNTERS, RAID_SAVE_KEY, loadRaidData, getHunterPool, getHunterStars } from '../ShadowColosseum/raidData';
+import { HUNTERS, RAID_SAVE_KEY, loadRaidData, getHunterPool, getHunterStars, computeSynergies, HUNTER_PASSIVE_EFFECTS, getAwakeningPassives } from '../ShadowColosseum/raidData';
 import { computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses, WEAPONS } from '../ShadowColosseum/equipmentData';
 import { statsAtFull, mergeTalentBonuses } from '../ShadowColosseum/colosseumCore';
 import { computeTalentBonuses } from '../ShadowColosseum/talentTreeData';
@@ -796,6 +796,107 @@ export default function Expedition() {
               })}
             </div>
           )}
+
+          {/* ── My Team Synergies & Passives ── */}
+          {selectedHunters.length >= 2 && (() => {
+            const team = selectedHunters.map(id => HUNTERS[id]).filter(Boolean);
+            const syn = computeSynergies(team);
+            // Hunter passive labels
+            const passiveLabels = [];
+            selectedHunters.forEach(id => {
+              const h = HUNTERS[id];
+              const hp = HUNTER_PASSIVE_EFFECTS[id];
+              if (!h || !hp) return;
+              if (hp.type === 'teamAura' && hp.stats) {
+                const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                passiveLabels.push({ name: h.name, label: parts.join(', ') + ' (equipe)', color: 'text-cyan-400' });
+              } else if (hp.type === 'teamDef') {
+                passiveLabels.push({ name: h.name, label: `DEF +${hp.value}% (equipe)`, color: 'text-cyan-400' });
+              } else if (hp.type === 'permanent' && hp.stats) {
+                const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                passiveLabels.push({ name: h.name, label: parts.join(', '), color: 'text-blue-400' });
+              } else if (hp.type === 'healBonus') {
+                passiveLabels.push({ name: h.name, label: `Soin +${hp.value}%`, color: 'text-green-400' });
+              } else if (hp.type === 'buffBonus') {
+                passiveLabels.push({ name: h.name, label: `Buff duree +${hp.value}%`, color: 'text-violet-400' });
+              } else if (hp.type === 'magicDmg') {
+                passiveLabels.push({ name: h.name, label: `DMG Magique +${hp.value}%`, color: 'text-indigo-400' });
+              } else if (hp.type === 'critDmg') {
+                passiveLabels.push({ name: h.name, label: `CRIT DMG +${hp.value}%`, color: 'text-amber-400' });
+              } else if (hp.type === 'aoeDmg') {
+                passiveLabels.push({ name: h.name, label: `AOE DMG +${hp.value}%`, color: 'text-orange-400' });
+              } else if (hp.type === 'dotDmg') {
+                passiveLabels.push({ name: h.name, label: `DOT DMG +${hp.value}%`, color: 'text-rose-400' });
+              } else if (hp.type === 'defIgnore') {
+                passiveLabels.push({ name: h.name, label: `Ignore DEF ${hp.value}%`, color: 'text-red-400' });
+              } else if (hp.type === 'stacking' && hp.perStack) {
+                const parts = Object.entries(hp.perStack).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                passiveLabels.push({ name: h.name, label: `${parts.join(', ')}/action (max x${hp.maxStacks || '?'})`, color: 'text-blue-400' });
+              } else if (hp.type === 'lowHp') {
+                const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                passiveLabels.push({ name: h.name, label: `${parts.join(', ')} (< ${hp.threshold}% HP)`, color: 'text-orange-300' });
+              } else if (hp.type === 'highHp') {
+                const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                passiveLabels.push({ name: h.name, label: `${parts.join(', ')} (> ${hp.threshold}% HP)`, color: 'text-teal-400' });
+              } else if (hp.type === 'firstTurn') {
+                const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                passiveLabels.push({ name: h.name, label: `${parts.join(', ')} (1er tour)`, color: 'text-yellow-400' });
+              } else if (hp.type === 'vsBoss') {
+                const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                passiveLabels.push({ name: h.name, label: `${parts.join(', ')} (vs Boss)`, color: 'text-red-300' });
+              } else if (hp.type === 'vsLowHp') {
+                const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                passiveLabels.push({ name: h.name, label: `${parts.join(', ')} (vs < ${hp.threshold}% HP)`, color: 'text-red-300' });
+              } else if (hp.type === 'vsDebuffed') {
+                const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                passiveLabels.push({ name: h.name, label: `${parts.join(', ')} (vs debuffed)`, color: 'text-pink-400' });
+              } else if (hp.type === 'berserker' && hp.tiers) {
+                passiveLabels.push({ name: h.name, label: `Berserker (3 paliers, max ATK +${hp.tiers[hp.tiers.length - 1].stats.atk}%)`, color: 'text-red-400' });
+              } else if (hp.type === 'chaotic') {
+                passiveLabels.push({ name: h.name, label: 'Chaotique (buff aleatoire/tour)', color: 'text-violet-400' });
+              } else if (hp.type === 'skillCd') {
+                const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}`);
+                passiveLabels.push({ name: h.name, label: `${parts.join(', ')} (skill CD >= ${hp.minCd})`, color: 'text-blue-300' });
+              } else if (hp.type === 'debuffBonus') {
+                passiveLabels.push({ name: h.name, label: `Debuff +${hp.value}%`, color: 'text-pink-400' });
+              }
+              // Awakening passives
+              const stars = getHunterStars(raidData, id);
+              const awPs = getAwakeningPassives(id, stars);
+              awPs.forEach(ap => {
+                if (ap.type === 'teamElementalDmg') {
+                  const count = selectedHunters.filter(tid => HUNTERS[tid]?.element === ap.element).length;
+                  const totalBonus = count * ap.pctPerAlly;
+                  const elemNames = { fire: 'Feu', water: 'Eau', shadow: 'Ombre', light: 'Lumiere' };
+                  passiveLabels.push({ name: h.name, label: `DMG ${elemNames[ap.element] || ap.element} +${totalBonus}% (${count}x ${ap.element})`, color: 'text-cyan-300' });
+                }
+              });
+            });
+            if (syn.labels.length === 0 && passiveLabels.length === 0) return null;
+            return (
+              <div className="mb-4 bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-3">
+                <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Synergies & Passifs
+                </div>
+                {syn.labels.length > 0 && (
+                  <div className="space-y-0.5 mb-2">
+                    {syn.labels.map((l, i) => (
+                      <div key={i} className="text-[11px] text-emerald-400">{l}</div>
+                    ))}
+                  </div>
+                )}
+                {passiveLabels.length > 0 && (
+                  <div className={`space-y-0.5 ${syn.labels.length > 0 ? 'border-t border-emerald-500/10 pt-2' : ''}`}>
+                    {passiveLabels.map((p, i) => (
+                      <div key={i} className={`text-[10px] ${p.color}`}>
+                        {p.name}: {p.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Team Composition Analysis */}
           {entries.length > 0 && (() => {

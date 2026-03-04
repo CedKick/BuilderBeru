@@ -181,6 +181,53 @@
     .log-info .log-text { color: #888; }
     .log-buff .log-text { color: #60a5fa; }
 
+    /* ── DPS Summary Bar ── */
+    .dps-summary {
+      display: flex; gap: 6px; padding: 4px 8px;
+      background: rgba(20, 20, 35, 0.9);
+      border-bottom: 1px solid #222; font-size: 9px; flex-wrap: wrap;
+    }
+    .dps-summary .dps-item { display: flex; align-items: center; gap: 3px; }
+    .dps-summary .dps-label { color: #555; }
+    .dps-summary .dps-val { font-weight: bold; font-family: monospace; }
+
+    /* ── Boss Selector ── */
+    .boss-selector {
+      display: flex; gap: 2px; padding: 4px 6px;
+      border-bottom: 1px solid #222;
+      overflow-x: auto; flex-wrap: nowrap;
+    }
+    .boss-selector::-webkit-scrollbar { height: 3px; }
+    .boss-selector::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    .boss-sel-btn {
+      padding: 2px 7px; border-radius: 5px; font-size: 8px; font-weight: bold;
+      background: transparent; border: 1px solid #333; color: #666;
+      cursor: pointer; white-space: nowrap; transition: all 0.2s; flex-shrink: 0;
+    }
+    .boss-sel-btn.active { background: rgba(168, 85, 247, 0.2); border-color: #a855f7; color: #c084fc; }
+    .boss-sel-btn:hover { color: #aaa; }
+
+    /* ── WoW-style Detail Stats ── */
+    .wow-stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px;
+      padding: 6px 8px; font-size: 10px;
+    }
+    .wow-stat { display: flex; justify-content: space-between; padding: 2px 4px; border-radius: 3px; }
+    .wow-stat:hover { background: rgba(255,255,255,0.03); }
+    .wow-stat-label { color: #666; }
+    .wow-stat-val { font-weight: bold; font-family: monospace; }
+    .wow-section-title {
+      font-size: 9px; font-weight: bold; color: #a855f7;
+      padding: 6px 8px 2px; text-transform: uppercase; letter-spacing: 0.5px;
+      border-top: 1px solid #222; margin-top: 4px;
+    }
+    .wow-section-title:first-child { border-top: none; margin-top: 0; }
+    .wow-player-header {
+      display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+      background: rgba(30, 30, 50, 0.6); border-bottom: 1px solid #222;
+    }
+    .wow-player-header img { width: 24px; height: 24px; border-radius: 4px; }
+
     /* ── Panel Resize Handle ── */
     #panel-resize {
       position: absolute; left: -4px; top: 0; bottom: 0; width: 8px;
@@ -316,11 +363,22 @@
 
   <div id="stats-panel">
     <div id="panel-resize"></div>
+    <div class="dps-summary" id="dps-summary">
+      <div class="dps-item"><span class="dps-label">Boss:</span><span class="dps-val" id="boss-dps" style="color:#ef4444">--</span></div>
+      <div class="dps-item"><span class="dps-label">Global:</span><span class="dps-val" id="global-dps" style="color:#f59e0b">--</span></div>
+      <div class="dps-item"><span class="dps-label">Combat:</span><span class="dps-val" id="combat-time-display" style="color:#a855f7">0:00</span></div>
+      <div class="dps-item"><span class="dps-label">Boss:</span><span class="dps-val" id="boss-combat-time" style="color:#c084fc">0:00</span></div>
+    </div>
+    <div class="boss-selector" id="boss-selector">
+      <button class="boss-sel-btn active" data-view="global">Global</button>
+      <button class="boss-sel-btn" data-view="current">Boss actuel</button>
+    </div>
     <div class="stats-tabs">
       <button class="stats-tab active" data-tab="dps">DPS</button>
       <button class="stats-tab" data-tab="heals">Heals</button>
       <button class="stats-tab" data-tab="received">Recus</button>
       <button class="stats-tab" data-tab="crits">Crits</button>
+      <button class="stats-tab" data-tab="details">Details</button>
       <button class="stats-tab" data-tab="graph">Graphe</button>
       <button class="stats-tab" data-tab="timeline">Timeline</button>
     </div>
@@ -887,6 +945,16 @@ let lastDpsSnapshot = 0;
 const DPS_SNAPSHOT_INTERVAL = 2;
 let combatElapsedTime = 0;  // Only increments during combat status
 
+// Per-boss stats tracking (WoW-style encounter breakdown)
+const bossEncounterHistory = []; // { bossName, bossIndex, combatTime, charStats, totalDmg, totalHeals, totalDeaths }
+let currentEncounterBaseline = {}; // snapshot of combatStats at combat_start
+let currentEncounterCombatTime = 0;
+let currentEncounterBossName = null;
+let currentEncounterIndex = -1;
+let currentEncounterType = null; // 'boss' | 'mob_wave'
+let selectedStatsView = 'global'; // 'global' | 'current' | number (index into bossEncounterHistory)
+let serverTotalCombatTime = 0; // from server broadcast (for late-joining spectators)
+
 function ensureStats(id) {
   if (!combatStats[id]) {
     const char = state?.characters?.find(c => c.id === id);
@@ -1214,6 +1282,104 @@ toggleBtn.addEventListener('click', () => {
   setTimeout(resizeCanvas, 310);
 });
 
+// ── Boss Selector Click Handlers ──
+function updateBossSelector() {
+  const container = document.getElementById('boss-selector');
+  let html = `<button class="boss-sel-btn${selectedStatsView === 'global' ? ' active' : ''}" data-view="global">Global</button>`;
+  html += `<button class="boss-sel-btn${selectedStatsView === 'current' ? ' active' : ''}" data-view="current" style="border-color:#dc2626">Boss actuel</button>`;
+  for (let i = 0; i < bossEncounterHistory.length; i++) {
+    const b = bossEncounterHistory[i];
+    const shortName = b.bossName ? b.bossName.split(' ').pop() : `Boss ${i + 1}`;
+    html += `<button class="boss-sel-btn${selectedStatsView === i ? ' active' : ''}" data-view="${i}" title="${b.bossName}">${shortName} ${formatTime(b.combatTime)}</button>`;
+  }
+  container.innerHTML = html;
+  container.querySelectorAll('.boss-sel-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.dataset.view;
+      selectedStatsView = v === 'global' ? 'global' : v === 'current' ? 'current' : parseInt(v);
+      container.querySelectorAll('.boss-sel-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderStatsPanel();
+    });
+  });
+}
+
+function updateDpsSummary() {
+  // Global DPS
+  let totalDmg = 0;
+  for (const [id, s] of Object.entries(combatStats)) {
+    if (!id.startsWith('mob_') && !id.startsWith('boss_')) totalDmg += s.dmgDealt;
+  }
+  const globalDps = combatElapsedTime > 0 ? totalDmg / combatElapsedTime : 0;
+  document.getElementById('global-dps').textContent = formatNumber(globalDps) + '/s';
+  // Current boss DPS
+  if (currentEncounterType === 'boss' && currentEncounterCombatTime > 1) {
+    let bossDmg = 0;
+    for (const [id, s] of Object.entries(combatStats)) {
+      if (id.startsWith('mob_') || id.startsWith('boss_')) continue;
+      const bl = currentEncounterBaseline[id];
+      bossDmg += bl ? s.dmgDealt - bl.dmgDealt : s.dmgDealt;
+    }
+    document.getElementById('boss-dps').textContent = formatNumber(bossDmg / currentEncounterCombatTime) + '/s';
+  } else {
+    document.getElementById('boss-dps').textContent = '--';
+  }
+  document.getElementById('combat-time-display').textContent = formatTime(combatElapsedTime);
+  document.getElementById('boss-combat-time').textContent = currentEncounterCombatTime > 0 ? formatTime(currentEncounterCombatTime) : '--';
+}
+
+// Get stats filtered by the selected boss view
+// Returns { stats: { [id]: {...} }, combatTime: number }
+function getFilteredStats() {
+  if (selectedStatsView === 'global') {
+    return { stats: combatStats, combatTime: combatElapsedTime };
+  }
+  if (selectedStatsView === 'current') {
+    // Delta between current combatStats and baseline
+    const filtered = {};
+    for (const [id, s] of Object.entries(combatStats)) {
+      if (id.startsWith('mob_') || id.startsWith('boss_')) continue;
+      const bl = currentEncounterBaseline[id] || {};
+      const delta = {
+        name: s.name, hunterId: s.hunterId, element: s.element, username: s.username,
+        dmgDealt: s.dmgDealt - (bl.dmgDealt || 0),
+        healsGiven: s.healsGiven - (bl.healsGiven || 0),
+        dmgReceived: s.dmgReceived - (bl.dmgReceived || 0),
+        kills: s.kills - (bl.kills || 0),
+        deaths: s.deaths - (bl.deaths || 0),
+        crits: s.crits - (bl.crits || 0),
+        totalHits: s.totalHits - (bl.totalHits || 0),
+        totalCritDmg: s.totalCritDmg - (bl.totalCritDmg || 0),
+        maxCrit: s.maxCrit || 0,
+        healsReceived: (s.healsReceived || 0) - (bl.healsReceived || 0),
+      };
+      if (delta.dmgDealt > 0 || delta.healsGiven > 0 || delta.deaths > 0 || delta.dmgReceived > 0) {
+        filtered[id] = delta;
+      }
+    }
+    return { stats: filtered, combatTime: currentEncounterCombatTime };
+  }
+  // Historical boss by index
+  const bossData = bossEncounterHistory[selectedStatsView];
+  if (!bossData) return { stats: {}, combatTime: 0 };
+  // Convert server charStats format (dmg/heals) to client format (dmgDealt/healsGiven)
+  const mapped = {};
+  for (const [id, cs] of Object.entries(bossData.charStats)) {
+    mapped[id] = {
+      name: cs.name || id.split('_').slice(1).join(' '),
+      hunterId: cs.hunterId || null, element: cs.element || null, username: cs.username || '',
+      dmgDealt: cs.dmg || cs.dmgDealt || 0,
+      healsGiven: cs.heals || cs.healsGiven || 0,
+      dmgReceived: cs.dmgReceived || 0,
+      kills: cs.kills || 0, deaths: cs.deaths || 0,
+      crits: cs.crits || 0, totalHits: cs.totalHits || 0,
+      totalCritDmg: cs.totalCritDmg || 0, maxCrit: cs.maxCrit || 0,
+      healsReceived: cs.healsReceived || 0,
+    };
+  }
+  return { stats: mapped, combatTime: bossData.combatTime };
+}
+
 // Stats Tabs
 document.querySelectorAll('.stats-tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -1230,6 +1396,10 @@ document.querySelectorAll('.stats-tab').forEach(tab => {
       graphEl.classList.remove('active');
       listEl.style.display = '';
       renderTimeline();
+    } else if (activeStatsTab === 'details') {
+      graphEl.classList.remove('active');
+      listEl.style.display = '';
+      renderDetailsTab();
     } else {
       graphEl.classList.remove('active');
       listEl.style.display = '';
@@ -1484,6 +1654,26 @@ function handleMessage(msg) {
         if (!combatStartTime) combatStartTime = msg.elapsedTime;
         takeDpsSnapshot(msg.elapsedTime);
       }
+      // Sync combat time from server (for late-joining spectators)
+      if (msg.totalCombatTime && combatElapsedTime < 1) {
+        combatElapsedTime = msg.totalCombatTime;
+        serverTotalCombatTime = msg.totalCombatTime;
+      }
+      // Hydrate boss encounter history from server (for late joiners or reconnects)
+      if (msg.encounterHistory && bossEncounterHistory.length < msg.encounterHistory.length) {
+        bossEncounterHistory.length = 0; // Clear and resync
+        for (const e of msg.encounterHistory) {
+          bossEncounterHistory.push({
+            bossName: e.bossName, bossIndex: e.bossIndex,
+            combatTime: e.combatTime, totalDmg: e.totalDmg,
+            totalHeals: e.totalHeals, totalDeaths: e.totalDeaths,
+            charStats: e.charStats || {},
+          });
+        }
+        updateBossSelector();
+      }
+      // Update DPS summary
+      updateDpsSummary();
       if (msg.status === 'campfire' && !campfireLayout) setupCampfireLayout();
       if (msg.status !== 'campfire') campfireLayout = null;
       break;
@@ -1494,23 +1684,74 @@ function handleMessage(msg) {
 
     case 'combat_start':
       combatStartTime = 0;
+      currentEncounterType = msg.encounterType;
+      currentEncounterIndex = msg.encounterIndex;
+      currentEncounterCombatTime = 0;
+      // Snapshot current stats as baseline for per-encounter delta
+      currentEncounterBaseline = {};
+      for (const [id, s] of Object.entries(combatStats)) {
+        currentEncounterBaseline[id] = { ...s };
+      }
       if (msg.encounterType === 'boss') {
+        currentEncounterBossName = msg.bossName;
         addLogEntry('boss', `BOSS: ${msg.bossName} apparait!`);
         startBossIntro(msg.bossName);
         showTvCommentary('boss_appear');
         addTimelineEvent('boss', null, { text: `Boss: ${msg.bossName}` });
       } else {
+        currentEncounterBossName = null;
         addLogEntry('info', `Vague de mobs! (${msg.mobCount} ennemis)`);
         showTvCommentary('combat_start');
         addTimelineEvent('phase', null, { text: `Combat — ${msg.mobCount} mobs` });
       }
       break;
 
-    case 'boss_killed':
+    case 'boss_killed': {
       addLogEntry('boss', `BOSS VAINCU: ${msg.bossName}!`);
       showTvCommentary('victory');
       addTimelineEvent('kill', null, { killer: 'Equipe', target: msg.bossName });
+      // Save per-boss encounter stats
+      const bossEntry = {
+        bossName: msg.bossName,
+        bossIndex: msg.bossIndex,
+        combatTime: msg.combatTime || Math.floor(currentEncounterCombatTime),
+        charStats: {},
+        totalDmg: 0, totalHeals: 0, totalDeaths: 0,
+      };
+      // Use server charStats if available, otherwise compute from client events
+      if (msg.charStats && Object.keys(msg.charStats).length > 0) {
+        bossEntry.charStats = msg.charStats;
+        bossEntry.totalDmg = msg.totalDmg || 0;
+        bossEntry.totalHeals = msg.totalHeals || 0;
+        bossEntry.totalDeaths = msg.totalDeaths || 0;
+      } else {
+        for (const [id, s] of Object.entries(combatStats)) {
+          if (id.startsWith('mob_') || id.startsWith('boss_')) continue;
+          const bl = currentEncounterBaseline[id] || { dmgDealt: 0, healsGiven: 0, dmgReceived: 0, kills: 0, deaths: 0, crits: 0, totalHits: 0, totalCritDmg: 0 };
+          const delta = {
+            name: s.name, hunterId: s.hunterId, element: s.element, username: s.username,
+            dmg: s.dmgDealt - (bl.dmgDealt || 0),
+            heals: s.healsGiven - (bl.healsGiven || 0),
+            dmgReceived: s.dmgReceived - (bl.dmgReceived || 0),
+            kills: s.kills - (bl.kills || 0),
+            deaths: s.deaths - (bl.deaths || 0),
+            crits: s.crits - (bl.crits || 0),
+            totalHits: s.totalHits - (bl.totalHits || 0),
+            totalCritDmg: s.totalCritDmg - (bl.totalCritDmg || 0),
+            maxCrit: s.maxCrit,
+          };
+          if (delta.dmg > 0 || delta.heals > 0 || delta.deaths > 0) {
+            bossEntry.charStats[id] = delta;
+            bossEntry.totalDmg += delta.dmg;
+            bossEntry.totalHeals += delta.heals;
+            bossEntry.totalDeaths += delta.deaths;
+          }
+        }
+      }
+      bossEncounterHistory.push(bossEntry);
+      updateBossSelector();
       break;
+    }
 
     case 'march_start':
       addLogEntry('info', `En marche... prochain: ${msg.nextEncounter}`);
@@ -2312,24 +2553,26 @@ const TAB_COLORS = { dps: '#ef4444', heals: '#22c55e', received: '#f59e0b', crit
 let statsRenderTimer = null;
 function scheduleStatsRender() {
   if (statsRenderTimer) return;
-  statsRenderTimer = setTimeout(() => { statsRenderTimer = null; if (activeStatsTab === 'graph') renderDpsGraph(); else if (activeStatsTab === 'timeline') renderTimeline(); else renderStatsPanel(); }, 2000);
+  statsRenderTimer = setTimeout(() => { statsRenderTimer = null; if (activeStatsTab === 'graph') renderDpsGraph(); else if (activeStatsTab === 'timeline') renderTimeline(); else if (activeStatsTab === 'details') renderDetailsTab(); else renderStatsPanel(); }, 2000);
 }
 
 function renderStatsPanel() {
-  if (!statsPanelOpen || activeStatsTab === 'graph' || activeStatsTab === 'timeline') return;
+  if (!statsPanelOpen || activeStatsTab === 'graph' || activeStatsTab === 'timeline' || activeStatsTab === 'details') return;
   const list = document.getElementById('stats-list');
-  const entries = Object.entries(combatStats).filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'));
+  const { stats: filteredStats, combatTime: filteredCombatTime } = getFilteredStats();
+  const entries = Object.entries(filteredStats).filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'));
+  const viewLabel = selectedStatsView === 'global' ? '' : selectedStatsView === 'current' ? ' (Boss actuel)' : ` (${bossEncounterHistory[selectedStatsView]?.bossName || ''})`;
 
   if (activeStatsTab === 'crits') {
-    const sorted = entries.sort((a, b) => b[1].crits - a[1].crits);
-    let html = '';
+    const sorted = entries.sort((a, b) => (b[1].crits || 0) - (a[1].crits || 0));
+    let html = viewLabel ? `<div style="text-align:center;font-size:9px;color:#a855f7;padding:3px;background:rgba(168,85,247,0.08)">${viewLabel}</div>` : '';
     for (const [id, s] of sorted) {
-      if (s.crits === 0 && s.totalHits === 0) continue;
+      if ((s.crits || 0) === 0 && (s.totalHits || 0) === 0) continue;
       const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
-      const critRate = s.totalHits > 0 ? (s.crits / s.totalHits * 100).toFixed(1) : '0.0';
-      const avgCrit = s.crits > 0 ? Math.floor(s.totalCritDmg / s.crits) : 0;
+      const critRate = s.totalHits > 0 ? ((s.crits || 0) / s.totalHits * 100).toFixed(1) : '0.0';
+      const avgCrit = s.crits > 0 ? Math.floor((s.totalCritDmg || 0) / s.crits) : 0;
       const critUserTag = s.username ? `<span style="font-size:8px;color:#666;margin-left:3px">(${s.username})</span>` : '';
-      html += `<div class="crit-card" style="cursor:pointer" onclick="focusOnCharacter('${id}')"><div class="crit-card-header">${thumbSrc ? `<img src="${thumbSrc}" alt="">` : ''}<span class="name">${s.name}${critUserTag}</span></div><div class="crit-stats-grid"><span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits}</span><span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits}</span><span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span><span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span><span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit)}</span><span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills}</span></div></div>`;
+      html += `<div class="crit-card" style="cursor:pointer" onclick="focusOnCharacter('${id}')"><div class="crit-card-header">${thumbSrc ? `<img src="${thumbSrc}" alt="">` : ''}<span class="name">${s.name}${critUserTag}</span></div><div class="crit-stats-grid"><span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits || 0}</span><span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits || 0}</span><span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span><span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span><span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit || 0)}</span><span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills || 0}</span></div></div>`;
     }
     list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de crits</div>';
     return;
@@ -2337,31 +2580,168 @@ function renderStatsPanel() {
 
   let sorted, valueKey;
   switch (activeStatsTab) {
-    case 'dps': valueKey = 'dmgDealt'; sorted = entries.sort((a, b) => b[1].dmgDealt - a[1].dmgDealt); break;
-    case 'heals': valueKey = 'healsGiven'; sorted = entries.sort((a, b) => b[1].healsGiven - a[1].healsGiven); break;
-    case 'received': valueKey = 'dmgReceived'; sorted = entries.sort((a, b) => b[1].dmgReceived - a[1].dmgReceived); break;
+    case 'dps': valueKey = 'dmgDealt'; sorted = entries.sort((a, b) => (b[1].dmgDealt || 0) - (a[1].dmgDealt || 0)); break;
+    case 'heals': valueKey = 'healsGiven'; sorted = entries.sort((a, b) => (b[1].healsGiven || 0) - (a[1].healsGiven || 0)); break;
+    case 'received': valueKey = 'dmgReceived'; sorted = entries.sort((a, b) => (b[1].dmgReceived || 0) - (a[1].dmgReceived || 0)); break;
   }
-  const maxVal = sorted.length > 0 ? sorted[0][1][valueKey] : 1;
+  const maxVal = sorted.length > 0 ? (sorted[0][1][valueKey] || 0) : 1;
   const barColor = TAB_COLORS[activeStatsTab];
-  const combatSec = Math.max(1, combatElapsedTime);
-  let html = '';
+  const combatSec = Math.max(1, filteredCombatTime);
+  // Total for % contribution
+  const totalVal = entries.reduce((sum, [, s]) => sum + (s[valueKey] || 0), 0);
+  let html = viewLabel ? `<div style="text-align:center;font-size:9px;color:#a855f7;padding:3px;background:rgba(168,85,247,0.08)">${viewLabel}</div>` : '';
   for (let i = 0; i < sorted.length; i++) {
     const [id, s] = sorted[i];
-    const val = s[valueKey];
+    const val = s[valueKey] || 0;
     if (val === 0) continue;
     const pct = maxVal > 0 ? (val / maxVal * 100) : 0;
+    const contribPct = totalVal > 0 ? (val / totalVal * 100).toFixed(1) : '0';
     const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
     const elemColor = ELEMENT_COLORS[s.element] || '#888';
-    const perSec = activeStatsTab === 'dps' ? ` (${formatNumber(val / combatSec)}/s)` : '';
-    // Check if character is currently alive
+    const perSec = activeStatsTab === 'dps' ? ` ${formatNumber(val / combatSec)}/s` : activeStatsTab === 'heals' ? ` ${formatNumber(val / combatSec)}/s` : '';
     const charObj = state?.characters?.find(c => c.id === id);
     const isAlive = charObj?.alive !== false;
-    const deathBadge = s.deaths > 0 ? `<span style="font-size:7px;color:#dc2626;margin-left:3px">\u2620${s.deaths}</span>` : '';
+    const deathBadge = (s.deaths || 0) > 0 ? `<span style="font-size:7px;color:#dc2626;margin-left:3px">\u2620${s.deaths}</span>` : '';
     const aliveStyle = isAlive ? '' : 'opacity:0.5;';
     const userTag = s.username ? `<span style="font-size:7px;color:#666;margin-left:2px">(${s.username})</span>` : '';
-    html += `<div class="stat-entry" style="${aliveStyle}cursor:pointer;" onclick="focusOnCharacter('${id}')"><span class="stat-rank">${i + 1}</span>${thumbSrc ? `<img class="stat-sprite" src="${thumbSrc}" alt="">` : `<span class="stat-sprite" style="background:${elemColor}"></span>`}<span class="stat-name" style="color:${isAlive ? elemColor : '#dc2626'}">${s.name}${userTag}${deathBadge}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${barColor}"></div></div><span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec}</span></span></div>`;
+    html += `<div class="stat-entry" style="${aliveStyle}cursor:pointer;" onclick="focusOnCharacter('${id}')"><span class="stat-rank">${i + 1}</span>${thumbSrc ? `<img class="stat-sprite" src="${thumbSrc}" alt="">` : `<span class="stat-sprite" style="background:${elemColor}"></span>`}<span class="stat-name" style="color:${isAlive ? elemColor : '#dc2626'}">${s.name}${userTag}${deathBadge}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${barColor}"></div></div><span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec} ${contribPct}%</span></span></div>`;
   }
   list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de donnees</div>';
+}
+
+// ═══════════════════════════════════════════════════════════
+// DETAILS TAB — WoW-style per-boss breakdown with all stats
+// ═══════════════════════════════════════════════════════════
+function renderDetailsTab() {
+  if (!statsPanelOpen || activeStatsTab !== 'details') return;
+  const list = document.getElementById('stats-list');
+  const { stats: filteredStats, combatTime: filteredCombatTime } = getFilteredStats();
+  const entries = Object.entries(filteredStats).filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'));
+  if (entries.length === 0) { list.innerHTML = '<div style="color:#555;text-align:center;padding:20px">Pas encore de donnees</div>'; return; }
+
+  const totalDmg = entries.reduce((s, [, c]) => s + (c.dmgDealt || 0), 0);
+  const totalHeals = entries.reduce((s, [, c]) => s + (c.healsGiven || 0), 0);
+  const totalDeaths = entries.reduce((s, [, c]) => s + (c.deaths || 0), 0);
+  const combatSec = Math.max(1, filteredCombatTime);
+  const viewLabel = selectedStatsView === 'global' ? 'Global' : selectedStatsView === 'current' ? 'Boss actuel' : (bossEncounterHistory[selectedStatsView]?.bossName || '');
+
+  let html = '';
+  // Summary header
+  html += `<div class="wow-section-title" style="border-top:none">${viewLabel} — Resume (${formatTime(filteredCombatTime)})</div>`;
+  html += '<div class="wow-stats-grid">';
+  html += `<div class="wow-stat"><span class="wow-stat-label">DPS Raid</span><span class="wow-stat-val" style="color:#ef4444">${formatNumber(totalDmg / combatSec)}/s</span></div>`;
+  html += `<div class="wow-stat"><span class="wow-stat-label">HPS Raid</span><span class="wow-stat-val" style="color:#22c55e">${formatNumber(totalHeals / combatSec)}/s</span></div>`;
+  html += `<div class="wow-stat"><span class="wow-stat-label">Total DMG</span><span class="wow-stat-val" style="color:#f97316">${formatNumber(totalDmg)}</span></div>`;
+  html += `<div class="wow-stat"><span class="wow-stat-label">Total Heals</span><span class="wow-stat-val" style="color:#22c55e">${formatNumber(totalHeals)}</span></div>`;
+  html += `<div class="wow-stat"><span class="wow-stat-label">Morts</span><span class="wow-stat-val" style="color:#dc2626">${totalDeaths}</span></div>`;
+  html += `<div class="wow-stat"><span class="wow-stat-label">Duree combat</span><span class="wow-stat-val" style="color:#a855f7">${formatTime(filteredCombatTime)}</span></div>`;
+  html += '</div>';
+
+  // Boss encounter history summary (only in global view)
+  if (selectedStatsView === 'global' && bossEncounterHistory.length > 0) {
+    html += '<div class="wow-section-title">Boss kills</div>';
+    for (let i = 0; i < bossEncounterHistory.length; i++) {
+      const b = bossEncounterHistory[i];
+      const raidDps = b.combatTime > 0 ? formatNumber(b.totalDmg / b.combatTime) : '0';
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 8px;font-size:10px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.03)" onclick="selectedStatsView=${i};document.querySelectorAll('.boss-sel-btn').forEach(b=>b.classList.remove('active'));renderStatsPanel();updateBossSelector();">`;
+      html += `<span style="color:#eab308;font-weight:bold">${b.bossName}</span>`;
+      html += `<span style="color:#888">${formatTime(b.combatTime)} | ${raidDps}/s | <span style="color:#dc2626">${b.totalDeaths}\u2620</span></span>`;
+      html += '</div>';
+    }
+  }
+
+  // Top 15 DPS
+  const sortedDps = [...entries].sort((a, b) => (b[1].dmgDealt || 0) - (a[1].dmgDealt || 0)).slice(0, 15);
+  html += '<div class="wow-section-title">Top DPS</div>';
+  for (let i = 0; i < sortedDps.length; i++) {
+    const [id, s] = sortedDps[i];
+    const dmg = s.dmgDealt || 0;
+    if (dmg === 0) continue;
+    const dps = dmg / combatSec;
+    const contrib = totalDmg > 0 ? (dmg / totalDmg * 100).toFixed(1) : '0';
+    const avgHit = (s.totalHits || 0) > 0 ? Math.floor(dmg / s.totalHits) : 0;
+    const critRate = (s.totalHits || 0) > 0 ? ((s.crits || 0) / s.totalHits * 100).toFixed(1) : '0';
+    const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
+    const elemColor = ELEMENT_COLORS[s.element] || '#888';
+    html += `<div style="padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer" onclick="focusOnCharacter('${id}')">`;
+    html += `<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">`;
+    html += `<span style="color:#555;font-size:9px;width:14px;text-align:right">${i + 1}.</span>`;
+    html += thumbSrc ? `<img src="${thumbSrc}" style="width:16px;height:16px;border-radius:3px">` : '';
+    html += `<span style="color:${elemColor};font-size:10px;font-weight:bold;flex:1">${s.name}</span>`;
+    html += `<span style="color:#ef4444;font-size:10px;font-weight:bold">${formatNumber(dps)}/s</span>`;
+    html += `<span style="color:#888;font-size:8px">${contrib}%</span>`;
+    html += '</div>';
+    html += '<div class="wow-stats-grid" style="padding:0 0 0 20px;font-size:9px">';
+    html += `<div class="wow-stat"><span class="wow-stat-label">Total</span><span class="wow-stat-val" style="color:#f97316">${formatNumber(dmg)}</span></div>`;
+    html += `<div class="wow-stat"><span class="wow-stat-label">Moy/hit</span><span class="wow-stat-val" style="color:#fb923c">${formatNumber(avgHit)}</span></div>`;
+    html += `<div class="wow-stat"><span class="wow-stat-label">Crit%</span><span class="wow-stat-val" style="color:#fbbf24">${critRate}%</span></div>`;
+    html += `<div class="wow-stat"><span class="wow-stat-label">Max crit</span><span class="wow-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit || 0)}</span></div>`;
+    html += `<div class="wow-stat"><span class="wow-stat-label">Kills</span><span class="wow-stat-val" style="color:#22c55e">${s.kills || 0}</span></div>`;
+    html += `<div class="wow-stat"><span class="wow-stat-label">Morts</span><span class="wow-stat-val" style="color:#dc2626">${s.deaths || 0}</span></div>`;
+    html += '</div></div>';
+  }
+
+  // Top Healers
+  const sortedHeals = [...entries].sort((a, b) => (b[1].healsGiven || 0) - (a[1].healsGiven || 0)).slice(0, 10);
+  const hasHeals = sortedHeals.some(([, s]) => (s.healsGiven || 0) > 0);
+  if (hasHeals) {
+    html += '<div class="wow-section-title">Top Healers</div>';
+    for (let i = 0; i < sortedHeals.length; i++) {
+      const [id, s] = sortedHeals[i];
+      const heals = s.healsGiven || 0;
+      if (heals === 0) continue;
+      const hps = heals / combatSec;
+      const contrib = totalHeals > 0 ? (heals / totalHeals * 100).toFixed(1) : '0';
+      const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
+      const elemColor = ELEMENT_COLORS[s.element] || '#888';
+      html += `<div style="padding:3px 8px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;gap:4px;cursor:pointer" onclick="focusOnCharacter('${id}')">`;
+      html += `<span style="color:#555;font-size:9px;width:14px;text-align:right">${i + 1}.</span>`;
+      html += thumbSrc ? `<img src="${thumbSrc}" style="width:16px;height:16px;border-radius:3px">` : '';
+      html += `<span style="color:${elemColor};font-size:10px;flex:1">${s.name}</span>`;
+      html += `<span style="color:#22c55e;font-size:10px;font-weight:bold">${formatNumber(hps)}/s</span>`;
+      html += `<span style="color:#888;font-size:8px">${contrib}%</span>`;
+      html += '</div>';
+    }
+  }
+
+  // Damage Taken
+  const sortedTaken = [...entries].sort((a, b) => (b[1].dmgReceived || 0) - (a[1].dmgReceived || 0)).slice(0, 10);
+  const hasTaken = sortedTaken.some(([, s]) => (s.dmgReceived || 0) > 0);
+  if (hasTaken) {
+    html += '<div class="wow-section-title">Degats recus (Tanks)</div>';
+    for (let i = 0; i < sortedTaken.length; i++) {
+      const [id, s] = sortedTaken[i];
+      const taken = s.dmgReceived || 0;
+      if (taken === 0) continue;
+      const dtps = taken / combatSec;
+      const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
+      const elemColor = ELEMENT_COLORS[s.element] || '#888';
+      html += `<div style="padding:3px 8px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;gap:4px;cursor:pointer" onclick="focusOnCharacter('${id}')">`;
+      html += `<span style="color:#555;font-size:9px;width:14px;text-align:right">${i + 1}.</span>`;
+      html += thumbSrc ? `<img src="${thumbSrc}" style="width:16px;height:16px;border-radius:3px">` : '';
+      html += `<span style="color:${elemColor};font-size:10px;flex:1">${s.name}</span>`;
+      html += `<span style="color:#f59e0b;font-size:10px;font-weight:bold">${formatNumber(dtps)}/s</span>`;
+      html += `<span style="color:#888;font-size:8px">${formatNumber(taken)}</span>`;
+      html += '</div>';
+    }
+  }
+
+  // Deaths list
+  const deadEntries = entries.filter(([, s]) => (s.deaths || 0) > 0).sort((a, b) => (b[1].deaths || 0) - (a[1].deaths || 0));
+  if (deadEntries.length > 0) {
+    html += '<div class="wow-section-title">Morts</div>';
+    for (const [id, s] of deadEntries) {
+      const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
+      const elemColor = ELEMENT_COLORS[s.element] || '#888';
+      html += `<div style="padding:3px 8px;display:flex;align-items:center;gap:4px;border-bottom:1px solid rgba(255,255,255,0.03)">`;
+      html += thumbSrc ? `<img src="${thumbSrc}" style="width:14px;height:14px;border-radius:3px">` : '';
+      html += `<span style="color:${elemColor};font-size:10px;flex:1">${s.name}</span>`;
+      html += `<span style="color:#dc2626;font-size:10px;font-weight:bold">${s.deaths}x \u2620</span>`;
+      html += '</div>';
+    }
+  }
+
+  list.innerHTML = html;
 }
 
 // DPS Graph
@@ -2483,7 +2863,10 @@ function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Accumulate combat time only during combat
-  if (state?.status === 'combat') combatElapsedTime += dt;
+  if (state?.status === 'combat') {
+    combatElapsedTime += dt;
+    currentEncounterCombatTime += dt;
+  }
 
   // Update animation states
   for (const id in animStates) { animStates[id].timer -= dt; if (animStates[id].timer <= 0) delete animStates[id]; }
