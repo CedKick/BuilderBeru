@@ -186,7 +186,7 @@ export const HUNTERS = {
     growth: { hp: 13, atk: 2.0, def: 1.3, spd: 1.1, crit: 0.3, res: 0.5, mana: 1.4 },
     skills: [
       { name: 'Flammeche', power: 85, cdMax: 0 },
-      { name: 'Soin Igné', power: 0, cdMax: 4, healTeam: 22 },
+      { name: 'Soin Igné', power: 0, cdMax: 4, healTeam: 22, manaRestore: 5 },
       { name: 'Protection de Feu', power: 0, cdMax: 3, buffDef: 35, buffDur: 3 },
     ],
   },
@@ -258,7 +258,7 @@ export const HUNTERS = {
     growth: { hp: 15, atk: 2.0, def: 1.5, spd: 1.3, crit: 0.3, res: 0.6, mana: 2.2 },
     skills: [
       { name: 'Vague d\'Infusion', power: 88, cdMax: 0 },
-      { name: 'Maree Soignante', power: 0, cdMax: 4, healTeam: 28 },
+      { name: 'Maree Soignante', power: 0, cdMax: 4, healTeam: 28, manaRestore: 5 },
       { name: 'Courant Renforcant', power: 0, cdMax: 3, buffAtk: 40, buffDur: 3 },
     ],
   },
@@ -280,7 +280,7 @@ export const HUNTERS = {
     growth: { hp: 14, atk: 1.8, def: 1.4, spd: 1.2, crit: 0.3, res: 0.6, mana: 1.8 },
     skills: [
       { name: 'Eclat Glace', power: 85, cdMax: 0 },
-      { name: 'Source de Vie', power: 0, cdMax: 4, healTeam: 25 },
+      { name: 'Source de Vie', power: 0, cdMax: 4, healTeam: 25, manaRestore: 5 },
       { name: 'Barriere d\'Eau', power: 0, cdMax: 3, buffDef: 45, buffDur: 3 },
     ],
   },
@@ -335,7 +335,7 @@ export const HUNTERS = {
     growth: { hp: 13, atk: 1.6, def: 1.3, spd: 1.0, crit: 0.2, res: 0.5, mana: 1.2 },
     skills: [
       { name: 'Lumiere Soignante', power: 80, cdMax: 0 },
-      { name: 'Regeneration', power: 0, cdMax: 4, healTeam: 22 },
+      { name: 'Regeneration', power: 0, cdMax: 4, healTeam: 22, manaRestore: 5 },
       { name: 'Benediction', power: 0, cdMax: 3, buffDef: 30, buffDur: 3 },
     ],
   },
@@ -470,7 +470,7 @@ export const HUNTERS = {
     growth: { hp: 13, atk: 1.6, def: 1.3, spd: 1.1, crit: 0.2, res: 0.5, mana: 1.2 },
     skills: [
       { name: 'Toucher Obscur', power: 82, cdMax: 0 },
-      { name: 'Soin des Ombres', power: 0, cdMax: 4, healTeam: 22 },
+      { name: 'Soin des Ombres', power: 0, cdMax: 4, healTeam: 22, manaRestore: 5 },
       { name: 'Voile Protecteur', power: 0, cdMax: 3, buffDef: 30, buffDur: 3 },
     ],
   },

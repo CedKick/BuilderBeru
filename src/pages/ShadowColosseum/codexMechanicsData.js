@@ -207,6 +207,7 @@ export const MECHANICS_RAID_SC = {
         'Cout des skills : heal 10% mana max (min 30), buff 5% mana max (min 15)',
         'Attention : les supports avec peu de SPD castent moins souvent mais regen plus par cast',
         'Soins (healTeam) : cout 0 mana — les supports soignent gratuitement',
+        'manaRestore support : les soins (healTeam) restaurent 5% du mana max apres utilisation',
         'Conseil : investir en SPD pour un support augmente sa cadence ET sa regen de base',
       ],
     },
