@@ -1732,6 +1732,39 @@ export const EXPEDITION_ARTIFACT_SETS = {
     bonus4: {}, bonus4Desc: 'Si 3 hunters du meme joueur en vie: ATK +10%, DEF +10%',
     passive2: null, passive4: { trigger: 'always', type: 'packBond' },
   },
+  // ── SUPPORT SETS — Neant (Boss 8-15) ──
+  sagesse_ancienne: {
+    id: 'sagesse_ancienne', name: 'Sagesse Ancienne', icon: '\uD83D\uDCDA', expedition: true,
+    color: 'text-violet-400', bg: 'bg-violet-500/15', border: 'border-violet-500/30',
+    desc: 'INT scaling et ignore DEF pour mages/supports',
+    bonus2: { intPercent: 20, manaRegen: 25 }, bonus2Desc: 'INT +20%, Mana regen +25%',
+    bonus4: {}, bonus4Desc: 'Chaque skill: INT +3% (max 10 stacks). A 10 stacks: ignore 20% DEF + reset.',
+    passive2: null, passive4: { trigger: 'onSkillCast', type: 'ancientWisdom' },
+  },
+  souffle_celeste: {
+    id: 'souffle_celeste', name: 'Souffle Celeste', icon: '\uD83C\uDF2C\uFE0F', expedition: true,
+    color: 'text-sky-300', bg: 'bg-sky-400/15', border: 'border-sky-400/30',
+    desc: 'Boost SPD equipe et burst personnel',
+    bonus2: { spdPercent: 15 }, bonus2Desc: 'SPD +15%',
+    bonus4: {}, bonus4Desc: 'Debut combat: equipe +10% SPD 8s. Tous les 20s: self +30% SPD 3s.',
+    passive2: null, passive4: { trigger: 'always', type: 'celestialSpeed' },
+  },
+  purification_sacree: {
+    id: 'purification_sacree', name: 'Purification Sacree', icon: '\u2728', expedition: true,
+    color: 'text-amber-300', bg: 'bg-amber-400/15', border: 'border-amber-400/30',
+    desc: 'Cleanse debuffs et heal equipe',
+    bonus2: { res: 15, hpPercent: 10 }, bonus2Desc: 'RES +15, HP +10%',
+    bonus4: {}, bonus4Desc: 'Tous les 8s: cleanse 1 debuff par allie. Si cleanse: heal 5% HP.',
+    passive2: null, passive4: { trigger: 'always', type: 'sacredPurify' },
+  },
+  brise_guerissante: {
+    id: 'brise_guerissante', name: 'Brise Guerissante', icon: '\uD83C\uDF3F', expedition: true,
+    color: 'text-emerald-300', bg: 'bg-emerald-400/15', border: 'border-emerald-400/30',
+    desc: 'Soins renforcés sur allies en danger',
+    bonus2: { healBonus: 25, spdPercent: 10 }, bonus2Desc: 'Soins +25%, SPD +10%',
+    bonus4: {}, bonus4Desc: 'Soin sur allie <40% HP: +20% SPD 5s + bouclier 10% HP max soigneur.',
+    passive2: null, passive4: { trigger: 'onHeal', type: 'healingBreeze' },
+  },
 };
 
 // Merge all sets into ALL_ARTIFACT_SETS (defined earlier as let)

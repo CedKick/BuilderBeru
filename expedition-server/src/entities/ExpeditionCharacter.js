@@ -198,6 +198,12 @@ export class ExpeditionCharacter {
     return this.debuffs.some(d => d.type === 'silence' && d.duration > 0);
   }
 
+  /** Remove one debuff (oldest first). Returns the removed debuff or null. */
+  cleanse() {
+    if (this.debuffs.length === 0) return null;
+    return this.debuffs.shift();
+  }
+
   // ── Cooldowns ───────────────────────────────────────────
 
   updateCooldowns(dt) {

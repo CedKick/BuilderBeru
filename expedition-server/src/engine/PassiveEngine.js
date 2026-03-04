@@ -129,6 +129,13 @@ export class PassiveEngine {
         commanderApplied: false,
         shadowPactApplied: false,
         martyrHealUsed: new Map(), // targetId -> used
+        // ── Support sets ──
+        wisdomStacks: 0,           // Sagesse Ancienne: INT stacks per skill
+        celestialSpdApplied: false,// Souffle Celeste: team SPD applied at start
+        celestialSpdTimer: 0,      // Souffle Celeste: self SPD burst timer
+        celestialSpdBurstCD: 0,    // Souffle Celeste: burst cooldown
+        purifyTimer: 0,            // Purification Sacree: cleanse tick timer
+        breezeShields: new Map(),  // Brise Guerissante: target -> shield HP remaining
       });
 
       // ── Apply combat-start passives ──
@@ -190,6 +197,16 @@ export class PassiveEngine {
         for (const ally of characters) {
           if (ally.id !== char.id) {
             ally.addBuff('crit', 20, 8, 'commander_crit');
+          }
+        }
+      }
+
+      // Souffle Celeste 4pc: team +10% SPD for 8s at combat start
+      if (this.hasPassive(char.id, 'celestial_speed') && !s.celestialSpdApplied) {
+        s.celestialSpdApplied = true;
+        for (const ally of characters) {
+          if (ally.username === char.username && ally.alive) {
+            ally.addBuff('spd', Math.floor(ally.spd * 0.10), 8, 'celestial_speed_start');
           }
         }
       }
@@ -729,6 +746,21 @@ export class PassiveEngine {
       }
     }
 
+    // ── BRISE GUERISSANTE 4pc: heal ally <40% HP → +20% SPD 5s + shield 10% healer maxHP ──
+    if (this.hasPassive(healer.id, 'healing_breeze')) {
+      const targetHpPct = target.hp / target.maxHp;
+      if (targetHpPct < 0.40) {
+        // SPD buff on target
+        const spdBuff = Math.floor(target.spd * 0.20);
+        target.addBuff('spd', spdBuff, 5, 'healing_breeze_spd');
+        // Shield = 10% of HEALER's max HP
+        const breezeShield = Math.floor(healer.maxHp * 0.10);
+        shieldAmount += breezeShield;
+        events.push({ type: 'passive_proc', charId: healer.id, passive: 'healing_breeze',
+          target: target.id, message: `Brise Guerissante: ${target.name} +SPD + bouclier ${breezeShield}!` });
+      }
+    }
+
     return { bonusHeal, shieldAmount };
   }
 
@@ -1036,6 +1068,17 @@ export class PassiveEngine {
       return { freeCast: false, doubleDamage: true, defIgnore: 0.25 };
     }
 
+    // ── SAGESSE ANCIENNE 4pc: stack INT +3% per skill (max 10). At 10: ignore 20% DEF + reset ──
+    if (this.hasPassive(char.id, 'ancient_wisdom')) {
+      s.wisdomStacks = Math.min(10, s.wisdomStacks + 1);
+      if (char.int) char.int = Math.floor(char.int * 1.03);
+      if (s.wisdomStacks >= 10) {
+        s.wisdomStacks = 0;
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'ancient_wisdom_burst', message: 'Sagesse Ancienne: Ignore 20% DEF!' });
+        return { freeCast: false, defIgnore: 0.20 };
+      }
+    }
+
     // ── TEMPETE ARCANE 4pc: mana plein = next skill x2 DMG (CD 5 casts) ──
     if (this.hasPassive(char.id, 'arcane_overload')) {
       if (s.arcaneOverloadCD > 0) {
@@ -1187,6 +1230,40 @@ export class PassiveEngine {
         char.regenMana(Math.floor(char.maxMana * 0.05 * dt)); // Aggressive regen
       } else {
         s.arcaneAdaptiveRegenActive = false;
+      }
+
+      // ── SOUFFLE CELESTE 4pc: self +30% SPD burst every 20s for 3s ──
+      if (this.hasPassive(char.id, 'celestial_speed')) {
+        if (s.celestialSpdBurstCD > 0) s.celestialSpdBurstCD -= dt;
+        if (s.celestialSpdTimer > 0) {
+          s.celestialSpdTimer -= dt;
+          if (s.celestialSpdTimer <= 0) {
+            // Burst ended, remove SPD buff
+            char.spd = Math.floor(char.spd / 1.30);
+          }
+        } else if (s.celestialSpdBurstCD <= 0) {
+          s.celestialSpdBurstCD = 20;
+          s.celestialSpdTimer = 3;
+          char.spd = Math.floor(char.spd * 1.30);
+          events.push({ type: 'passive_proc', charId: char.id, passive: 'celestial_speed_burst', message: 'Souffle Celeste: SPD +30% (3s)!' });
+        }
+      }
+
+      // ── PURIFICATION SACREE 4pc: cleanse 1 debuff from team every 8s ──
+      if (this.hasPassive(char.id, 'sacred_purify')) {
+        s.purifyTimer += dt;
+        if (s.purifyTimer >= 8) {
+          s.purifyTimer = 0;
+          for (const ally of characters) {
+            if (!ally.alive || ally.username !== char.username) continue;
+            const removed = ally.cleanse();
+            if (removed) {
+              const healed = ally.heal(Math.floor(ally.maxHp * 0.05));
+              events.push({ type: 'passive_proc', charId: char.id, passive: 'sacred_purify', target: ally.id,
+                message: `Purification: Cleanse ${removed.type}${healed > 0 ? ` + heal ${healed}` : ''}!` });
+            }
+          }
+        }
       }
 
       // ── SIPHON VITAL: deactivate emergency lifesteal after 2s ──

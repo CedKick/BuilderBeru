@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Search, Swords, BookOpen, ArrowLeft, Users, Shield, Zap, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Swords, BookOpen, ArrowLeft, Users, Shield, Zap, MapPin, ScrollText } from 'lucide-react';
 import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwakeningBonuses, computeWeaponBonuses,
   ARTIFACT_SETS, RAID_ARTIFACT_SETS, ARC2_ARTIFACT_SETS, ULTIME_ARTIFACT_SETS, ALL_ARTIFACT_SETS,
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL, RARITY_SUB_COUNT,
@@ -9,6 +9,7 @@ import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwak
 import { CHIBIS, SPRITES, ELEMENTS, RARITY, STAT_META, getSkillManaCost } from '../ShadowColosseum/colosseumCore';
 import { EXPEDITION_SETS, EXPEDITION_WEAPONS, EXPEDITION_UNIQUES, EXPEDITION_ESSENCES, ESSENCE_EXCHANGE, EXPEDITION_BOSSES } from '../ShadowColosseum/expeditionCodexData';
 import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars, getAwakeningPassives } from '../ShadowColosseum/raidData';
+import { CHANGELOG, CHANGELOG_CATEGORIES } from '../ShadowColosseum/changelogData';
 
 // ═══════════════════════════════════════════════════════════════
 // CODEX — Encyclopedie du Shadow Colosseum
@@ -17,6 +18,24 @@ import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars, getAwakeningPassives }
 
 const SAVE_KEY = 'shadow_colosseum_data';
 const RAID_KEY = 'shadow_colosseum_raid';
+
+const ATTACK_TYPE_META = {
+  frontal:    { label: 'Frontal',      color: 'text-red-400',     border: 'border-red-500/50',     bg: 'bg-red-500/10' },
+  aoe_melee:  { label: 'AoE Melee',    color: 'text-orange-400',  border: 'border-orange-500/50',  bg: 'bg-orange-500/10' },
+  aoe_ranged: { label: 'AoE Distance', color: 'text-blue-400',    border: 'border-blue-500/50',    bg: 'bg-blue-500/10' },
+  aoe_all:    { label: 'AoE Global',   color: 'text-purple-400',  border: 'border-purple-500/50',  bg: 'bg-purple-500/10' },
+  summon:     { label: 'Invocation',    color: 'text-green-400',   border: 'border-green-500/50',   bg: 'bg-green-500/10' },
+  self_heal:  { label: 'Auto-Soin',    color: 'text-emerald-400', border: 'border-emerald-500/50', bg: 'bg-emerald-500/10' },
+  anti_heal:  { label: 'Anti-Heal',    color: 'text-rose-400',    border: 'border-rose-500/50',    bg: 'bg-rose-500/10' },
+  execute:    { label: 'Execute',       color: 'text-red-500',     border: 'border-red-600/50',     bg: 'bg-red-600/10' },
+  multi_hit:  { label: 'Multi-Hit',    color: 'text-amber-400',   border: 'border-amber-500/50',   bg: 'bg-amber-500/10' },
+};
+
+const ZONE_STYLES = {
+  Foret:   { color: 'text-green-400',  bg: 'bg-green-900/40',  border: 'border-green-500/30',  gradient: 'from-green-900/50 to-green-800/20' },
+  Abysses: { color: 'text-cyan-400',   bg: 'bg-cyan-900/40',   border: 'border-cyan-500/30',   gradient: 'from-cyan-900/50 to-blue-800/20' },
+  Neant:   { color: 'text-purple-400', bg: 'bg-purple-900/40', border: 'border-purple-500/30', gradient: 'from-purple-900/50 to-indigo-800/20' },
+};
 
 const WEAPON_SPRITES = {
   w_sulfuras: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771443640/WeaponSulfuras_efg3ca.png',
@@ -147,6 +166,7 @@ const CODEX_TABS = [
   { id: 'artifacts', label: 'Artefacts',   Icon: Shield },
   { id: 'mechanics', label: 'Mecaniques',  Icon: Zap },
   { id: 'expedition', label: 'Expedition', Icon: MapPin },
+  { id: 'changelog',  label: 'Changelog',  Icon: ScrollText },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -175,6 +195,10 @@ export default function Codex() {
   const [aFilterSource, setAFilterSource] = useState('all');
   const [selectedSet, setSelectedSet] = useState(null);
   const [codexStatTooltip, setCodexStatTooltip] = useState(null);
+
+  // ─── Boss codex state ───
+  const [selectedBoss, setSelectedBoss] = useState(null);
+  const [bossZoneFilter, setBossZoneFilter] = useState('all');
 
   // ─── Load save data ───
   const [weaponCollection, setWeaponCollection] = useState({});
@@ -1452,42 +1476,267 @@ export default function Codex() {
             </div>
           </div>
 
-          {/* ─── Section: BOSS LIST ─── */}
+          {/* ─── Section: BOSS CODEX (DokkanDB style) ─── */}
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">15 Boss Expedition</div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-[10px]">
-                <thead>
-                  <tr className="text-gray-500 border-b border-gray-700/30">
-                    <th className="text-left py-1 px-2">#</th>
-                    <th className="text-left py-1 px-2">Nom</th>
-                    <th className="text-left py-1 px-2">Zone</th>
-                    <th className="text-right py-1 px-2">HP</th>
-                    <th className="text-right py-1 px-2">DEF</th>
-                    <th className="text-right py-1 px-2">ATK</th>
-                    <th className="text-right py-1 px-2">Enrage</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {EXPEDITION_BOSSES.map(b => {
-                    const zoneColor = { Foret: 'text-green-400', Abysses: 'text-cyan-400', Neant: 'text-purple-400' }[b.zone] || 'text-gray-400';
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3">Boss d'Expedition</div>
+
+            {selectedBoss === null ? (
+              /* ═══ MODE GRILLE ═══ */
+              <>
+                {/* Zone filter pills */}
+                <div className="flex gap-2 mb-4 flex-wrap">
+                  {['all', 'Foret', 'Abysses', 'Neant'].map(z => (
+                    <button key={z} onClick={() => setBossZoneFilter(z)}
+                      className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
+                        bossZoneFilter === z
+                          ? 'bg-purple-600/30 border border-purple-500/50 text-purple-300'
+                          : 'bg-gray-800/40 border border-gray-700/30 text-gray-500 hover:text-gray-300'
+                      }`}>
+                      {z === 'all' ? 'Tous (15)' : `${z} (${EXPEDITION_BOSSES.filter(b => b.zone === z).length})`}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Boss grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {EXPEDITION_BOSSES.filter(b => bossZoneFilter === 'all' || b.zone === bossZoneFilter).map(b => {
+                    const zs = ZONE_STYLES[b.zone];
                     return (
-                      <tr key={b.idx} className="border-b border-gray-800/30 hover:bg-gray-800/20">
-                        <td className="py-1.5 px-2 text-gray-500 font-bold">{b.idx + 1}</td>
-                        <td className="py-1.5 px-2 text-gray-200 font-medium">{b.name}</td>
-                        <td className={`py-1.5 px-2 ${zoneColor}`}>{b.zone}</td>
-                        <td className="py-1.5 px-2 text-right text-red-400 font-bold">{b.hp}</td>
-                        <td className="py-1.5 px-2 text-right text-blue-400">{b.def}</td>
-                        <td className="py-1.5 px-2 text-right text-orange-400">{b.atk}</td>
-                        <td className="py-1.5 px-2 text-right text-gray-400">{b.enrage}s</td>
-                      </tr>
+                      <button key={b.idx} onClick={() => setSelectedBoss(b.idx)}
+                        className={`text-left rounded-xl overflow-hidden border ${zs.border} hover:scale-[1.02] transition-all duration-200 hover:shadow-lg`}>
+                        <div className={`bg-gradient-to-r ${zs.gradient} px-3 py-2 flex items-center gap-2`}>
+                          <span className="text-lg">{b.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-500 text-[10px] font-bold">#{b.idx + 1}</span>
+                              <span className="text-white text-[11px] font-bold truncate">{b.name}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded ${zs.bg} ${zs.color} font-medium`}>{b.zone}</span>
+                              {b.phases.length > 0 && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-medium">{b.phases.length} Phase{b.phases.length > 1 ? 's' : ''}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-gray-900/40 px-3 py-2 flex gap-4 text-[10px]">
+                          <span className="text-red-400 font-bold">{b.hpDisplay} HP</span>
+                          <span className="text-orange-400">{b.atk.toLocaleString()} ATK</span>
+                          <span className="text-blue-400">{b.def} DEF</span>
+                        </div>
+                      </button>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </>
+            ) : (
+              /* ═══ MODE FICHE DETAILLEE ═══ */
+              (() => {
+                const boss = EXPEDITION_BOSSES[selectedBoss];
+                if (!boss) return null;
+                const zs = ZONE_STYLES[boss.zone];
+                return (
+                  <div>
+                    {/* Navigation */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <button onClick={() => setSelectedBoss(null)}
+                        className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-white transition-colors">
+                        <ChevronLeft className="w-4 h-4" /> Tous les boss
+                      </button>
+                      <div className="flex-1" />
+                      <button onClick={() => setSelectedBoss(Math.max(0, selectedBoss - 1))}
+                        disabled={selectedBoss === 0}
+                        className="p-1.5 rounded-lg bg-gray-800/40 border border-gray-700/30 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="text-[11px] text-gray-400 font-bold">{selectedBoss + 1} / 15</span>
+                      <button onClick={() => setSelectedBoss(Math.min(14, selectedBoss + 1))}
+                        disabled={selectedBoss === 14}
+                        className="p-1.5 rounded-lg bg-gray-800/40 border border-gray-700/30 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Boss Card */}
+                    <div className={`rounded-xl overflow-hidden border ${zs.border} bg-gray-900/60`}>
+                      {/* Header */}
+                      <div className={`bg-gradient-to-r ${zs.gradient} px-4 py-3`}>
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{boss.icon}</span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-400 text-sm font-bold">#{boss.idx + 1}</span>
+                              <span className="text-white text-lg font-black">{boss.name}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`text-[10px] px-2 py-0.5 rounded ${zs.bg} ${zs.color} font-medium`}>{boss.zone}</span>
+                              <span className="text-[10px] text-gray-400">Regen: {boss.regenPct}%/s</span>
+                              <span className="text-[10px] text-gray-400">Enrage: {boss.enrageTimer}s{boss.enrageHpPct > 0 ? ` ou ${boss.enrageHpPct}% HP` : ''}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Stats Grid */}
+                      <div className="px-4 py-3 border-b border-gray-700/30">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Stats</div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-gray-800/40 rounded-lg px-3 py-2 text-center">
+                            <div className="text-[9px] text-gray-500">HP</div>
+                            <div className="text-sm font-black text-red-400">{boss.hpDisplay}</div>
+                          </div>
+                          <div className="bg-gray-800/40 rounded-lg px-3 py-2 text-center">
+                            <div className="text-[9px] text-gray-500">ATK</div>
+                            <div className="text-sm font-black text-orange-400">{boss.atk.toLocaleString()}</div>
+                          </div>
+                          <div className="bg-gray-800/40 rounded-lg px-3 py-2 text-center">
+                            <div className="text-[9px] text-gray-500">DEF</div>
+                            <div className="text-sm font-black text-blue-400">{boss.def}</div>
+                          </div>
+                          <div className="bg-gray-800/40 rounded-lg px-3 py-2 text-center">
+                            <div className="text-[9px] text-gray-500">SPD</div>
+                            <div className="text-sm font-black text-teal-400">{boss.spd}</div>
+                          </div>
+                          <div className="bg-gray-800/40 rounded-lg px-3 py-2 text-center">
+                            <div className="text-[9px] text-gray-500">Auto-ATK</div>
+                            <div className="text-sm font-black text-gray-300">{boss.autoAtkPower}%</div>
+                          </div>
+                          <div className="bg-gray-800/40 rounded-lg px-3 py-2 text-center">
+                            <div className="text-[9px] text-gray-500">Regen/s</div>
+                            <div className="text-sm font-black text-emerald-400">{boss.regenPct}%</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Patterns & Attacks */}
+                      <div className="px-4 py-3 border-b border-gray-700/30">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Patterns & Attaques</div>
+                        <div className="space-y-2">
+                          {boss.patterns.map((p, i) => {
+                            const meta = ATTACK_TYPE_META[p.type] || { label: p.type, color: 'text-gray-400', border: 'border-gray-500/50', bg: 'bg-gray-500/10' };
+                            return (
+                              <div key={i} className={`rounded-lg bg-gray-800/30 border-l-2 ${meta.border} px-3 py-2`}>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-[11px] font-bold text-white">{p.name}</span>
+                                  <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${meta.bg} ${meta.color}`}>{meta.label}</span>
+                                  {p.damage > 0 && <span className="text-[9px] text-red-400 font-medium">DMG: {p.damage}</span>}
+                                  {p.healPercent && <span className="text-[9px] text-emerald-400 font-medium">Heal: {p.healPercent}%</span>}
+                                  {p.hitCount && <span className="text-[9px] text-amber-400 font-medium">{p.hitCount} hits</span>}
+                                  {p.antiHealPct && <span className="text-[9px] text-rose-400 font-medium">Anti-Heal: {p.antiHealPct}%</span>}
+                                </div>
+                                <div className="flex items-center gap-3 mt-1 text-[9px] text-gray-500">
+                                  <span>CD: {p.cooldown}s</span>
+                                  {p.telegraphTime && <span>Telegraph: {p.telegraphTime}s</span>}
+                                  {p.range && <span>Portee: {p.range}px</span>}
+                                  {p.aoeRadius && <span>Rayon: {p.aoeRadius}px</span>}
+                                  {p.summonCount && <span>Invoque: {p.summonCount}x {p.summonType}</span>}
+                                  {p.duration && <span>Duree: {p.duration}s</span>}
+                                </div>
+                                <div className="text-[10px] text-gray-400 mt-1">{p.description}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Phases */}
+                      <div className="px-4 py-3">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Phases Speciales</div>
+                        {boss.phases.length === 0 ? (
+                          <div className="text-[11px] text-gray-600 italic py-2">Ce boss n'a pas de phases speciales</div>
+                        ) : (
+                          <div className="space-y-2">
+                            {boss.phases.map((phase, pi) => (
+                              <div key={phase.id} className="rounded-lg bg-gray-800/30 border border-amber-500/30 px-3 py-2">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  <span className="text-[9px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold">Phase {pi + 1}</span>
+                                  <span className="text-[10px] text-amber-300 font-medium">HP &le; {phase.threshold}%</span>
+                                </div>
+                                {/* Multipliers */}
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {phase.atkMult && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">ATK x{phase.atkMult}</span>}
+                                  {phase.spdMult && <span className="text-[9px] px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-400">SPD x{phase.spdMult}</span>}
+                                  {phase.regenMult && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">Regen x{phase.regenMult}</span>}
+                                  {phase.antiHealPct > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400">Anti-Heal {phase.antiHealPct}%</span>}
+                                </div>
+                                {/* Phase patterns */}
+                                {phase.patterns.map((p, i) => {
+                                  const meta = ATTACK_TYPE_META[p.type] || { label: p.type, color: 'text-gray-400', border: 'border-gray-500/50', bg: 'bg-gray-500/10' };
+                                  return (
+                                    <div key={i} className={`rounded bg-gray-900/40 border-l-2 ${meta.border} px-2.5 py-1.5 mt-1.5`}>
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-[10px] font-bold text-white">{p.name}</span>
+                                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-medium ${meta.bg} ${meta.color}`}>{meta.label}</span>
+                                        {p.damage > 0 && <span className="text-[9px] text-red-400">DMG: {p.damage}</span>}
+                                        {p.hitCount && <span className="text-[9px] text-amber-400">{p.hitCount} hits</span>}
+                                        {p.antiHealPct && <span className="text-[9px] text-rose-400">Anti-Heal: {p.antiHealPct}%</span>}
+                                      </div>
+                                      <div className="text-[9px] text-gray-400 mt-0.5">{p.description}</div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </div>
 
+        </div>
+      )}
+
+      {/* ═══════════════ CHANGELOG ═══════════════ */}
+      {activeTab === 'changelog' && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <ScrollText size={20} className="text-amber-400" />
+            Derniers Changements
+          </h2>
+          <p className="text-gray-400 text-sm">Historique des mises a jour du Shadow Colosseum et de l'Expedition.</p>
+
+          <div className="space-y-4 mt-4">
+            {CHANGELOG.map((patch, pi) => (
+              <div key={pi} className="bg-gray-900/60 border border-gray-700/40 rounded-xl overflow-hidden">
+                {/* Patch header */}
+                <div className="px-4 py-3 bg-gradient-to-r from-amber-900/30 to-transparent border-b border-gray-700/30 flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-3">
+                    <span className="bg-amber-500/20 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-md">v{patch.version}</span>
+                    <span className="text-white font-semibold text-sm">{patch.title}</span>
+                  </div>
+                  <span className="text-gray-500 text-xs">{patch.date}</span>
+                </div>
+
+                {/* Categories */}
+                <div className="p-4 space-y-3">
+                  {patch.entries.map((entry, ei) => {
+                    const cat = CHANGELOG_CATEGORIES[entry.category] || CHANGELOG_CATEGORIES.new;
+                    return (
+                      <div key={ei}>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className={`${cat.bg} ${cat.border} border ${cat.color} text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide`}>
+                            {cat.icon} {cat.label}
+                          </span>
+                        </div>
+                        <ul className="space-y-1 ml-1">
+                          {entry.items.map((item, ii) => (
+                            <li key={ii} className="flex items-start gap-2 text-sm text-gray-300">
+                              <span className={`${cat.color} mt-1 text-[8px]`}>●</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

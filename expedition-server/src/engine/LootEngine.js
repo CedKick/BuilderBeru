@@ -26,8 +26,10 @@ export class LootEngine {
 
     // 2. Roll each loot independently against dropChance
     //    Roll the entire table QUANTITY_MULTIPLIER times for more drops
+    //    Endgame bosses (8+) get extra rolls for reinforced loot
     const drops = [];
-    const rolls = LOOT.QUANTITY_MULTIPLIER || 1;
+    const baseRolls = LOOT.QUANTITY_MULTIPLIER || 1;
+    const rolls = bossId >= 8 ? baseRolls + 1 : baseRolls;
     for (let r = 0; r < rolls; r++) {
       for (const entry of table) {
         const roll = Math.random() * 100;

@@ -321,6 +321,49 @@ export const MEDIUM_SETS = {
     bonus2pc: { atk_pct: 5, def_pct: 5 },
     bonus4pc: { passive: 'pack_bond', description: 'Si 3 hunters du meme joueur en vie: ATK +10%, DEF +10%' },
   },
+
+  // ── ZONE NEANT — SETS SUPPORT (Boss 8-15) ──
+
+  sagesse_ancienne: {
+    id: 'sagesse_ancienne',
+    name: 'Sagesse Ancienne',
+    zone: 'neant',
+    rarity: 'epic',
+    binding: 'lqe',
+    targetClass: ['mage', 'support'],
+    bonus2pc: { int_pct: 20, mana_regen_pct: 25 },
+    bonus4pc: { passive: 'ancient_wisdom', description: 'Chaque skill: INT +3% (max 10). A 10 stacks: ignore 20% DEF + reset' },
+  },
+  souffle_celeste: {
+    id: 'souffle_celeste',
+    name: 'Souffle Celeste',
+    zone: 'neant',
+    rarity: 'epic',
+    binding: 'lqe',
+    targetClass: ['all'],
+    bonus2pc: { spd_pct: 15 },
+    bonus4pc: { passive: 'celestial_speed', description: 'Debut combat: equipe +10% SPD 8s. Tous les 20s: self +30% SPD 3s' },
+  },
+  purification_sacree: {
+    id: 'purification_sacree',
+    name: 'Purification Sacree',
+    zone: 'neant',
+    rarity: 'epic',
+    binding: 'lqe',
+    targetClass: ['support'],
+    bonus2pc: { res_flat: 15, hp_pct: 10 },
+    bonus4pc: { passive: 'sacred_purify', description: 'Tous les 8s: cleanse 1 debuff equipe. Si cleanse: heal 5% HP' },
+  },
+  brise_guerissante: {
+    id: 'brise_guerissante',
+    name: 'Brise Guerissante',
+    zone: 'neant',
+    rarity: 'epic',
+    binding: 'lqe',
+    targetClass: ['support'],
+    bonus2pc: { heal_pct: 25, spd_pct: 10 },
+    bonus4pc: { passive: 'healing_breeze', description: 'Soin sur allie <40% HP: +20% SPD 5s + bouclier 10% HP max soigneur' },
+  },
 };
 
 // ═══════════════════════════════════════════════════════════

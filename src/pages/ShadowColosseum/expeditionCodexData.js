@@ -507,23 +507,217 @@ export const ESSENCE_EXCHANGE = [
 ];
 
 // ═══════════════════════════════════════════════════════════
-// BOSS LIST (for reference in codex)
+// BOSS LIST — Full data (matches bossDefinitions.js server-side)
 // ═══════════════════════════════════════════════════════════
 
 export const EXPEDITION_BOSSES = [
-  { idx: 0, name: 'Gardien Foret',       zone: 'Foret',   hp: '12M',  def: 30, atk: 1800, enrage: 300 },
-  { idx: 1, name: 'Sentinelle Pierre',   zone: 'Foret',   hp: '18M',  def: 40, atk: 2500, enrage: 300 },
-  { idx: 2, name: 'Seigneur Ombre',      zone: 'Foret',   hp: '25M',  def: 35, atk: 4000, enrage: 240 },
-  { idx: 3, name: 'Ancien des Racines',  zone: 'Foret',   hp: '35M',  def: 50, atk: 3500, enrage: 300 },
-  { idx: 4, name: 'Reine Sylvestre',     zone: 'Foret',   hp: '50M',  def: 45, atk: 5000, enrage: 270 },
-  { idx: 5, name: 'Leviathan',           zone: 'Abysses', hp: '70M',  def: 60, atk: 6000, enrage: 300 },
-  { idx: 6, name: 'Sorcier Abyssal',     zone: 'Abysses', hp: '90M',  def: 50, atk: 7000, enrage: 270 },
-  { idx: 7, name: 'Titan de Fer',        zone: 'Abysses', hp: '120M', def: 80, atk: 5500, enrage: 300 },
-  { idx: 8, name: 'Hydre Venimeuse',     zone: 'Abysses', hp: '160M', def: 60, atk: 8000, enrage: 240 },
-  { idx: 9, name: 'Roi des Profondeurs', zone: 'Abysses', hp: '200M', def: 70, atk: 9000, enrage: 300 },
-  { idx: 10, name: 'Spectre Originel',   zone: 'Neant',   hp: '250M', def: 65, atk: 10000, enrage: 270 },
-  { idx: 11, name: 'Archonte du Vide',   zone: 'Neant',   hp: '320M', def: 80, atk: 11000, enrage: 300 },
-  { idx: 12, name: 'Dragon du Chaos',    zone: 'Neant',   hp: '400M', def: 70, atk: 13000, enrage: 240 },
-  { idx: 13, name: 'Monarque Eternel',   zone: 'Neant',   hp: '500M', def: 90, atk: 15000, enrage: 300 },
-  { idx: 14, name: 'Sung Il-Hwan',       zone: 'Neant',   hp: '650M', def: 80, atk: 18000, enrage: 360 },
+  // ── ZONE FORET (Boss 1-5) ──
+  {
+    idx: 0, id: 'forest_guardian', name: 'Gardien de la Foret', zone: 'Foret', icon: '\uD83C\uDF32',
+    hp: 18_400_000, hpDisplay: '18.4M', atk: 2100, def: 35, spd: 40,
+    regenPct: 1.0, autoAtkPower: 100, enrageTimer: 300, enrageHpPct: 0,
+    patterns: [
+      { name: 'Cleave Frontal', type: 'frontal', damage: 800, cooldown: 6, telegraphTime: 2.0, range: 200, description: 'Frappe massive sur le frontline' },
+      { name: 'Stomp', type: 'aoe_melee', damage: 600, cooldown: 10, telegraphTime: 2.5, range: 250, description: 'Onde de choc au sol, degats melee' },
+      { name: 'Invocation Slimes', type: 'summon', damage: 0, cooldown: 20, telegraphTime: 1.5, summonCount: 3, summonType: 'slime', description: 'Invoque 3 slimes renforces' },
+    ],
+    phases: [],
+  },
+  {
+    idx: 1, id: 'stone_sentinel', name: 'Sentinelle de Pierre', zone: 'Foret', icon: '\uD83E\uDEA8',
+    hp: 27_600_000, hpDisplay: '27.6M', atk: 2900, def: 46, spd: 30,
+    regenPct: 1.14, autoAtkPower: 120, enrageTimer: 300, enrageHpPct: 0,
+    patterns: [
+      { name: 'Lancer de Roc', type: 'aoe_ranged', damage: 1000, cooldown: 8, telegraphTime: 2.0, range: 400, aoeRadius: 150, description: 'Rocher lance sur le backline' },
+      { name: 'Slam Sol', type: 'aoe_melee', damage: 1200, cooldown: 6, telegraphTime: 1.8, range: 200, description: 'Ecrasement au sol, degats melee' },
+      { name: 'Bouclier de Terre', type: 'self_heal', damage: 0, cooldown: 25, telegraphTime: 1.0, healPercent: 5, description: 'Bouclier de terre, regenere 5% HP' },
+      { name: 'Invocation Golems', type: 'summon', damage: 0, cooldown: 30, telegraphTime: 2.0, summonCount: 2, summonType: 'golem', description: 'Invoque 2 golems de pierre' },
+    ],
+    phases: [],
+  },
+  {
+    idx: 2, id: 'shadow_lord', name: 'Seigneur Ombre', zone: 'Foret', icon: '\uD83D\uDC7B',
+    hp: 38_000_000, hpDisplay: '38M', atk: 4600, def: 40, spd: 55,
+    regenPct: 1.29, autoAtkPower: 150, enrageTimer: 240, enrageHpPct: 20,
+    patterns: [
+      { name: "Lame d'Ombre", type: 'frontal', damage: 1500, cooldown: 5, telegraphTime: 1.5, range: 250, description: "Lame d'ombre tranchant le frontline" },
+      { name: 'Tenebres', type: 'aoe_ranged', damage: 1000, cooldown: 12, telegraphTime: 2.5, range: 500, aoeRadius: 200, description: "Tenebres engloutissant le backline" },
+      { name: 'Necromancie', type: 'summon', damage: 0, cooldown: 18, telegraphTime: 2.0, summonCount: 5, summonType: 'skeleton', description: 'Invoque 5 squelettes morts-vivants' },
+      { name: "Drain d'Ame", type: 'aoe_all', damage: 2000, cooldown: 20, telegraphTime: 3.0, healPercent: 2, description: "Draine la vie de tous, soigne le boss 2% HP" },
+    ],
+    phases: [],
+  },
+  {
+    idx: 3, id: 'root_ancient', name: 'Ancien des Racines', zone: 'Foret', icon: '\uD83C\uDF33',
+    hp: 53_000_000, hpDisplay: '53M', atk: 4000, def: 58, spd: 25,
+    regenPct: 1.43, autoAtkPower: 110, enrageTimer: 300, enrageHpPct: 0,
+    patterns: [
+      { name: 'Empalement Racinaire', type: 'aoe_melee', damage: 900, cooldown: 6, telegraphTime: 2.5, range: 300, description: 'Racines jaillissant du sol, degats melee' },
+      { name: 'Constriction', type: 'aoe_all', damage: 700, cooldown: 12, telegraphTime: 2.0, description: 'Lianes enserrant tous les personnages' },
+      { name: 'Regeneration Sylvestre', type: 'self_heal', damage: 0, cooldown: 30, telegraphTime: 1.0, healPercent: 3, description: 'Puise dans la foret, regenere 3% HP' },
+      { name: 'Invocation Treants', type: 'summon', damage: 0, cooldown: 25, telegraphTime: 2.0, summonCount: 3, summonType: 'treant', description: 'Invoque 3 treants gardiens' },
+    ],
+    phases: [],
+  },
+  {
+    idx: 4, id: 'sylvan_queen', name: 'Reine Sylvestre', zone: 'Foret', icon: '\uD83C\uDF3A',
+    hp: 79_000_000, hpDisplay: '79M', atk: 5800, def: 52, spd: 50,
+    regenPct: 1.57, autoAtkPower: 130, enrageTimer: 270, enrageHpPct: 15,
+    patterns: [
+      { name: "Pluie d'Epines", type: 'aoe_ranged', damage: 1100, cooldown: 5, telegraphTime: 1.8, range: 500, aoeRadius: 200, description: "Pluie d'epines sur le backline" },
+      { name: 'Etreinte Mortelle', type: 'frontal', damage: 1400, cooldown: 8, telegraphTime: 2.0, range: 250, description: 'Etreinte de lianes mortelles sur le frontline' },
+      { name: 'Charme Sylvestre', type: 'aoe_all', damage: 600, cooldown: 20, telegraphTime: 3.0, description: 'Aura charmante infligeant degats et confusion' },
+      { name: 'Invocation Essaim', type: 'summon', damage: 0, cooldown: 18, telegraphTime: 1.5, summonCount: 8, summonType: 'fae', description: 'Invoque un essaim de 8 creatures feeriques' },
+    ],
+    phases: [],
+  },
+  // ── ZONE ABYSSES (Boss 6-10) ──
+  {
+    idx: 5, id: 'leviathan', name: 'Leviathan', zone: 'Abysses', icon: '\uD83D\uDC19',
+    hp: 114_000_000, hpDisplay: '114M', atk: 7200, def: 72, spd: 35,
+    regenPct: 1.71, autoAtkPower: 140, enrageTimer: 300, enrageHpPct: 0,
+    patterns: [
+      { name: 'Raz-de-Maree', type: 'aoe_all', damage: 1300, cooldown: 7, telegraphTime: 2.5, description: 'Raz-de-maree frappant tout le raid' },
+      { name: 'Morsure Abyssale', type: 'frontal', damage: 1800, cooldown: 5, telegraphTime: 1.5, range: 200, description: 'Morsure devastatrice sur le frontline' },
+      { name: 'Tourbillon', type: 'aoe_melee', damage: 1000, cooldown: 15, telegraphTime: 2.0, range: 350, description: 'Tourbillon aspirant et blessant les proches' },
+      { name: 'Invocation Profondeurs', type: 'summon', damage: 0, cooldown: 25, telegraphTime: 2.0, summonCount: 4, summonType: 'abyssal', description: 'Invoque 4 creatures abyssales' },
+    ],
+    phases: [],
+  },
+  {
+    idx: 6, id: 'abyssal_sorcerer', name: 'Sorcier Abyssal', zone: 'Abysses', icon: '\uD83E\uDDD9',
+    hp: 147_000_000, hpDisplay: '147M', atk: 8400, def: 60, spd: 45,
+    regenPct: 1.86, autoAtkPower: 120, enrageTimer: 270, enrageHpPct: 0,
+    patterns: [
+      { name: 'Rayon Maudit', type: 'aoe_ranged', damage: 1600, cooldown: 5, telegraphTime: 1.5, range: 500, aoeRadius: 250, description: 'Rayon maudit ciblant mages et healers' },
+      { name: 'Nova Obscure', type: 'aoe_melee', damage: 1200, cooldown: 10, telegraphTime: 2.5, range: 300, description: 'Nova sombre autour du sorcier' },
+      { name: 'Drain de Mana', type: 'aoe_all', damage: 800, cooldown: 20, telegraphTime: 2.0, healPercent: 3, description: 'Draine mana et vie, soigne le boss 3% HP' },
+      { name: 'Invocation Dark Mages', type: 'summon', damage: 0, cooldown: 22, telegraphTime: 2.0, summonCount: 4, summonType: 'dark_mage', description: 'Invoque 4 mages noirs acolytes' },
+    ],
+    phases: [],
+  },
+  {
+    idx: 7, id: 'iron_titan', name: 'Titan de Fer', zone: 'Abysses', icon: '\uD83E\uDD16',
+    hp: 200_000_000, hpDisplay: '200M', atk: 6600, def: 96, spd: 20,
+    regenPct: 2.0, autoAtkPower: 160, enrageTimer: 300, enrageHpPct: 0,
+    patterns: [
+      { name: 'Poing de Fer', type: 'frontal', damage: 2000, cooldown: 6, telegraphTime: 2.5, range: 250, description: 'Poing massif ecrasant le frontline' },
+      { name: 'Seisme', type: 'aoe_all', damage: 1400, cooldown: 12, telegraphTime: 3.0, description: 'Tremblement de terre affectant tout le raid' },
+      { name: 'Armure Renforcee', type: 'self_heal', damage: 0, cooldown: 30, telegraphTime: 1.0, healPercent: 4, description: "Renforce l'armure, regenere 4% HP" },
+      { name: 'Invocation Golems de Fer', type: 'summon', damage: 0, cooldown: 28, telegraphTime: 2.0, summonCount: 3, summonType: 'iron_golem', description: 'Invoque 3 golems de fer' },
+    ],
+    phases: [],
+  },
+  {
+    idx: 8, id: 'venomous_hydra', name: 'Hydre Venimeuse', zone: 'Abysses', icon: '\uD83D\uDC0D',
+    hp: 265_000_000, hpDisplay: '265M', atk: 9600, def: 72, spd: 50,
+    regenPct: 2.14, autoAtkPower: 140, enrageTimer: 240, enrageHpPct: 25,
+    patterns: [
+      { name: 'Triple Morsure', type: 'frontal', damage: 1600, cooldown: 4, telegraphTime: 1.5, range: 200, description: 'Trois tetes mordent le frontline simultanement' },
+      { name: 'Crachat Venimeux', type: 'aoe_ranged', damage: 1200, cooldown: 8, telegraphTime: 2.0, range: 450, aoeRadius: 200, description: 'Crachat de poison sur le backline' },
+      { name: 'Regeneration Hydra', type: 'self_heal', damage: 0, cooldown: 25, telegraphTime: 1.0, healPercent: 5, description: "Les tetes repoussent, regenere 5% HP" },
+      { name: 'Nuage Toxique', type: 'aoe_all', damage: 900, cooldown: 15, telegraphTime: 2.5, description: 'Nuage toxique empoisonnant tout le raid' },
+    ],
+    phases: [],
+  },
+  {
+    idx: 9, id: 'deep_king', name: 'Roi des Profondeurs', zone: 'Abysses', icon: '\uD83D\uDD31',
+    hp: 345_000_000, hpDisplay: '345M', atk: 11000, def: 84, spd: 40,
+    regenPct: 2.29, autoAtkPower: 150, enrageTimer: 300, enrageHpPct: 20,
+    patterns: [
+      { name: 'Jugement Abyssal', type: 'frontal', damage: 2200, cooldown: 6, telegraphTime: 2.0, range: 300, description: 'Jugement royal tranchant le frontline' },
+      { name: 'Maree Noire', type: 'aoe_all', damage: 1500, cooldown: 10, telegraphTime: 3.0, description: 'Maree noire engloutissant tout le raid' },
+      { name: 'Trident Royal', type: 'aoe_ranged', damage: 1800, cooldown: 8, telegraphTime: 1.8, range: 500, aoeRadius: 200, description: 'Blast de trident ciblant le backline' },
+      { name: 'Invocation Gardes Royaux', type: 'summon', damage: 0, cooldown: 30, telegraphTime: 2.5, summonCount: 6, summonType: 'royal_guard', description: 'Invoque 6 gardes royaux des profondeurs' },
+    ],
+    phases: [],
+  },
+  // ── ZONE NEANT (Boss 11-15) — Phases speciales ──
+  {
+    idx: 10, id: 'origin_specter', name: 'Spectre Originel', zone: 'Neant', icon: '\uD83D\uDC7B',
+    hp: 750_000_000, hpDisplay: '750M', atk: 17000, def: 100, spd: 55,
+    regenPct: 2.5, autoAtkPower: 160, enrageTimer: 270, enrageHpPct: 20,
+    patterns: [
+      { name: 'Toucher Spectral', type: 'frontal', damage: 2200, cooldown: 4, telegraphTime: 1.2, range: 250, description: 'Toucher fantomatique traversant les defenses' },
+      { name: 'Hurlement du Neant', type: 'aoe_all', damage: 1600, cooldown: 12, telegraphTime: 2.5, description: 'Hurlement du vide infligeant degats a tous' },
+      { name: 'Phase Spectrale', type: 'self_heal', damage: 0, cooldown: 20, telegraphTime: 1.0, healPercent: 3, description: 'Se dephase de la realite, regenere 3% HP' },
+      { name: 'Invocation Fantomes', type: 'summon', damage: 0, cooldown: 18, telegraphTime: 1.5, summonCount: 8, summonType: 'specter', description: 'Invoque 8 guerriers spectraux' },
+    ],
+    phases: [
+      { id: 'specter_p1', trigger: 'hp_below', threshold: 70, atkMult: 1.2, antiHealPct: 30,
+        patterns: [{ name: 'Drain Spectral', type: 'anti_heal', damage: 800, cooldown: 14, telegraphTime: 2.0, antiHealPct: 40, duration: 8, description: 'Drain spectral reduisant tous les soins de 40% pendant 8s' }] },
+      { id: 'specter_p2', trigger: 'hp_below', threshold: 30, atkMult: 1.5, spdMult: 1.3, antiHealPct: 70,
+        patterns: [{ name: 'Eruption du Neant', type: 'multi_hit', damage: 1200, cooldown: 10, telegraphTime: 2.0, hitCount: 5, description: 'Eruption du vide frappant 5 cibles aleatoires' }] },
+    ],
+  },
+  {
+    idx: 11, id: 'void_archon', name: 'Archonte du Vide', zone: 'Neant', icon: '\uD83C\uDF0C',
+    hp: 1_400_000_000, hpDisplay: '1.4B', atk: 23000, def: 120, spd: 50,
+    regenPct: 2.6, autoAtkPower: 180, enrageTimer: 300, enrageHpPct: 15,
+    patterns: [
+      { name: 'Decret du Vide', type: 'frontal', damage: 3000, cooldown: 5, telegraphTime: 2.0, range: 300, description: 'Decret du vide obliterant le frontline' },
+      { name: 'Singularite', type: 'aoe_all', damage: 2400, cooldown: 15, telegraphTime: 3.0, description: 'Singularite infligeant degats a tout le raid' },
+      { name: 'Annihilation', type: 'aoe_ranged', damage: 2600, cooldown: 10, telegraphTime: 2.0, range: 500, aoeRadius: 300, description: "Rayon d'annihilation sur le backline" },
+      { name: 'Invocation Sentinelles', type: 'summon', damage: 0, cooldown: 25, telegraphTime: 2.0, summonCount: 4, summonType: 'void_sentinel', description: 'Invoque 4 sentinelles du vide' },
+    ],
+    phases: [
+      { id: 'archon_p1', trigger: 'hp_below', threshold: 65, regenMult: 1.5, antiHealPct: 25,
+        patterns: [{ name: 'Eclat du Vide', type: 'multi_hit', damage: 1800, cooldown: 8, telegraphTime: 1.8, hitCount: 4, description: 'Eclats du vide frappant 4 cibles aleatoires' }] },
+      { id: 'archon_p2', trigger: 'hp_below', threshold: 25, atkMult: 2.0, regenMult: 2.0, antiHealPct: 60,
+        patterns: [{ name: 'Tempete du Vide', type: 'aoe_all', damage: 3500, cooldown: 12, telegraphTime: 2.5, description: 'Tempete du vide ravageant tout le raid' }] },
+    ],
+  },
+  {
+    idx: 12, id: 'chaos_dragon', name: 'Dragon du Chaos', zone: 'Neant', icon: '\uD83D\uDC32',
+    hp: 2_500_000_000, hpDisplay: '2.5B', atk: 33000, def: 115, spd: 60,
+    regenPct: 2.8, autoAtkPower: 200, enrageTimer: 240, enrageHpPct: 25,
+    patterns: [
+      { name: 'Souffle du Chaos', type: 'frontal', damage: 3500, cooldown: 6, telegraphTime: 2.0, range: 350, description: 'Souffle chaotique incinerant le frontline' },
+      { name: "Battement d'Ailes", type: 'aoe_all', damage: 2200, cooldown: 8, telegraphTime: 2.5, description: "Battement d'ailes envoyant des ondes de choc" },
+      { name: 'Meteor du Chaos', type: 'aoe_ranged', damage: 3800, cooldown: 15, telegraphTime: 3.0, range: 500, aoeRadius: 250, description: 'Meteore chaotique ecrasant le backline' },
+      { name: 'Invocation Drakelings', type: 'summon', damage: 0, cooldown: 20, telegraphTime: 2.0, summonCount: 6, summonType: 'drakeling', description: 'Invoque 6 draconiens du chaos' },
+    ],
+    phases: [
+      { id: 'dragon_p1', trigger: 'hp_below', threshold: 75, atkMult: 1.3, antiHealPct: 35,
+        patterns: [{ name: 'Salve du Chaos', type: 'multi_hit', damage: 2000, cooldown: 9, telegraphTime: 2.0, hitCount: 6, description: 'Salve chaotique frappant 6 cibles aleatoires' }] },
+      { id: 'dragon_p2', trigger: 'hp_below', threshold: 35, atkMult: 1.8, spdMult: 1.4, antiHealPct: 60,
+        patterns: [{ name: 'Jugement du Dragon', type: 'execute', damage: 8000, cooldown: 12, telegraphTime: 2.5, description: 'Execute le personnage le plus faible — degats massifs' }] },
+    ],
+  },
+  {
+    idx: 13, id: 'eternal_monarch', name: 'Monarque Eternel', zone: 'Neant', icon: '\uD83D\uDC51',
+    hp: 4_500_000_000, hpDisplay: '4.5B', atk: 48000, def: 140, spd: 50,
+    regenPct: 3.0, autoAtkPower: 220, enrageTimer: 300, enrageHpPct: 15,
+    patterns: [
+      { name: 'Decret Eternel', type: 'frontal', damage: 4500, cooldown: 5, telegraphTime: 2.0, range: 300, description: 'Decret eternel ecrasant le frontline' },
+      { name: 'Tempete du Temps', type: 'aoe_all', damage: 3500, cooldown: 12, telegraphTime: 3.0, description: 'Tempete temporelle deformant la realite' },
+      { name: "Rayon d'Eternite", type: 'aoe_ranged', damage: 4000, cooldown: 10, telegraphTime: 2.0, range: 500, aoeRadius: 250, description: "Rayon d'eternite ciblant le backline" },
+      { name: 'Invocation Chevaliers', type: 'summon', damage: 0, cooldown: 30, telegraphTime: 2.5, summonCount: 8, summonType: 'eternal_knight', description: 'Invoque 8 chevaliers eternels' },
+    ],
+    phases: [
+      { id: 'monarch_p1', trigger: 'hp_below', threshold: 60, spdMult: 1.5, antiHealPct: 30,
+        patterns: [{ name: 'Distorsion Temporelle', type: 'anti_heal', damage: 2000, cooldown: 16, telegraphTime: 2.5, antiHealPct: 50, duration: 12, description: 'Distorsion temporelle bloquant les soins de 50% pendant 12s' }] },
+      { id: 'monarch_p2', trigger: 'hp_below', threshold: 25, atkMult: 2.0, spdMult: 1.8, antiHealPct: 75,
+        patterns: [{ name: 'Execution Eternelle', type: 'execute', damage: 12000, cooldown: 10, telegraphTime: 2.0, description: 'Jugement eternel sur le plus faible — mort quasi certaine' }] },
+    ],
+  },
+  {
+    idx: 14, id: 'sung_ilhwan', name: 'Sung Il-Hwan', zone: 'Neant', icon: '\u2694\uFE0F',
+    hp: 10_000_000_000, hpDisplay: '10B', atk: 75000, def: 130, spd: 65,
+    regenPct: 3.0, autoAtkPower: 250, enrageTimer: 360, enrageHpPct: 20,
+    patterns: [
+      { name: 'Frappe du Chasseur Supreme', type: 'frontal', damage: 5000, cooldown: 4, telegraphTime: 1.5, range: 300, description: 'Frappe devastatrice du chasseur supreme' },
+      { name: 'Domain du Monarque', type: 'aoe_all', damage: 4000, cooldown: 15, telegraphTime: 3.0, description: 'Domaine du monarque infligeant degats a tous' },
+      { name: 'Armee des Ombres', type: 'summon', damage: 0, cooldown: 20, telegraphTime: 2.0, summonCount: 12, summonType: 'shadow', description: "Invoque sa legendaire armee de 12 ombres" },
+      { name: 'Echange de Vie', type: 'aoe_all', damage: 5000, cooldown: 25, telegraphTime: 3.0, healPercent: 5, description: 'Draine toute force vitale, soigne le boss 5% HP' },
+    ],
+    phases: [
+      { id: 'ilhwan_p1', trigger: 'hp_below', threshold: 80, atkMult: 1.3, antiHealPct: 20,
+        patterns: [{ name: 'Ombre Renforcee', type: 'multi_hit', damage: 2500, cooldown: 10, telegraphTime: 1.8, hitCount: 8, description: 'Ombre renforcee frappant 8 cibles aleatoires' }] },
+      { id: 'ilhwan_p2', trigger: 'hp_below', threshold: 50, atkMult: 1.6, spdMult: 1.4, antiHealPct: 50,
+        patterns: [{ name: 'Domaine Supreme', type: 'anti_heal', damage: 3000, cooldown: 18, telegraphTime: 3.0, antiHealPct: 70, duration: 15, description: 'Domaine supreme ecrasant les soins de 70% pendant 15s' }] },
+      { id: 'ilhwan_p3', trigger: 'hp_below', threshold: 15, atkMult: 2.5, spdMult: 2.0, regenMult: 3.0, antiHealPct: 90,
+        patterns: [{ name: 'Annihilation Totale', type: 'multi_hit', damage: 3000, cooldown: 8, telegraphTime: 2.0, hitCount: 12, description: 'Annihilation totale — 12 frappes devastatrices' }] },
+    ],
+  },
 ];
