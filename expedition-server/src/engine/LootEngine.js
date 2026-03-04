@@ -25,14 +25,18 @@ export class LootEngine {
     if (!table.length) return [];
 
     // 2. Roll each loot independently against dropChance
+    //    Roll the entire table QUANTITY_MULTIPLIER times for more drops
     const drops = [];
-    for (const entry of table) {
-      const roll = Math.random() * 100;
-      if (roll >= entry.dropChance) continue;
+    const rolls = LOOT.QUANTITY_MULTIPLIER || 1;
+    for (let r = 0; r < rolls; r++) {
+      for (const entry of table) {
+        const roll = Math.random() * 100;
+        if (roll >= entry.dropChance) continue;
 
-      // 3. Resolve full item data (codex name/rarity + source file stats)
-      const drop = LootEngine._resolveDropEntry(entry);
-      if (drop) drops.push(drop);
+        // 3. Resolve full item data (codex name/rarity + source file stats)
+        const drop = LootEngine._resolveDropEntry(entry);
+        if (drop) drops.push(drop);
+      }
     }
 
     return drops;
@@ -140,15 +144,16 @@ export class LootEngine {
   // ═══════════════════════════════════════════════════════
   static rollEssenceDrops(mobKills, isBoss = false) {
     const essences = { guerre: 0, arcanique: 0, gardienne: 0 };
+    const mult = LOOT.QUANTITY_MULTIPLIER || 1;
 
     if (isBoss) {
       const drop = rollEssenceDrop(null, false, true);
-      if (drop) essences[drop.type] += drop.amount;
+      if (drop) essences[drop.type] += drop.amount * mult;
     }
 
     for (const mob of mobKills) {
       const drop = rollEssenceDrop(mob.templateKey, mob.elite || false, false);
-      if (drop) essences[drop.type] += drop.amount;
+      if (drop) essences[drop.type] += drop.amount * mult;
     }
 
     return essences;
@@ -177,10 +182,11 @@ export class LootEngine {
       contribution:   [5, 8, 12, 18][tier - 1] || 5,
     };
 
+    const mult = LOOT.QUANTITY_MULTIPLIER || 1;
     for (let i = 0; i < mobKillCount; i++) {
       for (const currency of ['alkahest', 'marteau_rouge', 'contribution']) {
         if (Math.random() * 100 < chances[currency]) {
-          totals[currency] += amounts[currency];
+          totals[currency] += amounts[currency] * mult;
         }
       }
     }

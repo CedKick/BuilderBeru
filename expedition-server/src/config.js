@@ -114,6 +114,7 @@ export const MARCH = {
 
 // ─── Loot ─────────────────────────────────────────────────
 export const LOOT = {
+  QUANTITY_MULTIPLIER: 5,   // Roll loot table N times per boss kill (5x more drops)
   WIPE_STEAL_CHANCE_MIN: 0.10,
   WIPE_STEAL_CHANCE_MAX: 0.40,
   ROLL_MAX: 100,
