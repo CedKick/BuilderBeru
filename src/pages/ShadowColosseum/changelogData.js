@@ -5,6 +5,30 @@
 
 export const CHANGELOG = [
   {
+    version: '0.9.11',
+    date: '2026-03-04',
+    title: 'Expedition 100 Hunters — Scaling Dynamique & Boss Massifs',
+    entries: [
+      {
+        category: 'balance',
+        items: [
+          'Boss 11-15 : HP massivement augmentee — Boss 11: 5B, Boss 12: 12B, Boss 13: 28B, Boss 14: 60B, Boss 15: 150B',
+          'Boss 11-15 : ATK augmentee — Boss 11: 17K, Boss 12: 23K, Boss 13: 33K, Boss 14: 48K, Boss 15: 75K',
+          'Scaling dynamique : au-dela de 30 hunters, HP/ATK/DEF des boss et mobs s\'adaptent proportionnellement',
+          'Formule scaling : HP ×(hunters/30), ATK ×(1 + (hunters/30 - 1)×0.3), DEF ×(1 + (hunters/30 - 1)×0.15)',
+        ],
+      },
+      {
+        category: 'new',
+        items: [
+          'Capacite expedition : 30 → 100 hunters max (6 par compte, ~16 joueurs max)',
+          'Loot scaling : +1 roll de loot tous les 10 hunters au-dela de 30 (ex: 60h = +3 rolls)',
+          'Mobs scaling : HP des mobs augmente de 60% du ratio joueurs (ex: 60h = ×1.6 HP mobs)',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.10',
     date: '2026-03-04',
     title: 'Boss 11-15 : ATK Crush — Debuff DPS',

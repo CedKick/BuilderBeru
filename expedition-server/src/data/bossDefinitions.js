@@ -601,8 +601,8 @@ export const BOSS_DEFINITIONS = [
     id: 'origin_specter',
     name: 'Spectre Originel',
     index: 10,
-    hp: 862_500_000,  // +15%
-    atk: 13000,
+    hp: 5_000_000_000,  // 5B (drastically increased)
+    atk: 17000,
     def: 100,
     regenPct: 2.5,
     spd: 60,
@@ -714,8 +714,8 @@ export const BOSS_DEFINITIONS = [
     id: 'void_archon',
     name: 'Archonte du Vide',
     index: 11,
-    hp: 1_610_000_000,  // +15%
-    atk: 16000,
+    hp: 12_000_000_000,  // 12B (drastically increased)
+    atk: 23000,
     def: 120,
     regenPct: 2.6,
     spd: 58,
@@ -826,8 +826,8 @@ export const BOSS_DEFINITIONS = [
     id: 'chaos_dragon',
     name: 'Dragon du Chaos',
     index: 12,
-    hp: 2_875_000_000,  // +15%
-    atk: 19000,
+    hp: 28_000_000_000,  // 28B (drastically increased)
+    atk: 33000,
     def: 115,
     regenPct: 2.8,
     spd: 66,
@@ -938,8 +938,8 @@ export const BOSS_DEFINITIONS = [
     id: 'eternal_monarch',
     name: 'Monarque Eternel',
     index: 13,
-    hp: 5_175_000_000,  // +15%
-    atk: 22000,
+    hp: 60_000_000_000,  // 60B (drastically increased)
+    atk: 48000,
     def: 140,
     regenPct: 3.0,
     spd: 62,
@@ -1051,8 +1051,8 @@ export const BOSS_DEFINITIONS = [
     id: 'sung_ilhwan',
     name: 'Sung Il-Hwan',
     index: 14,
-    hp: 11_500_000_000, // +15% (11.5B HP)
-    atk: 25000,
+    hp: 150_000_000_000, // 150B (drastically increased)
+    atk: 75000,
     def: 130,
     regenPct: 3.0,
     spd: 75,

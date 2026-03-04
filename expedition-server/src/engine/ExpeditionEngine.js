@@ -1,4 +1,4 @@
-import { SERVER, EXPEDITION, CAMPFIRE, MARCH, REST_CAMP } from '../config.js';
+import { SERVER, EXPEDITION, CAMPFIRE, MARCH, REST_CAMP, SCALING } from '../config.js';
 import { CombatEngine2D } from './CombatEngine2D.js';
 import { AIController } from './AIController.js';
 import { LootEngine } from './LootEngine.js';
@@ -344,8 +344,10 @@ export class ExpeditionEngine {
     }
 
     // Roll loot — use generateBossLoot for boss encounters, rollDrops for mob waves
+    // Extra rolls scale with player count (>30 hunters = more loot)
+    const extraRolls = this.getExtraLootRolls();
     const drops = isBoss
-      ? LootEngine.generateBossLoot(encounter.bossIndex + 1)  // bossIndex is 0-based, generateBossLoot expects 1-15
+      ? LootEngine.generateBossLoot(encounter.bossIndex + 1, extraRolls)  // bossIndex is 0-based, generateBossLoot expects 1-15
       : LootEngine.rollDrops(encounter.lootTableId);
     if (drops.length > 0) {
       const alivePlayers = this.getAlivePlayers();
@@ -410,8 +412,9 @@ export class ExpeditionEngine {
     // Roll loot with wipe penalty
     const encounter = this.encounters[this.currentEncounterIndex];
     const isBossWipe = encounter.type === 'boss';
+    const wipeExtraRolls = this.getExtraLootRolls();
     const drops = isBossWipe
-      ? LootEngine.generateBossLoot(encounter.bossIndex + 1)
+      ? LootEngine.generateBossLoot(encounter.bossIndex + 1, wipeExtraRolls)
       : LootEngine.rollDrops(encounter.lootTableId);
     if (drops.length > 0) {
       const allPlayers = this.getAllPlayers();
@@ -648,6 +651,39 @@ export class ExpeditionEngine {
   }
 
   // ═══════════════════════════════════════════════════════
+  // DYNAMIC DIFFICULTY SCALING (>30 hunters)
+  // ═══════════════════════════════════════════════════════
+  getPlayerScale() {
+    const count = this.characters.length;
+    if (count <= SCALING.BASE_HUNTERS) return 1.0;
+    return count / SCALING.BASE_HUNTERS;  // 60 hunters = 2.0, 100 = 3.33
+  }
+
+  getScaledBossDef(baseDef) {
+    const scale = this.getPlayerScale();
+    if (scale <= 1.0) return baseDef;
+    const excess = scale - 1;  // 0 at 30, 1.0 at 60, 2.33 at 100
+    return {
+      ...baseDef,
+      hp:  Math.floor(baseDef.hp  * (1 + excess * SCALING.HP_FACTOR)),
+      atk: Math.floor(baseDef.atk * (1 + excess * SCALING.ATK_FACTOR)),
+      def: Math.floor(baseDef.def * (1 + excess * SCALING.DEF_FACTOR)),
+    };
+  }
+
+  getMobDifficultyScale() {
+    const scale = this.getPlayerScale();
+    if (scale <= 1.0) return 1.0;
+    return 1 + (scale - 1) * SCALING.MOB_HP_FACTOR;  // 60h = 1.6, 100h = 2.4
+  }
+
+  getExtraLootRolls() {
+    const count = this.characters.length;
+    if (count <= SCALING.BASE_HUNTERS) return 0;
+    return Math.floor((count - SCALING.BASE_HUNTERS) / SCALING.LOOT_EXTRA_ROLLS_PER);
+  }
+
+  // ═══════════════════════════════════════════════════════
   // COMBAT SETUP
   // ═══════════════════════════════════════════════════════
   setupCombat() {
@@ -660,13 +696,17 @@ export class ExpeditionEngine {
     this.currentMobs = [];
     this.currentBoss = null;
 
+    // Dynamic difficulty scaling based on hunter count
+    const mobScale = this.getMobDifficultyScale();
+    const playerScale = this.getPlayerScale();
+
     if (encounter.type === 'mob_wave') {
-      // Spawn mobs from composition
+      // Spawn mobs from composition (scaled difficulty if >30 hunters)
       for (const group of encounter.composition) {
         const template = MOB_TEMPLATES[group.template];
         if (!template) continue;
         for (let i = 0; i < group.count; i++) {
-          this.currentMobs.push(new Mob(template, encounter.difficulty, group.template));
+          this.currentMobs.push(new Mob(template, encounter.difficulty * mobScale, group.template));
         }
       }
       this.broadcast({
@@ -676,14 +716,18 @@ export class ExpeditionEngine {
         encounterIndex: this.currentEncounterIndex,
       });
     } else if (encounter.type === 'boss') {
-      const bossDef = getBossDefinition(encounter.bossIndex);
-      if (bossDef) {
-        this.currentBoss = new ExpeditionBoss(bossDef);
+      const baseDef = getBossDefinition(encounter.bossIndex);
+      if (baseDef) {
+        const scaledDef = this.getScaledBossDef(baseDef);
+        this.currentBoss = new ExpeditionBoss(scaledDef);
+        if (playerScale > 1) {
+          console.log(`[Expedition] Boss ${baseDef.name} scaled ×${playerScale.toFixed(2)}: HP ${baseDef.hp} → ${scaledDef.hp}, ATK ${baseDef.atk} → ${scaledDef.atk}`);
+        }
         this.broadcast({
           type: 'combat_start',
           encounterType: 'boss',
-          bossName: bossDef.name,
-          bossHp: bossDef.hp,
+          bossName: scaledDef.name,
+          bossHp: scaledDef.hp,
           encounterIndex: this.currentEncounterIndex,
         });
       }

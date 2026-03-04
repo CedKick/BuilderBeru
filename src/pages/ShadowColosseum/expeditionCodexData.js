@@ -643,7 +643,7 @@ export const EXPEDITION_BOSSES = [
   // ── ZONE NEANT (Boss 11-15) — Phases speciales ──
   {
     idx: 10, id: 'origin_specter', name: 'Spectre Originel', zone: 'Neant', icon: '\uD83D\uDC7B',
-    hp: 862_500_000, hpDisplay: '863M', atk: 13000, def: 100, spd: 60,
+    hp: 5_000_000_000, hpDisplay: '5B', atk: 17000, def: 100, spd: 60,
     regenPct: 2.5, autoAtkPower: 160, enrageTimer: 270, enrageHpPct: 20,
     patterns: [
       { name: 'Toucher Spectral', type: 'frontal', damage: 2200, cooldown: 4, telegraphTime: 1.2, range: 250, description: 'Toucher fantomatique traversant les defenses' },
@@ -661,7 +661,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 11, id: 'void_archon', name: 'Archonte du Vide', zone: 'Neant', icon: '\uD83C\uDF0C',
-    hp: 1_610_000_000, hpDisplay: '1.61B', atk: 16000, def: 120, spd: 58,
+    hp: 12_000_000_000, hpDisplay: '12B', atk: 23000, def: 120, spd: 58,
     regenPct: 2.6, autoAtkPower: 180, enrageTimer: 300, enrageHpPct: 15,
     patterns: [
       { name: 'Decret du Vide', type: 'frontal', damage: 3000, cooldown: 5, telegraphTime: 2.0, range: 300, description: 'Decret du vide obliterant le frontline' },
@@ -679,7 +679,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 12, id: 'chaos_dragon', name: 'Dragon du Chaos', zone: 'Neant', icon: '\uD83D\uDC32',
-    hp: 2_875_000_000, hpDisplay: '2.88B', atk: 19000, def: 115, spd: 66,
+    hp: 28_000_000_000, hpDisplay: '28B', atk: 33000, def: 115, spd: 66,
     regenPct: 2.8, autoAtkPower: 200, enrageTimer: 240, enrageHpPct: 25,
     patterns: [
       { name: 'Souffle du Chaos', type: 'frontal', damage: 3500, cooldown: 6, telegraphTime: 2.0, range: 350, description: 'Souffle chaotique incinerant le frontline' },
@@ -697,7 +697,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 13, id: 'eternal_monarch', name: 'Monarque Eternel', zone: 'Neant', icon: '\uD83D\uDC51',
-    hp: 5_175_000_000, hpDisplay: '5.18B', atk: 22000, def: 140, spd: 62,
+    hp: 60_000_000_000, hpDisplay: '60B', atk: 48000, def: 140, spd: 62,
     regenPct: 3.0, autoAtkPower: 220, enrageTimer: 300, enrageHpPct: 15,
     patterns: [
       { name: 'Decret Eternel', type: 'frontal', damage: 4500, cooldown: 5, telegraphTime: 2.0, range: 300, description: 'Decret eternel ecrasant le frontline' },
@@ -715,7 +715,7 @@ export const EXPEDITION_BOSSES = [
   },
   {
     idx: 14, id: 'sung_ilhwan', name: 'Sung Il-Hwan', zone: 'Neant', icon: '\u2694\uFE0F',
-    hp: 11_500_000_000, hpDisplay: '11.5B', atk: 25000, def: 130, spd: 75,
+    hp: 150_000_000_000, hpDisplay: '150B', atk: 75000, def: 130, spd: 75,
     regenPct: 3.0, autoAtkPower: 250, enrageTimer: 360, enrageHpPct: 20,
     patterns: [
       { name: 'Frappe du Chasseur Supreme', type: 'frontal', damage: 5000, cooldown: 4, telegraphTime: 1.5, range: 300, description: 'Frappe devastatrice du chasseur supreme' },

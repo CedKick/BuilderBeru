@@ -14,7 +14,7 @@ export const SERVER = {
 
 // ─── Expedition Rules ─────────────────────────────────────
 export const EXPEDITION = {
-  MAX_CHARACTERS: 30,       // Total hunters across all players (e.g. 5 players × 6 = 30)
+  MAX_CHARACTERS: 100,      // Total hunters across all players (up to ~16 players × 6)
   HUNTERS_PER_PLAYER: 6,
   MAX_DURATION_HOURS: 12,       // 19h -> 7h next day = 12h max
   LAUNCH_HOUR: 19,              // 19h Paris daily
@@ -121,6 +121,20 @@ export const LOOT = {
   SR_PICKS_MAX: 5,  // Each player can SR up to 5 items (can repeat for extra rolls)
   INVENTORY_MAX: 200,  // Max items in expeditionInventory per player
   EQUIP_TYPES: ['armor', 'weapon', 'set_piece'],  // Types considered "artifacts" (have stats, can auto-replace)
+};
+
+// ─── Dynamic Difficulty Scaling (>30 hunters) ────────────
+// When more than BASE_HUNTERS join, boss & mob stats scale up proportionally.
+// Formula: stat × (1 + (hunterCount/BASE - 1) × factor)
+// At 30 hunters: 1.0×  |  At 60: ~1.3× HP  |  At 100: ~1.7× HP
+export const SCALING = {
+  BASE_HUNTERS: 30,         // No scaling at or below this count
+  HP_FACTOR: 1.0,           // Full linear scale for HP (proportional to player count)
+  ATK_FACTOR: 0.3,          // Partial scale for boss ATK (+30% per doubling)
+  DEF_FACTOR: 0.15,         // Slight scale for boss DEF
+  SPD_FACTOR: 0,            // No speed scaling
+  LOOT_EXTRA_ROLLS_PER: 10, // Every 10 extra hunters beyond 30 = +1 loot roll
+  MOB_HP_FACTOR: 0.6,       // Mob HP scales at 60% rate (mobs shouldn't be walls)
 };
 
 // ─── Stat Scaling: hunter base stats → expedition stats ───

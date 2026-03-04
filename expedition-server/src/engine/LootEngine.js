@@ -17,7 +17,7 @@ export class LootEngine {
   // Each loot rolls independently — can return 0 to N items (multi-drop)
   // Returns: [{ itemId, itemName, rarity, binding, type, slot, stats, dropChance, ... }]
   // ═══════════════════════════════════════════════════════
-  static generateBossLoot(bossId) {
+  static generateBossLoot(bossId, extraRolls = 0) {
     if (bossId < 1 || bossId > 15) return [];
 
     // 1. Retrieve boss loot table from codex
@@ -27,9 +27,10 @@ export class LootEngine {
     // 2. Roll each loot independently against dropChance
     //    Roll the entire table QUANTITY_MULTIPLIER times for more drops
     //    Endgame bosses (8+) get extra rolls for reinforced loot
+    //    extraRolls: bonus from dynamic scaling (>30 hunters)
     const drops = [];
     const baseRolls = LOOT.QUANTITY_MULTIPLIER || 1;
-    const rolls = bossId >= 8 ? baseRolls + 1 : baseRolls;
+    const rolls = (bossId >= 8 ? baseRolls + 1 : baseRolls) + extraRolls;
     for (let r = 0; r < rolls; r++) {
       for (const entry of table) {
         const roll = Math.random() * 100;
