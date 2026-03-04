@@ -103,8 +103,8 @@ export const EXPEDITION_ITEMS = [
     effects: [{ type: 'bleed', value: 1.5, duration: 4, trigger: 'on_hit' }, { type: 'bleed_amp', threshold: 2, bonus: 15 }] },
 
   // ── Neant (legendary) ──
-  { id: 'exp_katana_void', name: 'Katana du Neant', type: 'weapon', slot: 'weapon', rarity: 'legendary', binding: 'lqr', stats: { atk_flat: 95, crit_rate: 12, spd_flat: 8 }, description: 'Crit: Saignement (2% HP/s, 5s, stack x3). 3 stacks = Hemorragie: +25% DMG recus.',
-    effects: [{ type: 'bleed', value: 2, duration: 5, maxStacks: 3, trigger: 'on_crit' }, { type: 'hemorrhage', stacks: 3, dmgAmp: 25 }] },
+  { id: 'exp_katana_void', name: 'Katana du Neant', type: 'weapon', slot: 'weapon', rarity: 'legendary', binding: 'lqr', stats: { atk_flat: 95, crit_rate: 12, spd_flat: 8 }, description: 'Crit: Saignement (0.8% HP/s, 4s, stack x3). 3 stacks = Hemorragie: +10% DMG recus.',
+    effects: [{ type: 'bleed', value: 0.8, duration: 4, maxStacks: 3, trigger: 'on_crit' }, { type: 'hemorrhage', stacks: 3, dmgAmp: 10 }] },
   { id: 'exp_grimoire_void', name: 'Grimoire du Neant', type: 'weapon', slot: 'weapon', rarity: 'legendary', binding: 'lqr', stats: { atk_flat: 80, res_flat: 20 }, description: '15% chance Silence 2s. Cibles en feu: anti-heal -30%. Mana regen +15%.',
     effects: [{ type: 'silence', chance: 15, duration: 2, trigger: 'on_hit' }, { type: 'mana_regen', value: 15 }] },
   { id: 'exp_halberd_void', name: 'Hallebarde du Vide', type: 'weapon', slot: 'weapon', rarity: 'legendary', binding: 'lqr', stats: { atk_flat: 100, def_flat: 20 }, description: 'Chaque 3eme coup: AoE 150% ATK (150px). Touches: -15% ATK 4s + anti-heal 2s.',
