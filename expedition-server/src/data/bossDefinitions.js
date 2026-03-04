@@ -1,30 +1,46 @@
 // ── Boss Definitions for Expedition I ──
-// regenPct: passive HP regen per tick (% of maxHP per second). Progressive 1%→3% boss 1→15.
+// ── FULLY REBALANCED: real colosseum stats + all damage multipliers ──
+//
+// Hunter stats (from DB): HP avg ~17K, ATK avg ~8.5K, DEF avg ~1000
+// DEF reduction on boss damage: 100/(100+1000) = 9.1% damage gets through
+// Boss ATK must be high to deal meaningful damage through hunter DEF
+//
+// Effective group DPS (30 hunters, with all multipliers):
+//   ~1M/s base (pre-boss-DEF) — degrades with deaths
+//   Includes: skills, crits, set bonuses, talent multipliers (boss dmg, elem dmg, etc.)
+//
+// FIXED: double-DEF bug — Boss/Mob.takeDamage no longer applies DEF
+//        (calculateDamage already applies it)
+//
+// Boss pattern damage formula:
+//   effectiveDmg = bossATK × (pattern.damage/100) × 100/(100+charDEF)
+//   With charDEF=1000: effectiveDmg = bossATK × pattern.damage/100 × 0.091
 
 export const BOSS_DEFINITIONS = [
   // ═══════════════════════════════════════════════════════
   // BOSS 1: Gardien de la Foret (Intro)
+  // Target: ~30s | Effective DPS through DEF 10: ~910K/s
   // ═══════════════════════════════════════════════════════
   {
     id: 'forest_guardian',
     name: 'Gardien de la Foret',
     index: 0,
-    hp: 21_160_000,   // +15% again (manaRestore balance)
-    atk: 2100,
-    def: 35,
-    regenPct: 1.0,    // 1% maxHP/s
+    hp: 30_000_000,         // 30M
+    atk: 3500,
+    def: 10,
+    regenPct: 0.3,
     spd: 42,
-    enrageTimer: 300,     // 5 minutes
-    enrageHpPercent: 0,   // No HP enrage, only timer
-    autoAttackPower: 100,
+    enrageTimer: 300,
+    enrageHpPercent: 0,
+    autoAttackPower: 150,   // Auto: 3500×1.5×0.091 = 477 dmg (2.8% HP)
     patterns: [
       {
         name: 'Cleave Frontal',
         weight: 3,
         cooldown: 6,
         telegraphTime: 2.0,
-        damage: 800,     // ATK * this / 100
-        type: 'frontal',    // Hits characters in front of boss
+        damage: 500,          // 3500×5.0×0.091 = 1591 dmg (9.4% HP)
+        type: 'frontal',
         range: 200,
         description: 'Large sweeping attack hitting the frontline',
       },
@@ -33,8 +49,8 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 10,
         telegraphTime: 2.5,
-        damage: 600,
-        type: 'aoe_melee',  // Hits all characters near boss
+        damage: 400,          // 3500×4.0×0.091 = 1273 dmg (7.5% HP)
+        type: 'aoe_melee',
         range: 250,
         description: 'Ground stomp damaging nearby characters',
       },
@@ -53,28 +69,29 @@ export const BOSS_DEFINITIONS = [
   },
 
   // ═══════════════════════════════════════════════════════
-  // BOSS 2: Sentinelle de Pierre (Mid)
+  // BOSS 2: Sentinelle de Pierre
+  // Target: ~40s | Effective DPS through DEF 15: ~870K/s
   // ═══════════════════════════════════════════════════════
   {
     id: 'stone_sentinel',
     name: 'Sentinelle de Pierre',
     index: 1,
-    hp: 31_740_000,   // +15% again
-    atk: 2900,
-    def: 46,
-    regenPct: 1.14,
+    hp: 40_000_000,         // 40M
+    atk: 4000,
+    def: 15,
+    regenPct: 0.4,
     spd: 35,
     enrageTimer: 300,
     enrageHpPercent: 0,
-    autoAttackPower: 120,
+    autoAttackPower: 160,   // Auto: 4000×1.6×0.091 = 582 dmg (3.4% HP)
     patterns: [
       {
         name: 'Lancer de Roc',
         weight: 3,
         cooldown: 8,
         telegraphTime: 2.0,
-        damage: 1000,
-        type: 'aoe_ranged',   // Hits characters at range (backline!)
+        damage: 450,          // 4000×4.5×0.091 = 1636 dmg (9.6% HP)
+        type: 'aoe_ranged',
         range: 400,
         aoeRadius: 150,
         description: 'Throws a boulder at the backline',
@@ -84,7 +101,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 6,
         telegraphTime: 1.8,
-        damage: 1200,
+        damage: 500,          // 4000×5.0×0.091 = 1818 dmg (10.7% HP)
         type: 'aoe_melee',
         range: 200,
         description: 'Slams the ground, damaging melee range',
@@ -96,7 +113,7 @@ export const BOSS_DEFINITIONS = [
         telegraphTime: 1.0,
         damage: 0,
         type: 'self_heal',
-        healPercent: 5,       // Heals 5% of max HP
+        healPercent: 3,
         description: 'Raises an earth shield, regenerating HP',
       },
       {
@@ -114,27 +131,28 @@ export const BOSS_DEFINITIONS = [
   },
 
   // ═══════════════════════════════════════════════════════
-  // BOSS 3: Seigneur Ombre (Hard)
+  // BOSS 3: Seigneur Ombre
+  // Target: ~55s
   // ═══════════════════════════════════════════════════════
   {
     id: 'shadow_lord',
     name: 'Seigneur Ombre',
     index: 2,
-    hp: 43_700_000,   // +15% again
-    atk: 4600,
-    def: 40,
-    regenPct: 1.29,
+    hp: 55_000_000,         // 55M
+    atk: 4500,
+    def: 15,
+    regenPct: 0.5,
     spd: 58,
-    enrageTimer: 240,     // 4 minutes
-    enrageHpPercent: 20,  // Enrages at 20% HP
-    autoAttackPower: 150,
+    enrageTimer: 240,
+    enrageHpPercent: 20,
+    autoAttackPower: 170,   // Auto: 4500×1.7×0.091 = 696 dmg (4.1% HP)
     patterns: [
       {
         name: 'Lame d\'Ombre',
         weight: 3,
         cooldown: 5,
         telegraphTime: 1.5,
-        damage: 1500,
+        damage: 550,          // 4500×5.5×0.091 = 2252 dmg (13.2% HP)
         type: 'frontal',
         range: 250,
         description: 'Shadow blade cleaves the frontline',
@@ -144,8 +162,8 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 12,
         telegraphTime: 2.5,
-        damage: 1000,
-        type: 'aoe_ranged',  // Targets backline
+        damage: 400,          // 4500×4.0×0.091 = 1636 dmg (9.6% HP)
+        type: 'aoe_ranged',
         range: 500,
         aoeRadius: 200,
         description: 'Darkness engulfs the backline',
@@ -165,9 +183,9 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 20,
         telegraphTime: 3.0,
-        damage: 2000,
-        type: 'aoe_all',     // Hits everyone
-        healPercent: 2,       // Boss heals for 2% of max HP
+        damage: 300,          // 4500×3.0×0.091 = 1227 dmg each (7.2% HP)
+        type: 'aoe_all',
+        healPercent: 2,
         description: 'Drains life from all characters',
       },
     ],
@@ -176,26 +194,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 4: Ancien des Racines (Zone Foret)
+  // Target: ~70s
   // ═══════════════════════════════════════════════════════
   {
     id: 'root_ancient',
     name: 'Ancien des Racines',
     index: 3,
-    hp: 60_950_000,   // +15% again
-    atk: 4000,
-    def: 58,
-    regenPct: 1.43,
+    hp: 70_000_000,         // 70M
+    atk: 4800,
+    def: 20,
+    regenPct: 0.5,
     spd: 32,
     enrageTimer: 300,
     enrageHpPercent: 0,
-    autoAttackPower: 110,
+    autoAttackPower: 170,   // Auto: 4800×1.7×0.091 = 742 dmg (4.4% HP)
     patterns: [
       {
         name: 'Empalement Racinaire',
         weight: 3,
         cooldown: 6,
         telegraphTime: 2.5,
-        damage: 900,
+        damage: 450,          // 4800×4.5×0.091 = 1964 dmg (11.6% HP)
         type: 'aoe_melee',
         range: 300,
         description: 'Roots erupt from the ground, impaling melee range',
@@ -205,7 +224,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 12,
         telegraphTime: 2.0,
-        damage: 700,
+        damage: 280,          // 4800×2.8×0.091 = 1223 dmg each (7.2% HP)
         type: 'aoe_all',
         description: 'Vines constrict all characters',
       },
@@ -235,26 +254,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 5: Reine Sylvestre (Zone Foret — final)
+  // Target: ~90s (1.5min)
   // ═══════════════════════════════════════════════════════
   {
     id: 'sylvan_queen',
     name: 'Reine Sylvestre',
     index: 4,
-    hp: 90_850_000,   // +15%
-    atk: 5800,
-    def: 52,
-    regenPct: 1.57,
+    hp: 90_000_000,         // 90M
+    atk: 5000,
+    def: 25,
+    regenPct: 0.6,
     spd: 55,
     enrageTimer: 270,
     enrageHpPercent: 15,
-    autoAttackPower: 130,
+    autoAttackPower: 180,   // Auto: 5000×1.8×0.091 = 819 dmg (4.8% HP)
     patterns: [
       {
         name: 'Pluie d\'Epines',
         weight: 3,
         cooldown: 5,
         telegraphTime: 1.8,
-        damage: 1100,
+        damage: 480,          // 5000×4.8×0.091 = 2182 dmg (12.8% HP)
         type: 'aoe_ranged',
         range: 500,
         aoeRadius: 200,
@@ -265,7 +285,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 8,
         telegraphTime: 2.0,
-        damage: 1400,
+        damage: 600,          // 5000×6.0×0.091 = 2727 dmg (16% HP)
         type: 'frontal',
         range: 250,
         description: 'Deadly vine embrace on the frontline',
@@ -275,7 +295,7 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 20,
         telegraphTime: 3.0,
-        damage: 600,
+        damage: 300,          // 5000×3.0×0.091 = 1364 dmg each (8% HP)
         type: 'aoe_all',
         description: 'Charming aura damages and confuses all',
       },
@@ -295,26 +315,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 6: Leviathan (Zone Abysses)
+  // Target: ~2min | 90% team alive
   // ═══════════════════════════════════════════════════════
   {
     id: 'leviathan',
     name: 'Leviathan',
     index: 5,
-    hp: 131_100_000,  // +15%
-    atk: 7200,
-    def: 72,
-    regenPct: 1.71,
+    hp: 120_000_000,        // 120M
+    atk: 5500,
+    def: 25,
+    regenPct: 0.7,
     spd: 42,
     enrageTimer: 300,
     enrageHpPercent: 0,
-    autoAttackPower: 140,
+    autoAttackPower: 180,   // Auto: 5500×1.8×0.091 = 900 dmg (5.3% HP)
     patterns: [
       {
         name: 'Raz-de-Maree',
         weight: 3,
         cooldown: 7,
         telegraphTime: 2.5,
-        damage: 1300,
+        damage: 350,          // 5500×3.5×0.091 = 1750 dmg each (10.3% HP)
         type: 'aoe_all',
         description: 'Massive tidal wave hits everyone',
       },
@@ -323,7 +344,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 5,
         telegraphTime: 1.5,
-        damage: 1800,
+        damage: 650,          // 5500×6.5×0.091 = 3252 dmg (19.1% HP)
         type: 'frontal',
         range: 200,
         description: 'Devastating bite on frontline',
@@ -333,7 +354,7 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 15,
         telegraphTime: 2.0,
-        damage: 1000,
+        damage: 500,          // 5500×5.0×0.091 = 2500 dmg (14.7% HP)
         type: 'aoe_melee',
         range: 350,
         description: 'Whirlpool drags and damages nearby characters',
@@ -354,26 +375,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 7: Sorcier Abyssal (Zone Abysses)
+  // Target: ~2.5min
   // ═══════════════════════════════════════════════════════
   {
     id: 'abyssal_sorcerer',
     name: 'Sorcier Abyssal',
     index: 6,
-    hp: 169_050_000,  // +15%
-    atk: 8400,
-    def: 60,
-    regenPct: 1.86,
+    hp: 150_000_000,        // 150M
+    atk: 6000,
+    def: 30,
+    regenPct: 0.8,
     spd: 50,
     enrageTimer: 270,
     enrageHpPercent: 0,
-    autoAttackPower: 120,
+    autoAttackPower: 190,   // Auto: 6000×1.9×0.091 = 1036 dmg (6.1% HP)
     patterns: [
       {
         name: 'Rayon Maudit',
         weight: 3,
         cooldown: 5,
         telegraphTime: 1.5,
-        damage: 1600,
+        damage: 500,          // 6000×5.0×0.091 = 2727 dmg (16% HP)
         type: 'aoe_ranged',
         range: 500,
         aoeRadius: 250,
@@ -384,7 +406,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 10,
         telegraphTime: 2.5,
-        damage: 1200,
+        damage: 450,          // 6000×4.5×0.091 = 2455 dmg (14.4% HP)
         type: 'aoe_melee',
         range: 300,
         description: 'Dark nova around the sorcerer',
@@ -394,7 +416,7 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 20,
         telegraphTime: 2.0,
-        damage: 800,
+        damage: 320,          // 6000×3.2×0.091 = 1745 dmg each (10.3% HP)
         type: 'aoe_all',
         healPercent: 3,
         description: 'Drains mana and life from all, self-heals',
@@ -415,26 +437,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 8: Titan de Fer (Zone Abysses)
+  // Target: ~3min
   // ═══════════════════════════════════════════════════════
   {
     id: 'iron_titan',
     name: 'Titan de Fer',
     index: 7,
-    hp: 230_000_000,  // +15%
-    atk: 6600,
-    def: 96,
-    regenPct: 2.0,
+    hp: 180_000_000,        // 180M
+    atk: 6500,
+    def: 30,
+    regenPct: 0.9,
     spd: 30,
     enrageTimer: 300,
     enrageHpPercent: 0,
-    autoAttackPower: 160,
+    autoAttackPower: 190,   // Auto: 6500×1.9×0.091 = 1123 dmg (6.6% HP)
     patterns: [
       {
         name: 'Poing de Fer',
         weight: 3,
         cooldown: 6,
         telegraphTime: 2.5,
-        damage: 2000,
+        damage: 700,          // 6500×7.0×0.091 = 4136 dmg (24.3% HP)
         type: 'frontal',
         range: 250,
         description: 'Massive iron fist crushing the frontline',
@@ -444,7 +467,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 12,
         telegraphTime: 3.0,
-        damage: 1400,
+        damage: 380,          // 6500×3.8×0.091 = 2247 dmg each (13.2% HP)
         type: 'aoe_all',
         description: 'Earth-shaking stomp damages everyone',
       },
@@ -455,7 +478,7 @@ export const BOSS_DEFINITIONS = [
         telegraphTime: 1.0,
         damage: 0,
         type: 'self_heal',
-        healPercent: 4,
+        healPercent: 3,
         description: 'Reinforces armor, regenerating HP',
       },
       {
@@ -474,26 +497,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 9: Hydre Venimeuse (Zone Abysses)
+  // Target: ~3.5min | Deaths accelerating
   // ═══════════════════════════════════════════════════════
   {
     id: 'venomous_hydra',
     name: 'Hydre Venimeuse',
     index: 8,
-    hp: 304_750_000,  // +15%
-    atk: 9500,
-    def: 72,
-    regenPct: 2.14,
+    hp: 220_000_000,        // 220M
+    atk: 7000,
+    def: 35,
+    regenPct: 1.0,
     spd: 55,
     enrageTimer: 240,
     enrageHpPercent: 25,
-    autoAttackPower: 140,
+    autoAttackPower: 200,   // Auto: 7000×2.0×0.091 = 1273 dmg (7.5% HP)
     patterns: [
       {
         name: 'Triple Morsure',
         weight: 3,
         cooldown: 4,
         telegraphTime: 1.5,
-        damage: 1600,
+        damage: 650,          // 7000×6.5×0.091 = 4136 dmg (24.3% HP)
         type: 'frontal',
         range: 200,
         description: 'Three heads bite the frontline simultaneously',
@@ -503,7 +527,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 8,
         telegraphTime: 2.0,
-        damage: 1200,
+        damage: 500,          // 7000×5.0×0.091 = 3182 dmg (18.7% HP)
         type: 'aoe_ranged',
         range: 450,
         aoeRadius: 200,
@@ -516,7 +540,7 @@ export const BOSS_DEFINITIONS = [
         telegraphTime: 1.0,
         damage: 0,
         type: 'self_heal',
-        healPercent: 5,
+        healPercent: 3,
         description: 'Severed heads regrow, healing the hydra',
       },
       {
@@ -524,7 +548,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 15,
         telegraphTime: 2.5,
-        damage: 900,
+        damage: 350,          // 7000×3.5×0.091 = 2227 dmg each (13.1% HP)
         type: 'aoe_all',
         description: 'Toxic cloud poisons all characters',
       },
@@ -534,26 +558,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 10: Roi des Profondeurs (Zone Abysses — final)
+  // Target: ~4min | ~75% alive
   // ═══════════════════════════════════════════════════════
   {
     id: 'deep_king',
     name: 'Roi des Profondeurs',
     index: 9,
-    hp: 396_750_000,  // +15%
-    atk: 10500,
-    def: 84,
-    regenPct: 2.29,
+    hp: 270_000_000,        // 270M
+    atk: 7500,
+    def: 35,
+    regenPct: 1.1,
     spd: 50,
     enrageTimer: 300,
     enrageHpPercent: 20,
-    autoAttackPower: 150,
+    autoAttackPower: 200,   // Auto: 7500×2.0×0.091 = 1364 dmg (8% HP)
     patterns: [
       {
         name: 'Jugement Abyssal',
         weight: 3,
         cooldown: 6,
         telegraphTime: 2.0,
-        damage: 2200,
+        damage: 700,          // 7500×7.0×0.091 = 4773 dmg (28.1% HP)
         type: 'frontal',
         range: 300,
         description: 'Royal judgment cleaves the frontline',
@@ -563,7 +588,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 10,
         telegraphTime: 3.0,
-        damage: 1500,
+        damage: 380,          // 7500×3.8×0.091 = 2591 dmg each (15.2% HP)
         type: 'aoe_all',
         description: 'Dark tide engulfs all characters',
       },
@@ -572,7 +597,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 8,
         telegraphTime: 1.8,
-        damage: 1800,
+        damage: 550,          // 7500×5.5×0.091 = 3750 dmg (22.1% HP)
         type: 'aoe_ranged',
         range: 500,
         aoeRadius: 200,
@@ -594,28 +619,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 11: Spectre Originel (Zone Neant)
-  //   Exponential jump from boss 10 (345M → 750M)
-  //   Mechanic: anti-heal phases + spectral multi-hits
+  // Target: ~5min+ | Deaths start piling up
   // ═══════════════════════════════════════════════════════
   {
     id: 'origin_specter',
     name: 'Spectre Originel',
     index: 10,
-    hp: 5_000_000_000,  // 5B (drastically increased)
-    atk: 17000,
-    def: 100,
-    regenPct: 2.5,
+    hp: 330_000_000,        // 330M
+    atk: 8000,
+    def: 40,
+    regenPct: 1.2,
     spd: 60,
     enrageTimer: 270,
     enrageHpPercent: 20,
-    autoAttackPower: 160,
+    autoAttackPower: 210,   // Auto: 8000×2.1×0.091 = 1527 dmg (9% HP)
     patterns: [
       {
         name: 'Toucher Spectral',
         weight: 3,
         cooldown: 4,
         telegraphTime: 1.2,
-        damage: 2200,
+        damage: 650,          // 8000×6.5×0.091 = 4727 dmg (27.8% HP)
         type: 'frontal',
         range: 250,
         description: 'Ghostly touch phasing through defenses',
@@ -625,7 +649,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 12,
         telegraphTime: 2.5,
-        damage: 1600,
+        damage: 400,          // 8000×4.0×0.091 = 2909 dmg each (17.1% HP)
         type: 'aoe_all',
         description: 'Wail from the void damaging all characters',
       },
@@ -636,7 +660,7 @@ export const BOSS_DEFINITIONS = [
         telegraphTime: 1.0,
         damage: 0,
         type: 'self_heal',
-        healPercent: 3,
+        healPercent: 2,
         description: 'Phases out of reality, regenerating',
       },
       {
@@ -674,7 +698,7 @@ export const BOSS_DEFINITIONS = [
             weight: 2,
             cooldown: 14,
             telegraphTime: 2.0,
-            damage: 800,
+            damage: 350,
             type: 'anti_heal',
             antiHealPct: 40,
             duration: 8,
@@ -695,7 +719,7 @@ export const BOSS_DEFINITIONS = [
             weight: 3,
             cooldown: 10,
             telegraphTime: 2.0,
-            damage: 1200,
+            damage: 400,
             type: 'multi_hit',
             hitCount: 5,
             description: 'Void eruption strikes 5 random targets',
@@ -708,27 +732,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 12: Archonte du Vide (Zone Neant)
-  //   Mechanic: gradual anti-heal + void multi-hits + regen amplification
+  // Target: ~6min+ | Serious attrition
   // ═══════════════════════════════════════════════════════
   {
     id: 'void_archon',
     name: 'Archonte du Vide',
     index: 11,
-    hp: 12_000_000_000,  // 12B (drastically increased)
-    atk: 23000,
-    def: 120,
-    regenPct: 2.6,
+    hp: 400_000_000,        // 400M
+    atk: 8500,
+    def: 40,
+    regenPct: 1.3,
     spd: 58,
     enrageTimer: 300,
     enrageHpPercent: 15,
-    autoAttackPower: 180,
+    autoAttackPower: 220,   // Auto: 8500×2.2×0.091 = 1701 dmg (10% HP)
     patterns: [
       {
         name: 'Decret du Vide',
         weight: 3,
         cooldown: 5,
         telegraphTime: 2.0,
-        damage: 3000,
+        damage: 750,          // 8500×7.5×0.091 = 5795 dmg (34.1% HP)
         type: 'frontal',
         range: 300,
         description: 'Void decree obliterates the frontline',
@@ -738,7 +762,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 15,
         telegraphTime: 3.0,
-        damage: 2400,
+        damage: 450,          // 8500×4.5×0.091 = 3477 dmg each (20.5% HP)
         type: 'aoe_all',
         description: 'Creates a singularity damaging everyone',
       },
@@ -747,7 +771,7 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 10,
         telegraphTime: 2.0,
-        damage: 2600,
+        damage: 600,          // 8500×6.0×0.091 = 4636 dmg (27.3% HP)
         type: 'aoe_ranged',
         range: 500,
         aoeRadius: 300,
@@ -788,7 +812,7 @@ export const BOSS_DEFINITIONS = [
             weight: 2,
             cooldown: 8,
             telegraphTime: 1.8,
-            damage: 1800,
+            damage: 500,
             type: 'multi_hit',
             hitCount: 4,
             description: 'Void shards strike 4 random targets',
@@ -808,7 +832,7 @@ export const BOSS_DEFINITIONS = [
             weight: 3,
             cooldown: 12,
             telegraphTime: 2.5,
-            damage: 3500,
+            damage: 500,
             type: 'aoe_all',
             description: 'Void storm ravages all characters',
           },
@@ -820,27 +844,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 13: Dragon du Chaos (Zone Neant)
-  //   Mechanic: chaos multi-hits + execute on low HP targets
+  // Target: ~7min+ | Heavy deaths
   // ═══════════════════════════════════════════════════════
   {
     id: 'chaos_dragon',
     name: 'Dragon du Chaos',
     index: 12,
-    hp: 28_000_000_000,  // 28B (drastically increased)
-    atk: 33000,
-    def: 115,
-    regenPct: 2.8,
+    hp: 500_000_000,        // 500M
+    atk: 9000,
+    def: 45,
+    regenPct: 1.5,
     spd: 66,
     enrageTimer: 240,
     enrageHpPercent: 25,
-    autoAttackPower: 200,
+    autoAttackPower: 230,   // Auto: 9000×2.3×0.091 = 1882 dmg (11.1% HP)
     patterns: [
       {
         name: 'Souffle du Chaos',
         weight: 3,
         cooldown: 6,
         telegraphTime: 2.0,
-        damage: 3500,
+        damage: 800,          // 9000×8.0×0.091 = 6545 dmg (38.5% HP)
         type: 'frontal',
         range: 350,
         description: 'Chaotic breath incinerates the frontline',
@@ -850,7 +874,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 8,
         telegraphTime: 2.5,
-        damage: 2200,
+        damage: 450,          // 9000×4.5×0.091 = 3682 dmg each (21.7% HP)
         type: 'aoe_all',
         description: 'Wing buffet sends shockwaves at everyone',
       },
@@ -859,7 +883,7 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 15,
         telegraphTime: 3.0,
-        damage: 3800,
+        damage: 650,          // 9000×6.5×0.091 = 5318 dmg (31.3% HP)
         type: 'aoe_ranged',
         range: 500,
         aoeRadius: 250,
@@ -900,7 +924,7 @@ export const BOSS_DEFINITIONS = [
             weight: 2,
             cooldown: 9,
             telegraphTime: 2.0,
-            damage: 2000,
+            damage: 500,
             type: 'multi_hit',
             hitCount: 6,
             description: 'Chaos barrage strikes 6 random targets',
@@ -920,7 +944,7 @@ export const BOSS_DEFINITIONS = [
             weight: 2,
             cooldown: 12,
             telegraphTime: 2.5,
-            damage: 8000,
+            damage: 800,
             type: 'execute',
             description: 'Executes the weakest character with massive damage',
           },
@@ -932,27 +956,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 14: Monarque Eternel (Zone Neant)
-  //   Mechanic: time warp speed + anti-heal aura + execute
+  // Target: ~8min+ | Wipe probable
   // ═══════════════════════════════════════════════════════
   {
     id: 'eternal_monarch',
     name: 'Monarque Eternel',
     index: 13,
-    hp: 60_000_000_000,  // 60B (drastically increased)
-    atk: 48000,
-    def: 140,
-    regenPct: 3.0,
+    hp: 650_000_000,        // 650M
+    atk: 10000,
+    def: 45,
+    regenPct: 1.8,
     spd: 62,
     enrageTimer: 300,
     enrageHpPercent: 15,
-    autoAttackPower: 220,
+    autoAttackPower: 240,   // Auto: 10000×2.4×0.091 = 2182 dmg (12.8% HP)
     patterns: [
       {
         name: 'Decret Eternel',
         weight: 3,
         cooldown: 5,
         telegraphTime: 2.0,
-        damage: 4500,
+        damage: 850,          // 10000×8.5×0.091 = 7727 dmg (45.5% HP)
         type: 'frontal',
         range: 300,
         description: 'The Monarch\'s eternal decree crushes the frontline',
@@ -962,7 +986,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 12,
         telegraphTime: 3.0,
-        damage: 3500,
+        damage: 500,          // 10000×5.0×0.091 = 4545 dmg each (26.7% HP)
         type: 'aoe_all',
         description: 'Time storm warping reality around all characters',
       },
@@ -971,7 +995,7 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 10,
         telegraphTime: 2.0,
-        damage: 4000,
+        damage: 700,          // 10000×7.0×0.091 = 6364 dmg (37.4% HP)
         type: 'aoe_ranged',
         range: 500,
         aoeRadius: 250,
@@ -1012,7 +1036,7 @@ export const BOSS_DEFINITIONS = [
             weight: 2,
             cooldown: 16,
             telegraphTime: 2.5,
-            damage: 2000,
+            damage: 500,
             type: 'anti_heal',
             antiHealPct: 50,
             duration: 12,
@@ -1033,7 +1057,7 @@ export const BOSS_DEFINITIONS = [
             weight: 3,
             cooldown: 10,
             telegraphTime: 2.0,
-            damage: 12000,
+            damage: 900,
             type: 'execute',
             description: 'Eternal judgment on the weakest — near certain death',
           },
@@ -1045,27 +1069,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 15: Sung Il-Hwan (Zone Neant — Final Boss)
-  //   3 phases: progressive anti-heal, multi-hit army, total annihilation
+  // Target: ~10min+ | Designed to wipe most groups
   // ═══════════════════════════════════════════════════════
   {
     id: 'sung_ilhwan',
     name: 'Sung Il-Hwan',
     index: 14,
-    hp: 150_000_000_000, // 150B (drastically increased)
-    atk: 75000,
-    def: 130,
-    regenPct: 3.0,
+    hp: 900_000_000,        // 900M — wall boss
+    atk: 11000,
+    def: 50,
+    regenPct: 2.0,
     spd: 75,
     enrageTimer: 360,
     enrageHpPercent: 20,
-    autoAttackPower: 250,
+    autoAttackPower: 250,   // Auto: 11000×2.5×0.091 = 2500 dmg (14.7% HP)
     patterns: [
       {
         name: 'Frappe du Chasseur Supreme',
         weight: 3,
         cooldown: 4,
         telegraphTime: 1.5,
-        damage: 5000,
+        damage: 600,          // 11000×6.0×0.091 = 6000 dmg (35.3% HP)
         type: 'frontal',
         range: 300,
         description: 'The supreme hunter\'s devastating strike',
@@ -1075,7 +1099,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 15,
         telegraphTime: 3.0,
-        damage: 4000,
+        damage: 350,          // 11000×3.5×0.091 = 3500 dmg each (20.6% HP)
         type: 'aoe_all',
         description: 'Monarch domain damages all living characters',
       },
@@ -1094,9 +1118,9 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 25,
         telegraphTime: 3.0,
-        damage: 5000,
+        damage: 500,          // 11000×5.0×0.091 = 5000 dmg each (29.4% HP)
         type: 'aoe_all',
-        healPercent: 5,
+        healPercent: 3,
         description: 'Drains all life force, healing significantly',
       },
       {
@@ -1124,7 +1148,7 @@ export const BOSS_DEFINITIONS = [
             weight: 2,
             cooldown: 10,
             telegraphTime: 1.8,
-            damage: 2500,
+            damage: 500,
             type: 'multi_hit',
             hitCount: 8,
             description: 'Empowered shadow strikes 8 random targets',
@@ -1144,7 +1168,7 @@ export const BOSS_DEFINITIONS = [
             weight: 2,
             cooldown: 18,
             telegraphTime: 3.0,
-            damage: 3000,
+            damage: 400,
             type: 'anti_heal',
             antiHealPct: 70,
             duration: 15,
@@ -1166,7 +1190,7 @@ export const BOSS_DEFINITIONS = [
             weight: 3,
             cooldown: 8,
             telegraphTime: 2.0,
-            damage: 3000,
+            damage: 500,
             type: 'multi_hit',
             hitCount: 12,
             description: 'Total annihilation — 12 devastating strikes',

@@ -797,8 +797,15 @@ export class ExpeditionEngine {
       }
     }
 
-    // Initialize passive engine for this combat (set bonuses, weapon passives)
+    // Reset ALL characters to base stats before applying combat bonuses
+    // This prevents infinite stacking of set bonuses, synergies, and buffs across fights
     const combatCharacters = this.characters.filter(c => c.alive && !this.restingCharacters.has(c.id));
+    for (const char of combatCharacters) {
+      char.resetForCombat();
+    }
+
+    // Initialize passive engine for this combat (set bonuses, weapon passives)
+    // Now applies cleanly to reset base stats (no stacking)
     this.combatEngine.initCombat(combatCharacters);
 
     // Reset formation for combat (arc around boss if present)

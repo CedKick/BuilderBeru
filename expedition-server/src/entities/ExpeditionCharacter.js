@@ -26,18 +26,19 @@ export class ExpeditionCharacter {
     const isMage = hunterDef.class === 'mage';
 
     if (precomputedStats && precomputedStats.hp) {
-      // Use pre-computed full stats from client (scaled for expedition)
-      this.maxHp = Math.floor(precomputedStats.hp * STAT_SCALE.hp);
+      // Use pre-computed full stats from client AS-IS (already includes artifacts, talents, etc.)
+      // No STAT_SCALE — these stats are final from the colosseum system
+      this.maxHp = Math.floor(precomputedStats.hp);
       this.hp = this.maxHp;
-      this.maxMana = Math.floor((precomputedStats.mana || 100) * STAT_SCALE.hp);
+      this.maxMana = Math.floor(precomputedStats.mana || 100);
       this.mana = this.maxMana;
-      this.atk = Math.floor(precomputedStats.atk * STAT_SCALE.atk);
-      this.def = Math.floor(precomputedStats.def * STAT_SCALE.def);
-      this.spd = Math.floor(precomputedStats.spd * STAT_SCALE.spd);
-      this.crit = precomputedStats.crit * STAT_SCALE.crit;
-      this.res = precomputedStats.res * STAT_SCALE.res;
+      this.atk = Math.floor(precomputedStats.atk);
+      this.def = Math.floor(precomputedStats.def);
+      this.spd = Math.floor(precomputedStats.spd);
+      this.crit = precomputedStats.crit;
+      this.res = precomputedStats.res;
       // Mages scale on INT — use client INT if provided, fallback to ATK
-      this.int = isMage ? Math.floor((precomputedStats.int || precomputedStats.atk) * STAT_SCALE.atk) : 0;
+      this.int = isMage ? Math.floor(precomputedStats.int || precomputedStats.atk) : 0;
     } else {
       // Fallback: simple computation from level + stars only
       const raw = hunterStatsAtLevel(hunterId, hunterLevel, hunterStars);
@@ -53,6 +54,16 @@ export class ExpeditionCharacter {
       // Mages fallback: use ATK as INT (no artifact data)
       this.int = isMage ? this.atk : 0;
     }
+
+    // Store original base stats (NEVER modified — used for reset between combats)
+    this._baseMaxHp = this.maxHp;
+    this._baseAtk = this.atk;
+    this._baseDef = this.def;
+    this._baseSpd = this.spd;
+    this._baseCrit = this.crit;
+    this._baseRes = this.res;
+    this._baseInt = this.int;
+    this._baseMaxMana = this.maxMana;
 
     // Skills (with runtime cooldown tracking)
     this.skills = hunterDef.skills.map(s => ({
@@ -235,6 +246,37 @@ export class ExpeditionCharacter {
     this.mana = Math.floor(this.maxMana * 0.3);
   }
 
+  // ── Reset for next combat (prevents infinite stat stacking) ──
+
+  resetForCombat() {
+    // Restore ALL stats to original base values
+    this.maxHp = this._baseMaxHp;
+    this.atk = this._baseAtk;
+    this.def = this._baseDef;
+    this.spd = this._baseSpd;
+    this.crit = this._baseCrit;
+    this.res = this._baseRes;
+    this.int = this._baseInt;
+    this.maxMana = this._baseMaxMana;
+
+    // Keep current HP/mana ratios (campfire already healed)
+    this.hp = Math.min(this.hp, this.maxHp);
+    this.mana = Math.min(this.mana, this.maxMana);
+
+    // Clear ALL combat buffs and debuffs
+    this.buffs = [];
+    this.debuffs = [];
+
+    // Reset skill cooldowns
+    for (const skill of this.skills) {
+      skill.cooldown = 0;
+    }
+
+    // Reset combat-specific tracking
+    this.diedThisCombat = false;
+    this.attackTimer = 0;
+  }
+
   // ── Movement ────────────────────────────────────────────
 
   getEffectiveAtk() {
@@ -288,6 +330,14 @@ export class ExpeditionCharacter {
       skills: this.skills.map(s => ({ name: s.name, cooldown: s.cooldown, cdMax: s.cdMax })),
       stats: { ...this.stats },
       debuffs: this.debuffs,
+      _baseMaxHp: this._baseMaxHp,
+      _baseAtk: this._baseAtk,
+      _baseDef: this._baseDef,
+      _baseSpd: this._baseSpd,
+      _baseCrit: this._baseCrit,
+      _baseRes: this._baseRes,
+      _baseInt: this._baseInt,
+      _baseMaxMana: this._baseMaxMana,
       expeditionGear: this.expeditionGear,
       weaponEffects: this.weaponEffects,
       scWeaponPassive: this.scWeaponPassive,
@@ -318,6 +368,15 @@ export class ExpeditionCharacter {
     }
     char.stats = data.stats || { damageDealt: 0, healingDone: 0, kills: 0, deaths: 0 };
     char.debuffs = data.debuffs || [];
+    // Restore base stats for combat reset (fallback to current stats if missing from old snapshots)
+    char._baseMaxHp = data._baseMaxHp || data.maxHp;
+    char._baseAtk = data._baseAtk || data.atk;
+    char._baseDef = data._baseDef || data.def;
+    char._baseSpd = data._baseSpd || data.spd;
+    char._baseCrit = data._baseCrit || data.crit;
+    char._baseRes = data._baseRes || (data.res ?? 0);
+    char._baseInt = data._baseInt || 0;
+    char._baseMaxMana = data._baseMaxMana || data.maxMana;
     char.expeditionGear = data.expeditionGear || null;
     char.weaponEffects = data.weaponEffects || [];
     char.scWeaponPassive = data.scWeaponPassive || null;

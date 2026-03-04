@@ -40,8 +40,8 @@ export class Mob {
 
   takeDamage(amount) {
     if (!this.alive) return 0;
-    const reduction = COMBAT.DEF_CONSTANT / (COMBAT.DEF_CONSTANT + this.def);
-    const finalDamage = Math.floor(amount * reduction);
+    // DEF is already applied in CombatEngine2D.calculateDamage() — do NOT apply again here
+    const finalDamage = Math.floor(amount);
     this.hp = Math.max(0, this.hp - finalDamage);
     if (this.hp <= 0) {
       this.alive = false;

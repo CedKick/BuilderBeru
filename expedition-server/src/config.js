@@ -17,8 +17,8 @@ export const EXPEDITION = {
   MAX_CHARACTERS: 100,      // Total hunters across all players (up to ~16 players × 6)
   HUNTERS_PER_PLAYER: 6,
   MAX_DURATION_HOURS: 12,       // 19h -> 7h next day = 12h max
-  LAUNCH_HOUR: 19,              // 19h Paris daily
-  END_HOUR: 7,                  // 7h next day (hard stop after 12h)
+  LAUNCH_HOUR: 22,              // TEMP: 22h Paris for tonight's test (normally 19h)
+  END_HOUR: 7,                  // 7h next day (hard stop)
   END_MINUTE: 0,
   REGISTRATION_OPEN_HOUR: 12,   // Opens at 12h05 (after end + cleanup)
   REGISTRATION_OPEN_MINUTE: 5,
@@ -84,7 +84,7 @@ export const COMBAT = {
 
 // ─── Campfire ─────────────────────────────────────────────
 export const CAMPFIRE = {
-  DURATION_SEC: 45,
+  DURATION_SEC: 25,
   HP_REGEN_PERCENT: 30,       // 20 -> 30% HP regen at campfire
   MANA_REGEN_PERCENT: 80,     // 50 -> 80% mana regen at campfire
   HEALER_REZ_PER_COMBAT: 1,
