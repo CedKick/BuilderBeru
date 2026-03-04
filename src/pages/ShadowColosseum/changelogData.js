@@ -20,7 +20,7 @@ export const CHANGELOG = [
       {
         category: 'balance',
         items: [
-          'Nerf Katana du Neant : bleed 2% → 0.8%, hemorrhage 25% → 10%',
+          'Nerf Katana V : DoT 3% → 1.5%/stack, max stacks 10 → 7, buff chance 30% → 18%',
           'Boss 11-15 : phases speciales avec anti-heal, enrage, invocations',
           'Boss HP et regen augmentes sur les 15 boss',
           'Passifs d\'armes SC actifs en Expedition (Sulfuras, Katana, etc.)',
