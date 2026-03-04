@@ -5,6 +5,39 @@
 
 export const CHANGELOG = [
   {
+    version: '0.9.12',
+    date: '2026-03-04',
+    title: 'Ultimate Skills — 48 Hunters + Parchemins Expedition',
+    entries: [
+      {
+        category: 'new',
+        items: [
+          'Ultimate Skill pour les 48 hunters — un 4eme skill puissant qui s\'ajoute aux 3 existants',
+          'Parchemin Ultimate : nouvel item d\'expedition qui debloque l\'ultime d\'un hunter au choix',
+          'Drop Parchemin : 5% sur les trash mobs, 100% garanti sur chaque boss (x5 rolls = ~5 par boss)',
+          'Systeme de deblocage : les ultimates ne coutent plus de points de talent, mais un parchemin',
+        ],
+      },
+      {
+        category: 'balance',
+        items: [
+          'Fighters/Assassins : ultimes offensifs (power 230-350%, buffs ATK, debuffs DEF)',
+          'Mages : ultimes INT-scaling (power 250-380%, manaScaling, debuffs DEF)',
+          'Supports : ultimes buff/heal (healTeam 28-35%, double buffs ATK+DEF, shieldTeamPctDef)',
+          'Tanks : ultimes defensifs (shieldTeamPctDef 20-25%, healSelf, buffDef)',
+          'Hunters rares : ultimes legerement plus forts pour reequilibrer vs mythiques',
+          'Megumin : GIGA EXPLOSION!!! — 10000% power, CD 10, 500 mana, stun 3 tours',
+        ],
+      },
+      {
+        category: 'content',
+        items: [
+          'Codex : section Ultimate ajoutee dans chaque fiche hunter (grise si verrouille)',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.11',
     date: '2026-03-04',
     title: 'Expedition 100 Hunters — Scaling Dynamique & Boss Massifs',

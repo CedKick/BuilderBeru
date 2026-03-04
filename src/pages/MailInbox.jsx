@@ -330,10 +330,15 @@ export default function MailInbox() {
       if (!raidData.expeditionCurrencies) raidData.expeditionCurrencies = { alkahest: 0, marteau_rouge: 0, contribution: 0 };
       if (!raidData.expeditionEssences) raidData.expeditionEssences = { guerre: 0, arcanique: 0, gardienne: 0 };
 
-      // Add items to expedition inventory
+      // Add items to expedition inventory (consumables like scrolls go to colosseum data instead)
       if (rewards.expeditionItems && Array.isArray(rewards.expeditionItems)) {
         const timestamp = Date.now();
+        let scrollCount = 0;
         rewards.expeditionItems.forEach(item => {
+          if (item.itemId === 'exp_ultimate_scroll') {
+            scrollCount++;
+            return;
+          }
           raidData.expeditionInventory.push({
             ...item,
             uid: `exp_${timestamp}_${Math.random().toString(36).slice(2, 8)}`,
@@ -342,6 +347,10 @@ export default function MailInbox() {
             locked: false,
           });
         });
+        // Ultimate scrolls → increment in colosseum save (shadow_colosseum_data)
+        if (scrollCount > 0) {
+          data.ultimateScrolls = (data.ultimateScrolls || 0) + scrollCount;
+        }
       }
 
       // Add currencies
@@ -450,10 +459,17 @@ export default function MailInbox() {
         }
 
         if (rewards.expeditionItems && rewards.expeditionItems.length > 0) {
-          message += '\n\u2694\uFE0F BUTIN EXPEDITION :\n';
-          rewards.expeditionItems.forEach(it => {
-            message += `  \u2022 ${it.itemName} (${it.rarity})\n`;
-          });
+          const scrolls = rewards.expeditionItems.filter(it => it.itemId === 'exp_ultimate_scroll');
+          const otherItems = rewards.expeditionItems.filter(it => it.itemId !== 'exp_ultimate_scroll');
+          if (scrolls.length > 0) {
+            message += `\n\uD83D\uDCDC PARCHEMINS ULTIMATE : x${scrolls.length}\n`;
+          }
+          if (otherItems.length > 0) {
+            message += '\n\u2694\uFE0F BUTIN EXPEDITION :\n';
+            otherItems.forEach(it => {
+              message += `  \u2022 ${it.itemName} (${it.rarity})\n`;
+            });
+          }
         }
 
         if (rewards.expeditionCurrencies) {

@@ -23,6 +23,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_sword_forest', dropChance: 5 },
     { itemId: 'exp_bow_forest', dropChance: 5 },
     { itemId: 'exp_mace_forest', dropChance: 5 },
+    { itemId: 'exp_ultimate_scroll', dropChance: 5 },
   ],
 
   mob_wave_tier2: [
@@ -36,6 +37,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_sword_forest', dropChance: 4 },
     { itemId: 'exp_bow_forest', dropChance: 4 },
     { itemId: 'exp_spear_crystal', dropChance: 3 },
+    { itemId: 'exp_ultimate_scroll', dropChance: 5 },
   ],
 
   mob_wave_tier3: [
@@ -51,6 +53,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_axe_abyss', dropChance: 3 },
     { itemId: 'exp_blade_shadow', dropChance: 3 },
     { itemId: 'exp_staff_shadow', dropChance: 3 },
+    { itemId: 'exp_ultimate_scroll', dropChance: 5 },
   ],
 
   mob_wave_tier4: [
@@ -67,6 +70,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_void_helm', dropChance: 1.5 },
     { itemId: 'exp_void_chest', dropChance: 1.5 },
     { itemId: 'exp_katana_void', dropChance: 0.8 },
+    { itemId: 'exp_ultimate_scroll', dropChance: 5 },
   ],
 
   // ═══════════════════════════════════════════════════════
@@ -94,6 +98,7 @@ export const LOOT_TABLES = {
     { itemId: 'set_nova_arcanique_piece', name: 'Piece: Nova Arcanique', rarity: 'epic', dropChance: 3, setId: 'nova_arcanique' },
     // Unique (legendary)
     { itemId: 'unique_oeil_monarque', name: 'Oeil du Monarque', rarity: 'legendary', dropChance: 2, uniqueId: 'oeil_monarque' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 2: Sentinelle de Pierre ── (sum ~258% → avg 12.9 drops)
@@ -121,6 +126,7 @@ export const LOOT_TABLES = {
     { itemId: 'set_fureur_titan_piece', name: 'Piece: Fureur du Titan', rarity: 'epic', dropChance: 3, setId: 'fureur_titan' },
     // Unique (legendary)
     { itemId: 'unique_coeur_pierre', name: 'Coeur de Pierre', rarity: 'legendary', dropChance: 2, uniqueId: 'coeur_pierre' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 3: Seigneur de l'Ombre ── (sum ~260% → avg 13.0 drops)
@@ -152,6 +158,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_bow_stone', name: 'Arc Petrifie', rarity: 'rare', dropChance: 12 },
     // Unique
     { itemId: 'unique_voile_seigneur', name: 'Voile du Seigneur', rarity: 'legendary', dropChance: 2, uniqueId: 'voile_seigneur' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 4: Ancien des Racines ── (sum ~279% → avg 14.0 drops)
@@ -184,6 +191,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_shadow_gloves', name: "Griffes d'Ombre", rarity: 'epic', dropChance: 12 },
     // Unique
     { itemId: 'unique_fragment_sentinelle', name: 'Fragment de Sentinelle', rarity: 'legendary', dropChance: 2, uniqueId: 'fragment_sentinelle' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 5: Reine Sylvestre ── (sum ~281% → avg 14.1 drops)
@@ -215,6 +223,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_shadow_boots', name: "Sandales d'Ombre", rarity: 'epic', dropChance: 14 },
     // Unique
     { itemId: 'unique_plume_ange_noir', name: 'Plume de l\'Ange Noir', rarity: 'legendary', dropChance: 2, uniqueId: 'plume_ange_noir' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ═══════════════════════════════════════════════════════
@@ -258,6 +267,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 3 },
     // Unique
     { itemId: 'unique_larme_foret', name: 'Larme de la Foret', rarity: 'legendary', dropChance: 2, uniqueId: 'larme_foret' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 7: Sorcier Abyssal ── (sum ~305% → avg 15.3 drops)
@@ -293,6 +303,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 3 },
     // Unique
     { itemId: 'unique_sceau_commandant', name: 'Sceau du Commandant', rarity: 'legendary', dropChance: 2, uniqueId: 'sceau_commandant' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 8: Titan de Fer ── (sum ~325% → avg 16.3 drops)
@@ -340,6 +351,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 4 },
     // Unique
     { itemId: 'unique_croc_warg', name: 'Croc du Warg', rarity: 'legendary', dropChance: 2, uniqueId: 'croc_warg' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 9: Hydre Venimeuse ── (sum ~322% → avg 16.1 drops)
@@ -385,6 +397,7 @@ export const LOOT_TABLES = {
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 5 },
     // Unique
     { itemId: 'unique_cape_fantome', name: 'Cape du Fantome', rarity: 'legendary', dropChance: 2, uniqueId: 'cape_fantome' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 10: Roi des Profondeurs ── (sum ~335% → avg 16.8 drops)
@@ -433,6 +446,7 @@ export const LOOT_TABLES = {
     { itemId: 'weapon_caladbolg', name: 'Caladbolg', rarity: 'mythique', dropChance: 2, weaponId: 'caladbolg' },
     // Unique
     { itemId: 'unique_talisman_sage', name: 'Talisman du Sage', rarity: 'legendary', dropChance: 2, uniqueId: 'talisman_sage' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ═══════════════════════════════════════════════════════
@@ -483,6 +497,7 @@ export const LOOT_TABLES = {
     { itemId: 'weapon_nidhogg', name: 'Nidhogg', rarity: 'mythique', dropChance: 3, weaponId: 'nidhogg' },
     // Unique
     { itemId: 'unique_diademe_astral', name: 'Diademe Astral', rarity: 'legendary', dropChance: 2, uniqueId: 'diademe_astral' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 12: Archonte du Vide ── (sum ~365% → avg 18.3 drops)
@@ -530,6 +545,7 @@ export const LOOT_TABLES = {
     { itemId: 'weapon_yggdrasil', name: 'Yggdrasil', rarity: 'mythique', dropChance: 3, weaponId: 'yggdrasil' },
     // Unique
     { itemId: 'unique_sceaux_abysse', name: 'Sceaux de l\'Abysse', rarity: 'legendary', dropChance: 2, uniqueId: 'sceaux_abysse' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 13: Dragon du Chaos ── (sum ~380% → avg 19.0 drops)
@@ -575,6 +591,7 @@ export const LOOT_TABLES = {
     { itemId: 'weapon_mjolnir', name: 'Mjolnir', rarity: 'mythique', dropChance: 3, weaponId: 'mjolnir' },
     // Unique
     { itemId: 'unique_gantelets_colosse', name: 'Gantelets du Colosse', rarity: 'legendary', dropChance: 2, uniqueId: 'gantelets_colosse' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 14: Monarque Eternel ── (sum ~400% → avg 20.0 drops)
@@ -621,6 +638,7 @@ export const LOOT_TABLES = {
     { itemId: 'weapon_gungnir', name: 'Gungnir', rarity: 'mythique', dropChance: 4, weaponId: 'gungnir' },
     // Unique
     { itemId: 'unique_couronne_vainqueur', name: 'Couronne du Vainqueur', rarity: 'legendary', dropChance: 2, uniqueId: 'couronne_vainqueur' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
   // ── Boss 15: Sung Il-Hwan ── (sum ~420% → avg 21.0 drops)
@@ -670,6 +688,7 @@ export const LOOT_TABLES = {
     // Uniques (legendary)
     { itemId: 'unique_bottes_explorateur', name: 'Bottes de l\'Explorateur', rarity: 'legendary', dropChance: 3, uniqueId: 'bottes_explorateur' },
     { itemId: 'unique_relique_temps', name: 'Relique du Temps', rarity: 'legendary', dropChance: 2, uniqueId: 'relique_temps' },
+    { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 };
 

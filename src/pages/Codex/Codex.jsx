@@ -10,6 +10,7 @@ import { CHIBIS, SPRITES, ELEMENTS, RARITY, STAT_META, getSkillManaCost } from '
 import { EXPEDITION_SETS, EXPEDITION_WEAPONS, EXPEDITION_UNIQUES, EXPEDITION_ESSENCES, ESSENCE_EXCHANGE, EXPEDITION_BOSSES } from '../ShadowColosseum/expeditionCodexData';
 import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars, getAwakeningPassives } from '../ShadowColosseum/raidData';
 import { CHANGELOG, CHANGELOG_CATEGORIES } from '../ShadowColosseum/changelogData';
+import { ULTIMATE_SKILLS } from '../ShadowColosseum/talentSkillData';
 import { ALL_MECHANICS_TABS } from '../ShadowColosseum/codexMechanicsData';
 
 // ═══════════════════════════════════════════════════════════════
@@ -613,6 +614,48 @@ export default function Codex() {
                             })}
                           </div>
                         </div>
+
+                        {/* Ultimate Skill */}
+                        {(() => {
+                          const ultiData = ULTIMATE_SKILLS[f.id] || ULTIMATE_SKILLS[f.id?.replace('_skin', '')];
+                          if (!ultiData) return null;
+                          const coloSave = (() => { try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'); } catch { return {}; } })();
+                          const isUnlocked = !!coloSave.ultimateSkills?.[f.id];
+                          return (
+                            <div className="mb-4">
+                              <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Ultimate</div>
+                              <div className={`p-2.5 rounded-lg border transition-all ${
+                                isUnlocked
+                                  ? 'bg-blue-500/10 border-blue-500/30'
+                                  : 'bg-gray-800/20 border-gray-700/20 opacity-50'
+                              }`}>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[11px] font-bold text-blue-300">{ultiData.name}</span>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {ultiData.power > 0 && <span className="text-[10px] text-orange-400 font-bold">POW {ultiData.power}</span>}
+                                    <span className="text-[10px] text-gray-500">CD {ultiData.cdMax}</span>
+                                    <span className="text-[10px] text-indigo-400">{'\uD83D\uDD2E'}{ultiData.manaCost}</span>
+                                  </div>
+                                </div>
+                                <div className="text-[10px] text-gray-400 mt-1">{ultiData.desc}</div>
+                                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                  {ultiData.shieldTeamPctDef > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400">Shield {Math.round(ultiData.shieldTeamPctDef * 100)}% DEF</span>}
+                                  {ultiData.healSelf > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">Soin {ultiData.healSelf}%</span>}
+                                  {ultiData.healTeam > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400">Soin Equipe {ultiData.healTeam}%</span>}
+                                  {ultiData.buffAtk > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">ATK +{ultiData.buffAtk}%</span>}
+                                  {ultiData.buffDef > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400">DEF +{ultiData.buffDef}%</span>}
+                                  {ultiData.debuffDef > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">DEF ennemi -{ultiData.debuffDef}%</span>}
+                                  {ultiData.poison > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-lime-500/15 text-lime-400">Poison {ultiData.poison}/t ({ultiData.poisonDur}t)</span>}
+                                  {ultiData.antiHeal > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400">Anti-Soin {ultiData.antiHeal}%</span>}
+                                  {ultiData.manaScaling > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-400">Mana x{ultiData.manaScaling}</span>}
+                                  {ultiData.selfDamage > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-500/15 text-yellow-400">Auto-DMG {ultiData.selfDamage}%</span>}
+                                  {ultiData.manaRestore > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-400">+{ultiData.manaRestore}% Mana</span>}
+                                </div>
+                                {!isUnlocked && <div className="text-[9px] text-gray-500 mt-1.5 italic">Verrouille — Obtenir un Parchemin Ultimate en Expedition</div>}
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* Hunter Passive */}
                         {f.type === 'hunter' && passive && f.passiveDesc && (() => {

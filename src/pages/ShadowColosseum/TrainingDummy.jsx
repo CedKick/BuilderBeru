@@ -445,9 +445,10 @@ export default function TrainingDummy() {
       const upgraded = applySkillUpgrades(baseSk, skillTreeData[i] || 0);
       return { ...upgraded, cd: 0, manaCost: Math.floor(getSkillManaCost(upgraded, mana) * manaCostMult) };
     });
-    // Ultimate skill (4th slot)
-    if (coloData.ultimateSkills?.[entityId] && ULTIMATE_SKILLS[entityId]) {
-      const ult = ULTIMATE_SKILLS[entityId];
+    // Ultimate skill (4th slot) — skin aliases fallback to base hunter
+    const ultiKey = ULTIMATE_SKILLS[entityId] ? entityId : entityId.replace('_skin', '');
+    if (coloData.ultimateSkills?.[entityId] && ULTIMATE_SKILLS[ultiKey]) {
+      const ult = ULTIMATE_SKILLS[ultiKey];
       skills.push({ ...ult, cd: 0, manaCost: Math.floor(ult.manaCost * manaCostMult), isUltimate: true });
     }
 

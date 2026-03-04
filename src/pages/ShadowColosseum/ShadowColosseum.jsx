@@ -56,7 +56,7 @@ import {
   ARC2_LOCKED_BERU_DIALOGUES, ARC2_BEBE_MACHINE_REACTIONS, GRIMOIRE_WEISS,
   buildStageEnemies,
 } from './arc2Data';
-import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL, ULTIMATE_SKILLS, ULTIMATE_SKILL_COST } from './talentSkillData';
+import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL, ULTIMATE_SKILLS } from './talentSkillData';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
 import { cloudStorage } from '../../utils/CloudStorage';
 import { isFarming, getFarmState, setFarmState, startFarm, stopFarm, calculateFarmRewards, FARMABLE_STAGES, getFarmElapsedMinutes, getPendingFarmResult, clearPendingFarmResult } from '../../utils/offlineFarm';
@@ -1520,9 +1520,10 @@ export default function ShadowColosseum() {
       const up = applySkillUpgrades(baseSk, data.skillUpgrades?.[id]?.[i] || 0);
       return { ...up, cd: 0, manaCost: Math.floor(getSkillManaCost(up, fs.mana) * manaCostMult) };
     });
-    // Ultimate skill (4th slot, added on top)
-    if (data.ultimateSkills?.[id] && ULTIMATE_SKILLS[id]) {
-      const ult = ULTIMATE_SKILLS[id];
+    // Ultimate skill (4th slot, added on top) — skin aliases fallback to base hunter
+    const ultiKey = ULTIMATE_SKILLS[id] ? id : id.replace('_skin', '');
+    if (data.ultimateSkills?.[id] && ULTIMATE_SKILLS[ultiKey]) {
+      const ult = ULTIMATE_SKILLS[ultiKey];
       skills.push({ ...ult, cd: 0, manaCost: Math.floor(ult.manaCost * manaCostMult), isUltimate: true });
     }
 
@@ -2687,10 +2688,9 @@ export default function ShadowColosseum() {
   };
   // Talent Skill spent
   const getSpentTalentSkillPts = (id) => data.talentSkills[id] ? TALENT_SKILL_COST : 0;
-  // Ultimate Skill spent
-  const getSpentUltimatePts = (id) => data.ultimateSkills?.[id] ? ULTIMATE_SKILL_COST : 0;
-  // Total spent (T1 + T2 + Skill + Ulti) — shared pool
-  const getSpentTalentPts = (id) => getSpentTalent1Pts(id) + getSpentTalent2Pts(data.talentTree2[id]) + getSpentTalentSkillPts(id) + getSpentUltimatePts(id);
+  // Ultimate Skill — no longer costs talent points (unlocked via expedition scrolls)
+  // Total spent (T1 + T2 + Skill) — shared pool
+  const getSpentTalentPts = (id) => getSpentTalent1Pts(id) + getSpentTalent2Pts(data.talentTree2[id]) + getSpentTalentSkillPts(id);
   const getAvailTalentPts = (id) => getTotalTalentPts(getChibiLevel(id).level) - getSpentTalentPts(id);
   const getTreePoints = (id, treeId) => {
     const tree = (data.talentTree[id] || {})[treeId] || {};
@@ -2816,8 +2816,14 @@ export default function ShadowColosseum() {
 
   // Ultimate Skill: equip/unequip
   const equipUltimateSkill = (id) => {
-    if (getAvailTalentPts(id) < ULTIMATE_SKILL_COST && !data.ultimateSkills?.[id]) return;
-    const newData = { ...data, ultimateSkills: { ...(data.ultimateSkills || {}), [id]: true } };
+    if (data.ultimateSkills?.[id]) return; // already unlocked
+    const scrolls = data.ultimateScrolls || 0;
+    if (scrolls < 1) return; // no scrolls
+    const newData = {
+      ...data,
+      ultimateSkills: { ...(data.ultimateSkills || {}), [id]: true },
+      ultimateScrolls: scrolls - 1,
+    };
     setData(newData);
     debouncedSaveAndSync(newData);
   };
@@ -7701,7 +7707,7 @@ export default function ShadowColosseum() {
               <div className="mt-2 px-3 py-1.5 rounded-lg bg-green-500/5 border border-green-500/20 inline-block">
                 <span className="text-sm font-bold text-green-400">{availTP}</span>
                 <span className="text-xs text-gray-400 ml-1">pts dispo</span>
-                <span className="text-small-responsive text-gray-500 ml-1">(I:{spent1} + II:{spent2}{data.talentSkills[id] ? ` + S:${TALENT_SKILL_COST}` : ''}{data.ultimateSkills?.[id] ? ` + U:${ULTIMATE_SKILL_COST}` : ''} / {totalTP})</span>
+                <span className="text-small-responsive text-gray-500 ml-1">(I:{spent1} + II:{spent2}{data.talentSkills[id] ? ` + S:${TALENT_SKILL_COST}` : ''} / {totalTP})</span>
               </div>
             </div>
 
@@ -8389,9 +8395,10 @@ export default function ShadowColosseum() {
               const skillChoices = TALENT_SKILLS[id] || [];
               const equipped = data.talentSkills[id]; // { skillIndex, replacedSlot } or undefined
               const hasEnoughPts = availTP >= TALENT_SKILL_COST || !!equipped;
-              const ultiData = ULTIMATE_SKILLS[id];
+              const ultiData = ULTIMATE_SKILLS[id] || ULTIMATE_SKILLS[id.replace('_skin', '')];
               const ultiEquipped = !!data.ultimateSkills?.[id];
-              const hasEnoughPtsUlti = availTP >= ULTIMATE_SKILL_COST || ultiEquipped;
+              const scrollCount = data.ultimateScrolls || 0;
+              const hasScrolls = scrollCount >= 1 || ultiEquipped;
 
               if (skillChoices.length === 0 && !ultiData) return (
                 <div className="text-center text-gray-500 text-xs py-8">Aucun Talent Skill disponible pour ce personnage.</div>
@@ -8402,8 +8409,11 @@ export default function ShadowColosseum() {
                   {/* ── ULTIME SECTION ── */}
                   {ultiData && (
                     <div className="mb-4 p-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
-                      <div className="text-normal-responsive text-blue-400 font-bold mb-1">ULTIME — {ULTIMATE_SKILL_COST} pts</div>
-                      <div className="text-small-responsive text-gray-400 mb-2">Un 4eme skill puissant qui s'ajoute a tes 3 skills (ne remplace rien).</div>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-normal-responsive text-blue-400 font-bold">ULTIME — 1 Parchemin</div>
+                        <div className="text-small-responsive text-gray-400">Parchemins : <span className={scrollCount > 0 ? 'text-blue-400 font-bold' : 'text-gray-500'}>{scrollCount}</span></div>
+                      </div>
+                      <div className="text-small-responsive text-gray-400 mb-2">Un 4eme skill puissant qui s'ajoute a tes 3 skills (ne remplace rien). Obtenu en Expedition.</div>
                       <div className={`p-3 rounded-xl border transition-all ${
                         ultiEquipped ? 'border-blue-400/60 bg-blue-500/10' : 'border-gray-700/30 bg-gray-800/20'
                       }`}>
@@ -8415,8 +8425,18 @@ export default function ShadowColosseum() {
                             </div>
                             <div className="text-normal-responsive text-gray-400 mt-1">{ultiData.desc}</div>
                             <div className="flex flex-wrap gap-2 mt-1.5">
-                              {ultiData.shieldTeamPctDef > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400">Shield {Math.round(ultiData.shieldTeamPctDef * 100)}% DEF</span>}
                               {ultiData.power > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">DMG {ultiData.power}%</span>}
+                              {ultiData.shieldTeamPctDef > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400">Shield {Math.round(ultiData.shieldTeamPctDef * 100)}% DEF</span>}
+                              {ultiData.healSelf > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-green-500/10 text-green-400">Soin {ultiData.healSelf}%</span>}
+                              {ultiData.healTeam > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">Soin Equipe {ultiData.healTeam}%</span>}
+                              {ultiData.buffAtk > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400">ATK +{ultiData.buffAtk}%</span>}
+                              {ultiData.buffDef > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300">DEF +{ultiData.buffDef}%</span>}
+                              {ultiData.debuffDef > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400">DEF -{ultiData.debuffDef}%</span>}
+                              {ultiData.poison > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-green-600/10 text-green-500">Poison {ultiData.poison}%</span>}
+                              {ultiData.antiHeal > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400">Anti-Soin {ultiData.antiHeal}%</span>}
+                              {ultiData.manaScaling > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400">Mana x{ultiData.manaScaling}</span>}
+                              {ultiData.selfDamage > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-red-600/10 text-red-500">Self -{ultiData.selfDamage}%</span>}
+                              {ultiData.manaRestore > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300">Mana +{ultiData.manaRestore}%</span>}
                               <span className="text-small-responsive px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">CD {ultiData.cdMax}</span>
                               <span className="text-small-responsive px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Mana {ultiData.manaCost}</span>
                             </div>
@@ -8425,7 +8445,7 @@ export default function ShadowColosseum() {
                             {!ultiEquipped && (
                               <button
                                 onClick={() => equipUltimateSkill(id)}
-                                disabled={!hasEnoughPtsUlti}
+                                disabled={!hasScrolls}
                                 className="px-3 py-1.5 rounded-lg text-normal-responsive font-bold border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 disabled:opacity-30 transition-all"
                               >
                                 Debloquer

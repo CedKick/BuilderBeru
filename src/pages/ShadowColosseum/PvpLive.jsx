@@ -906,8 +906,10 @@ export default function PvpLive() {
       const up = applySkillUpgrades(baseSk, coloData.skillUpgrades?.[id]?.[i] || 0);
       return { ...up, cd: 0, manaCost: Math.floor(getSkillManaCost(up, fs.mana) * manaCostMult) };
     });
-    if (coloData.ultimateSkills?.[id] && ULTIMATE_SKILLS[id]) {
-      const ult = ULTIMATE_SKILLS[id];
+    // Skin aliases fallback to base hunter
+    const ultiKey = ULTIMATE_SKILLS[id] ? id : id.replace('_skin', '');
+    if (coloData.ultimateSkills?.[id] && ULTIMATE_SKILLS[ultiKey]) {
+      const ult = ULTIMATE_SKILLS[ultiKey];
       skills.push({ ...ult, cd: 0, manaCost: Math.floor(ult.manaCost * manaCostMult), isUltimate: true });
     }
 

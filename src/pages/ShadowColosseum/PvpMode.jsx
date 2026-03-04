@@ -341,9 +341,10 @@ export default function PvpMode() {
       const cost = Math.floor(rawCost * (1 - (st.manaCostReduce || 0) / 100));
       return { ...upgraded, cd: 0, cdMaxMs: upgraded.cdMax * BASE_CD_MS * intelCDR, manaCost: cost };
     });
-    // Ultimate skill (4th slot)
-    if (coloData.ultimateSkills?.[id] && ULTIMATE_SKILLS[id]) {
-      const ult = ULTIMATE_SKILLS[id];
+    // Ultimate skill (4th slot) — skin aliases fallback to base hunter
+    const ultiKey = ULTIMATE_SKILLS[id] ? id : id.replace('_skin', '');
+    if (coloData.ultimateSkills?.[id] && ULTIMATE_SKILLS[ultiKey]) {
+      const ult = ULTIMATE_SKILLS[ultiKey];
       const manaCostMult = Math.max(0.5, 1 - (st.manaCostReduce || 0) / 100);
       skills.push({ ...ult, cd: 0, cdMaxMs: ult.cdMax * BASE_CD_MS * intelCDR, manaCost: Math.floor(ult.manaCost * manaCostMult), isUltimate: true });
     }

@@ -135,6 +135,11 @@ export const EXPEDITION_ITEMS = [
   { id: 'exp_alkahest', name: 'Alkahest', type: 'currency', slot: null, rarity: 'rare', binding: 'tradeable', stats: null, description: 'Permet de reroll les stats d\'artefacts' },
   { id: 'exp_marteau_rouge', name: 'Marteau Rouge', type: 'currency', slot: null, rarity: 'epic', binding: 'tradeable', stats: null, description: 'Monnaie d\'echange pour armes exclusives' },
   { id: 'exp_contribution', name: 'Points de Contribution', type: 'currency', slot: null, rarity: 'uncommon', binding: 'tradeable', stats: null, description: 'Points de contribution d\'expedition' },
+
+  // ══════════════════════════════════════════════════════
+  // CONSUMABLES
+  // ══════════════════════════════════════════════════════
+  { id: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', type: 'consumable', slot: null, rarity: 'epic', binding: 'lqr', stats: null, description: 'Debloque le skill Ultimate d\'un hunter au choix' },
 ];
 
 export function getItemById(id) {

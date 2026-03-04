@@ -5,7 +5,7 @@
 
 export const TALENT_SKILL_COST = 15;
 export const TALENT_SKILL_UNLOCK_LEVEL = 100;
-export const ULTIMATE_SKILL_COST = 20;
+// ULTIMATE_SKILL_COST removed — ultimates now unlocked via expedition scrolls
 
 // ═══════════════════════════════════════════════════════════════
 // TALENT SKILLS — 3 per character (DPS / Utility / Survivability)
@@ -355,14 +355,270 @@ export const TALENT_SKILLS = {
 // ═══════════════════════════════════════════════════════════════
 
 export const ULTIMATE_SKILLS = {
+
+  // ─── TANKS ────────────────────────────────────────────────────
   h_hwang: {
-    id: 'ult_hwang',
-    name: 'Rempart d\'Acier',
-    power: 0,
-    cdMax: 4,
-    manaCost: 90,
-    shieldTeamPctDef: 0.20,
-    isUltimate: true,
+    id: 'ult_hwang', name: 'Rempart d\'Acier', power: 0, cdMax: 4, manaCost: 90,
+    shieldTeamPctDef: 0.20, isUltimate: true,
     desc: 'Protege toute l\'equipe avec un bouclier egal a 20% de sa DEF',
   },
+  h_emma: {
+    id: 'ult_emma', name: 'Forteresse Eternelle', power: 0, cdMax: 4, manaCost: 80,
+    shieldTeamPctDef: 0.25, buffDef: 40, buffDur: 3, isUltimate: true,
+    desc: 'Erige une forteresse de feu protegeant toute l\'equipe (25% DEF shield + DEF +40%)',
+  },
+  h_seo: {
+    id: 'ult_seo', name: 'Mur de Glace Absolu', power: 0, cdMax: 4, manaCost: 80,
+    shieldTeamPctDef: 0.22, healSelf: 25, isUltimate: true,
+    desc: 'Mur de glace impenetrable (22% DEF shield + auto-soin 25%)',
+  },
+  h_harper: {
+    id: 'ult_harper', name: 'Bastion des Tenebres', power: 0, cdMax: 4, manaCost: 80,
+    shieldTeamPctDef: 0.25, buffDef: 35, buffDur: 3, isUltimate: true,
+    desc: 'Invoque les ombres pour proteger l\'equipe (25% DEF shield + DEF +35%)',
+  },
+  h_son: {
+    id: 'ult_son', name: 'Endurance Titanesque', power: 0, cdMax: 5, manaCost: 75,
+    shieldTeamPctDef: 0.20, healSelf: 30, buffDef: 30, buffDur: 2, isUltimate: true,
+    desc: 'Puise dans sa resilience pour se soigner et proteger (20% DEF shield + soin 30% + DEF +30%)',
+  },
+
+  // ─── FIGHTERS ─────────────────────────────────────────────────
+  h_stark: {
+    id: 'ult_stark', name: 'Volcanique Garde', power: 0, cdMax: 4, manaCost: 80,
+    buffDef: 80, buffDur: 3, healSelf: 20, isUltimate: true,
+    desc: 'Se couvre de lave durcie (DEF +80% pendant 3 tours + soin 20%)',
+  },
+  h_fern: {
+    id: 'ult_fern', name: 'Annihilation Totale', power: 280, cdMax: 4, manaCost: 85,
+    debuffDef: 25, debuffDur: 2, isUltimate: true,
+    desc: 'Magie destructrice pure qui brise les defenses (280% DMG + DEF -25%)',
+  },
+  h_esil: {
+    id: 'ult_esil', name: 'Lance du Phenix', power: 250, cdMax: 4, manaCost: 75,
+    healSelf: 15, isUltimate: true,
+    desc: 'Charge enflammee qui regenere (250% DMG + soin 15%)',
+  },
+  h_yuqi: {
+    id: 'ult_yuqi', name: 'Poing Celeste', power: 240, cdMax: 4, manaCost: 70,
+    buffAtk: 30, buffDur: 2, isUltimate: true,
+    desc: 'Frappe divine qui decuple la puissance (240% DMG + ATK +30%)',
+  },
+  h_chae_in: {
+    id: 'ult_chae_in', name: 'Etoile Filante', power: 260, cdMax: 4, manaCost: 85,
+    buffAtk: 25, buffDur: 2, isUltimate: true,
+    desc: 'Enchainement celeste a vitesse supersonique (260% DMG + ATK +25%)',
+  },
+  h_shuhua: {
+    id: 'ult_shuhua', name: 'Tsunami', power: 250, cdMax: 4, manaCost: 80,
+    debuffDef: 20, debuffDur: 2, isUltimate: true,
+    desc: 'Vague deferlante qui emporte tout (250% DMG + DEF -20%)',
+  },
+  h_silverbaek: {
+    id: 'ult_silverbaek', name: 'Metamorphose Supreme', power: 270, cdMax: 5, manaCost: 90,
+    buffAtk: 35, buffDur: 3, isUltimate: true,
+    desc: 'Transformation bestiale complete (270% DMG + ATK +35% pendant 3 tours)',
+  },
+  h_lim: {
+    id: 'ult_lim', name: 'Devastation Sombre', power: 240, cdMax: 4, manaCost: 75,
+    debuffDef: 30, debuffDur: 2, isUltimate: true,
+    desc: 'Coup devastateur qui pulverise les defenses (240% DMG + DEF -30%)',
+  },
+  h_mikasa: {
+    id: 'ult_mikasa', name: 'Ackerman Assault', power: 280, cdMax: 4, manaCost: 85,
+    buffAtk: 20, buffDur: 2, isUltimate: true,
+    desc: 'Enchainement Ackerman a pleine puissance (280% DMG + ATK +20%)',
+  },
+  h_sukuna: {
+    id: 'ult_sukuna', name: 'Domain Expansion', power: 350, cdMax: 5, manaCost: 100,
+    selfDamage: 10, isUltimate: true,
+    desc: 'Malevolent Shrine etendu — degats colossaux (350% DMG, -10% PV)',
+  },
+  h_guts: {
+    id: 'ult_guts', name: 'Eclipse', power: 320, cdMax: 5, manaCost: 90,
+    selfDamage: 15, buffAtk: 30, buffDur: 2, isUltimate: true,
+    desc: 'Unleash total du Berserker Armor (320% DMG + ATK +30%, -15% PV)',
+  },
+  h_saber: {
+    id: 'ult_saber', name: 'Excalibur Morgan', power: 300, cdMax: 5, manaCost: 95,
+    debuffDef: 20, debuffDur: 2, isUltimate: true,
+    desc: 'L\'Excalibur corrompue, puissance destructrice absolue (300% DMG + DEF -20%)',
+  },
+  h_2b: {
+    id: 'ult_2b', name: 'Mode A — Execution', power: 290, cdMax: 4, manaCost: 85,
+    debuffDef: 25, debuffDur: 2, isUltimate: true,
+    desc: 'Protocole d\'execution YoRHa (290% DMG + DEF -25%)',
+  },
+  h_a2: {
+    id: 'ult_a2', name: 'Rage Mode', power: 300, cdMax: 4, manaCost: 80,
+    selfDamage: 12, buffAtk: 25, buffDur: 2, isUltimate: true,
+    desc: 'Mode rage activee — puissance maximale (300% DMG + ATK +25%, -12% PV)',
+  },
+
+  // ─── ASSASSINS ────────────────────────────────────────────────
+  h_kanae: {
+    id: 'ult_kanae', name: 'Danse du Crepuscule', power: 270, cdMax: 4, manaCost: 80,
+    buffAtk: 30, buffDur: 2, isUltimate: true,
+    desc: 'Danse mortelle a la vitesse de l\'eclair (270% DMG + ATK +30%)',
+  },
+  h_ilhwan: {
+    id: 'ult_ilhwan', name: 'Ombre Absolue', power: 280, cdMax: 4, manaCost: 85,
+    debuffDef: 20, debuffDur: 2, isUltimate: true,
+    desc: 'Frappe depuis les tenebres les plus profondes (280% DMG + DEF -20%)',
+  },
+  h_minnie: {
+    id: 'ult_minnie', name: 'Lame Fantome', power: 260, cdMax: 4, manaCost: 80,
+    debuffDef: 25, debuffDur: 2, isUltimate: true,
+    desc: 'Lame invisible qui transperce toute defense (260% DMG + DEF -25%)',
+  },
+  h_sian: {
+    id: 'ult_sian', name: 'Fureur Sans Fin', power: 250, cdMax: 4, manaCost: 75,
+    buffAtk: 40, buffDur: 3, isUltimate: true,
+    desc: 'Rage croissante qui ne s\'arrete jamais (250% DMG + ATK +40% pendant 3 tours)',
+  },
+  h_anna: {
+    id: 'ult_anna', name: 'Blizzard de Fleches', power: 250, cdMax: 4, manaCost: 75,
+    debuffDef: 20, debuffDur: 2, isUltimate: true,
+    desc: 'Tempete de fleches glaciales (250% DMG + DEF -20%)',
+  },
+  h_han_song: {
+    id: 'ult_han_song', name: 'Tempete Eclair', power: 260, cdMax: 4, manaCost: 80,
+    buffAtk: 25, buffDur: 2, isUltimate: true,
+    desc: 'Enchainement surhumain de coups (260% DMG + ATK +25%)',
+  },
+  h_kang: {
+    id: 'ult_kang', name: 'Assassinat Ultime', power: 270, cdMax: 4, manaCost: 80,
+    poison: 20, poisonDur: 3, isUltimate: true,
+    desc: 'Frappe empoisonnee mortelle (270% DMG + poison 20% pendant 3 tours)',
+  },
+  h_seorin: {
+    id: 'ult_seorin', name: 'Tir Glacial Mortel', power: 240, cdMax: 4, manaCost: 65,
+    debuffDef: 25, debuffDur: 2, isUltimate: true,
+    desc: 'Fleche de glace qui gele et brise les defenses (240% DMG + DEF -25%)',
+  },
+  h_nam: {
+    id: 'ult_nam', name: 'Volee Mortelle', power: 230, cdMax: 4, manaCost: 60,
+    buffAtk: 30, buffDur: 2, isUltimate: true,
+    desc: 'Pluie de fleches empoisonnees (230% DMG + ATK +30%)',
+  },
+  h_kaneki: {
+    id: 'ult_kaneki', name: 'Centipede Complet', power: 320, cdMax: 5, manaCost: 85,
+    selfDamage: 20, buffAtk: 40, buffDur: 2, isUltimate: true,
+    desc: 'Transformation Centipede complete — puissance monstrueuse (320% DMG + ATK +40%, -20% PV)',
+  },
+  h_a9: {
+    id: 'ult_a9', name: 'Programme Z000: Termination', power: 290, cdMax: 4, manaCost: 80,
+    antiHeal: 50, isUltimate: true,
+    desc: 'Protocole d\'execution final (290% DMG + anti-soin 50%)',
+  },
+  h_daijin: {
+    id: 'ult_daijin', name: 'Dimension Feline', power: 260, cdMax: 4, manaCost: 70,
+    buffAtk: 25, buffDur: 2, isUltimate: true,
+    desc: 'Bond entre les dimensions pour frapper (260% DMG + ATK +25%)',
+  },
+
+  // ─── MAGES ────────────────────────────────────────────────────
+  h_choi: {
+    id: 'ult_choi', name: 'Inferno Supreme', power: 280, cdMax: 4, manaCost: 90,
+    debuffDef: 25, debuffDur: 2, isUltimate: true,
+    desc: 'Invocation d\'un inferno devastateur (280% DMG + DEF -25%)',
+  },
+  h_yoo: {
+    id: 'ult_yoo', name: 'Nova Solaire', power: 270, cdMax: 4, manaCost: 85,
+    debuffDef: 20, debuffDur: 2, isUltimate: true,
+    desc: 'Explosion solaire brulante (270% DMG + DEF -20%)',
+  },
+  h_song: {
+    id: 'ult_song', name: 'Pyrotechnie Supreme', power: 260, cdMax: 4, manaCost: 75,
+    debuffDef: 20, debuffDur: 2, isUltimate: true,
+    desc: 'Feu d\'artifice destructeur (260% DMG + DEF -20%)',
+  },
+  h_megumin: {
+    id: 'ult_megumin', name: 'GIGA EXPLOSION!!!', power: 10000, cdMax: 10, manaCost: 500,
+    manaThreshold: 0.95, selfDamage: 25, selfStunTurns: 3, isUltimate: true,
+    desc: 'L\'explosion ULTIME ! 10000% mais s\'inflige 25% PV et stun 3 tours. Requiert 95% mana.',
+  },
+  h_frieren: {
+    id: 'ult_frieren', name: 'Magie Ancestrale', power: 300, cdMax: 5, manaCost: 100,
+    debuffDef: 30, debuffDur: 2, isUltimate: true,
+    desc: 'Sort oublie des temps anciens (300% DMG + DEF -30%)',
+  },
+  h_alicia: {
+    id: 'ult_alicia', name: 'Tempete de Givre', power: 280, cdMax: 4, manaCost: 90,
+    debuffDef: 20, debuffDur: 2, isUltimate: true,
+    desc: 'Tempete de cristaux de glace tranchants (280% DMG + DEF -20%)',
+  },
+  h_charlotte: {
+    id: 'ult_charlotte', name: 'Malediction Eternelle', power: 250, cdMax: 4, manaCost: 80,
+    poison: 25, poisonDur: 3, debuffDef: 15, debuffDur: 2, isUltimate: true,
+    desc: 'Malediction ancienne qui corrompt et affaiblit (250% DMG + poison 25% 3t + DEF -15%)',
+  },
+  h_lee_bora: {
+    id: 'ult_lee_bora', name: 'Eclipse Sombre', power: 260, cdMax: 4, manaCost: 80,
+    debuffDef: 30, debuffDur: 3, isUltimate: true,
+    desc: 'Eclipse magique qui erode les defenses (260% DMG + DEF -30% pendant 3 tours)',
+  },
+  h_kurisu: {
+    id: 'ult_kurisu', name: 'Convergence Temporelle', power: 0, cdMax: 4, manaCost: 80,
+    manaScaling: 12, consumeHalfMana: true, debuffDef: 20, debuffDur: 2, isUltimate: true,
+    desc: 'Concentre l\'energie temporelle — mana restante x12 = puissance ! (50% mana + DEF -20%)',
+  },
+  h_gojo: {
+    id: 'ult_gojo', name: 'Murasaki', power: 380, cdMax: 6, manaCost: 120,
+    debuffDef: 25, debuffDur: 2, isUltimate: true,
+    desc: 'Hollow Purple ultime — pouvoir de destruction imaginaire (380% DMG + DEF -25%)',
+  },
+
+  // ─── SUPPORTS ─────────────────────────────────────────────────
+  h_reed: {
+    id: 'ult_reed', name: 'Infusion de Feu Sacre', power: 0, cdMax: 4, manaCost: 85,
+    buffAtk: 50, buffDef: 40, buffDur: 3, isUltimate: true,
+    desc: 'Infuse l\'equipe de feu sacre (ATK +50% + DEF +40% pendant 3 tours)',
+  },
+  h_gina: {
+    id: 'ult_gina', name: 'Benediction des Flammes', power: 0, cdMax: 5, manaCost: 70,
+    healTeam: 30, buffDef: 30, buffDur: 2, isUltimate: true,
+    desc: 'Benediction ardente qui soigne et protege (soin equipe 30% + DEF +30%)',
+  },
+  h_meri: {
+    id: 'ult_meri', name: 'Tsunami Reparateur', power: 0, cdMax: 4, manaCost: 90,
+    healTeam: 35, buffAtk: 30, buffDur: 2, isUltimate: true,
+    desc: 'Vague de soin massive et renforcement (soin equipe 35% + ATK +30%)',
+  },
+  h_meilin: {
+    id: 'ult_meilin', name: 'Source de Vie Supreme', power: 0, cdMax: 5, manaCost: 80,
+    healTeam: 35, manaRestore: 10, isUltimate: true,
+    desc: 'Source de vie pure (soin equipe 35% + restaure 10% mana)',
+  },
+  h_lee_johee: {
+    id: 'ult_lee_johee', name: 'Lumiere Salvatrice', power: 0, cdMax: 5, manaCost: 65,
+    healTeam: 30, buffDef: 25, buffDur: 2, isUltimate: true,
+    desc: 'Lumiere divine qui guerit et protege (soin equipe 30% + DEF +25%)',
+  },
+  h_isla: {
+    id: 'ult_isla', name: 'Ombre Protectrice', power: 0, cdMax: 5, manaCost: 65,
+    healTeam: 28, buffDef: 30, buffDur: 2, isUltimate: true,
+    desc: 'Les ombres soignent et protegent (soin equipe 28% + DEF +30%)',
+  },
+  h_mayuri: {
+    id: 'ult_mayuri', name: 'Tutturu Supreme', power: 0, cdMax: 5, manaCost: 100,
+    healTeam: 30, buffAtk: 40, buffDef: 30, buffDur: 3, isUltimate: true,
+    desc: 'Tutturu~ ! Soin et mega-buff pour toute l\'equipe (soin 30% + ATK +40% + DEF +30%)',
+  },
+  h_pascal: {
+    id: 'ult_pascal', name: 'Protocole Omega', power: 0, cdMax: 5, manaCost: 90,
+    shieldTeamPctDef: 0.25, healTeam: 20, isUltimate: true,
+    desc: 'Protocole de protection ultime (25% DEF shield + soin equipe 20%)',
+  },
+  h_pod042: {
+    id: 'ult_pod042', name: 'Programme S999: Aegis', power: 0, cdMax: 5, manaCost: 80,
+    shieldTeamPctDef: 0.20, buffDef: 30, buffDur: 2, isUltimate: true,
+    desc: 'Programme de defense avancee (20% DEF shield + DEF +30%)',
+  },
+
+  // ─── KURISU SKIN (alias: uses same ultimate as Kurisu) ────────
+  // h_kurisu_skin shares h_kurisu ultimate (handled in code)
+
+  // ─── KANEKI SKIN (alias: uses same ultimate as Kaneki) ────────
+  // h_kaneki_skin shares h_kaneki ultimate (handled in code)
 };
