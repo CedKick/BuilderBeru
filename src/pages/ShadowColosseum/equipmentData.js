@@ -1270,7 +1270,7 @@ export function computeEquipILevel(equippedArtifacts, weaponId, weaponAwakening 
 export const ROLE_WEIGHTS = {
   dps:     { atk_pct: 3, atk_flat: 2, crit_dmg: 3, crit_rate: 2.5, spd_flat: 2, hp_pct: 0.5, hp_flat: 0.3, def_pct: 0.5, def_flat: 0.3, res_flat: 0.3, int_flat: 0.3, int_pct: 0.3 },
   mage:    { int_pct: 3, int_flat: 2.5, crit_dmg: 3, crit_rate: 2.5, spd_flat: 2, atk_pct: 0.5, atk_flat: 0.3, hp_pct: 0.5, hp_flat: 0.3, def_pct: 0.5, def_flat: 0.3, res_flat: 0.3 },
-  support: { spd_flat: 3, hp_pct: 2, hp_flat: 1.5, atk_pct: 1.5, atk_flat: 1, crit_dmg: 1, crit_rate: 1, def_pct: 1.5, def_flat: 1, res_flat: 1.5, int_flat: 0.3, int_pct: 0.3 },
+  support: { int_pct: 3, int_flat: 2.5, spd_flat: 3, hp_pct: 2, hp_flat: 1.5, def_pct: 1.5, def_flat: 1, res_flat: 1.5, crit_rate: 1, crit_dmg: 0.5, atk_pct: 0.3, atk_flat: 0.3 },
   tank:    { def_pct: 3, def_flat: 2.5, hp_pct: 3, hp_flat: 2, res_flat: 2, spd_flat: 1.5, atk_pct: 0.5, atk_flat: 0.5, crit_dmg: 0.5, crit_rate: 0.5, int_flat: 0.3, int_pct: 0.3 },
 };
 

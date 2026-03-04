@@ -82,9 +82,9 @@ export const CLASS_IDEAL_STATS = {
     badSubs: ['crit_dmg', 'atk_pct', 'atk_flat'],
   },
   support: {
-    mainStats: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_rate', bottes: 'spd_flat', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
-    goodSubs: ['hp_pct', 'spd_flat', 'res_flat', 'def_pct', 'hp_flat'],
-    badSubs: ['crit_dmg', 'atk_flat'],
+    mainStats: { casque: 'hp_pct', plastron: 'int_pct', gants: 'crit_rate', bottes: 'spd_flat', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
+    goodSubs: ['int_pct', 'int_flat', 'hp_pct', 'spd_flat', 'res_flat', 'def_pct'],
+    badSubs: ['crit_dmg', 'atk_flat', 'atk_pct'],
   },
 };
 
@@ -92,7 +92,7 @@ export const STAT_COLOR_MAP = {
   fighter:  { green: ['atk_flat', 'atk_pct', 'crit_dmg', 'crit_rate', 'spd_flat'], gray: ['int_flat', 'int_pct', 'hp_flat', 'res_flat'] },
   assassin: { green: ['atk_flat', 'atk_pct', 'crit_dmg', 'crit_rate', 'spd_flat'], gray: ['int_flat', 'int_pct', 'hp_flat', 'res_flat'] },
   mage:     { green: ['int_flat', 'int_pct', 'crit_dmg', 'crit_rate', 'spd_flat'], gray: ['atk_flat', 'atk_pct', 'hp_flat', 'res_flat'] },
-  support:  { green: ['atk_flat', 'atk_pct', 'crit_dmg', 'crit_rate', 'spd_flat'], gray: ['int_flat', 'int_pct'] },
+  support:  { green: ['int_flat', 'int_pct', 'hp_pct', 'spd_flat', 'res_flat', 'def_pct'], gray: ['atk_flat', 'atk_pct', 'crit_dmg'] },
   tank:     { green: ['hp_flat', 'hp_pct', 'def_flat', 'def_pct', 'res_flat'], gray: ['atk_flat', 'crit_dmg', 'int_flat', 'int_pct'] },
 };
 
