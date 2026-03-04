@@ -981,11 +981,11 @@ export default function TrainingDummy() {
               });
             }
           } else {
-            fighter.passiveState.katanaVState.nextDmgMult = 6;
+            fighter.passiveState.katanaVState.nextDmgMult = 3;
             if (fLog) {
               fLog.buffActivations.push({
                 name: 'Katana V - Puissance Divine',
-                value: 'x6 DMG prochain coup',
+                value: 'x3 DMG prochain coup',
               });
             }
           }
@@ -1553,14 +1553,14 @@ export default function TrainingDummy() {
       if (Math.random() < KATANA_V_BUFF_CHANCE) {
         const roll = Math.random();
         if (roll < 0.33) {
-          fighter.passiveState.katanaVState.allStatBuff += 10;
-          log.push({ text: `  ├─ Katana V "Benediction": +10% stats ! (total: +${fighter.passiveState.katanaVState.allStatBuff}%)`, type: 'buff', id: Date.now() + 0.74 });
+          fighter.passiveState.katanaVState.allStatBuff += 5;
+          log.push({ text: `  ├─ Katana V "Benediction": +5% stats ! (total: +${fighter.passiveState.katanaVState.allStatBuff}%)`, type: 'buff', id: Date.now() + 0.74 });
         } else if (roll < 0.66) {
           fighter.passiveState.katanaVState.shield = true;
           log.push({ text: `  ├─ Katana V "Bouclier Divin" activé !`, type: 'buff', id: Date.now() + 0.75 });
         } else {
-          fighter.passiveState.katanaVState.nextDmgMult = 6;
-          log.push({ text: `  ├─ Katana V "Puissance x6" activée !`, type: 'buff', id: Date.now() + 0.76 });
+          fighter.passiveState.katanaVState.nextDmgMult = 3;
+          log.push({ text: `  ├─ Katana V "Puissance x3" activée !`, type: 'buff', id: Date.now() + 0.76 });
         }
       }
     }

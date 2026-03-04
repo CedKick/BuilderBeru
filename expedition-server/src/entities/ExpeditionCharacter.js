@@ -81,6 +81,7 @@ export class ExpeditionCharacter {
     // Expedition gear (loaded from inventory, used by PassiveEngine)
     this.expeditionGear = null;  // { sets: { setId: count }, weaponId: string|null }
     this.weaponEffects = [];     // Effects from equipped regular weapon
+    this.scWeaponPassive = null; // SC weapon passive ID (sulfuras_fury, katana_v_chaos, etc.)
 
     // Auto-attack timer
     this.attackTimer = 0;
@@ -123,6 +124,11 @@ export class ExpeditionCharacter {
 
   heal(amount) {
     if (!this.alive) return 0;
+    // Anti-heal debuff reduces healing (from boss phases/patterns)
+    const antiHeal = this.getDebuffValue('anti_heal');
+    if (antiHeal > 0) {
+      amount = Math.floor(amount * Math.max(0, 1 - Math.min(antiHeal, 100) / 100));
+    }
     const before = this.hp;
     this.hp = Math.min(this.maxHp, this.hp + amount);
     return this.hp - before;
@@ -278,6 +284,7 @@ export class ExpeditionCharacter {
       debuffs: this.debuffs,
       expeditionGear: this.expeditionGear,
       weaponEffects: this.weaponEffects,
+      scWeaponPassive: this.scWeaponPassive,
     };
   }
 
@@ -307,6 +314,7 @@ export class ExpeditionCharacter {
     char.debuffs = data.debuffs || [];
     char.expeditionGear = data.expeditionGear || null;
     char.weaponEffects = data.weaponEffects || [];
+    char.scWeaponPassive = data.scWeaponPassive || null;
     return char;
   }
 }

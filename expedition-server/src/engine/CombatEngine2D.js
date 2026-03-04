@@ -504,6 +504,20 @@ export class CombatEngine2D {
   tickBoss(boss, characters, mobs, dt) {
     if (!boss.alive) return;
 
+    // Passive HP regen (configured per boss in bossDefinitions.regenPct)
+    if (boss.regenPct > 0 && boss.hp < boss.maxHp) {
+      boss.hp = Math.min(boss.maxHp, boss.hp + Math.floor(boss.maxHp * boss.regenPct / 100 * dt));
+    }
+
+    // Apply boss anti-heal aura from active phases
+    if (boss.antiHealPct > 0) {
+      for (const c of characters) {
+        if (c.alive) {
+          c.addDebuff('anti_heal', boss.antiHealPct, 2, `boss_aura_${boss.id}`);
+        }
+      }
+    }
+
     // Boss pattern system
     const patternResult = boss.update(dt);
 
@@ -685,6 +699,68 @@ export class CombatEngine2D {
             count: pattern.summon.count,
             mobType: pattern.summon.template,
           });
+        }
+        break;
+      }
+
+      // ── New pattern types (boss 11+ mechanics) ──
+
+      case 'anti_heal': {
+        // Apply anti-heal debuff to all alive characters + optional damage
+        for (const c of aliveChars) {
+          c.addDebuff('anti_heal', pattern.antiHealPct || 50, pattern.duration || 10, `boss_${boss.id}_antiheal`);
+        }
+        if (pattern.damage > 0) {
+          for (const c of aliveChars) {
+            const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
+            const { damageReduction } = this.passives.onTakeDamage(c, boss, damage, false, this.events);
+            const actualDmg = c.takeDamage(Math.max(1, damage - damageReduction));
+            this.events.push({ type: 'pattern_damage', source: boss.id, target: c.id, amount: actualDmg, pattern: pattern.name });
+            if (!c.alive) {
+              const dr = this.passives.onDeath(c, boss, this.events);
+              if (dr.preventDeath) { c.alive = true; c.hp = Math.floor(c.maxHp * dr.rezHpPercent / 100); }
+              else this.events.push({ type: 'death', characterId: c.id, killedBy: boss.id });
+            }
+          }
+        }
+        this.events.push({ type: 'boss_anti_heal', source: boss.id, pattern: pattern.name, antiHealPct: pattern.antiHealPct, duration: pattern.duration });
+        break;
+      }
+
+      case 'multi_hit': {
+        // Hit N times on random alive characters
+        const hits = pattern.hitCount || 3;
+        for (let i = 0; i < hits; i++) {
+          const alive = aliveChars.filter(c => c.alive);
+          if (alive.length === 0) break;
+          const target = alive[Math.floor(Math.random() * alive.length)];
+          const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
+          const { damageReduction } = this.passives.onTakeDamage(target, boss, damage, false, this.events);
+          const actualDmg = target.takeDamage(Math.max(1, damage - damageReduction));
+          this.events.push({ type: 'pattern_damage', source: boss.id, target: target.id, amount: actualDmg, pattern: pattern.name, hit: i + 1 });
+          if (!target.alive) {
+            const dr = this.passives.onDeath(target, boss, this.events);
+            if (dr.preventDeath) { target.alive = true; target.hp = Math.floor(target.maxHp * dr.rezHpPercent / 100); }
+            else this.events.push({ type: 'death', characterId: target.id, killedBy: boss.id });
+          }
+        }
+        break;
+      }
+
+      case 'execute': {
+        // Massive damage on the character with lowest HP%
+        const sorted = [...aliveChars].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+        const target = sorted[0];
+        if (target) {
+          const damage = this.calculateDamage(boss.atk, pattern.damage, 0);
+          const { damageReduction } = this.passives.onTakeDamage(target, boss, damage, false, this.events);
+          const actualDmg = target.takeDamage(Math.max(1, damage - damageReduction));
+          this.events.push({ type: 'pattern_damage', source: boss.id, target: target.id, amount: actualDmg, pattern: pattern.name, execute: true });
+          if (!target.alive) {
+            const dr = this.passives.onDeath(target, boss, this.events);
+            if (dr.preventDeath) { target.alive = true; target.hp = Math.floor(target.maxHp * dr.rezHpPercent / 100); }
+            else this.events.push({ type: 'death', characterId: target.id, killedBy: boss.id });
+          }
         }
         break;
       }

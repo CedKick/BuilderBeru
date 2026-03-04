@@ -3,7 +3,7 @@ import { Swords, Users, Play, Plus, Eye, Clock, Shield, Skull, Trophy, ChevronRi
 
 // ── Import real hunter data from Shadow Colosseum ──
 import { HUNTERS, RAID_SAVE_KEY, loadRaidData, getHunterPool, getHunterStars } from '../ShadowColosseum/raidData';
-import { computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses } from '../ShadowColosseum/equipmentData';
+import { computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses, WEAPONS } from '../ShadowColosseum/equipmentData';
 import { statsAtFull, mergeTalentBonuses } from '../ShadowColosseum/colosseumCore';
 import { computeTalentBonuses } from '../ShadowColosseum/talentTreeData';
 import { computeTalentBonuses2 } from '../ShadowColosseum/talentTree2Data';
@@ -299,10 +299,13 @@ export default function Expedition() {
       for (const hId of selectedHunters) {
         const fullStats = computeHunterFullStats(hId, coloData, raidData);
         const h = hunterPool[hId];
+        const wId = coloData.weapons?.[hId];
+        const weaponPassive = wId && WEAPONS[wId]?.passive ? WEAPONS[wId].passive : null;
         characterData[hId] = {
           level: fullStats?.level || 1,
           stars: typeof h === 'number' ? h : (h?.stars || 0),
           fullStats, // Pre-computed stats including artifacts/weapons/talents
+          weaponPassive, // SC weapon passive identifier (sulfuras_fury, katana_v_chaos, etc.)
         };
       }
       await api('/api/expedition/register', 'POST', {
@@ -487,6 +490,11 @@ export default function Expedition() {
 
   const isRegistrationClosed = registrationCutoff && Date.now() >= registrationCutoff.getTime();
 
+  // Compute status early (needed by recap useEffect below and by render logic)
+  const engineStatus = liveStatus?.status;
+  const dbStatus = expedition?.status;
+  const status = (engineStatus && engineStatus !== 'idle') ? engineStatus : (dbStatus || 'none');
+
   // Fetch recap data when expedition is finished or wiped
   useEffect(() => {
     if (status !== 'finished' && status !== 'wiped') { setRecapData(null); return; }
@@ -552,10 +560,6 @@ export default function Expedition() {
   // ═══════════════════════════════════════════
   // RENDER: Dashboard
   // ═══════════════════════════════════════════
-  // Engine status is "idle" when not running; prefer DB expedition status in that case
-  const engineStatus = liveStatus?.status;
-  const dbStatus = expedition?.status;
-  const status = (engineStatus && engineStatus !== 'idle') ? engineStatus : (dbStatus || 'none');
   const isActive = ['march', 'combat', 'loot_roll', 'campfire'].includes(status);
   const isRegistration = status === 'registration';
 

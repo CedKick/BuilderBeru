@@ -1208,9 +1208,9 @@ export default function PvpMode() {
           }
           if (Math.random() < KATANA_V_BUFF_CHANCE) {
             const roll = Math.random();
-            if (roll < 0.33) unit.passiveState.katanaVState.allStatBuff += 10;
+            if (roll < 0.33) unit.passiveState.katanaVState.allStatBuff += 5;
             else if (roll < 0.66) unit.passiveState.katanaVState.shield = true;
-            else unit.passiveState.katanaVState.nextDmgMult = 6;
+            else unit.passiveState.katanaVState.nextDmgMult = 3;
           }
         }
         // Gul'dan Halo Eternelle: post-attack stacking

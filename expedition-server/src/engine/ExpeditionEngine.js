@@ -139,6 +139,8 @@ export class ExpeditionEngine {
         const precomputedStats = data.fullStats || null;
         try {
           const char = new ExpeditionCharacter(entry.username, hunterId, level, stars, precomputedStats);
+          // SC weapon passive from client (sulfuras_fury, katana_v_chaos, etc.)
+          if (data.weaponPassive) char.scWeaponPassive = data.weaponPassive;
           this.characters.push(char);
         } catch (e) {
           console.warn(`[Expedition] Failed to create character ${hunterId} for ${entry.username}:`, e.message);

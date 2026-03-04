@@ -12,6 +12,7 @@ export class ExpeditionBoss {
     this.atk = definition.atk;
     this.def = definition.def;
     this.spd = definition.spd || 50;
+    this.regenPct = definition.regenPct || 0;  // Passive HP regen (% maxHP per second)
 
     // Position (starts on the right side)
     this.x = COMBAT.WORLD_WIDTH - 200;
@@ -37,6 +38,15 @@ export class ExpeditionBoss {
     this.patternTimer = 0;
     this.patternPhase = null;   // 'telegraph' | 'execute' | null
     this.globalPatternCooldown = 0;
+
+    // Phase system (boss 11+ advanced mechanics)
+    this.phases = definition.phases || [];
+    this.activePhaseIds = new Set();
+    this.baseAtk = this.atk;
+    this.baseSpd = this.spd;
+    this.baseRegenPct = this.regenPct;
+    this.baseAutoAttackInterval = COMBAT.BOSS_AUTO_ATTACK_INTERVAL;
+    this.antiHealPct = 0;  // Active anti-heal aura from phases
 
     // Debuffs
     this.debuffs = [];
@@ -72,8 +82,56 @@ export class ExpeditionBoss {
   enrage() {
     if (this.enraged) return;
     this.enraged = true;
-    this.atk = Math.floor(this.atk * 1.5);
-    this.autoAttackInterval *= 0.6;
+    this.recalcPhaseStats();
+  }
+
+  // ── Phase System ──────────────────────────────────────
+
+  updatePhases() {
+    const hpPct = this.hp / this.maxHp * 100;
+    let changed = false;
+
+    for (const phase of this.phases) {
+      if (this.activePhaseIds.has(phase.id)) continue;
+
+      let triggered = false;
+      if (phase.trigger === 'hp_below') triggered = hpPct <= phase.threshold;
+      else if (phase.trigger === 'enrage') triggered = this.enraged;
+
+      if (triggered) {
+        this.activePhaseIds.add(phase.id);
+        changed = true;
+        // Add phase-specific patterns
+        if (phase.patterns) {
+          for (const p of phase.patterns) {
+            this.patterns.push({ ...p, cooldownRemaining: 0 });
+          }
+        }
+      }
+    }
+
+    if (changed) this.recalcPhaseStats();
+  }
+
+  recalcPhaseStats() {
+    let atkMult = 1, spdMult = 1, regenMult = 1, antiHeal = 0;
+
+    for (const phase of this.phases) {
+      if (!this.activePhaseIds.has(phase.id)) continue;
+      if (phase.atkMult) atkMult *= phase.atkMult;
+      if (phase.spdMult) spdMult *= phase.spdMult;
+      if (phase.regenMult) regenMult *= phase.regenMult;
+      if (phase.antiHealPct) antiHeal = Math.max(antiHeal, phase.antiHealPct);
+    }
+
+    const enrageMult = this.enraged ? 1.5 : 1;
+    this.atk = Math.floor(this.baseAtk * enrageMult * atkMult);
+    this.spd = Math.floor(this.baseSpd * spdMult);
+    this.regenPct = this.baseRegenPct * regenMult;
+    this.antiHealPct = antiHeal;
+
+    const enrageIntervalMult = this.enraged ? 0.6 : 1;
+    this.autoAttackInterval = this.baseAutoAttackInterval * enrageIntervalMult / spdMult;
   }
 
   // ── Pattern System ──────────────────────────────────────
@@ -85,6 +143,11 @@ export class ExpeditionBoss {
     this.enrageTimer -= dt;
     if (this.enrageTimer <= 0 && !this.enraged) {
       this.enrage();
+    }
+
+    // Check phase triggers (data-driven mechanics for boss 11+)
+    if (this.phases.length > 0) {
+      this.updatePhases();
     }
 
     // Update pattern cooldowns
@@ -218,6 +281,8 @@ export class ExpeditionBoss {
       patternPhase: this.patternPhase,
       currentPatternName: this.currentPattern?.name || null,
       patternTimeLeft: this.patternPhase === 'telegraph' ? this.patternTimer : 0,
+      activePhases: [...this.activePhaseIds],
+      antiHealPct: this.antiHealPct,
     };
   }
 }

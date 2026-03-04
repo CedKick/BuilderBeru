@@ -2044,17 +2044,17 @@ export default function ShadowColosseum() {
         enemy.hp = Math.max(0, enemy.hp - dotDmg);
         if (enemy.hp <= 0) enemy.alive = false;
       }
-      // 30% chance buff roll
+      // 18% chance buff roll (nerfed from 30%)
       if (Math.random() < KATANA_V_BUFF_CHANCE) {
         const roll = Math.random();
         if (roll < 0.33) {
-          ps.katanaVState.allStatBuff += 10;
-          b.log.unshift({ msg: `${fighter.name} : Katana V Benediction +10% stats (total +${ps.katanaVState.allStatBuff}%)`, type: 'player' });
+          ps.katanaVState.allStatBuff += 5;
+          b.log.unshift({ msg: `${fighter.name} : Katana V Benediction +5% stats (total +${ps.katanaVState.allStatBuff}%)`, type: 'player' });
         } else if (roll < 0.66) {
           ps.katanaVState.shield = true;
         } else {
-          ps.katanaVState.nextDmgMult = 6;
-          b.log.unshift({ msg: `${fighter.name} : Katana V Puissance x6 prochain coup !`, type: 'player' });
+          ps.katanaVState.nextDmgMult = 3;
+          b.log.unshift({ msg: `${fighter.name} : Katana V Puissance x3 prochain coup !`, type: 'player' });
         }
       }
     }
@@ -3632,14 +3632,14 @@ export default function ShadowColosseum() {
       if (Math.random() < KATANA_V_BUFF_CHANCE) {
         const roll = Math.random();
         if (roll < 0.33) {
-          newKatanaVState.allStatBuff += 10;
-          log.push({ text: `Benediction : +10% toutes stats ! (total +${newKatanaVState.allStatBuff}%)`, type: 'buff', id: Date.now() + 0.07 });
+          newKatanaVState.allStatBuff += 5;
+          log.push({ text: `Benediction : +5% toutes stats ! (total +${newKatanaVState.allStatBuff}%)`, type: 'buff', id: Date.now() + 0.07 });
         } else if (roll < 0.66) {
           newKatanaVState.shield = true;
           log.push({ text: `Benediction : Bouclier Divin ! Prochain coup = 0 degats !`, type: 'buff', id: Date.now() + 0.07 });
         } else {
-          newKatanaVState.nextDmgMult = 6;
-          log.push({ text: `Benediction : Puissance x6 au prochain coup !`, type: 'buff', id: Date.now() + 0.07 });
+          newKatanaVState.nextDmgMult = 3;
+          log.push({ text: `Benediction : Puissance x3 au prochain coup !`, type: 'buff', id: Date.now() + 0.07 });
         }
       }
     }

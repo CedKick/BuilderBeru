@@ -1086,10 +1086,10 @@ export const KATANA_Z_STACK_PERSIST_CHANCE = 0.5; // 50% chance de rester entre 
 export const KATANA_Z_COUNTER_CHANCE = 0.5;       // 50% contre-attaque quand touche
 export const KATANA_Z_COUNTER_MULT = 2.0;         // 200% ATK du joueur
 
-// Katana V passives
-export const KATANA_V_DOT_PCT = 0.03;             // 3% maxMana (INT) du joueur par stack par tour
-export const KATANA_V_DOT_MAX_STACKS = 10;        // max 10 stacks de DoT
-export const KATANA_V_BUFF_CHANCE = 0.30;          // 30% chance de buff par coup
+// Katana V passives (nerfed: was 3%/10stacks/30% → 1.5%/7stacks/18%)
+export const KATANA_V_DOT_PCT = 0.015;            // 1.5% maxMana (INT) du joueur par stack par tour — was 3%
+export const KATANA_V_DOT_MAX_STACKS = 7;         // max 7 stacks de DoT — was 10
+export const KATANA_V_BUFF_CHANCE = 0.18;          // 18% chance de buff par coup — was 30%
 
 // Baton de Gul'dan passives — Halo Eternelle (nerfed: was 50% stun → 5%, heal 10% → 4%, SPD 200% → 80%)
 export const GULDAN_HEAL_PER_STACK = 0.02;         // +2% heal per stack (% of damage dealt) — was 10%

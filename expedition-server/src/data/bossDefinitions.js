@@ -1,4 +1,5 @@
-// ── Boss Definitions for Expedition I (Phase 1: 3 bosses) ──
+// ── Boss Definitions for Expedition I ──
+// regenPct: passive HP regen per tick (% of maxHP per second). Progressive 1%→3% boss 1→15.
 
 export const BOSS_DEFINITIONS = [
   // ═══════════════════════════════════════════════════════
@@ -8,9 +9,10 @@ export const BOSS_DEFINITIONS = [
     id: 'forest_guardian',
     name: 'Gardien de la Foret',
     index: 0,
-    hp: 16_000_000,   // buffed +33% (sets now functional)
+    hp: 18_400_000,   // +15% (weapon passives balance)
     atk: 2100,
     def: 35,
+    regenPct: 1.0,    // 1% maxHP/s
     spd: 40,
     enrageTimer: 300,     // 5 minutes
     enrageHpPercent: 0,   // No HP enrage, only timer
@@ -57,9 +59,10 @@ export const BOSS_DEFINITIONS = [
     id: 'stone_sentinel',
     name: 'Sentinelle de Pierre',
     index: 1,
-    hp: 24_000_000,   // buffed +33%
+    hp: 27_600_000,   // +15%
     atk: 2900,
     def: 46,
+    regenPct: 1.14,
     spd: 30,
     enrageTimer: 300,
     enrageHpPercent: 0,
@@ -117,9 +120,10 @@ export const BOSS_DEFINITIONS = [
     id: 'shadow_lord',
     name: 'Seigneur Ombre',
     index: 2,
-    hp: 33_000_000,   // buffed +33%
+    hp: 38_000_000,   // +15%
     atk: 4600,
     def: 40,
+    regenPct: 1.29,
     spd: 55,
     enrageTimer: 240,     // 4 minutes
     enrageHpPercent: 20,  // Enrages at 20% HP
@@ -177,9 +181,10 @@ export const BOSS_DEFINITIONS = [
     id: 'root_ancient',
     name: 'Ancien des Racines',
     index: 3,
-    hp: 46_000_000,   // buffed +33%
+    hp: 53_000_000,   // +15%
     atk: 4000,
     def: 58,
+    regenPct: 1.43,
     spd: 25,
     enrageTimer: 300,
     enrageHpPercent: 0,
@@ -235,9 +240,10 @@ export const BOSS_DEFINITIONS = [
     id: 'sylvan_queen',
     name: 'Reine Sylvestre',
     index: 4,
-    hp: 68_000_000,   // buffed +36%
+    hp: 79_000_000,   // +16%
     atk: 5800,
     def: 52,
+    regenPct: 1.57,
     spd: 50,
     enrageTimer: 270,
     enrageHpPercent: 15,
@@ -294,9 +300,10 @@ export const BOSS_DEFINITIONS = [
     id: 'leviathan',
     name: 'Leviathan',
     index: 5,
-    hp: 98_000_000,   // buffed +40%
+    hp: 114_000_000,  // +16%
     atk: 7200,
     def: 72,
+    regenPct: 1.71,
     spd: 35,
     enrageTimer: 300,
     enrageHpPercent: 0,
@@ -352,9 +359,10 @@ export const BOSS_DEFINITIONS = [
     id: 'abyssal_sorcerer',
     name: 'Sorcier Abyssal',
     index: 6,
-    hp: 126_000_000,  // buffed +40%
+    hp: 147_000_000,  // +17%
     atk: 8400,
     def: 60,
+    regenPct: 1.86,
     spd: 45,
     enrageTimer: 270,
     enrageHpPercent: 0,
@@ -412,9 +420,10 @@ export const BOSS_DEFINITIONS = [
     id: 'iron_titan',
     name: 'Titan de Fer',
     index: 7,
-    hp: 170_000_000,  // buffed +42%
+    hp: 200_000_000,  // +18%
     atk: 6600,
     def: 96,
+    regenPct: 2.0,
     spd: 20,
     enrageTimer: 300,
     enrageHpPercent: 0,
@@ -470,9 +479,10 @@ export const BOSS_DEFINITIONS = [
     id: 'venomous_hydra',
     name: 'Hydre Venimeuse',
     index: 8,
-    hp: 224_000_000,  // buffed +40%
+    hp: 265_000_000,  // +18%
     atk: 9600,
     def: 72,
+    regenPct: 2.14,
     spd: 50,
     enrageTimer: 240,
     enrageHpPercent: 25,
@@ -529,9 +539,10 @@ export const BOSS_DEFINITIONS = [
     id: 'deep_king',
     name: 'Roi des Profondeurs',
     index: 9,
-    hp: 290_000_000,  // buffed +45%
+    hp: 345_000_000,  // +19%
     atk: 11000,
     def: 84,
+    regenPct: 2.29,
     spd: 40,
     enrageTimer: 300,
     enrageHpPercent: 20,
@@ -583,25 +594,28 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 11: Spectre Originel (Zone Neant)
+  //   Exponential jump from boss 10 (345M → 750M)
+  //   Mechanic: anti-heal phases + spectral multi-hits
   // ═══════════════════════════════════════════════════════
   {
     id: 'origin_specter',
     name: 'Spectre Originel',
     index: 10,
-    hp: 450_000_000,  // buffed +80% (endgame brutal)
-    atk: 14000,
-    def: 95,
+    hp: 750_000_000,
+    atk: 17000,
+    def: 100,
+    regenPct: 2.5,
     spd: 55,
     enrageTimer: 270,
     enrageHpPercent: 20,
-    autoAttackPower: 140,
+    autoAttackPower: 160,
     patterns: [
       {
         name: 'Toucher Spectral',
         weight: 3,
         cooldown: 4,
         telegraphTime: 1.2,
-        damage: 1800,
+        damage: 2200,
         type: 'frontal',
         range: 250,
         description: 'Ghostly touch phasing through defenses',
@@ -611,7 +625,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 12,
         telegraphTime: 2.5,
-        damage: 1400,
+        damage: 1600,
         type: 'aoe_all',
         description: 'Wail from the void damaging all characters',
       },
@@ -632,8 +646,50 @@ export const BOSS_DEFINITIONS = [
         telegraphTime: 1.5,
         damage: 0,
         type: 'summon',
-        summon: { template: 'skeleton', count: 8, difficultyMult: 3.0 },
+        summon: { template: 'skeleton', count: 8, difficultyMult: 3.5 },
         description: 'Summons 8 spectral warriors',
+      },
+    ],
+    phases: [
+      {
+        id: 'specter_p1',
+        trigger: 'hp_below',
+        threshold: 70,
+        atkMult: 1.2,
+        antiHealPct: 30,
+        patterns: [
+          {
+            name: 'Drain Spectral',
+            weight: 2,
+            cooldown: 14,
+            telegraphTime: 2.0,
+            damage: 800,
+            type: 'anti_heal',
+            antiHealPct: 40,
+            duration: 8,
+            description: 'Spectral drain reduces all healing',
+          },
+        ],
+      },
+      {
+        id: 'specter_p2',
+        trigger: 'hp_below',
+        threshold: 30,
+        atkMult: 1.5,
+        spdMult: 1.3,
+        antiHealPct: 70,
+        patterns: [
+          {
+            name: 'Eruption du Neant',
+            weight: 3,
+            cooldown: 10,
+            telegraphTime: 2.0,
+            damage: 1200,
+            type: 'multi_hit',
+            hitCount: 5,
+            description: 'Void eruption strikes 5 random targets',
+          },
+        ],
       },
     ],
     lootTable: 'boss_11',
@@ -641,25 +697,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 12: Archonte du Vide (Zone Neant)
+  //   Mechanic: gradual anti-heal + void multi-hits + regen amplification
   // ═══════════════════════════════════════════════════════
   {
     id: 'void_archon',
     name: 'Archonte du Vide',
     index: 11,
-    hp: 580_000_000,  // buffed +81% (endgame brutal)
-    atk: 16000,
-    def: 115,
-    spd: 45,
+    hp: 1_400_000_000,
+    atk: 23000,
+    def: 120,
+    regenPct: 2.6,
+    spd: 50,
     enrageTimer: 300,
     enrageHpPercent: 15,
-    autoAttackPower: 160,
+    autoAttackPower: 180,
     patterns: [
       {
         name: 'Decret du Vide',
         weight: 3,
         cooldown: 5,
         telegraphTime: 2.0,
-        damage: 2500,
+        damage: 3000,
         type: 'frontal',
         range: 300,
         description: 'Void decree obliterates the frontline',
@@ -669,7 +727,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 15,
         telegraphTime: 3.0,
-        damage: 2000,
+        damage: 2400,
         type: 'aoe_all',
         description: 'Creates a singularity damaging everyone',
       },
@@ -678,7 +736,7 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 10,
         telegraphTime: 2.0,
-        damage: 2200,
+        damage: 2600,
         type: 'aoe_ranged',
         range: 500,
         aoeRadius: 300,
@@ -691,8 +749,48 @@ export const BOSS_DEFINITIONS = [
         telegraphTime: 2.0,
         damage: 0,
         type: 'summon',
-        summon: { template: 'golem', count: 4, difficultyMult: 3.5 },
+        summon: { template: 'golem', count: 4, difficultyMult: 4.0 },
         description: 'Summons 4 void sentinels',
+      },
+    ],
+    phases: [
+      {
+        id: 'archon_p1',
+        trigger: 'hp_below',
+        threshold: 65,
+        regenMult: 1.5,
+        antiHealPct: 25,
+        patterns: [
+          {
+            name: 'Eclat du Vide',
+            weight: 2,
+            cooldown: 8,
+            telegraphTime: 1.8,
+            damage: 1800,
+            type: 'multi_hit',
+            hitCount: 4,
+            description: 'Void shards strike 4 random targets',
+          },
+        ],
+      },
+      {
+        id: 'archon_p2',
+        trigger: 'hp_below',
+        threshold: 25,
+        atkMult: 2.0,
+        regenMult: 2.0,
+        antiHealPct: 60,
+        patterns: [
+          {
+            name: 'Tempete du Vide',
+            weight: 3,
+            cooldown: 12,
+            telegraphTime: 2.5,
+            damage: 3500,
+            type: 'aoe_all',
+            description: 'Void storm ravages all characters',
+          },
+        ],
       },
     ],
     lootTable: 'boss_12',
@@ -700,25 +798,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 13: Dragon du Chaos (Zone Neant)
+  //   Mechanic: chaos multi-hits + execute on low HP targets
   // ═══════════════════════════════════════════════════════
   {
     id: 'chaos_dragon',
     name: 'Dragon du Chaos',
     index: 12,
-    hp: 750_000_000,  // buffed +88% (endgame brutal)
-    atk: 20000,
-    def: 105,
+    hp: 2_500_000_000,
+    atk: 33000,
+    def: 115,
+    regenPct: 2.8,
     spd: 60,
     enrageTimer: 240,
     enrageHpPercent: 25,
-    autoAttackPower: 170,
+    autoAttackPower: 200,
     patterns: [
       {
         name: 'Souffle du Chaos',
         weight: 3,
         cooldown: 6,
         telegraphTime: 2.0,
-        damage: 2800,
+        damage: 3500,
         type: 'frontal',
         range: 350,
         description: 'Chaotic breath incinerates the frontline',
@@ -728,7 +828,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 8,
         telegraphTime: 2.5,
-        damage: 1800,
+        damage: 2200,
         type: 'aoe_all',
         description: 'Wing buffet sends shockwaves at everyone',
       },
@@ -737,7 +837,7 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 15,
         telegraphTime: 3.0,
-        damage: 3000,
+        damage: 3800,
         type: 'aoe_ranged',
         range: 500,
         aoeRadius: 250,
@@ -750,8 +850,48 @@ export const BOSS_DEFINITIONS = [
         telegraphTime: 2.0,
         damage: 0,
         type: 'summon',
-        summon: { template: 'orc', count: 6, difficultyMult: 3.5 },
+        summon: { template: 'orc', count: 6, difficultyMult: 4.0 },
         description: 'Summons 6 chaos drakelings',
+      },
+    ],
+    phases: [
+      {
+        id: 'dragon_p1',
+        trigger: 'hp_below',
+        threshold: 75,
+        atkMult: 1.3,
+        antiHealPct: 35,
+        patterns: [
+          {
+            name: 'Salve du Chaos',
+            weight: 2,
+            cooldown: 9,
+            telegraphTime: 2.0,
+            damage: 2000,
+            type: 'multi_hit',
+            hitCount: 6,
+            description: 'Chaos barrage strikes 6 random targets',
+          },
+        ],
+      },
+      {
+        id: 'dragon_p2',
+        trigger: 'hp_below',
+        threshold: 35,
+        atkMult: 1.8,
+        spdMult: 1.4,
+        antiHealPct: 60,
+        patterns: [
+          {
+            name: 'Jugement du Dragon',
+            weight: 2,
+            cooldown: 12,
+            telegraphTime: 2.5,
+            damage: 8000,
+            type: 'execute',
+            description: 'Executes the weakest character with massive damage',
+          },
+        ],
       },
     ],
     lootTable: 'boss_13',
@@ -759,25 +899,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 14: Monarque Eternel (Zone Neant)
+  //   Mechanic: time warp speed + anti-heal aura + execute
   // ═══════════════════════════════════════════════════════
   {
     id: 'eternal_monarch',
     name: 'Monarque Eternel',
     index: 13,
-    hp: 950_000_000,  // buffed +90% (endgame brutal)
-    atk: 23000,
-    def: 130,
+    hp: 4_500_000_000,
+    atk: 48000,
+    def: 140,
+    regenPct: 3.0,
     spd: 50,
     enrageTimer: 300,
     enrageHpPercent: 15,
-    autoAttackPower: 180,
+    autoAttackPower: 220,
     patterns: [
       {
         name: 'Decret Eternel',
         weight: 3,
         cooldown: 5,
         telegraphTime: 2.0,
-        damage: 3200,
+        damage: 4500,
         type: 'frontal',
         range: 300,
         description: 'The Monarch\'s eternal decree crushes the frontline',
@@ -787,7 +929,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 12,
         telegraphTime: 3.0,
-        damage: 2500,
+        damage: 3500,
         type: 'aoe_all',
         description: 'Time storm warping reality around all characters',
       },
@@ -796,7 +938,7 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 10,
         telegraphTime: 2.0,
-        damage: 2800,
+        damage: 4000,
         type: 'aoe_ranged',
         range: 500,
         aoeRadius: 250,
@@ -809,8 +951,49 @@ export const BOSS_DEFINITIONS = [
         telegraphTime: 2.5,
         damage: 0,
         type: 'summon',
-        summon: { template: 'orc', count: 8, difficultyMult: 4.0 },
+        summon: { template: 'orc', count: 8, difficultyMult: 4.5 },
         description: 'Summons 8 eternal knights',
+      },
+    ],
+    phases: [
+      {
+        id: 'monarch_p1',
+        trigger: 'hp_below',
+        threshold: 60,
+        spdMult: 1.5,
+        antiHealPct: 30,
+        patterns: [
+          {
+            name: 'Distorsion Temporelle',
+            weight: 2,
+            cooldown: 16,
+            telegraphTime: 2.5,
+            damage: 2000,
+            type: 'anti_heal',
+            antiHealPct: 50,
+            duration: 12,
+            description: 'Time distortion blocks healing for 12 seconds',
+          },
+        ],
+      },
+      {
+        id: 'monarch_p2',
+        trigger: 'hp_below',
+        threshold: 25,
+        atkMult: 2.0,
+        spdMult: 1.8,
+        antiHealPct: 75,
+        patterns: [
+          {
+            name: 'Execution Eternelle',
+            weight: 3,
+            cooldown: 10,
+            telegraphTime: 2.0,
+            damage: 12000,
+            type: 'execute',
+            description: 'Eternal judgment on the weakest — near certain death',
+          },
+        ],
       },
     ],
     lootTable: 'boss_14',
@@ -818,25 +1001,27 @@ export const BOSS_DEFINITIONS = [
 
   // ═══════════════════════════════════════════════════════
   // BOSS 15: Sung Il-Hwan (Zone Neant — Final Boss)
+  //   3 phases: progressive anti-heal, multi-hit army, total annihilation
   // ═══════════════════════════════════════════════════════
   {
     id: 'sung_ilhwan',
     name: 'Sung Il-Hwan',
     index: 14,
-    hp: 1_300_000_000, // buffed +100% (endgame — 1.3 BILLION HP)
-    atk: 28000,
-    def: 120,
+    hp: 10_000_000_000, // 10 BILLION HP
+    atk: 75000,
+    def: 130,
+    regenPct: 3.0,
     spd: 65,
     enrageTimer: 360,
     enrageHpPercent: 20,
-    autoAttackPower: 200,
+    autoAttackPower: 250,
     patterns: [
       {
         name: 'Frappe du Chasseur Supreme',
         weight: 3,
         cooldown: 4,
         telegraphTime: 1.5,
-        damage: 3500,
+        damage: 5000,
         type: 'frontal',
         range: 300,
         description: 'The supreme hunter\'s devastating strike',
@@ -846,7 +1031,7 @@ export const BOSS_DEFINITIONS = [
         weight: 2,
         cooldown: 15,
         telegraphTime: 3.0,
-        damage: 3000,
+        damage: 4000,
         type: 'aoe_all',
         description: 'Monarch domain damages all living characters',
       },
@@ -857,7 +1042,7 @@ export const BOSS_DEFINITIONS = [
         telegraphTime: 2.0,
         damage: 0,
         type: 'summon',
-        summon: { template: 'skeleton', count: 12, difficultyMult: 4.0 },
+        summon: { template: 'skeleton', count: 12, difficultyMult: 5.0 },
         description: 'Summons his legendary shadow army',
       },
       {
@@ -865,10 +1050,73 @@ export const BOSS_DEFINITIONS = [
         weight: 1,
         cooldown: 25,
         telegraphTime: 3.0,
-        damage: 4000,
+        damage: 5000,
         type: 'aoe_all',
         healPercent: 5,
         description: 'Drains all life force, healing significantly',
+      },
+    ],
+    phases: [
+      {
+        id: 'ilhwan_p1',
+        trigger: 'hp_below',
+        threshold: 80,
+        atkMult: 1.3,
+        antiHealPct: 20,
+        patterns: [
+          {
+            name: 'Ombre Renforcee',
+            weight: 2,
+            cooldown: 10,
+            telegraphTime: 1.8,
+            damage: 2500,
+            type: 'multi_hit',
+            hitCount: 8,
+            description: 'Empowered shadow strikes 8 random targets',
+          },
+        ],
+      },
+      {
+        id: 'ilhwan_p2',
+        trigger: 'hp_below',
+        threshold: 50,
+        atkMult: 1.6,
+        spdMult: 1.4,
+        antiHealPct: 50,
+        patterns: [
+          {
+            name: 'Domaine Supreme',
+            weight: 2,
+            cooldown: 18,
+            telegraphTime: 3.0,
+            damage: 3000,
+            type: 'anti_heal',
+            antiHealPct: 70,
+            duration: 15,
+            description: 'Supreme domain crushes healing for 15 seconds',
+          },
+        ],
+      },
+      {
+        id: 'ilhwan_p3',
+        trigger: 'hp_below',
+        threshold: 15,
+        atkMult: 2.5,
+        spdMult: 2.0,
+        regenMult: 3.0,
+        antiHealPct: 90,
+        patterns: [
+          {
+            name: 'Annihilation Totale',
+            weight: 3,
+            cooldown: 8,
+            telegraphTime: 2.0,
+            damage: 3000,
+            type: 'multi_hit',
+            hitCount: 12,
+            description: 'Total annihilation — 12 devastating strikes',
+          },
+        ],
       },
     ],
     lootTable: 'boss_15',

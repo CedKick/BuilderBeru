@@ -1290,12 +1290,12 @@ export default function RaidMode() {
               });
             }
           } else {
-            kvs.nextDmgMult = 6;
-            logEntries.push({ text: `${chibi.name} : Puissance x6 prochain coup !`, time: elapsed, type: 'buff', element: chibi.element, passive: 'Katana V' });
+            kvs.nextDmgMult = 3;
+            logEntries.push({ text: `${chibi.name} : Puissance x3 prochain coup !`, time: elapsed, type: 'buff', element: chibi.element, passive: 'Katana V' });
             if (cLog) {
               cLog.buffActivations.push({
                 name: 'Katana V - Puissance Divine',
-                value: 'x6 DMG prochain coup',
+                value: 'x3 DMG prochain coup',
               });
             }
           }

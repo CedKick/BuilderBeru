@@ -2,6 +2,40 @@ import { ALL_SETS } from '../data/expeditionSets.js';
 import { EXPEDITION_WEAPONS } from '../data/expeditionWeapons.js';
 import { COMBAT } from '../config.js';
 
+// ── SC Weapon Passive Constants ──
+// Mirrors client-side equipmentData.js values for the 5 SC secret weapons.
+// Keep in sync when nerfing/buffing on the client side.
+const SC_WEAPON = {
+  // Sulfuras (sulfuras_fury)
+  SULFURAS_STACK_PER_HIT: 1,
+  SULFURAS_STACK_MAX: 3,          // Each stack = +33% ATK (max +100%)
+  // Arc des Murmures (shadow_silence)
+  MURMURES_PROC_CHANCE: 0.10,     // 10% per hit to add silence stack
+  MURMURES_STACK_DURATION: 5,     // 5s per stack
+  MURMURES_MAX_STACKS: 3,        // Each = +100% ATK
+  // Katana Z (katana_z_fury)
+  KATANA_Z_ATK_PER_HIT: 5,       // +5% ATK per hit (permanent)
+  KATANA_Z_COUNTER_CHANCE: 0.50,  // 50% counter on damage taken
+  KATANA_Z_COUNTER_MULT: 2.0,    // 200% ATK counter damage
+  KATANA_Z_PERSIST_CHANCE: 0.50,  // 50% stacks survive damage
+  // Katana V (katana_v_chaos) — nerfed values
+  KATANA_V_DOT_PCT: 0.015,       // 1.5% maxMana per stack per tick
+  KATANA_V_DOT_MAX_STACKS: 7,
+  KATANA_V_BUFF_CHANCE: 0.18,    // 18% per hit
+  KATANA_V_STAT_BUFF: 5,         // +5% all stats per proc
+  KATANA_V_DMG_MULT: 3,          // x3 next hit (was x6)
+  KATANA_V_DOT_TICK_INTERVAL: 1, // DoT ticks every 1s
+  // Gul'dan (guldan_halo)
+  GULDAN_HEAL_PER_STACK: 0.02,   // +2% of damage dealt per stack
+  GULDAN_STUN_CHANCE: 0.05,      // 5% stun chance per heal stack
+  GULDAN_DEF_PER_HIT: 0.01,      // +1% DEF per hit
+  GULDAN_ATK_PER_HIT: 0.015,     // +1.5% ATK per hit
+  GULDAN_SPD_CHANCE: 0.25,       // 25% chance SPD stack
+  GULDAN_SPD_BOOST: 0.80,        // +80% SPD per stack
+  GULDAN_SPD_MAX_STACKS: 3,
+};
+const VALID_SC_PASSIVES = ['sulfuras_fury', 'shadow_silence', 'katana_z_fury', 'katana_v_chaos', 'guldan_halo'];
+
 // ── PassiveEngine ──
 // Processes set bonuses and weapon passives during expedition combat.
 // Called by CombatEngine2D at hook points (on_hit, on_kill, on_crit, etc.)
@@ -28,9 +62,24 @@ export class PassiveEngine {
       // Apply permanent 2pc stat bonuses
       this.apply2pcBonuses(char, activeSets);
 
+      // SC weapon passive (from client registration)
+      const scWp = (char.scWeaponPassive && VALID_SC_PASSIVES.includes(char.scWeaponPassive))
+        ? char.scWeaponPassive : null;
+
       this.state.set(char.id, {
         activeSets,         // [{ setId, setDef, pieces, has2pc, has4pc }]
         weaponDef,          // weapon definition or null
+        scWeaponPassive: scWp,  // SC weapon passive ID or null
+        // ── SC Weapon Runtime State ──
+        sulfurasStacks: 0,
+        shadowSilenceStacks: [],         // Array of { timer: seconds remaining }
+        katanaZStacks: 0,
+        katanaVState: scWp === 'katana_v_chaos'
+          ? { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1, dotTickTimer: 0 }
+          : null,
+        guldanState: scWp === 'guldan_halo'
+          ? { healStacks: 0, defBonus: 0, atkBonus: 0, spdStacks: 0, divinUsed: false }
+          : null,
         // ── Stacks & Counters ──
         titanFuryStacks: 0,
         titanFuryCritTimer: 0,    // Guaranteed crit timer (5s)
@@ -251,6 +300,11 @@ export class PassiveEngine {
     return s?.weaponDef?.id === weaponId;
   }
 
+  hasScWeapon(charId, passiveId) {
+    const s = this.state.get(charId);
+    return s?.scWeaponPassive === passiveId;
+  }
+
   // ═══════════════════════════════════════════════════════
   // HOOK: ON HIT (after character deals damage to enemy)
   // Returns: { bonusDamage, events[] }
@@ -421,6 +475,84 @@ export class PassiveEngine {
     // ── ARCANE RESONANCE 2pc: mana-scaling bonus +15% ──
     if (this.has2pcPassive(char.id, 'arcane_resonance')) {
       bonusDamage += Math.floor(damage * 0.15);
+    }
+
+    // ── SC WEAPON: SULFURAS — ATK boost from stacks ──
+    if (this.hasScWeapon(char.id, 'sulfuras_fury') && s.sulfurasStacks > 0) {
+      // Each stack = +33% ATK (max 3 stacks = +100%)
+      bonusDamage += Math.floor(damage * (s.sulfurasStacks / 3));
+    }
+
+    // ── SC WEAPON: ARC DES MURMURES (shadow_silence) — ATK boost from active stacks ──
+    if (this.hasScWeapon(char.id, 'shadow_silence')) {
+      const activeStacks = s.shadowSilenceStacks.length;
+      if (activeStacks > 0) {
+        bonusDamage += Math.floor(damage * activeStacks * 1.0); // +100% per stack
+      }
+      // 10% chance to add new stack
+      if (s.shadowSilenceStacks.length < SC_WEAPON.MURMURES_MAX_STACKS && Math.random() < SC_WEAPON.MURMURES_PROC_CHANCE) {
+        s.shadowSilenceStacks.push({ timer: SC_WEAPON.MURMURES_STACK_DURATION });
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'murmures_stack', message: `Murmures: +1 stack (${s.shadowSilenceStacks.length})` });
+      }
+    }
+
+    // ── SC WEAPON: KATANA Z — +5% ATK per hit (permanent) ──
+    if (this.hasScWeapon(char.id, 'katana_z_fury')) {
+      s.katanaZStacks++;
+      bonusDamage += Math.floor(damage * s.katanaZStacks * SC_WEAPON.KATANA_Z_ATK_PER_HIT / 100);
+    }
+
+    // ── SC WEAPON: KATANA V — x3 mult + allStatBuff + DoT stack + buff roll ──
+    if (this.hasScWeapon(char.id, 'katana_v_chaos') && s.katanaVState) {
+      const kvs = s.katanaVState;
+      // Apply x3 multiplier if buffed
+      if (kvs.nextDmgMult > 1) {
+        bonusDamage += Math.floor(damage * (kvs.nextDmgMult - 1));
+        kvs.nextDmgMult = 1;
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'katana_v_x3', message: 'Katana V: Puissance x3!' });
+      }
+      // Apply allStatBuff
+      if (kvs.allStatBuff > 0) {
+        bonusDamage += Math.floor(damage * kvs.allStatBuff / 100);
+      }
+      // +1 DoT stack
+      if (kvs.dots < SC_WEAPON.KATANA_V_DOT_MAX_STACKS) kvs.dots++;
+      // 18% buff roll
+      if (Math.random() < SC_WEAPON.KATANA_V_BUFF_CHANCE) {
+        const roll = Math.random();
+        if (roll < 0.33) {
+          kvs.allStatBuff += SC_WEAPON.KATANA_V_STAT_BUFF;
+          events.push({ type: 'passive_proc', charId: char.id, passive: 'katana_v_buff', message: `Katana V: +${SC_WEAPON.KATANA_V_STAT_BUFF}% stats (total +${kvs.allStatBuff}%)` });
+        } else if (roll < 0.66) {
+          kvs.shield = true;
+          events.push({ type: 'passive_proc', charId: char.id, passive: 'katana_v_shield', message: 'Katana V: Bouclier Divin!' });
+        } else {
+          kvs.nextDmgMult = SC_WEAPON.KATANA_V_DMG_MULT;
+          events.push({ type: 'passive_proc', charId: char.id, passive: 'katana_v_power', message: `Katana V: Puissance x${SC_WEAPON.KATANA_V_DMG_MULT} prochain coup!` });
+        }
+      }
+    }
+
+    // ── SC WEAPON: GUL'DAN — post-attack: heal, DEF/ATK stacking, SPD, stun ──
+    if (this.hasScWeapon(char.id, 'guldan_halo') && s.guldanState && damage > 0) {
+      const gs = s.guldanState;
+      gs.healStacks++;
+      // Heal: 2% of damage dealt per stack
+      const healAmt = Math.floor(damage * SC_WEAPON.GULDAN_HEAL_PER_STACK * gs.healStacks);
+      if (healAmt > 0 && char.alive) char.heal(healAmt);
+      // ATK & DEF permanent stacking
+      gs.defBonus += SC_WEAPON.GULDAN_DEF_PER_HIT;
+      gs.atkBonus += SC_WEAPON.GULDAN_ATK_PER_HIT;
+      // SPD stacking (max 3)
+      if (gs.spdStacks < SC_WEAPON.GULDAN_SPD_MAX_STACKS && Math.random() < SC_WEAPON.GULDAN_SPD_CHANCE) {
+        gs.spdStacks++;
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'guldan_spd', message: `Gul'dan: SPD +${gs.spdStacks}!` });
+      }
+    }
+
+    // ── SC WEAPON: SULFURAS — stack building (after damage) ──
+    if (this.hasScWeapon(char.id, 'sulfuras_fury')) {
+      s.sulfurasStacks = Math.min(SC_WEAPON.SULFURAS_STACK_MAX, s.sulfurasStacks + SC_WEAPON.SULFURAS_STACK_PER_HIT);
     }
 
     return { bonusDamage };
@@ -693,6 +825,30 @@ export class PassiveEngine {
       }
     }
 
+    // ── SC WEAPON: KATANA Z — counter-attack + stack persistence ──
+    if (this.hasScWeapon(char.id, 'katana_z_fury') && rawDamage > 0 && char.alive) {
+      // 50% counter-attack
+      if (Math.random() < SC_WEAPON.KATANA_Z_COUNTER_CHANCE && attacker) {
+        const counterDmg = Math.max(1, Math.floor(char.getOffensiveStat() * SC_WEAPON.KATANA_Z_COUNTER_MULT));
+        events.push({ type: 'passive_aoe', charId: char.id, passive: 'katana_z_counter', damage: counterDmg, radius: 0, target: attacker.id });
+      }
+      // 50% each stack survives damage
+      if (s.katanaZStacks > 0) {
+        let surviving = 0;
+        for (let i = 0; i < s.katanaZStacks; i++) {
+          if (Math.random() < SC_WEAPON.KATANA_Z_PERSIST_CHANCE) surviving++;
+        }
+        s.katanaZStacks = surviving;
+      }
+    }
+
+    // ── SC WEAPON: KATANA V — shield absorbs 1 hit ──
+    if (this.hasScWeapon(char.id, 'katana_v_chaos') && s.katanaVState?.shield && rawDamage > 0) {
+      s.katanaVState.shield = false;
+      damageReduction = rawDamage; // Full absorption
+      events.push({ type: 'passive_proc', charId: char.id, passive: 'katana_v_shield_absorb', message: 'Katana V: Bouclier Divin absorbe le coup!' });
+    }
+
     // ── SACRIFICE DU MARTYR 4pc: ally <30% HP = heal 20% (1x per ally) ──
     // (Checked in tick for all allies)
 
@@ -749,6 +905,19 @@ export class PassiveEngine {
           events.push({ type: 'passive_proc', charId, passive: 'aegis_ally_death', message: 'Aegis: Allie tombe! ATK +30%!' });
         }
       }
+    }
+
+    // ── SC WEAPON: GUL'DAN — resurrect first dead ally (once per combat) ──
+    // When any ally dies, a Gul'dan holder can rez them
+    for (const [charId, cs] of this.state) {
+      if (charId === char.id) continue;
+      if (cs.scWeaponPassive !== 'guldan_halo' || !cs.guldanState) continue;
+      if (cs.guldanState.divinUsed) continue;
+      const holder = this.findChar(charId);
+      if (!holder || !holder.alive) continue;
+      cs.guldanState.divinUsed = true;
+      events.push({ type: 'passive_proc', charId, passive: 'guldan_rez', message: `Gul'dan Halo Divin: Resurrection de ${char.name}!` });
+      return { preventDeath: true, rezHpPercent: 50, bonusDef: 0, bonusDefDuration: 0 };
     }
 
     return { preventDeath: false };
@@ -1026,6 +1195,53 @@ export class PassiveEngine {
         s.siphonEmergencyActive = false;
         char._lifesteal = Math.max(0, (char._lifesteal || 0) - 100);
       }
+
+      // ── SC WEAPON: SHADOW SILENCE — decay stack timers ──
+      if (this.hasScWeapon(char.id, 'shadow_silence') && s.shadowSilenceStacks.length > 0) {
+        for (let i = s.shadowSilenceStacks.length - 1; i >= 0; i--) {
+          s.shadowSilenceStacks[i].timer -= dt;
+          if (s.shadowSilenceStacks[i].timer <= 0) {
+            s.shadowSilenceStacks.splice(i, 1);
+          }
+        }
+      }
+
+      // ── SC WEAPON: KATANA V — DoT tick damage on enemies ──
+      if (this.hasScWeapon(char.id, 'katana_v_chaos') && s.katanaVState && s.katanaVState.dots > 0) {
+        s.katanaVState.dotTickTimer += dt;
+        if (s.katanaVState.dotTickTimer >= SC_WEAPON.KATANA_V_DOT_TICK_INTERVAL) {
+          s.katanaVState.dotTickTimer = 0;
+          // DoT damages closest alive enemy
+          const target = enemies.find(e => e.alive);
+          if (target) {
+            const baseStat = char.maxMana || char.getOffensiveStat();
+            const dotDmg = Math.max(1, Math.floor(baseStat * SC_WEAPON.KATANA_V_DOT_PCT * s.katanaVState.dots));
+            if (target.takeDamage) {
+              target.takeDamage(dotDmg);
+            } else {
+              target.hp = Math.max(0, target.hp - dotDmg);
+              if (target.hp <= 0) target.alive = false;
+            }
+            char.stats.damageDealt += dotDmg;
+          }
+        }
+      }
+
+      // ── SC WEAPON: GUL'DAN — stun chance per tick (based on heal stacks) ──
+      if (this.hasScWeapon(char.id, 'guldan_halo') && s.guldanState && s.guldanState.healStacks > 0) {
+        // Small stun chance per tick based on stacks
+        for (let i = 0; i < Math.min(s.guldanState.healStacks, 5); i++) {
+          if (Math.random() < SC_WEAPON.GULDAN_STUN_CHANCE * dt) {
+            // Apply stun to boss
+            const target = enemies.find(e => e.alive);
+            if (target && !target._stunImmune) {
+              target.addDebuff?.('stun', 0, 0.5, 'guldan_stun');
+              events.push({ type: 'passive_proc', charId: char.id, passive: 'guldan_stun', message: `Gul'dan: Stun!` });
+            }
+            break; // Max 1 stun per tick
+          }
+        }
+      }
     }
   }
 
@@ -1067,6 +1283,15 @@ export class PassiveEngine {
     if (s.infamyStacks > 0) {
       const pctPerStack = this.hasPassive(charId, 'enhanced_infamy') ? 0.025 : 0.015;
       mult += s.infamyStacks * pctPerStack;
+    }
+
+    // SC WEAPON: GUL'DAN — accumulated ATK bonus
+    if (this.hasScWeapon(charId, 'guldan_halo') && s.guldanState) {
+      mult += s.guldanState.atkBonus;
+      // SPD stacks also add a small ATK bonus (10% of SPD boost)
+      if (s.guldanState.spdStacks > 0) {
+        mult += s.guldanState.spdStacks * SC_WEAPON.GULDAN_SPD_BOOST * 0.1;
+      }
     }
 
     // Elem/All DMG bonuses (from set stats)
