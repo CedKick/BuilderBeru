@@ -373,6 +373,9 @@
       <button class="boss-sel-btn active" data-view="global">Global</button>
       <button class="boss-sel-btn" data-view="current">Boss actuel</button>
     </div>
+    <div style="display:flex;justify-content:center;padding:2px 4px;">
+      <button id="group-mode-toggle" style="font-size:9px;padding:2px 8px;background:rgba(168,85,247,0.15);color:#a855f7;border:1px solid rgba(168,85,247,0.3);border-radius:4px;cursor:pointer" onclick="statsGroupMode=statsGroupMode==='hunter'?'account':'hunter';this.textContent=statsGroupMode==='hunter'?'Par Chasseur':'Par Compte';renderStatsPanel();">Par Chasseur</button>
+    </div>
     <div class="stats-tabs">
       <button class="stats-tab active" data-tab="dps">DPS</button>
       <button class="stats-tab" data-tab="heals">Heals</button>
@@ -953,6 +956,7 @@ let currentEncounterBossName = null;
 let currentEncounterIndex = -1;
 let currentEncounterType = null; // 'boss' | 'mob_wave'
 let selectedStatsView = 'global'; // 'global' | 'current' | number (index into bossEncounterHistory)
+let statsGroupMode = 'hunter'; // 'hunter' | 'account'
 let serverTotalCombatTime = 0; // from server broadcast (for late-joining spectators)
 
 function ensureStats(id) {
@@ -1870,6 +1874,43 @@ function getFilteredStats() {
     };
   }
   return { stats: mapped, combatTime: bossData.combatTime };
+}
+
+// Aggregate stats by account (username)
+function aggregateByAccount(stats) {
+  const accounts = {};
+  for (const [id, s] of Object.entries(stats)) {
+    if (id.startsWith('mob_') || id.startsWith('boss_')) continue;
+    const user = s.username || 'unknown';
+    if (!accounts[user]) {
+      accounts[user] = {
+        name: user, username: user, hunterId: null, element: null, isAccount: true,
+        hunterCount: 0, hunters: [],
+        dmgDealt: 0, dmgReceived: 0, healsGiven: 0, healsReceived: 0,
+        kills: 0, deaths: 0, crits: 0, totalHits: 0, maxCrit: 0, totalCritDmg: 0,
+      };
+    }
+    const a = accounts[user];
+    a.hunterCount++;
+    a.hunters.push({ name: s.name, hunterId: s.hunterId, element: s.element, dmg: s.dmgDealt || 0 });
+    a.dmgDealt += s.dmgDealt || 0;
+    a.dmgReceived += s.dmgReceived || 0;
+    a.healsGiven += s.healsGiven || 0;
+    a.healsReceived += s.healsReceived || 0;
+    a.kills += s.kills || 0;
+    a.deaths += s.deaths || 0;
+    a.crits += s.crits || 0;
+    a.totalHits += s.totalHits || 0;
+    a.totalCritDmg += s.totalCritDmg || 0;
+    if ((s.maxCrit || 0) > a.maxCrit) a.maxCrit = s.maxCrit;
+    // Track best element (most dmg)
+    if (!a.element || (s.dmgDealt || 0) > (a._bestDmg || 0)) {
+      a.element = s.element;
+      a._bestDmg = s.dmgDealt || 0;
+      a.hunterId = s.hunterId; // Use top DPS hunter as avatar
+    }
+  }
+  return accounts;
 }
 
 // Stats Tabs
@@ -3286,7 +3327,9 @@ function renderStatsPanel() {
   if (!statsPanelOpen || activeStatsTab === 'graph' || activeStatsTab === 'timeline' || activeStatsTab === 'details') return;
   const list = document.getElementById('stats-list');
   const { stats: filteredStats, combatTime: filteredCombatTime } = getFilteredStats();
-  const entries = Object.entries(filteredStats).filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'));
+  const isAccountMode = statsGroupMode === 'account';
+  const rawEntries = Object.entries(filteredStats).filter(([id]) => !id.startsWith('mob_') && !id.startsWith('boss_'));
+  const entries = isAccountMode ? Object.entries(aggregateByAccount(filteredStats)) : rawEntries;
   const viewLabel = selectedStatsView === 'global' ? '' : selectedStatsView === 'current' ? ' (Boss actuel)' : ` (${bossEncounterHistory[selectedStatsView]?.bossName || ''})`;
 
   if (activeStatsTab === 'crits') {
@@ -3297,8 +3340,9 @@ function renderStatsPanel() {
       const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
       const critRate = s.totalHits > 0 ? ((s.crits || 0) / s.totalHits * 100).toFixed(1) : '0.0';
       const avgCrit = s.crits > 0 ? Math.floor((s.totalCritDmg || 0) / s.crits) : 0;
-      const critUserTag = s.username ? `<span style="font-size:8px;color:#666;margin-left:3px">(${s.username})</span>` : '';
-      html += `<div class="crit-card" style="cursor:pointer" onclick="focusOnCharacter('${id}')"><div class="crit-card-header">${thumbSrc ? `<img src="${thumbSrc}" alt="">` : ''}<span class="name">${s.name}${critUserTag}</span></div><div class="crit-stats-grid"><span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits || 0}</span><span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits || 0}</span><span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span><span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span><span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit || 0)}</span><span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills || 0}</span></div></div>`;
+      const critUserTag = !isAccountMode && s.username ? `<span style="font-size:8px;color:#666;margin-left:3px">(${s.username})</span>` : '';
+      const hunterBadge = isAccountMode && s.hunterCount ? `<span style="font-size:8px;color:#a855f7;margin-left:3px">${s.hunterCount} hunters</span>` : '';
+      html += `<div class="crit-card" style="cursor:pointer" ${!isAccountMode ? `onclick="focusOnCharacter('${id}')"` : ''}><div class="crit-card-header">${thumbSrc ? `<img src="${thumbSrc}" alt="">` : ''}<span class="name">${s.name}${critUserTag}${hunterBadge}</span></div><div class="crit-stats-grid"><span class="crit-stat-label">Coups</span><span class="crit-stat-val">${s.totalHits || 0}</span><span class="crit-stat-label">Critiques</span><span class="crit-stat-val" style="color:#f97316">${s.crits || 0}</span><span class="crit-stat-label">Taux crit</span><span class="crit-stat-val" style="color:#fb923c">${critRate}%</span><span class="crit-stat-label">Crit moyen</span><span class="crit-stat-val">${formatNumber(avgCrit)}</span><span class="crit-stat-label">Max crit</span><span class="crit-stat-val" style="color:#fbbf24">${formatNumber(s.maxCrit || 0)}</span><span class="crit-stat-label">Kills</span><span class="crit-stat-val" style="color:#22c55e">${s.kills || 0}</span></div></div>`;
     }
     list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de crits</div>';
     return;
@@ -3325,12 +3369,14 @@ function renderStatsPanel() {
     const thumbSrc = s.hunterId ? thumbDataUrls[s.hunterId] : null;
     const elemColor = ELEMENT_COLORS[s.element] || '#888';
     const perSec = activeStatsTab === 'dps' ? ` ${formatNumber(val / combatSec)}/s` : activeStatsTab === 'heals' ? ` ${formatNumber(val / combatSec)}/s` : '';
-    const charObj = state?.characters?.find(c => c.id === id);
-    const isAlive = charObj?.alive !== false;
+    const charObj = !isAccountMode ? state?.characters?.find(c => c.id === id) : null;
+    const isAlive = isAccountMode ? true : charObj?.alive !== false;
     const deathBadge = (s.deaths || 0) > 0 ? `<span style="font-size:7px;color:#dc2626;margin-left:3px">\u2620${s.deaths}</span>` : '';
     const aliveStyle = isAlive ? '' : 'opacity:0.5;';
-    const userTag = s.username ? `<span style="font-size:7px;color:#666;margin-left:2px">(${s.username})</span>` : '';
-    html += `<div class="stat-entry" style="${aliveStyle}cursor:pointer;" onclick="focusOnCharacter('${id}')"><span class="stat-rank">${i + 1}</span>${thumbSrc ? `<img class="stat-sprite" src="${thumbSrc}" alt="">` : `<span class="stat-sprite" style="background:${elemColor}"></span>`}<span class="stat-name" style="color:${isAlive ? elemColor : '#dc2626'}">${s.name}${userTag}${deathBadge}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${barColor}"></div></div><span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec} ${contribPct}%</span></span></div>`;
+    const userTag = !isAccountMode && s.username ? `<span style="font-size:7px;color:#666;margin-left:2px">(${s.username})</span>` : '';
+    const hunterCountTag = isAccountMode && s.hunterCount ? `<span style="font-size:7px;color:#a855f7;margin-left:2px">${s.hunterCount}h</span>` : '';
+    const clickAction = !isAccountMode ? `onclick="focusOnCharacter('${id}')"` : '';
+    html += `<div class="stat-entry" style="${aliveStyle}cursor:pointer;" ${clickAction}><span class="stat-rank">${i + 1}</span>${thumbSrc ? `<img class="stat-sprite" src="${thumbSrc}" alt="">` : `<span class="stat-sprite" style="background:${elemColor}"></span>`}<span class="stat-name" style="color:${isAlive ? elemColor : '#dc2626'}">${s.name}${userTag}${hunterCountTag}${deathBadge}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${barColor}"></div></div><span class="stat-value">${formatNumber(val)}<span style="font-size:8px;color:#888">${perSec} ${contribPct}%</span></span></div>`;
   }
   list.innerHTML = html || '<div style="color:#555;text-align:center;padding:20px">Pas encore de donnees</div>';
 }

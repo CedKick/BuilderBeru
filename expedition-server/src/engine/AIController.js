@@ -14,18 +14,18 @@ export class AIController {
     character.attackTimer -= dt;
 
     // ── Passive mana regen: % of maxMana per second (scales with pool size) ──
-    // Base: Non-support 3%/sec, Support 5%/sec
-    // Idle boost: if no skill cast for 3s → ×2, 6s → ×3, 10s → ×4 (accelerating recovery)
-    const baseManaRegenPct = character.hunterClass === 'support' ? 0.05 : 0.03;
+    // Base: Non-support 2%/sec, Support 3.5%/sec
+    // Idle boost: ramps up slowly when not casting (prevents perma-OOM but keeps mana tension)
+    const baseManaRegenPct = character.hunterClass === 'support' ? 0.035 : 0.02;
     const bonusPct = character._manaRegenBonus || 0;  // from sets/weapons
 
     // Track idle time (ticks since last skill cast)
     character._ticksSinceSkill = (character._ticksSinceSkill || 0) + 1;
     const idleSec = character._ticksSinceSkill * dt;
     let idleMultiplier = 1;
-    if (idleSec >= 10) idleMultiplier = 4;       // 10s+ idle → ×4 regen
-    else if (idleSec >= 6) idleMultiplier = 3;   // 6s idle → ×3 regen
-    else if (idleSec >= 3) idleMultiplier = 2;   // 3s idle → ×2 regen
+    if (idleSec >= 12) idleMultiplier = 3;        // 12s+ idle → ×3 regen
+    else if (idleSec >= 7) idleMultiplier = 2;    // 7s idle → ×2 regen
+    else if (idleSec >= 4) idleMultiplier = 1.5;  // 4s idle → ×1.5 regen
 
     const manaRegen = character.maxMana * baseManaRegenPct * (1 + bonusPct / 100) * idleMultiplier;
     character.regenMana(manaRegen * dt);

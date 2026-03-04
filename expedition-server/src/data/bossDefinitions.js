@@ -28,7 +28,7 @@ export const BOSS_DEFINITIONS = [
     hp: 30_000_000,         // 30M
     atk: 3500,
     def: 10,
-    regenPct: 0.3,
+    regenPct: 0.15,           // 45K/s regen (~5% of group DPS)
     spd: 42,
     enrageTimer: 300,
     enrageHpPercent: 0,
@@ -79,7 +79,7 @@ export const BOSS_DEFINITIONS = [
     hp: 40_000_000,         // 40M
     atk: 4000,
     def: 15,
-    regenPct: 0.4,
+    regenPct: 0.12,           // 48K/s (~6% of group DPS)
     spd: 35,
     enrageTimer: 300,
     enrageHpPercent: 0,
@@ -141,7 +141,7 @@ export const BOSS_DEFINITIONS = [
     hp: 55_000_000,         // 55M
     atk: 4500,
     def: 15,
-    regenPct: 0.5,
+    regenPct: 0.10,           // 55K/s (~6% of group DPS)
     spd: 58,
     enrageTimer: 240,
     enrageHpPercent: 20,
@@ -203,7 +203,7 @@ export const BOSS_DEFINITIONS = [
     hp: 70_000_000,         // 70M
     atk: 4800,
     def: 20,
-    regenPct: 0.5,
+    regenPct: 0.08,           // 56K/s (~7% of group DPS)
     spd: 32,
     enrageTimer: 300,
     enrageHpPercent: 0,
@@ -263,7 +263,7 @@ export const BOSS_DEFINITIONS = [
     hp: 90_000_000,         // 90M
     atk: 5000,
     def: 25,
-    regenPct: 0.6,
+    regenPct: 0.07,           // 63K/s (~8% of group DPS)
     spd: 55,
     enrageTimer: 270,
     enrageHpPercent: 15,
@@ -324,7 +324,7 @@ export const BOSS_DEFINITIONS = [
     hp: 120_000_000,        // 120M
     atk: 5500,
     def: 25,
-    regenPct: 0.7,
+    regenPct: 0.05,           // 60K/s (~8% of group DPS)
     spd: 42,
     enrageTimer: 300,
     enrageHpPercent: 0,
@@ -384,7 +384,7 @@ export const BOSS_DEFINITIONS = [
     hp: 150_000_000,        // 150M
     atk: 6000,
     def: 30,
-    regenPct: 0.8,
+    regenPct: 0.05,           // 75K/s (~10% of group DPS)
     spd: 50,
     enrageTimer: 270,
     enrageHpPercent: 0,
@@ -446,7 +446,7 @@ export const BOSS_DEFINITIONS = [
     hp: 180_000_000,        // 180M
     atk: 6500,
     def: 30,
-    regenPct: 0.9,
+    regenPct: 0.04,           // 72K/s (~9% of group DPS)
     spd: 30,
     enrageTimer: 300,
     enrageHpPercent: 0,
@@ -506,7 +506,7 @@ export const BOSS_DEFINITIONS = [
     hp: 220_000_000,        // 220M
     atk: 7000,
     def: 35,
-    regenPct: 1.0,
+    regenPct: 0.04,           // 88K/s (~12% of group DPS)
     spd: 55,
     enrageTimer: 240,
     enrageHpPercent: 25,
@@ -567,7 +567,7 @@ export const BOSS_DEFINITIONS = [
     hp: 270_000_000,        // 270M
     atk: 7500,
     def: 35,
-    regenPct: 1.1,
+    regenPct: 0.03,           // 81K/s (~11% of group DPS)
     spd: 50,
     enrageTimer: 300,
     enrageHpPercent: 20,
@@ -628,7 +628,7 @@ export const BOSS_DEFINITIONS = [
     hp: 330_000_000,        // 330M
     atk: 8000,
     def: 40,
-    regenPct: 1.2,
+    regenPct: 0.03,           // 99K/s (~14% of group DPS)
     spd: 60,
     enrageTimer: 270,
     enrageHpPercent: 20,
@@ -741,7 +741,7 @@ export const BOSS_DEFINITIONS = [
     hp: 400_000_000,        // 400M
     atk: 8500,
     def: 40,
-    regenPct: 1.3,
+    regenPct: 0.025,          // 100K/s (~14% of group DPS)
     spd: 58,
     enrageTimer: 300,
     enrageHpPercent: 15,
@@ -853,7 +853,7 @@ export const BOSS_DEFINITIONS = [
     hp: 500_000_000,        // 500M
     atk: 9000,
     def: 45,
-    regenPct: 1.5,
+    regenPct: 0.02,           // 100K/s (~14% of group DPS)
     spd: 66,
     enrageTimer: 240,
     enrageHpPercent: 25,
@@ -965,7 +965,7 @@ export const BOSS_DEFINITIONS = [
     hp: 650_000_000,        // 650M
     atk: 10000,
     def: 45,
-    regenPct: 1.8,
+    regenPct: 0.02,           // 130K/s (~19% of group DPS)
     spd: 62,
     enrageTimer: 300,
     enrageHpPercent: 15,
@@ -1078,7 +1078,7 @@ export const BOSS_DEFINITIONS = [
     hp: 900_000_000,        // 900M — wall boss
     atk: 11000,
     def: 50,
-    regenPct: 2.0,
+    regenPct: 0.015,          // 135K/s (~20% of group DPS)
     spd: 75,
     enrageTimer: 360,
     enrageHpPercent: 20,
