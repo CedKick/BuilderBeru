@@ -769,6 +769,7 @@ export default function ShadowColosseum() {
   const [farmRewards, setFarmRewards] = useState(null);
   const [farmLoading, setFarmLoading] = useState(false);
   const [farmConfirm, setFarmConfirm] = useState(null); // { action: fn, label: string } — confirmation before stopping farm
+  const [rerollConfirm, setRerollConfirm] = useState(null); // { action: fn, lockCount, alkCost, coinCost }
   const [factionPointsAvailable, setFactionPointsAvailable] = useState(null);
   const [weaponReveal, setWeaponReveal] = useState(null); // weapon data for epic reveal
   const [artFilter, setArtFilter] = useState({ set: null, rarity: null, slot: null, type: null });
@@ -9005,41 +9006,46 @@ export default function ShadowColosseum() {
                     if (eqStatLocks.main) lockedStats.add('main');
                     eqArt.subs.forEach(s => { if (eqStatLocks.subs?.[s.id]) lockedStats.add(s.id); });
 
-                    const lockInfo = eqLockCount > 0 ? `\n${eqLockCount} stat${eqLockCount > 1 ? 's' : ''} verrouillee${eqLockCount > 1 ? 's' : ''} (protegee${eqLockCount > 1 ? 's' : ''} du reroll)` : '';
-                    if (!window.confirm(`Reroll COMPLET de cet artefact ?${lockInfo}\n\nLes stats NON verrouillees seront reroll.\nCout: ${eqLockAlkCost} Alkahest + ${fmtNum(eqRerollCoinCost)} coins\nL'artefact repassera au niveau 0 !\nIrreversible !`)) return;
-                    shadowCoinManager.spendCoins(eqRerollCoinCost);
-                    try {
-                      const token = localStorage.getItem('builderberu_auth_token');
-                      const resp = await fetch('/api/storage/reroll', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-                        body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0 }),
-                      });
-                      const result = await resp.json();
-                      if (!result.success) {
-                        shadowCoinManager.addCoins(eqRerollCoinCost, 'reroll_refund');
-                        if (result.errorCode === 'ALKAHEST_INSUFFICIENT') {
-                          // Sync local alkahest with server value to fix desync
-                          setData(prev => ({ ...prev, alkahest: result.have }));
-                          beruSay(`Desync detecte ! Le serveur dit que tu as ${result.have} Alkahest, mais il en faut ${result.need} avec ${result.lockCount} lock${result.lockCount > 1 ? 's' : ''}. Tes coins ont ete rendus.`, 'shocked');
-                        } else {
-                          beruSay(result.error || 'Reroll echoue... tes coins ont ete rendus.', 'shocked');
+                    setRerollConfirm({
+                      lockCount: eqLockCount,
+                      alkCost: eqLockAlkCost,
+                      coinCost: eqRerollCoinCost,
+                      action: async () => {
+                        setRerollConfirm(null);
+                        shadowCoinManager.spendCoins(eqRerollCoinCost);
+                        try {
+                          const token = localStorage.getItem('builderberu_auth_token');
+                          const resp = await fetch('/api/storage/reroll', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
+                            body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0 }),
+                          });
+                          const result = await resp.json();
+                          if (!result.success) {
+                            shadowCoinManager.addCoins(eqRerollCoinCost, 'reroll_refund');
+                            if (result.errorCode === 'ALKAHEST_INSUFFICIENT') {
+                              setData(prev => ({ ...prev, alkahest: result.have }));
+                              beruSay(`Desync detecte ! Le serveur dit que tu as ${result.have} Alkahest, mais il en faut ${result.need} avec ${result.lockCount} lock${result.lockCount > 1 ? 's' : ''}. Tes coins ont ete rendus.`, 'shocked');
+                            } else {
+                              beruSay(result.error || 'Reroll echoue... tes coins ont ete rendus.', 'shocked');
+                            }
+                            return;
+                          }
+                          const rerolled = result.rerolledArtifact;
+                          setData(prev => {
+                            const nd = { ...prev, alkahest: result.alkahestRemaining };
+                            if (!nd.rerollCounts) nd.rerollCounts = {};
+                            nd.rerollCounts[eqArt.uid] = result.rerollCount;
+                            nd.artifacts = { ...prev.artifacts, [id]: { ...prev.artifacts[id], [equipDetailSlot]: rerolled } };
+                            return nd;
+                          });
+                          beruSay(eqLockCount > 0 ? `Reroll avec ${eqLockCount} lock${eqLockCount > 1 ? 's' : ''} ! Les stats protegees sont intactes.` : 'Artefact reroll ! Voyons ces nouvelles substats...', 'excited');
+                        } catch {
+                          shadowCoinManager.addCoins(eqRerollCoinCost, 'reroll_refund');
+                          beruSay('Erreur reseau... reessaie plus tard.', 'shocked');
                         }
-                        return;
-                      }
-                      const rerolled = result.rerolledArtifact;
-                      setData(prev => {
-                        const nd = { ...prev, alkahest: result.alkahestRemaining };
-                        if (!nd.rerollCounts) nd.rerollCounts = {};
-                        nd.rerollCounts[eqArt.uid] = result.rerollCount;
-                        nd.artifacts = { ...prev.artifacts, [id]: { ...prev.artifacts[id], [equipDetailSlot]: rerolled } };
-                        return nd;
-                      });
-                      beruSay(eqLockCount > 0 ? `Reroll avec ${eqLockCount} lock${eqLockCount > 1 ? 's' : ''} ! Les stats protegees sont intactes.` : 'Artefact reroll ! Voyons ces nouvelles substats...', 'excited');
-                    } catch {
-                      shadowCoinManager.addCoins(eqRerollCoinCost, 'reroll_refund');
-                      beruSay('Erreur reseau... reessaie plus tard.', 'shocked');
-                    }
+                      },
+                    });
                   };
 
                   return (
@@ -10707,47 +10713,52 @@ export default function ShadowColosseum() {
           if (invStatLocks.main) lockedStats.add('main');
           selArt.subs.forEach(s => { if (invStatLocks.subs?.[s.id]) lockedStats.add(s.id); });
 
-          const lockInfo = invLockCount > 0 ? `\n${invLockCount} stat${invLockCount > 1 ? 's' : ''} verrouillee${invLockCount > 1 ? 's' : ''} (protegee${invLockCount > 1 ? 's' : ''} du reroll)` : '';
-          if (!window.confirm(`Reroll COMPLET de cet artefact ?${lockInfo}\n\nLes stats NON verrouillees seront reroll.\nCout: ${invLockAlkCost} Alkahest + ${fmtNum(rerollCoinCost)} coins\nL'artefact repassera au niveau 0 !\nIrreversible !`)) return;
-
-          shadowCoinManager.spendCoins(rerollCoinCost);
-          try {
-            const token = localStorage.getItem('builderberu_auth_token');
-            const resp = await fetch('/api/storage/reroll', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-              body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0 }),
-            });
-            const result = await resp.json();
-            if (!result.success) {
-              shadowCoinManager.addCoins(rerollCoinCost, 'reroll_refund');
-              if (result.errorCode === 'ALKAHEST_INSUFFICIENT') {
-                setData(prev => ({ ...prev, alkahest: result.have }));
-                beruSay(`Desync detecte ! Le serveur dit que tu as ${result.have} Alkahest, mais il en faut ${result.need} avec ${result.lockCount} lock${result.lockCount > 1 ? 's' : ''}. Tes coins ont ete rendus.`, 'shocked');
-              } else {
-                beruSay(result.error || 'Reroll echoue... tes coins ont ete rendus.', 'shocked');
+          setRerollConfirm({
+            lockCount: invLockCount,
+            alkCost: invLockAlkCost,
+            coinCost: rerollCoinCost,
+            action: async () => {
+              setRerollConfirm(null);
+              shadowCoinManager.spendCoins(rerollCoinCost);
+              try {
+                const token = localStorage.getItem('builderberu_auth_token');
+                const resp = await fetch('/api/storage/reroll', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
+                  body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0 }),
+                });
+                const result = await resp.json();
+                if (!result.success) {
+                  shadowCoinManager.addCoins(rerollCoinCost, 'reroll_refund');
+                  if (result.errorCode === 'ALKAHEST_INSUFFICIENT') {
+                    setData(prev => ({ ...prev, alkahest: result.have }));
+                    beruSay(`Desync detecte ! Le serveur dit que tu as ${result.have} Alkahest, mais il en faut ${result.need} avec ${result.lockCount} lock${result.lockCount > 1 ? 's' : ''}. Tes coins ont ete rendus.`, 'shocked');
+                  } else {
+                    beruSay(result.error || 'Reroll echoue... tes coins ont ete rendus.', 'shocked');
+                  }
+                  return;
+                }
+                const rerolled = result.rerolledArtifact;
+                setData(prev => {
+                  const nd = { ...prev, alkahest: result.alkahestRemaining };
+                  if (!nd.rerollCounts) nd.rerollCounts = {};
+                  nd.rerollCounts[selArt.uid] = result.rerollCount;
+                  if (isEquipped) {
+                    const [, cId, sId] = artSelected.split(':');
+                    nd.artifacts = { ...prev.artifacts, [cId]: { ...prev.artifacts[cId], [sId]: rerolled } };
+                  } else {
+                    nd.artifactInventory = [...prev.artifactInventory];
+                    nd.artifactInventory[artSelected] = rerolled;
+                  }
+                  return nd;
+                });
+                beruSay(invLockCount > 0 ? `Reroll avec ${invLockCount} lock${invLockCount > 1 ? 's' : ''} ! Les stats protegees sont intactes.` : 'Artefact reroll ! Voyons ces nouvelles substats...', 'excited');
+              } catch {
+                shadowCoinManager.addCoins(rerollCoinCost, 'reroll_refund');
+                beruSay('Erreur reseau... reessaie plus tard.', 'shocked');
               }
-              return;
-            }
-            const rerolled = result.rerolledArtifact;
-            setData(prev => {
-              const nd = { ...prev, alkahest: result.alkahestRemaining };
-              if (!nd.rerollCounts) nd.rerollCounts = {};
-              nd.rerollCounts[selArt.uid] = result.rerollCount;
-              if (isEquipped) {
-                const [, cId, sId] = artSelected.split(':');
-                nd.artifacts = { ...prev.artifacts, [cId]: { ...prev.artifacts[cId], [sId]: rerolled } };
-              } else {
-                nd.artifactInventory = [...prev.artifactInventory];
-                nd.artifactInventory[artSelected] = rerolled;
-              }
-              return nd;
-            });
-            beruSay(invLockCount > 0 ? `Reroll avec ${invLockCount} lock${invLockCount > 1 ? 's' : ''} ! Les stats protegees sont intactes.` : 'Artefact reroll ! Voyons ces nouvelles substats...', 'excited');
-          } catch {
-            shadowCoinManager.addCoins(rerollCoinCost, 'reroll_refund');
-            beruSay('Erreur reseau... reessaie plus tard.', 'shocked');
-          }
+            },
+          });
         };
 
         const doSell = () => {
@@ -13383,6 +13394,59 @@ export default function ShadowColosseum() {
                   className="flex-1 px-4 py-2.5 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 rounded-xl font-bold text-sm transition-colors disabled:opacity-50"
                 >
                   {farmLoading ? 'Calcul...' : 'Confirmer'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ REROLL CONFIRMATION POPUP ═══ */}
+      <AnimatePresence>
+        {rerollConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setRerollConfirm(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-gray-900 border border-red-500/40 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl shadow-red-900/20"
+            >
+              <div className="text-center mb-4">
+                <div className="text-3xl mb-2">{'\u{1F504}'}</div>
+                <h3 className="text-lg font-bold text-red-400">Reroll COMPLET</h3>
+                {rerollConfirm.lockCount > 0 && (
+                  <p className="text-sm text-yellow-400 mt-2">
+                    {'\uD83D\uDD12'} {rerollConfirm.lockCount} stat{rerollConfirm.lockCount > 1 ? 's' : ''} verrouillee{rerollConfirm.lockCount > 1 ? 's' : ''} (protegee{rerollConfirm.lockCount > 1 ? 's' : ''})
+                  </p>
+                )}
+                <p className="text-sm text-gray-300 mt-2">
+                  Les stats <span className="text-red-300 font-bold">NON verrouillees</span> seront reroll.
+                </p>
+                <div className="mt-3 p-2 rounded-lg bg-black/40 text-xs text-gray-400 space-y-1">
+                  <div>Cout : <span className="text-purple-300 font-bold">{rerollConfirm.alkCost} Alkahest</span> + <span className="text-yellow-300 font-bold">{fmtNum(rerollConfirm.coinCost)} coins</span></div>
+                  <div className="text-red-400">L'artefact repassera au niveau 0 !</div>
+                  <div className="text-red-500 font-bold">Irreversible !</div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setRerollConfirm(null)}
+                  className="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-sm transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={rerollConfirm.action}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 rounded-xl font-bold text-sm transition-colors"
+                >
+                  Reroll !
                 </button>
               </div>
             </motion.div>
