@@ -650,6 +650,7 @@ export const EXPEDITION_BOSSES = [
       { name: 'Hurlement du Neant', type: 'aoe_all', damage: 1600, cooldown: 12, telegraphTime: 2.5, description: 'Hurlement du vide infligeant degats a tous' },
       { name: 'Phase Spectrale', type: 'self_heal', damage: 0, cooldown: 20, telegraphTime: 1.0, healPercent: 3, description: 'Se dephase de la realite, regenere 3% HP' },
       { name: 'Invocation Fantomes', type: 'summon', damage: 0, cooldown: 18, telegraphTime: 1.5, summonCount: 8, summonType: 'specter', description: 'Invoque 8 guerriers spectraux' },
+      { name: 'Ecrasement Spectral', type: 'atk_crush', damage: 0, cooldown: 15, telegraphTime: 1.0, crushPct: 70, duration: 30, description: 'Ecrase la puissance d\'un chasseur aleatoire (-70% ATK/INT, 30s)' },
     ],
     phases: [
       { id: 'specter_p1', trigger: 'hp_below', threshold: 70, atkMult: 1.2, antiHealPct: 30,
@@ -667,6 +668,7 @@ export const EXPEDITION_BOSSES = [
       { name: 'Singularite', type: 'aoe_all', damage: 2400, cooldown: 15, telegraphTime: 3.0, description: 'Singularite infligeant degats a tout le raid' },
       { name: 'Annihilation', type: 'aoe_ranged', damage: 2600, cooldown: 10, telegraphTime: 2.0, range: 500, aoeRadius: 300, description: "Rayon d'annihilation sur le backline" },
       { name: 'Invocation Sentinelles', type: 'summon', damage: 0, cooldown: 25, telegraphTime: 2.0, summonCount: 4, summonType: 'void_sentinel', description: 'Invoque 4 sentinelles du vide' },
+      { name: 'Decret d\'Ecrasement', type: 'atk_crush', damage: 0, cooldown: 15, telegraphTime: 1.0, crushPct: 70, duration: 30, description: 'Ecrase la puissance d\'un chasseur aleatoire (-70% ATK/INT, 30s)' },
     ],
     phases: [
       { id: 'archon_p1', trigger: 'hp_below', threshold: 65, regenMult: 1.5, antiHealPct: 25,
@@ -684,6 +686,7 @@ export const EXPEDITION_BOSSES = [
       { name: "Battement d'Ailes", type: 'aoe_all', damage: 2200, cooldown: 8, telegraphTime: 2.5, description: "Battement d'ailes envoyant des ondes de choc" },
       { name: 'Meteor du Chaos', type: 'aoe_ranged', damage: 3800, cooldown: 15, telegraphTime: 3.0, range: 500, aoeRadius: 250, description: 'Meteore chaotique ecrasant le backline' },
       { name: 'Invocation Drakelings', type: 'summon', damage: 0, cooldown: 20, telegraphTime: 2.0, summonCount: 6, summonType: 'drakeling', description: 'Invoque 6 draconiens du chaos' },
+      { name: 'Rugissement du Chaos', type: 'atk_crush', damage: 0, cooldown: 15, telegraphTime: 1.0, crushPct: 70, duration: 30, description: 'Ecrase la puissance d\'un chasseur aleatoire (-70% ATK/INT, 30s)' },
     ],
     phases: [
       { id: 'dragon_p1', trigger: 'hp_below', threshold: 75, atkMult: 1.3, antiHealPct: 35,
@@ -701,6 +704,7 @@ export const EXPEDITION_BOSSES = [
       { name: 'Tempete du Temps', type: 'aoe_all', damage: 3500, cooldown: 12, telegraphTime: 3.0, description: 'Tempete temporelle deformant la realite' },
       { name: "Rayon d'Eternite", type: 'aoe_ranged', damage: 4000, cooldown: 10, telegraphTime: 2.0, range: 500, aoeRadius: 250, description: "Rayon d'eternite ciblant le backline" },
       { name: 'Invocation Chevaliers', type: 'summon', damage: 0, cooldown: 30, telegraphTime: 2.5, summonCount: 8, summonType: 'eternal_knight', description: 'Invoque 8 chevaliers eternels' },
+      { name: 'Sablier Brise', type: 'atk_crush', damage: 0, cooldown: 15, telegraphTime: 1.0, crushPct: 70, duration: 30, description: 'Ecrase la puissance d\'un chasseur aleatoire (-70% ATK/INT, 30s)' },
     ],
     phases: [
       { id: 'monarch_p1', trigger: 'hp_below', threshold: 60, spdMult: 1.5, antiHealPct: 30,
@@ -718,6 +722,7 @@ export const EXPEDITION_BOSSES = [
       { name: 'Domain du Monarque', type: 'aoe_all', damage: 4000, cooldown: 15, telegraphTime: 3.0, description: 'Domaine du monarque infligeant degats a tous' },
       { name: 'Armee des Ombres', type: 'summon', damage: 0, cooldown: 20, telegraphTime: 2.0, summonCount: 12, summonType: 'shadow', description: "Invoque sa legendaire armee de 12 ombres" },
       { name: 'Echange de Vie', type: 'aoe_all', damage: 5000, cooldown: 25, telegraphTime: 3.0, healPercent: 5, description: 'Draine toute force vitale, soigne le boss 5% HP' },
+      { name: 'Autorite du Monarque', type: 'atk_crush', damage: 0, cooldown: 15, telegraphTime: 1.0, crushPct: 70, duration: 30, description: 'Ecrase la puissance d\'un chasseur aleatoire (-70% ATK/INT, 30s)' },
     ],
     phases: [
       { id: 'ilhwan_p1', trigger: 'hp_below', threshold: 80, atkMult: 1.3, antiHealPct: 20,

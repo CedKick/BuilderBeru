@@ -153,7 +153,13 @@ export class CombatEngine2D {
 
     // Get ATK multiplier from passives (Titan Fury stacks, etc.)
     const atkMult = this.passives.getAtkMultiplier(char.id);
-    const atk = Math.floor(char.getOffensiveStat() * atkMult);
+    let atk = Math.floor(char.getOffensiveStat() * atkMult);
+
+    // Apply atk_crush debuff (boss mechanic: reduces ATK/INT output)
+    const atkCrush = char.getDebuffValue ? char.getDebuffValue('atk_crush') : 0;
+    if (atkCrush > 0) {
+      atk = Math.floor(atk * Math.max(0.05, 1 - atkCrush / 100));
+    }
 
     // Calculate armor penetration from weapon effects + set bonuses
     let armorPen = this.getArmorPen(char) + (char._defPen || 0);
@@ -763,6 +769,25 @@ export class CombatEngine2D {
             else this.events.push({ type: 'death', characterId: target.id, killedBy: boss.id });
           }
         }
+        break;
+      }
+
+      case 'atk_crush': {
+        // Targets a random alive character and crushes their ATK/INT output
+        if (aliveChars.length === 0) break;
+        const target = aliveChars[Math.floor(Math.random() * aliveChars.length)];
+        const crushPct = pattern.crushPct || 70;
+        const duration = pattern.duration || 30;
+        target.addDebuff('atk_crush', crushPct, duration, `boss_${boss.id}_crush`);
+        this.events.push({
+          type: 'boss_atk_crush',
+          source: boss.id,
+          target: target.id,
+          targetName: target.name,
+          pattern: pattern.name,
+          crushPct,
+          duration,
+        });
         break;
       }
     }

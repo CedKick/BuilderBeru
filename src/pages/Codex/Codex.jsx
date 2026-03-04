@@ -30,6 +30,7 @@ const ATTACK_TYPE_META = {
   anti_heal:  { label: 'Anti-Heal',    color: 'text-rose-400',    border: 'border-rose-500/50',    bg: 'bg-rose-500/10' },
   execute:    { label: 'Execute',       color: 'text-red-500',     border: 'border-red-600/50',     bg: 'bg-red-600/10' },
   multi_hit:  { label: 'Multi-Hit',    color: 'text-amber-400',   border: 'border-amber-500/50',   bg: 'bg-amber-500/10' },
+  atk_crush:  { label: 'ATK Crush',   color: 'text-pink-400',    border: 'border-pink-500/50',    bg: 'bg-pink-500/10' },
 };
 
 const ZONE_STYLES = {

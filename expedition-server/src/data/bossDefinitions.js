@@ -649,6 +649,17 @@ export const BOSS_DEFINITIONS = [
         summon: { template: 'skeleton', count: 8, difficultyMult: 3.5 },
         description: 'Summons 8 spectral warriors',
       },
+      {
+        name: 'Ecrasement Spectral',
+        weight: 2,
+        cooldown: 15,
+        telegraphTime: 1.0,
+        damage: 0,
+        type: 'atk_crush',
+        crushPct: 70,
+        duration: 30,
+        description: 'Ecrase la puissance d\'un chasseur aleatoire (-70% ATK/INT, 30s)',
+      },
     ],
     phases: [
       {
@@ -752,6 +763,17 @@ export const BOSS_DEFINITIONS = [
         summon: { template: 'golem', count: 4, difficultyMult: 4.0 },
         description: 'Summons 4 void sentinels',
       },
+      {
+        name: 'Decret d\'Ecrasement',
+        weight: 2,
+        cooldown: 15,
+        telegraphTime: 1.0,
+        damage: 0,
+        type: 'atk_crush',
+        crushPct: 70,
+        duration: 30,
+        description: 'Ecrase la puissance d\'un chasseur aleatoire (-70% ATK/INT, 30s)',
+      },
     ],
     phases: [
       {
@@ -852,6 +874,17 @@ export const BOSS_DEFINITIONS = [
         type: 'summon',
         summon: { template: 'orc', count: 6, difficultyMult: 4.0 },
         description: 'Summons 6 chaos drakelings',
+      },
+      {
+        name: 'Rugissement du Chaos',
+        weight: 2,
+        cooldown: 15,
+        telegraphTime: 1.0,
+        damage: 0,
+        type: 'atk_crush',
+        crushPct: 70,
+        duration: 30,
+        description: 'Ecrase la puissance d\'un chasseur aleatoire (-70% ATK/INT, 30s)',
       },
     ],
     phases: [
@@ -954,6 +987,17 @@ export const BOSS_DEFINITIONS = [
         summon: { template: 'orc', count: 8, difficultyMult: 4.5 },
         description: 'Summons 8 eternal knights',
       },
+      {
+        name: 'Sablier Brise',
+        weight: 2,
+        cooldown: 15,
+        telegraphTime: 1.0,
+        damage: 0,
+        type: 'atk_crush',
+        crushPct: 70,
+        duration: 30,
+        description: 'Ecrase la puissance d\'un chasseur aleatoire (-70% ATK/INT, 30s)',
+      },
     ],
     phases: [
       {
@@ -1054,6 +1098,17 @@ export const BOSS_DEFINITIONS = [
         type: 'aoe_all',
         healPercent: 5,
         description: 'Drains all life force, healing significantly',
+      },
+      {
+        name: 'Autorite du Monarque',
+        weight: 2,
+        cooldown: 15,
+        telegraphTime: 1.0,
+        damage: 0,
+        type: 'atk_crush',
+        crushPct: 70,
+        duration: 30,
+        description: 'Ecrase la puissance d\'un chasseur aleatoire (-70% ATK/INT, 30s)',
       },
     ],
     phases: [

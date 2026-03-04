@@ -5,6 +5,27 @@
 
 export const CHANGELOG = [
   {
+    version: '0.9.10',
+    date: '2026-03-04',
+    title: 'Boss 11-15 : ATK Crush — Debuff DPS',
+    entries: [
+      {
+        category: 'balance',
+        items: [
+          'Boss 11-15 : nouvelle mecanique "ATK Crush" — reduit ATK/INT d\'un chasseur aleatoire de 70% pendant 30s (CD 15s)',
+          'Le debuff cible un chasseur au hasard et peut se superposer sur differentes cibles',
+          'Boss 11: Ecrasement Spectral, Boss 12: Decret d\'Ecrasement, Boss 13: Rugissement du Chaos, Boss 14: Sablier Brise, Boss 15: Autorite du Monarque',
+        ],
+      },
+      {
+        category: 'content',
+        items: [
+          'Codex Expedition : fiches boss 11-15 mises a jour avec le nouveau pattern ATK Crush',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.9',
     date: '2026-03-04',
     title: 'Balance : manaRestore Support & Boss HP +15%',
