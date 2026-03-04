@@ -23,6 +23,8 @@ export class ExpeditionCharacter {
     this.rarity = hunterDef.rarity;
     this.role = ROLE_MAP[hunterDef.class] || 'frontline_dps';
 
+    const isMage = hunterDef.class === 'mage';
+
     if (precomputedStats && precomputedStats.hp) {
       // Use pre-computed full stats from client (scaled for expedition)
       this.maxHp = Math.floor(precomputedStats.hp * STAT_SCALE.hp);
@@ -34,6 +36,8 @@ export class ExpeditionCharacter {
       this.spd = Math.floor(precomputedStats.spd * STAT_SCALE.spd);
       this.crit = precomputedStats.crit * STAT_SCALE.crit;
       this.res = precomputedStats.res * STAT_SCALE.res;
+      // Mages scale on INT — use client INT if provided, fallback to ATK
+      this.int = isMage ? Math.floor((precomputedStats.int || precomputedStats.atk) * STAT_SCALE.atk) : 0;
     } else {
       // Fallback: simple computation from level + stars only
       const raw = hunterStatsAtLevel(hunterId, hunterLevel, hunterStars);
@@ -46,6 +50,8 @@ export class ExpeditionCharacter {
       this.spd = Math.floor(raw.spd * STAT_SCALE.spd);
       this.crit = raw.crit * STAT_SCALE.crit;
       this.res = raw.res * STAT_SCALE.res;
+      // Mages fallback: use ATK as INT (no artifact data)
+      this.int = isMage ? this.atk : 0;
     }
 
     // Skills (with runtime cooldown tracking)
@@ -53,6 +59,9 @@ export class ExpeditionCharacter {
       ...s,
       cooldown: 0,  // Current cooldown remaining (seconds)
     }));
+
+    // Megumin-style mana scaling: stays on ATK, not INT
+    this.usesManaScaling = hunterDef.skills.some(s => s.manaScaling);
 
     // Position (2D)
     this.x = 0;
@@ -222,6 +231,22 @@ export class ExpeditionCharacter {
       if (b.type === 'atk') total += b.value;
     }
     return Math.max(0, total);
+  }
+
+  getEffectiveInt() {
+    let total = this.int || 0;
+    for (const b of this.buffs) {
+      if (b.type === 'int') total += b.value;
+    }
+    return Math.max(0, total);
+  }
+
+  // Mages use INT, everyone else uses ATK (except mana-scaling mages like Megumin)
+  getOffensiveStat() {
+    if (this.hunterClass === 'mage' && !this.usesManaScaling) {
+      return this.getEffectiveInt();
+    }
+    return this.getEffectiveAtk();
   }
 
   // ── Serialization ───────────────────────────────────────

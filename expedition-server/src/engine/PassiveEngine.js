@@ -146,7 +146,7 @@ export class PassiveEngine {
       s.gramHitCount++;
       if (s.gramHitCount >= 5) {
         s.gramHitCount = 0;
-        const aoeDmg = Math.floor(char.getEffectiveAtk() * 2.5 * (1 + s.gramAoeBonus / 100));
+        const aoeDmg = Math.floor(char.getOffensiveStat() * 2.5 * (1 + s.gramAoeBonus / 100));
         events.push({ type: 'passive_aoe', charId: char.id, passive: 'gram_aoe', damage: aoeDmg, radius: 150 });
         // gramAoeBonus increases per target hit (handled externally)
       }
@@ -297,7 +297,7 @@ export class PassiveEngine {
 
     // ── VOIX DU NEANT: DoT kill = AoE explosion ──
     if (this.hasPassive(char.id, 'void_voice') && s.voidVoiceDots.has(target.id)) {
-      const aoeDmg = Math.floor(char.getEffectiveAtk() * 2.0);
+      const aoeDmg = Math.floor(char.getOffensiveStat() * 2.0);
       events.push({ type: 'passive_aoe', charId: char.id, passive: 'void_voice_explode', damage: aoeDmg, radius: 120 });
       s.voidVoiceDots.delete(target.id);
     }
@@ -533,7 +533,7 @@ export class PassiveEngine {
           // Find target and apply DoT damage
           const target = enemies.find(e => e.id === targetId && e.alive);
           if (target) {
-            const dotDmg = Math.floor(char.getEffectiveAtk() * 0.03 * dot.stacks);
+            const dotDmg = Math.floor(char.getOffensiveStat() * 0.03 * dot.stacks);
             if (target.takeDamage) target.takeDamage(dotDmg);
             // 3 stacks debuff: +25% damage from all sources (applied via target mark)
             if (dot.stacks >= 3) {

@@ -152,7 +152,7 @@ export class CombatEngine2D {
 
     // Get ATK multiplier from passives (Titan Fury stacks, etc.)
     const atkMult = this.passives.getAtkMultiplier(char.id);
-    const atk = Math.floor(char.getEffectiveAtk() * atkMult);
+    const atk = Math.floor(char.getOffensiveStat() * atkMult);
 
     // Calculate armor penetration from weapon effects
     let armorPen = this.getArmorPen(char);
@@ -365,7 +365,7 @@ export class CombatEngine2D {
     // Offensive damage
     if (skill.power > 0 && target?.alive) {
       const atkMult = this.passives.getAtkMultiplier(char.id);
-      const atk = Math.floor(char.getEffectiveAtk() * atkMult);
+      const atk = Math.floor(char.getOffensiveStat() * atkMult);
       let skillPower = skill.power;
 
       // Nova Arcanique 4th spell = double damage
@@ -776,7 +776,7 @@ export class CombatEngine2D {
           attacker._hitCountAoe = (attacker._hitCountAoe || 0) + 1;
           if (attacker._hitCountAoe >= eff.hitCount) {
             attacker._hitCountAoe = 0;
-            const aoeDmg = Math.floor(attacker.getEffectiveAtk() * eff.power / 100);
+            const aoeDmg = Math.floor(attacker.getOffensiveStat() * eff.power / 100);
             this.events.push({ type: 'passive_aoe', charId: attacker.id, passive: 'weapon_aoe', damage: aoeDmg, radius: eff.radius });
             // Apply atk_debuff and anti_heal to all enemies in radius (simplified: applied to target)
             for (const otherEff of effects) {
