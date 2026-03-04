@@ -205,36 +205,40 @@ export class ExpeditionEngine {
   // MAIN TICK (called at 4 TPS)
   // ═══════════════════════════════════════════════════════
   tick() {
-    const dt = SERVER.TICK_MS / 1000;  // 0.25 seconds
-    this.elapsedSeconds += dt;
-    this.tickCount++;
+    try {
+      const dt = SERVER.TICK_MS / 1000;  // 0.25 seconds
+      this.elapsedSeconds += dt;
+      this.tickCount++;
 
-    // Check 24h max duration
-    if (this.elapsedSeconds >= EXPEDITION.MAX_DURATION_HOURS * 3600) {
-      this.transitionTo('finished');
-      return;
-    }
+      // Check 24h max duration
+      if (this.elapsedSeconds >= EXPEDITION.MAX_DURATION_HOURS * 3600) {
+        this.transitionTo('finished');
+        return;
+      }
 
-    switch (this.status) {
-      case 'march':    this.tickMarch(dt); break;
-      case 'combat':   this.tickCombat(dt); break;
-      case 'loot_roll': this.tickLootRoll(dt); break;
-      case 'campfire': this.tickCampfire(dt); break;
-      case 'finished':
-      case 'wiped':
-        this.stop();
-        break;
-    }
+      switch (this.status) {
+        case 'march':    this.tickMarch(dt); break;
+        case 'combat':   this.tickCombat(dt); break;
+        case 'loot_roll': this.tickLootRoll(dt); break;
+        case 'campfire': this.tickCampfire(dt); break;
+        case 'finished':
+        case 'wiped':
+          this.stop();
+          break;
+      }
 
-    // Broadcast to spectators every BROADCAST_RATE ticks
-    if (this.tickCount % (SERVER.TICK_RATE / SERVER.BROADCAST_RATE) === 0) {
-      this.broadcastState();
-    }
+      // Broadcast to spectators every BROADCAST_RATE ticks
+      if (this.tickCount % (SERVER.TICK_RATE / SERVER.BROADCAST_RATE) === 0) {
+        this.broadcastState();
+      }
 
-    // Periodic state snapshot to DB
-    if (this.elapsedSeconds - this.lastSnapshotTime >= EXPEDITION.STATE_SAVE_INTERVAL_SEC) {
-      this.lastSnapshotTime = this.elapsedSeconds;
-      this.saveState().catch(err => console.error('[Expedition] Snapshot save error:', err.message));
+      // Periodic state snapshot to DB
+      if (this.elapsedSeconds - this.lastSnapshotTime >= EXPEDITION.STATE_SAVE_INTERVAL_SEC) {
+        this.lastSnapshotTime = this.elapsedSeconds;
+        this.saveState().catch(err => console.error('[Expedition] Snapshot save error:', err.message));
+      }
+    } catch (err) {
+      console.error('[Expedition] TICK ERROR (non-fatal):', err.message, err.stack);
     }
   }
 
@@ -433,8 +437,8 @@ export class ExpeditionEngine {
       for (const char of restingAlive) {
         char.maxHp = Math.floor(char.maxHp * (1 + REST_CAMP.REST_BONUS_HP));
         char.hp = char.maxHp; // Full HP
-        char.stats.atk = Math.floor(char.stats.atk * (1 + REST_CAMP.REST_BONUS_ATK));
-        char.stats.def = Math.floor(char.stats.def * (1 + REST_CAMP.REST_BONUS_DEF));
+        char.atk = Math.floor(char.atk * (1 + REST_CAMP.REST_BONUS_ATK));
+        char.def = Math.floor(char.def * (1 + REST_CAMP.REST_BONUS_DEF));
         char.mana = char.maxMana; // Full mana
       }
 
@@ -498,7 +502,14 @@ export class ExpeditionEngine {
       // Check if this was a wipe (excluding resting chars)
       const allCombatantsDead = this.characters.every(c => !c.alive || this.restingCharacters.has(c.id));
       if (allCombatantsDead) {
-        this.onCombatWipe(); // Will check resting chars for recovery
+        // After wipe loot is distributed, check if resting chars can recover
+        const restingAlive = this.characters.filter(c => this.restingCharacters.has(c.id) && c.alive);
+        if (restingAlive.length > 0) {
+          // Wipe recovery — resting chars jump in
+          this.transitionTo('campfire');
+        } else {
+          this.transitionTo('wiped');
+        }
         return;
       } else {
         this.currentEncounterIndex++;

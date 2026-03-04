@@ -10,9 +10,7 @@ export class AIController {
   static decide(character, allies, enemies, boss, dt) {
     if (!character.alive) return null;
 
-    // Update timers
-    character.updateCooldowns(dt);
-    character.updateBuffs(dt);
+    // Update attack timer (cooldowns & buffs already updated in CombatEngine2D.tick)
     character.attackTimer -= dt;
 
     // Passive mana regen (2 mana/sec for non-support, 8/sec for support)
