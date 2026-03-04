@@ -5,6 +5,26 @@
 
 export const CHANGELOG = [
   {
+    version: '0.9.9',
+    date: '2026-03-04',
+    title: 'Balance : manaRestore Support & Boss HP +15%',
+    entries: [
+      {
+        category: 'balance',
+        items: [
+          'Support healTeam : manaRestore 5% du mana max apres chaque soin (Gina, Meri, Meilin, Lee Johee, Isla)',
+          'Expedition : HP de tous les 15 boss augmentee de +15% (21.2M → 11.5B)',
+        ],
+      },
+      {
+        category: 'content',
+        items: [
+          'Codex : documentation mana regen par mode (ARC, Raid SC, Raid Manaya, Expedition, PVP)',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.8',
     date: '2026-03-04',
     title: 'Codex Mecaniques — Guides Complets par Mode',

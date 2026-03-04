@@ -9,7 +9,7 @@ export const BOSS_DEFINITIONS = [
     id: 'forest_guardian',
     name: 'Gardien de la Foret',
     index: 0,
-    hp: 18_400_000,   // +15% (weapon passives balance)
+    hp: 21_160_000,   // +15% again (manaRestore balance)
     atk: 2100,
     def: 35,
     regenPct: 1.0,    // 1% maxHP/s
@@ -59,7 +59,7 @@ export const BOSS_DEFINITIONS = [
     id: 'stone_sentinel',
     name: 'Sentinelle de Pierre',
     index: 1,
-    hp: 27_600_000,   // +15%
+    hp: 31_740_000,   // +15% again
     atk: 2900,
     def: 46,
     regenPct: 1.14,
@@ -120,7 +120,7 @@ export const BOSS_DEFINITIONS = [
     id: 'shadow_lord',
     name: 'Seigneur Ombre',
     index: 2,
-    hp: 38_000_000,   // +15%
+    hp: 43_700_000,   // +15% again
     atk: 4600,
     def: 40,
     regenPct: 1.29,
@@ -181,7 +181,7 @@ export const BOSS_DEFINITIONS = [
     id: 'root_ancient',
     name: 'Ancien des Racines',
     index: 3,
-    hp: 53_000_000,   // +15%
+    hp: 60_950_000,   // +15% again
     atk: 4000,
     def: 58,
     regenPct: 1.43,
@@ -240,7 +240,7 @@ export const BOSS_DEFINITIONS = [
     id: 'sylvan_queen',
     name: 'Reine Sylvestre',
     index: 4,
-    hp: 79_000_000,   // +16%
+    hp: 90_850_000,   // +15%
     atk: 5800,
     def: 52,
     regenPct: 1.57,
@@ -300,7 +300,7 @@ export const BOSS_DEFINITIONS = [
     id: 'leviathan',
     name: 'Leviathan',
     index: 5,
-    hp: 114_000_000,  // +16%
+    hp: 131_100_000,  // +15%
     atk: 7200,
     def: 72,
     regenPct: 1.71,
@@ -359,7 +359,7 @@ export const BOSS_DEFINITIONS = [
     id: 'abyssal_sorcerer',
     name: 'Sorcier Abyssal',
     index: 6,
-    hp: 147_000_000,  // +17%
+    hp: 169_050_000,  // +15%
     atk: 8400,
     def: 60,
     regenPct: 1.86,
@@ -420,7 +420,7 @@ export const BOSS_DEFINITIONS = [
     id: 'iron_titan',
     name: 'Titan de Fer',
     index: 7,
-    hp: 200_000_000,  // +18%
+    hp: 230_000_000,  // +15%
     atk: 6600,
     def: 96,
     regenPct: 2.0,
@@ -479,7 +479,7 @@ export const BOSS_DEFINITIONS = [
     id: 'venomous_hydra',
     name: 'Hydre Venimeuse',
     index: 8,
-    hp: 265_000_000,  // +18%
+    hp: 304_750_000,  // +15%
     atk: 9500,
     def: 72,
     regenPct: 2.14,
@@ -539,7 +539,7 @@ export const BOSS_DEFINITIONS = [
     id: 'deep_king',
     name: 'Roi des Profondeurs',
     index: 9,
-    hp: 345_000_000,  // +19%
+    hp: 396_750_000,  // +15%
     atk: 10500,
     def: 84,
     regenPct: 2.29,
@@ -601,7 +601,7 @@ export const BOSS_DEFINITIONS = [
     id: 'origin_specter',
     name: 'Spectre Originel',
     index: 10,
-    hp: 750_000_000,
+    hp: 862_500_000,  // +15%
     atk: 13000,
     def: 100,
     regenPct: 2.5,
@@ -703,7 +703,7 @@ export const BOSS_DEFINITIONS = [
     id: 'void_archon',
     name: 'Archonte du Vide',
     index: 11,
-    hp: 1_400_000_000,
+    hp: 1_610_000_000,  // +15%
     atk: 16000,
     def: 120,
     regenPct: 2.6,
@@ -804,7 +804,7 @@ export const BOSS_DEFINITIONS = [
     id: 'chaos_dragon',
     name: 'Dragon du Chaos',
     index: 12,
-    hp: 2_500_000_000,
+    hp: 2_875_000_000,  // +15%
     atk: 19000,
     def: 115,
     regenPct: 2.8,
@@ -905,7 +905,7 @@ export const BOSS_DEFINITIONS = [
     id: 'eternal_monarch',
     name: 'Monarque Eternel',
     index: 13,
-    hp: 4_500_000_000,
+    hp: 5_175_000_000,  // +15%
     atk: 22000,
     def: 140,
     regenPct: 3.0,
@@ -1007,7 +1007,7 @@ export const BOSS_DEFINITIONS = [
     id: 'sung_ilhwan',
     name: 'Sung Il-Hwan',
     index: 14,
-    hp: 10_000_000_000, // 10 BILLION HP
+    hp: 11_500_000_000, // +15% (11.5B HP)
     atk: 25000,
     def: 130,
     regenPct: 3.0,
