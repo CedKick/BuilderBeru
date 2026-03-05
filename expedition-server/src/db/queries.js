@@ -31,6 +31,13 @@ export async function getLatestExpedition() {
   return result.rows[0] || null;
 }
 
+export async function getPreviousExpedition() {
+  const result = await query(
+    `SELECT * FROM expeditions WHERE status IN ('finished', 'wiped') ORDER BY ended_at DESC LIMIT 1`
+  );
+  return result.rows[0] || null;
+}
+
 export async function updateExpeditionStatus(id, status, extra = {}) {
   const sets = ['status = $2'];
   const params = [id, status];

@@ -33,6 +33,12 @@ export class CombatEngine2D {
     if (aliveChars.length === 0) {
       return { status: 'wipe', events: this.events };
     }
+    // Auto-wipe: if no DPS remain (only tanks/healers), they can't kill the boss
+    const hasDps = aliveChars.some(c => c.role === 'frontline_dps' || c.role === 'backline_dps');
+    if (!hasDps && (boss?.alive || aliveMobs.length > 0)) {
+      this.events.push({ type: 'system', message: 'No DPS remaining — auto-wipe triggered' });
+      return { status: 'wipe', events: this.events };
+    }
     if (aliveMobs.length === 0 && (!boss || !boss.alive)) {
       return { status: 'victory', events: this.events };
     }
@@ -90,6 +96,11 @@ export class CombatEngine2D {
     const stillAlive = characters.filter(c => c.alive);
     const mobsLeft = mobs.filter(m => m.alive);
     if (stillAlive.length === 0) {
+      return { status: 'wipe', events: this.events };
+    }
+    const stillHasDps = stillAlive.some(c => c.role === 'frontline_dps' || c.role === 'backline_dps');
+    if (!stillHasDps && (boss?.alive || mobsLeft.length > 0)) {
+      this.events.push({ type: 'system', message: 'No DPS remaining — auto-wipe triggered' });
       return { status: 'wipe', events: this.events };
     }
     if (mobsLeft.length === 0 && (!boss || !boss.alive)) {

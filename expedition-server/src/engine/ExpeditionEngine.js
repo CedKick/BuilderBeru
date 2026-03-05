@@ -266,6 +266,21 @@ export class ExpeditionEngine {
   tickCombat(dt) {
     this.totalCombatTime += dt;
 
+    // Boss enrage OS after 20 minutes if boss still above 95% HP
+    const encounterTime = this.elapsedSeconds - this.currentEncounterStartTime;
+    const bossHpPct = this.currentBoss?.alive ? this.currentBoss.hp / this.currentBoss.maxHp : 0;
+    if (encounterTime >= 1200 && this.currentBoss?.alive && bossHpPct > 0.95) {
+      // Kill all alive characters — boss one-shots everyone
+      const alive = this.characters.filter(c => c.alive && !this.restingCharacters.has(c.id));
+      for (const c of alive) {
+        c.hp = 0;
+        c.alive = false;
+      }
+      this.broadcast({ type: 'events_batch', events: [{ type: 'system', message: `${this.currentBoss.name} enrage — one-shot all hunters!` }] });
+      this.onCombatWipe();
+      return;
+    }
+
     // Exclude resting characters from combat
     const combatChars = this.characters.filter(c => !this.restingCharacters.has(c.id));
     const result = this.combatEngine.tick(combatChars, this.currentMobs, this.currentBoss, dt);
@@ -1045,6 +1060,7 @@ export class ExpeditionEngine {
       playerCurrencies: Array.from(this.playerCurrencies.entries()),
       encounterHistory: this.encounterHistory,
       totalCombatTime: this.totalCombatTime,
+      currentEncounterStartTime: this.currentEncounterStartTime,
     };
 
     await db.saveExpeditionSnapshot(this.expeditionId, snapshot);
@@ -1092,6 +1108,10 @@ export class ExpeditionEngine {
     // If was in combat, restart that encounter
     if (this.status === 'combat') {
       this.setupCombat();
+      // Restore encounter start time AFTER setupCombat (which resets it)
+      if (snapshot.currentEncounterStartTime != null) {
+        this.currentEncounterStartTime = snapshot.currentEncounterStartTime;
+      }
     }
 
     // Resume tick loop
