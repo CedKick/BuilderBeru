@@ -383,6 +383,108 @@ async function handleResetScore(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// DB-OVERVIEW — Tables info (like Neon dashboard)
+// ═══════════════════════════════════════════════════════════════
+
+async function handleDbOverview(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  // Table sizes and row counts
+  const tables = await query(`
+    SELECT
+      t.tablename as name,
+      pg_total_relation_size(quote_ident(t.tablename)) as total_bytes,
+      pg_relation_size(quote_ident(t.tablename)) as data_bytes,
+      (SELECT COUNT(*) FROM information_schema.columns c WHERE c.table_name = t.tablename AND c.table_schema = 'public') as col_count
+    FROM pg_tables t
+    WHERE t.schemaname = 'public'
+    ORDER BY pg_total_relation_size(quote_ident(t.tablename)) DESC
+  `);
+
+  // Row counts (separate query for each — fast enough for 20 tables)
+  const tableData = [];
+  for (const t of tables.rows) {
+    const countResult = await query(`SELECT COUNT(*) as cnt FROM "${t.name}"`);
+    tableData.push({
+      name: t.name,
+      rows: parseInt(countResult.rows[0].cnt, 10),
+      totalBytes: parseInt(t.total_bytes, 10),
+      dataBytes: parseInt(t.data_bytes, 10),
+      columns: parseInt(t.col_count, 10),
+    });
+  }
+
+  // DB total size
+  const dbSize = await query(`SELECT pg_database_size(current_database()) as size`);
+
+  return res.status(200).json({
+    success: true,
+    dbSizeBytes: parseInt(dbSize.rows[0].size, 10),
+    tables: tableData,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPEDITION-DASHBOARD — Overview of all players' expedition data
+// ═══════════════════════════════════════════════════════════════
+
+async function handleExpeditionDashboard(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const result = await query(`
+    SELECT u.username, u.display_name,
+           s.data->'expeditionInventory' as inventory,
+           s.data->'expeditionCurrencies' as currencies,
+           s.data->'expeditionEssences' as essences,
+           s.updated_at
+    FROM users u
+    JOIN user_storage s ON s.device_id = u.device_id AND s.storage_key = 'shadow_colosseum_raid'
+    WHERE s.data ? 'expeditionInventory'
+       OR s.data ? 'expeditionCurrencies'
+       OR s.data ? 'expeditionEssences'
+    ORDER BY u.username
+  `);
+
+  const players = result.rows.map(r => {
+    const inv = r.inventory || [];
+    const cur = r.currencies || {};
+    const ess = r.essences || {};
+
+    const rarityCount = {};
+    const typeCount = {};
+    for (const item of (Array.isArray(inv) ? inv : [])) {
+      rarityCount[item.rarity] = (rarityCount[item.rarity] || 0) + 1;
+      typeCount[item.type] = (typeCount[item.type] || 0) + 1;
+    }
+
+    return {
+      username: r.username,
+      displayName: r.display_name || r.username,
+      itemCount: Array.isArray(inv) ? inv.length : 0,
+      rarityCount,
+      typeCount,
+      currencies: {
+        alkahest: cur.alkahest || 0,
+        marteau_rouge: cur.marteau_rouge || 0,
+        contribution: cur.contribution || 0,
+      },
+      essences: {
+        guerre: ess.guerre || 0,
+        arcanique: ess.arcanique || 0,
+        gardienne: ess.gardienne || 0,
+      },
+      updatedAt: r.updated_at,
+    };
+  });
+
+  return res.status(200).json({ success: true, players });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -414,6 +516,10 @@ export default async function handler(req, res) {
         return await handleManualSuspend(req, res);
       case 'reset-score':
         return await handleResetScore(req, res);
+      case 'expedition-dashboard':
+        return await handleExpeditionDashboard(req, res);
+      case 'db-overview':
+        return await handleDbOverview(req, res);
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }

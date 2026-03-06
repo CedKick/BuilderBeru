@@ -1,13 +1,13 @@
 // src/pages/AdminPanel.jsx — Admin panel for managing player data (Kly only)
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Search, User, ChevronLeft, Save, RefreshCw, Package, Sword, Star, TrendingUp, X, Check, AlertTriangle, Activity, Eye, Ban, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Shield, Search, User, ChevronLeft, Save, RefreshCw, Package, Sword, Star, TrendingUp, X, Check, AlertTriangle, Activity, Eye, Ban, ShieldCheck, ShieldAlert, Database, Map } from 'lucide-react';
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
 import { API_URL } from '../utils/api.js';
 import { HUNTERS } from './ShadowColosseum/raidData';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
 
-const API = '/api/admin';
+const API = `${API_URL}/admin`;
 
 const SAVE_KEY = 'shadow_colosseum_data';
 const RAID_KEY = 'shadow_colosseum_raid';
@@ -19,6 +19,8 @@ const TABS = [
   { id: 'account', label: 'Compte', icon: TrendingUp },
   { id: 'inventory', label: 'Inventaire', icon: Package },
   { id: 'anticheat', label: 'Anti-Cheat', icon: ShieldAlert },
+  { id: 'expedition', label: 'Expedition', icon: Map },
+  { id: 'database', label: 'Base de donnees', icon: Database },
   { id: 'diagnostics', label: 'Serveur', icon: Activity },
 ];
 
@@ -327,9 +329,9 @@ export default function AdminPanel() {
           )}
 
           {/* Tabs */}
-          {(selectedUser && playerData || activeTab === 'diagnostics' || activeTab === 'anticheat') && (
+          {(selectedUser && playerData || ['diagnostics', 'anticheat', 'expedition', 'database'].includes(activeTab)) && (
             <div className="flex gap-1 px-6 pt-3 border-b border-white/10 bg-[#0a0a15] overflow-x-auto">
-              {TABS.filter(tab => tab.id === 'diagnostics' || tab.id === 'anticheat' || (selectedUser && playerData)).map(tab => (
+              {TABS.filter(tab => ['diagnostics', 'anticheat', 'expedition', 'database'].includes(tab.id) || (selectedUser && playerData)).map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
@@ -362,7 +364,15 @@ export default function AdminPanel() {
               <AntiCheatTab />
             )}
 
-            {!selectedUser && !loading && activeTab !== 'diagnostics' && activeTab !== 'anticheat' && (
+            {activeTab === 'expedition' && (
+              <ExpeditionDashboardTab />
+            )}
+
+            {activeTab === 'database' && (
+              <DatabaseTab />
+            )}
+
+            {!selectedUser && !loading && !['diagnostics', 'anticheat', 'expedition', 'database'].includes(activeTab) && (
               <div className="flex items-center justify-center h-64 text-gray-600">
                 <div className="text-center">
                   <Shield size={48} className="mx-auto mb-4 opacity-20" />
@@ -377,7 +387,7 @@ export default function AdminPanel() {
               </div>
             )}
 
-            {selectedUser && playerData && !loading && activeTab !== 'diagnostics' && activeTab !== 'anticheat' && (
+            {selectedUser && playerData && !loading && !['diagnostics', 'anticheat', 'expedition', 'database'].includes(activeTab) && (
               <>
                 {activeTab === 'overview' && <OverviewTab data={playerData} raidData={raidData} />}
                 {activeTab === 'hunters' && <HuntersTab data={playerData} setField={setField} />}
@@ -1631,6 +1641,310 @@ function InventoryTab({ data, setField }) {
           Vider tout l'inventaire
         </button>
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB: Expedition Dashboard — All players inventory overview
+// ═══════════════════════════════════════════════════════════
+
+const RARITY_COLORS = {
+  common: '#9ca3af',
+  uncommon: '#22c55e',
+  rare: '#3b82f6',
+  epic: '#a855f7',
+  legendary: '#f59e0b',
+  mythique: '#ef4444',
+};
+
+function ExpeditionDashboardTab() {
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [expandedPlayer, setExpandedPlayer] = useState(null);
+  const [playerDetail, setPlayerDetail] = useState(null);
+
+  const fetchDashboard = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await fetch(`${API}?action=expedition-dashboard`, { headers: authHeaders() });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (data.success) setPlayers(data.players);
+      else throw new Error(data.error);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchDashboard(); }, []);
+
+  const loadPlayerDetail = async (username) => {
+    if (expandedPlayer === username) {
+      setExpandedPlayer(null);
+      setPlayerDetail(null);
+      return;
+    }
+    setExpandedPlayer(username);
+    try {
+      const resp = await fetch(`${API}?action=get-player&username=${encodeURIComponent(username)}`, { headers: authHeaders() });
+      const data = await resp.json();
+      if (data.success) {
+        const raid = data.storage?.shadow_colosseum_raid?.data;
+        setPlayerDetail(raid ? (typeof raid === 'string' ? JSON.parse(raid) : raid) : null);
+      }
+    } catch {}
+  };
+
+  const totals = players.reduce((acc, p) => ({
+    items: acc.items + p.itemCount,
+    alkahest: acc.alkahest + p.currencies.alkahest,
+    marteau: acc.marteau + p.currencies.marteau_rouge,
+    contribution: acc.contribution + p.currencies.contribution,
+    guerre: acc.guerre + p.essences.guerre,
+    arcanique: acc.arcanique + p.essences.arcanique,
+    gardienne: acc.gardienne + p.essences.gardienne,
+  }), { items: 0, alkahest: 0, marteau: 0, contribution: 0, guerre: 0, arcanique: 0, gardienne: 0 });
+
+  if (loading && players.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500 flex items-center gap-2">
+            <Map size={20} />
+            Dashboard Expedition
+          </h2>
+          <p className="text-xs text-gray-500 mt-1">
+            {players.length} joueurs | {totals.items} items total
+          </p>
+        </div>
+        <button onClick={fetchDashboard} disabled={loading} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-300 transition-colors">
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Rafraichir
+        </button>
+      </div>
+
+      {error && <div className="px-4 py-3 rounded-lg text-sm bg-red-500/10 text-red-400 border border-red-500/20">{error}</div>}
+
+      {/* Global totals */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+          <div className="text-xs text-gray-500 mb-1">Monnaies (tous joueurs)</div>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between"><span className="text-blue-400">Alkahest</span><span className="text-white font-bold">{totals.alkahest.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-red-400">Marteau Rouge</span><span className="text-white font-bold">{totals.marteau.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-yellow-400">Contribution</span><span className="text-white font-bold">{totals.contribution.toLocaleString()}</span></div>
+          </div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+          <div className="text-xs text-gray-500 mb-1">Essences (tous joueurs)</div>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between"><span className="text-red-400">Guerre</span><span className="text-white font-bold">{totals.guerre.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-blue-400">Arcanique</span><span className="text-white font-bold">{totals.arcanique.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-yellow-400">Gardienne</span><span className="text-white font-bold">{totals.gardienne.toLocaleString()}</span></div>
+          </div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+          <div className="text-xs text-gray-500 mb-1">Items total</div>
+          <div className="text-3xl font-bold text-white">{totals.items}</div>
+          <div className="text-xs text-gray-500 mt-1">{players.length} joueurs actifs</div>
+        </div>
+      </div>
+
+      {/* Players table */}
+      <div className="bg-white/5 rounded-lg border border-white/10 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-white/10 text-left text-xs text-gray-500">
+              <th className="px-4 py-3">Joueur</th>
+              <th className="px-3 py-3 text-center">Items</th>
+              <th className="px-3 py-3 text-center">Rarete</th>
+              <th className="px-3 py-3 text-center">Alkahest</th>
+              <th className="px-3 py-3 text-center">Marteau</th>
+              <th className="px-3 py-3 text-center">Contrib</th>
+              <th className="px-3 py-3 text-center">Essences</th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map(p => (
+              <tr key={p.username}>
+                <td className="px-4 py-3">
+                  <button onClick={() => loadPlayerDetail(p.username)} className="text-left hover:text-purple-400 transition-colors">
+                    <span className="font-bold text-white">{p.displayName}</span>
+                    {p.displayName !== p.username && <span className="text-xs text-gray-600 ml-1">({p.username})</span>}
+                  </button>
+                </td>
+                <td className="px-3 py-3 text-center">
+                  <span className={`font-bold ${p.itemCount >= 200 ? 'text-red-400' : p.itemCount >= 150 ? 'text-yellow-400' : 'text-white'}`}>
+                    {p.itemCount}
+                  </span>
+                  <span className="text-gray-600 text-xs">/200</span>
+                </td>
+                <td className="px-3 py-3">
+                  <div className="flex gap-1 justify-center flex-wrap">
+                    {Object.entries(p.rarityCount).sort((a, b) => {
+                      const order = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythique'];
+                      return order.indexOf(a[0]) - order.indexOf(b[0]);
+                    }).map(([rarity, count]) => (
+                      <span key={rarity} className="text-[10px] px-1.5 py-0.5 rounded-full border font-bold" style={{ color: RARITY_COLORS[rarity], borderColor: RARITY_COLORS[rarity] + '40', backgroundColor: RARITY_COLORS[rarity] + '10' }}>
+                        {count}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+                <td className="px-3 py-3 text-center text-blue-400 font-mono">{p.currencies.alkahest.toLocaleString()}</td>
+                <td className="px-3 py-3 text-center text-red-400 font-mono">{p.currencies.marteau_rouge.toLocaleString()}</td>
+                <td className="px-3 py-3 text-center text-yellow-400 font-mono">{p.currencies.contribution.toLocaleString()}</td>
+                <td className="px-3 py-3">
+                  <div className="flex gap-2 justify-center text-xs font-mono">
+                    <span className="text-red-400">{p.essences.guerre}</span>
+                    <span className="text-blue-400">{p.essences.arcanique}</span>
+                    <span className="text-yellow-400">{p.essences.gardienne}</span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Expanded player detail */}
+      {expandedPlayer && playerDetail && (
+        <div className="bg-white/5 rounded-lg border border-purple-500/20 p-4">
+          <h3 className="text-sm font-bold text-purple-400 mb-3">Inventaire de {expandedPlayer} ({playerDetail.expeditionInventory?.length || 0} items)</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-96 overflow-y-auto">
+            {(playerDetail.expeditionInventory || []).map((item, i) => (
+              <div key={item.uid || i} className="text-xs p-2 rounded border bg-black/20" style={{ borderColor: (RARITY_COLORS[item.rarity] || '#444') + '40' }}>
+                <div className="font-bold truncate" style={{ color: RARITY_COLORS[item.rarity] || '#fff' }}>{item.itemName}</div>
+                <div className="text-gray-500 flex justify-between mt-0.5">
+                  <span>{item.type}</span>
+                  <span>{item.rarity}</span>
+                </div>
+                {item.stats && Object.keys(item.stats).length > 0 && (
+                  <div className="text-gray-600 mt-0.5">
+                    {Object.entries(item.stats).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB: Database — Tables overview (like Neon dashboard)
+// ═══════════════════════════════════════════════════════════
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function DatabaseTab() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchDb = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await fetch(`${API}?action=db-overview`, { headers: authHeaders() });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      if (json.success) setData(json);
+      else throw new Error(json.error);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchDb(); }, []);
+
+  if (loading && !data) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-500 flex items-center gap-2">
+            <Database size={20} />
+            Base de donnees PostgreSQL (DO)
+          </h2>
+          {data && (
+            <p className="text-xs text-gray-500 mt-1">
+              Taille totale: {formatBytes(data.dbSizeBytes)} | {data.tables.length} tables
+            </p>
+          )}
+        </div>
+        <button onClick={fetchDb} disabled={loading} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-300 transition-colors">
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Rafraichir
+        </button>
+      </div>
+
+      {error && <div className="px-4 py-3 rounded-lg text-sm bg-red-500/10 text-red-400 border border-red-500/20">{error}</div>}
+
+      {data && (
+        <div className="bg-white/5 rounded-lg border border-white/10 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 text-left text-xs text-gray-500">
+                <th className="px-4 py-3">Table</th>
+                <th className="px-3 py-3 text-right">Lignes</th>
+                <th className="px-3 py-3 text-right">Taille donnees</th>
+                <th className="px-3 py-3 text-right">Taille totale</th>
+                <th className="px-3 py-3 text-right">Colonnes</th>
+                <th className="px-3 py-3">Barre</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.tables.map(t => {
+                const pct = data.dbSizeBytes > 0 ? (t.totalBytes / data.dbSizeBytes) * 100 : 0;
+                return (
+                  <tr key={t.name} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td className="px-4 py-3 font-mono text-white font-bold">{t.name}</td>
+                    <td className="px-3 py-3 text-right font-mono text-gray-300">{t.rows.toLocaleString()}</td>
+                    <td className="px-3 py-3 text-right font-mono text-gray-400">{formatBytes(t.dataBytes)}</td>
+                    <td className="px-3 py-3 text-right font-mono text-blue-400">{formatBytes(t.totalBytes)}</td>
+                    <td className="px-3 py-3 text-right font-mono text-gray-500">{t.columns}</td>
+                    <td className="px-3 py-3 w-32">
+                      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all" style={{ width: `${Math.max(pct, 0.5)}%` }} />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
