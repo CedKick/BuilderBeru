@@ -118,6 +118,7 @@ function getDeviceId() {
 const _syncTimers = {};
 const SYNC_DELAY = 30000; // 30s debounce (was 3s — reduced to save network transfer)
 const SYNC_THROTTLE = 120000; // 2 min minimum between syncs per key (auto-farming protection)
+const SYNC_DEADLINE = 60000; // 60s max — sync MUST fire within this window even if debounce keeps resetting
 const SAVE_SYNC_THROTTLE = 15000; // 15s smart throttle for saveAndSync — if synced recently, schedule instead of force
 const _lastSyncTime = {}; // key → timestamp of last successful sync
 
@@ -740,17 +741,32 @@ class CloudStorageManager {
 
   _scheduleSync(key) {
     this._syncQueue.add(key);
+
+    // Track when first change happened (for deadline enforcement)
+    if (!this._firstDirtyTime) this._firstDirtyTime = {};
+    if (!this._firstDirtyTime[key]) this._firstDirtyTime[key] = Date.now();
+
     if (_syncTimers[key]) clearTimeout(_syncTimers[key]);
 
     // Throttle: if we synced this key recently, delay until throttle period expires
     const lastSync = _lastSyncTime[key] || 0;
     const elapsed = Date.now() - lastSync;
-    const delay = elapsed < SYNC_THROTTLE
+    let delay = elapsed < SYNC_THROTTLE
       ? Math.max(SYNC_DELAY, SYNC_THROTTLE - elapsed) // Wait until throttle expires
       : SYNC_DELAY; // Normal debounce
 
+    // Deadline: if data has been dirty for too long, force sync NOW
+    const dirtyDuration = Date.now() - this._firstDirtyTime[key];
+    if (dirtyDuration >= SYNC_DEADLINE) {
+      delay = 0; // Fire immediately
+    } else {
+      // Cap delay so it doesn't exceed deadline
+      delay = Math.min(delay, SYNC_DEADLINE - dirtyDuration);
+    }
+
     _syncTimers[key] = setTimeout(() => {
       delete _syncTimers[key];
+      delete this._firstDirtyTime[key];
       this.syncKey(key);
     }, delay);
   }
@@ -881,7 +897,7 @@ class CloudStorageManager {
       if (self._initialized && (self._syncQueue.size > 0 || self._pendingData.size > 0)) {
         self._flushQueue();
       }
-    }, 900000); // 15 min periodic safety net (was 5 min)
+    }, 300000); // 5 min periodic safety net
 
     // 4. Cross-tab sync — detect when another tab writes to localStorage
     //    (storage event only fires in OTHER tabs, not the one that wrote)
@@ -904,3 +920,6 @@ export const cloudStorage = new CloudStorageManager();
 
 // Install auto-sync interceptor immediately
 cloudStorage.installAutoSync();
+
+// Expose for console debugging (e.g. cloudStorage.syncKey('shadow_colosseum_data'))
+window.cloudStorage = cloudStorage;
