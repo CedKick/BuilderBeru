@@ -53,19 +53,32 @@ const RARITY_MAX_SUBS = { rare: 2, legendaire: 3, mythique: 4 };
 const VALID_RARITIES = new Set(['rare', 'legendaire', 'mythique']);
 const VALID_SLOTS = new Set(['casque', 'plastron', 'gants', 'bottes', 'collier', 'bracelet', 'anneau', 'boucles']);
 
-// All 29 valid set IDs (8 base + 8 raid + 5 ARC2 + 8 ultime)
+// All valid set IDs (8 base + 8 raid + 5 ARC2 + 8 ultime + expedition)
 const VALID_SETS = new Set([
-  // Base (equipmentData.js line 8-65)
+  // Base (8)
   'infamie_chaotique', 'volonte_de_fer', 'flamme_maudite', 'maree_eternelle',
   'ombre_souveraine', 'benediction_celeste', 'expertise_bestiale', 'eclat_angelique',
-  // Raid (equipmentData.js line 71-143)
+  // Raid (8)
   'sacrifice_martyr', 'fureur_desespoir', 'chaines_destin', 'echo_temporel',
   'aura_commandeur', 'voile_ombre', 'source_arcanique', 'flamme_interieure',
-  // ARC2 (equipmentData.js line 1346-1442)
+  // ARC2 (5)
   'toughness', 'burning_curse', 'burning_greed', 'iron_will', 'chaotic_infamy',
-  // Ultime (equipmentData.js line 1448-1522)
+  // Ultime (8)
   'rage_eternelle', 'gardien_celeste', 'siphon_vital', 'tempete_arcane',
   'equilibre_supreme', 'pacte_ombres', 'esprit_transcendant', 'resonance_arcanique',
+  // Expedition — BIG SETS (10)
+  'fureur_titan', 'lame_fantome', 'aegis_gardien', 'souffle_vital', 'tempete_acier',
+  'voix_neant', 'pacte_sang', 'bastion_eternel', 'harmonie_celeste', 'nova_arcanique',
+  // Expedition — MEDIUM SETS Foret (5)
+  'ecailles_drake', 'crocs_loup', 'plumes_phenix', 'griffes_wyverne', 'ronce_vivante',
+  // Expedition — MEDIUM SETS Abysses (5)
+  'souffle_glacial', 'cendres_ardentes', 'murmure_ombre', 'lumiere_sacree', 'cuirasse_fer',
+  // Expedition — MEDIUM SETS Neant (5)
+  'ailes_vent', 'sang_guerrier', 'totem_ancestral', 'brume_mystique', 'lien_meute',
+  // Expedition — SUPPORT SETS (4)
+  'sagesse_ancienne', 'souffle_celeste', 'purification_sacree', 'brise_guerissante',
+  // Expedition — ZONE SETS (5)
+  'set_forest', 'set_stone', 'set_shadow', 'set_abyss', 'set_void',
 ]);
 
 // ─── Constants (from colosseumCore.js lines 95-119) ──────────

@@ -324,53 +324,75 @@ export default function MailInbox() {
       shadowCoinManager.addCoins(rewards.coins, 'mail-reward');
     }
 
-    // Expedition items, currencies, essences
+    // Expedition items → convert to artifact format and add to artifactInventory
+    // Currencies/essences stay in raidData (shadow_colosseum_raid)
     if (rewards.expeditionItems || rewards.expeditionCurrencies || rewards.expeditionEssences) {
-      let raidData = await cloudStorage.loadFresh(RAID_KEY) || {};
-      if (!Array.isArray(raidData.expeditionInventory)) raidData.expeditionInventory = [];
-      if (!raidData.expeditionCurrencies) raidData.expeditionCurrencies = { alkahest: 0, marteau_rouge: 0, contribution: 0 };
-      if (!raidData.expeditionEssences) raidData.expeditionEssences = { guerre: 0, arcanique: 0, gardienne: 0 };
+      const EXP_SLOT_MAP = { helm: 'casque', chest: 'plastron', gloves: 'gants', boots: 'bottes' };
+      const mapRarity = (r) => r === 'legendary' ? 'legendaire' : r === 'epic' ? 'legendaire' : (r === 'uncommon' || r === 'common') ? 'rare' : r;
 
-      // Add items to expedition inventory (consumables like scrolls go to colosseum data instead)
+      // Items → artifactInventory (in data = shadow_colosseum_data)
       if (rewards.expeditionItems && Array.isArray(rewards.expeditionItems)) {
+        if (!Array.isArray(data.artifactInventory)) data.artifactInventory = [];
         const timestamp = Date.now();
         let scrollCount = 0;
         rewards.expeditionItems.forEach(item => {
-          if (item.itemId === 'exp_ultimate_scroll') {
-            scrollCount++;
-            return;
-          }
-          raidData.expeditionInventory.push({
-            ...item,
+          if (item.itemId === 'exp_ultimate_scroll') { scrollCount++; return; }
+          if (!['armor', 'weapon', 'set_piece'].includes(item.type)) return;
+          const statEntries = Object.entries(item.stats || {});
+          const mainStatEntry = statEntries[0] || ['atk_flat', 0];
+          const subEntries = statEntries.slice(1);
+          data.artifactInventory.push({
             uid: `exp_${timestamp}_${Math.random().toString(36).slice(2, 8)}`,
-            obtainedAt: timestamp,
-            source: 'expedition_mail',
+            set: item.setId || null,
+            slot: item.slot ? (EXP_SLOT_MAP[item.slot] || item.slot) : 'casque',
+            rarity: mapRarity(item.rarity),
+            level: 0,
+            mainStat: mainStatEntry[0],
+            mainValue: mainStatEntry[1],
+            subs: subEntries.map(([sid, value]) => ({ id: sid, value })),
             locked: false,
+            source: 'expedition',
+            expItemId: item.itemId,
+            expItemName: item.itemName,
+            expOriginalStats: item.stats,
           });
         });
-        // Ultimate scrolls → increment in colosseum save (shadow_colosseum_data)
         if (scrollCount > 0) {
           data.ultimateScrolls = (data.ultimateScrolls || 0) + scrollCount;
         }
+        // Cap at 1500 — trim weakest non-locked
+        if (data.artifactInventory.length > 1500) {
+          data.artifactInventory = data.artifactInventory
+            .map((a, i) => ({ a, i, locked: a.locked || a.highlighted, score: (typeof a.mainValue === 'number' ? a.mainValue : 0) + (Array.isArray(a.subs) ? a.subs.reduce((s, sub) => s + (sub.value || 0), 0) : 0) + ({ rare: 40, legendaire: 160, mythique: 320 }[a.rarity] || 0) }))
+            .sort((a, b) => (a.locked ? 1 : 0) - (b.locked ? 1 : 0) || b.score - a.score)
+            .slice(0, 1500)
+            .sort((a, b) => a.i - b.i)
+            .map(x => x.a);
+        }
       }
 
-      // Add currencies
-      if (rewards.expeditionCurrencies) {
-        const c = raidData.expeditionCurrencies;
-        c.alkahest = (c.alkahest || 0) + (rewards.expeditionCurrencies.alkahest || 0);
-        c.marteau_rouge = (c.marteau_rouge || 0) + (rewards.expeditionCurrencies.marteau_rouge || 0);
-        c.contribution = (c.contribution || 0) + (rewards.expeditionCurrencies.contribution || 0);
-      }
+      // Currencies + essences stay in raidData
+      if (rewards.expeditionCurrencies || rewards.expeditionEssences) {
+        let raidData = await cloudStorage.loadFresh(RAID_KEY) || {};
+        if (!raidData.expeditionCurrencies) raidData.expeditionCurrencies = { alkahest: 0, marteau_rouge: 0, contribution: 0 };
+        if (!raidData.expeditionEssences) raidData.expeditionEssences = { guerre: 0, arcanique: 0, gardienne: 0 };
 
-      // Add essences
-      if (rewards.expeditionEssences) {
-        const e = raidData.expeditionEssences;
-        e.guerre = (e.guerre || 0) + (rewards.expeditionEssences.guerre || 0);
-        e.arcanique = (e.arcanique || 0) + (rewards.expeditionEssences.arcanique || 0);
-        e.gardienne = (e.gardienne || 0) + (rewards.expeditionEssences.gardienne || 0);
-      }
+        if (rewards.expeditionCurrencies) {
+          const c = raidData.expeditionCurrencies;
+          c.alkahest = (c.alkahest || 0) + (rewards.expeditionCurrencies.alkahest || 0);
+          c.marteau_rouge = (c.marteau_rouge || 0) + (rewards.expeditionCurrencies.marteau_rouge || 0);
+          c.contribution = (c.contribution || 0) + (rewards.expeditionCurrencies.contribution || 0);
+        }
 
-      await cloudStorage.saveAndSync(RAID_KEY, raidData);
+        if (rewards.expeditionEssences) {
+          const e = raidData.expeditionEssences;
+          e.guerre = (e.guerre || 0) + (rewards.expeditionEssences.guerre || 0);
+          e.arcanique = (e.arcanique || 0) + (rewards.expeditionEssences.arcanique || 0);
+          e.gardienne = (e.gardienne || 0) + (rewards.expeditionEssences.gardienne || 0);
+        }
+
+        await cloudStorage.saveAndSync(RAID_KEY, raidData);
+      }
     }
 
     // Force immediate sync (no debounce) — ensures cloud has A3 BEFORE user navigates to ShadowColosseum

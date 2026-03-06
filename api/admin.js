@@ -535,6 +535,138 @@ async function handleTableRows(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// MIGRATE-EXPEDITION — One-shot: move expeditionInventory → artifactInventory
+// ═══════════════════════════════════════════════════════════════
+
+const EXP_SLOT_MAP = { helm: 'casque', chest: 'plastron', gloves: 'gants', boots: 'bottes' };
+
+function mapExpRarity(r) {
+  if (r === 'legendary') return 'legendaire';
+  if (r === 'epic') return 'legendaire';
+  if (r === 'uncommon' || r === 'common') return 'rare';
+  return r;
+}
+
+function convertExpToArtifact(item) {
+  const statEntries = Object.entries(item.stats || {});
+  const mainStatEntry = statEntries[0] || ['atk_flat', 0];
+  const subEntries = statEntries.slice(1);
+  return {
+    uid: item.uid || `exp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    set: item.setId || null,
+    slot: item.slot ? (EXP_SLOT_MAP[item.slot] || item.slot) : 'casque',
+    rarity: mapExpRarity(item.rarity),
+    level: 0,
+    mainStat: mainStatEntry[0],
+    mainValue: mainStatEntry[1],
+    subs: subEntries.map(([sid, value]) => ({ id: sid, value })),
+    locked: item.locked || false,
+    source: 'expedition',
+    expItemId: item.itemId,
+    expItemName: item.itemName,
+    expOriginalStats: item.stats,
+  };
+}
+
+function scoreArtifact(art) {
+  let score = 0;
+  if (typeof art.mainValue === 'number') score += Math.abs(art.mainValue);
+  if (Array.isArray(art.subs)) for (const s of art.subs) if (typeof s.value === 'number') score += Math.abs(s.value);
+  const w = { rare: 40, legendaire: 160, mythique: 320 };
+  score += w[art.rarity] || 0;
+  return score;
+}
+
+async function handleMigrateExpedition(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  // Find all users with expeditionInventory in shadow_colosseum_raid
+  const raidRows = await query(`
+    SELECT s.device_id, u.username, s.data as raid_data
+    FROM user_storage s
+    JOIN users u ON u.device_id = s.device_id
+    WHERE s.storage_key = 'shadow_colosseum_raid'
+      AND s.data ? 'expeditionInventory'
+  `);
+
+  const results = [];
+  for (const row of raidRows.rows) {
+    const raidData = typeof row.raid_data === 'string' ? JSON.parse(row.raid_data) : row.raid_data;
+    const expInv = raidData.expeditionInventory;
+    if (!Array.isArray(expInv) || expInv.length === 0) {
+      results.push({ username: row.username, status: 'empty', migrated: 0 });
+      continue;
+    }
+
+    // Filter to equippable items only (armor, weapon, set_piece)
+    const equipItems = expInv.filter(i => ['armor', 'weapon', 'set_piece'].includes(i.type));
+    if (equipItems.length === 0) {
+      results.push({ username: row.username, status: 'no_equip', migrated: 0 });
+      continue;
+    }
+
+    // Load shadow_colosseum_data
+    const saveRow = await query(
+      'SELECT data FROM user_storage WHERE device_id = $1 AND storage_key = $2',
+      [row.device_id, 'shadow_colosseum_data']
+    );
+
+    let saveData = {};
+    if (saveRow.rows.length > 0) {
+      saveData = typeof saveRow.rows[0].data === 'string' ? JSON.parse(saveRow.rows[0].data) : saveRow.rows[0].data;
+    }
+    if (!Array.isArray(saveData.artifactInventory)) saveData.artifactInventory = [];
+
+    // Convert and add
+    const converted = equipItems.map(convertExpToArtifact);
+    saveData.artifactInventory.push(...converted);
+
+    // Cap at 1500 — remove weakest non-locked
+    if (saveData.artifactInventory.length > 1500) {
+      const scored = saveData.artifactInventory.map((art, idx) => ({ art, idx, score: scoreArtifact(art), locked: art.locked || art.highlighted }));
+      scored.sort((a, b) => a.score - b.score);
+      const toRemove = new Set();
+      let excess = saveData.artifactInventory.length - 1500;
+      for (const s of scored) {
+        if (excess <= 0) break;
+        if (!s.locked) { toRemove.add(s.idx); excess--; }
+      }
+      saveData.artifactInventory = saveData.artifactInventory.filter((_, i) => !toRemove.has(i));
+    }
+
+    // Write back saveData
+    const saveJson = JSON.stringify(saveData);
+    const saveSize = Buffer.byteLength(saveJson, 'utf8');
+    if (saveRow.rows.length > 0) {
+      await query(`UPDATE user_storage SET data = $1, size_bytes = $2, updated_at = NOW() WHERE device_id = $3 AND storage_key = 'shadow_colosseum_data'`,
+        [saveJson, saveSize, row.device_id]);
+    } else {
+      await query(`INSERT INTO user_storage (device_id, storage_key, data, size_bytes, updated_at) VALUES ($1, 'shadow_colosseum_data', $2, $3, NOW())`,
+        [row.device_id, saveJson, saveSize]);
+    }
+
+    // Clear expeditionInventory from raid data
+    delete raidData.expeditionInventory;
+    delete raidData.expeditionReplacementLog;
+    const raidJson = JSON.stringify(raidData);
+    const raidSize = Buffer.byteLength(raidJson, 'utf8');
+    await query(`UPDATE user_storage SET data = $1, size_bytes = $2, updated_at = NOW() WHERE device_id = $3 AND storage_key = 'shadow_colosseum_raid'`,
+      [raidJson, raidSize, row.device_id]);
+
+    results.push({
+      username: row.username,
+      status: 'migrated',
+      migrated: converted.length,
+      finalInventorySize: saveData.artifactInventory.length,
+    });
+  }
+
+  return res.status(200).json({ success: true, results });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -572,6 +704,8 @@ export default async function handler(req, res) {
         return await handleDbOverview(req, res);
       case 'table-rows':
         return await handleTableRows(req, res);
+      case 'migrate-expedition':
+        return await handleMigrateExpedition(req, res);
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }

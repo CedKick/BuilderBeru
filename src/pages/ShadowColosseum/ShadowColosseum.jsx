@@ -8818,42 +8818,7 @@ export default function ShadowColosseum() {
                 );
               })()}
 
-              {/* ── Expedition Weapons ── */}
-              {(() => {
-                const expWeapons = (raidStorage?.expeditionInventory || []).filter(item => item.type === 'weapon');
-                if (expWeapons.length === 0) return null;
-                const EXP_R = {
-                  common: { color: 'text-gray-400', border: 'border-gray-600/30', bg: 'bg-gray-700/20' },
-                  uncommon: { color: 'text-green-400', border: 'border-green-600/30', bg: 'bg-green-900/20' },
-                  rare: { color: 'text-blue-400', border: 'border-blue-600/30', bg: 'bg-blue-900/20' },
-                  epic: { color: 'text-purple-400', border: 'border-purple-600/30', bg: 'bg-purple-900/20' },
-                  legendary: { color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-900/20' },
-                  mythique: { color: 'text-red-400', border: 'border-red-500/30', bg: 'bg-red-900/20' },
-                };
-                const EXP_SN = { hp_flat: 'PV', atk_flat: 'ATK', def_flat: 'DEF', spd_flat: 'SPD', crit_rate: 'CRIT%', res_flat: 'RES', hp_pct: 'PV%', atk_pct: 'ATK%', def_pct: 'DEF%', crit_dmg: 'CRIT DMG' };
-                const EXP_SC = { hp_flat: 'text-green-400', atk_flat: 'text-red-400', def_flat: 'text-blue-400', spd_flat: 'text-emerald-400', crit_rate: 'text-yellow-400', res_flat: 'text-cyan-400', hp_pct: 'text-green-400', atk_pct: 'text-red-400', def_pct: 'text-blue-400', crit_dmg: 'text-yellow-400' };
-                return (
-                  <div className="mt-2">
-                    <div className="text-small-responsive text-emerald-400 mb-1">{'\u2694\uFE0F'} Armes d'Expedition ({expWeapons.length})</div>
-                    <div className="space-y-1 max-h-48 overflow-y-auto">
-                      {expWeapons.map(item => {
-                        const rc = EXP_R[item.rarity] || EXP_R.common;
-                        return (
-                          <div key={item.uid} className={`w-full flex items-center gap-2 p-1.5 rounded-lg border ${rc.border} ${rc.bg} text-left`}>
-                            <span className="text-base">{'\u2694\uFE0F'}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className={`text-normal-responsive font-bold truncate ${rc.color}`}>{item.itemName || item.itemId}</div>
-                              <div className="text-normal-responsive text-gray-500">
-                                {Object.entries(item.stats || {}).map(([k, v]) => `${EXP_SN[k] || k} +${v}`).join(' | ')}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* Expedition weapons now in unified artifactInventory — no separate section */}
 
               {/* Weapon Swap Confirmation Popup */}
               {weaponSwapConfirm && (() => {
@@ -9358,7 +9323,7 @@ export default function ShadowColosseum() {
             <div className="mb-4">
               <div className="flex items-center justify-between mb-1.5">
                 <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider">
-                  Inventaire ({data.artifactInventory.length + ((raidStorage?.expeditionInventory || []).filter(i => i.type === 'armor' || i.type === 'set_piece').length)})
+                  Inventaire ({data.artifactInventory.length})
                 </div>
                 <div className="flex items-center gap-1.5">
                 {/* Conseil Beru button */}
@@ -9955,47 +9920,18 @@ export default function ShadowColosseum() {
                 </div>
               )}
 
-              {/* Inventory grid — includes forge + expedition artifacts */}
+              {/* Inventory grid — unified artifactInventory (includes expedition items with source:'expedition') */}
               {(() => {
-                const EXP_SLOT_MAP = { helm: 'casque', chest: 'plastron', gloves: 'gants', boots: 'bottes' };
                 const EXP_STAT_NAMES = { hp_flat: 'PV', atk_flat: 'ATK', def_flat: 'DEF', spd_flat: 'SPD', crit_rate: 'CRIT%', res_flat: 'RES', hp_pct: 'PV%', atk_pct: 'ATK%', def_pct: 'DEF%', crit_dmg: 'CRIT DMG', heal_received_pct: 'Soins+%', heal_pct: 'Soins%', lifesteal_pct: 'Vol Vie%', mana_regen_pct: 'Mana%', cdr_pct: 'CDR%', armor_pen: 'Perce', dodge_pct: 'Esquive%', thorns_pct: 'Epines%', shield_pct: 'Bouclier%' };
 
-                // Convert expedition armor to forge-compatible display format
-                const expArmor = (raidStorage?.expeditionInventory || [])
-                  .filter(item => item.type === 'armor' || item.type === 'set_piece')
-                  .map(item => {
-                    const statEntries = Object.entries(item.stats || {});
-                    const mainStatEntry = statEntries[0] || ['atk_flat', 0];
-                    const subEntries = statEntries.slice(1);
-                    return {
-                      art: {
-                        uid: item.uid, set: item.setId || null,
-                        slot: item.slot ? EXP_SLOT_MAP[item.slot] : null,
-                        rarity: item.rarity === 'legendary' ? 'legendaire' : item.rarity === 'epic' ? 'legendaire' : item.rarity === 'uncommon' ? 'rare' : item.rarity === 'common' ? 'rare' : item.rarity,
-                        level: 0, mainStat: mainStatEntry[0], mainValue: mainStatEntry[1],
-                        subs: subEntries.map(([sid, value]) => ({ id: sid, value })),
-                        source: 'expedition', expItemId: item.itemId, expItemName: item.itemName,
-                      },
-                      i: -1, // marker for expedition items
-                      expOriginal: item, // keep reference for equip
-                    };
-                  });
-
-                // Merge forge + expedition artifacts
-                const forgeItems = data.artifactInventory.map((art, i) => ({ art, i, expOriginal: null }));
-                const allItems = [...forgeItems, ...expArmor];
-
                 // Filter
-                const filteredInv = allItems.filter(({ art, expOriginal }) => {
+                const filteredInv = data.artifactInventory.filter(art => {
                   if (eqInvFilter.type) {
-                    const isExp = !!expOriginal || art.source === 'expedition';
+                    const isExp = art.source === 'expedition';
                     if (eqInvFilter.type === 'expedition') { if (!isExp) return false; }
-                    else { if (isExp) return false; if (getSetCategory(art.set) !== eqInvFilter.type) return false; }
+                    else { if (isExp && !getSetCategory(art.set)) return false; if (!isExp && getSetCategory(art.set) !== eqInvFilter.type) return false; if (isExp && getSetCategory(art.set) !== eqInvFilter.type) return false; }
                   }
-                  if (eqInvFilter.slot) {
-                    const artSlot = art.slot || (expOriginal?.slot ? EXP_SLOT_MAP[expOriginal.slot] : null);
-                    if (artSlot !== eqInvFilter.slot) return false;
-                  }
+                  if (eqInvFilter.slot && art.slot !== eqInvFilter.slot) return false;
                   if (eqInvFilter.set && art.set !== eqInvFilter.set) return false;
                   return true;
                 });
@@ -10003,50 +9939,20 @@ export default function ShadowColosseum() {
                 const invHClass = HUNTERS[id]?.class || 'fighter';
                 const invHElement = c.element || 'fire';
 
-                // Equip expedition item
-                const equipExpItem = (expItem) => {
-                  const mappedSlot = expItem.slot ? EXP_SLOT_MAP[expItem.slot] : null;
-                  const targetSlot = mappedSlot || (() => {
-                    const equipped = data.artifacts[id] || {};
-                    for (const s of ['casque', 'plastron', 'gants', 'bottes']) { if (!equipped[s]) return s; }
-                    return 'casque';
-                  })();
-                  const statEntries = Object.entries(expItem.stats || {});
-                  const mainStatEntry = statEntries[0] || ['atk_flat', 0];
-                  const subEntries = statEntries.slice(1);
-                  const forgeArt = {
-                    uid: expItem.uid, set: expItem.setId || null, slot: targetSlot,
-                    rarity: expItem.rarity === 'legendary' ? 'legendaire' : expItem.rarity === 'epic' ? 'legendaire' : expItem.rarity === 'uncommon' ? 'rare' : expItem.rarity === 'common' ? 'rare' : expItem.rarity,
-                    level: 0, mainStat: mainStatEntry[0], mainValue: mainStatEntry[1],
-                    subs: subEntries.map(([sid, value]) => ({ id: sid, value })),
-                    locked: expItem.locked || false, source: 'expedition', expItemId: expItem.itemId, expItemName: expItem.itemName, expOriginalStats: expItem.stats,
-                  };
-                  setData(prev => {
-                    const prevEquipped = { ...(prev.artifacts[id] || {}) };
-                    const prevInv = [...prev.artifactInventory];
-                    if (prevEquipped[targetSlot]) prevInv.push(prevEquipped[targetSlot]);
-                    prevEquipped[targetSlot] = forgeArt;
-                    return { ...prev, artifacts: { ...prev.artifacts, [id]: prevEquipped }, artifactInventory: prevInv };
-                  });
-                  setRaidStorage(prev => ({
-                    ...prev, expeditionInventory: (prev?.expeditionInventory || []).filter(i => i.uid !== expItem.uid),
-                  }));
-                };
-
                 return filteredInv.length === 0 ? (
                   <div className="text-center text-normal-responsive text-gray-600 py-4">
-                    {allItems.length === 0 ? "Aucun artefact. Forge-en dans la Boutique !" : "Aucun artefact ne correspond aux filtres."}
+                    {data.artifactInventory.length === 0 ? "Aucun artefact. Forge-en dans la Boutique !" : "Aucun artefact ne correspond aux filtres."}
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto">
-                    {filteredInv.map(({ art, i, expOriginal }) => {
+                    {filteredInv.map((art, i) => {
                       const setDef = ALL_ARTIFACT_SETS[art.set];
                       const slotDef = ARTIFACT_SLOTS[art.slot];
                       const mainDef = MAIN_STAT_VALUES[art.mainStat];
                       const mainColor = getStatColor(art.mainStat, invHClass, invHElement);
-                      const isExp = !!expOriginal;
+                      const isExp = art.source === 'expedition';
                       return (
-                        <button key={art.uid || i} onClick={() => isExp ? equipExpItem(expOriginal) : equipArtifact(art)}
+                        <button key={art.uid || i} onClick={() => equipArtifact(art)}
                           className={`p-2 rounded-lg border ${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'} hover:brightness-125 transition-all text-left`}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
@@ -10061,7 +9967,7 @@ export default function ShadowColosseum() {
                             <span className={`text-small-responsive font-bold ${mainColor}`}>{mainDef?.icon || (isExp ? '\uD83C\uDF3F' : '?')} {mainDef?.name || EXP_STAT_NAMES[art.mainStat] || art.mainStat}</span>
                             <span className={`text-normal-responsive font-black ml-auto ${mainColor}`}>+{art.mainValue}</span>
                           </div>
-                          {art.subs.length > 0 && (
+                          {art.subs && art.subs.length > 0 && (
                             <div className="mt-1 pt-1 border-t border-gray-700/20 space-y-px">
                               {art.subs.map((sub, si) => {
                                 const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);

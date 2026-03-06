@@ -1,26 +1,59 @@
 import { query } from '../_db/neon.js';
 
-// Server-to-server secret (expedition server → Vercel)
+// Server-to-server secret (expedition server → API)
 const GAME_SERVER_SECRET = process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key';
 
-// Inventory limits (mirrored from expedition-server config)
 const INVENTORY_MAX = 1500;
 const EQUIP_TYPES = ['armor', 'weapon', 'set_piece'];
 
-// Rarity weights for stat scoring (higher rarity = higher base value)
-const RARITY_WEIGHT = { common: 1, uncommon: 2, rare: 4, epic: 8, legendary: 16, mythique: 32 };
+// Slot mapping: expedition → colosseum format
+const EXP_SLOT_MAP = { helm: 'casque', chest: 'plastron', gloves: 'gants', boots: 'bottes' };
 
-// Calculate a simple power score for an equippable item
-// Sums all numeric stat values + rarity bonus
-function calcItemScore(item) {
+// Rarity mapping: expedition → colosseum format
+function mapRarity(r) {
+  if (r === 'legendary') return 'legendaire';
+  if (r === 'epic') return 'legendaire';
+  if (r === 'uncommon' || r === 'common') return 'rare';
+  return r; // mythique, rare pass through
+}
+
+// Rarity weights for artifact scoring
+const RARITY_WEIGHT = { rare: 4, legendaire: 16, mythique: 32 };
+
+// Score an artifact in colosseum format (mainValue + subs + rarity bonus)
+function calcArtifactScore(art) {
   let score = 0;
-  if (item.stats && typeof item.stats === 'object') {
-    for (const val of Object.values(item.stats)) {
-      if (typeof val === 'number') score += Math.abs(val);
+  if (typeof art.mainValue === 'number') score += Math.abs(art.mainValue);
+  if (Array.isArray(art.subs)) {
+    for (const sub of art.subs) {
+      if (typeof sub.value === 'number') score += Math.abs(sub.value);
     }
   }
-  score += (RARITY_WEIGHT[item.rarity] || 0) * 10;
+  score += (RARITY_WEIGHT[art.rarity] || 0) * 10;
   return score;
+}
+
+// Convert expedition item → artifact format (same as equipExpItem in ShadowColosseum.jsx)
+function convertToArtifact(item, timestamp) {
+  const statEntries = Object.entries(item.stats || {});
+  const mainStatEntry = statEntries[0] || ['atk_flat', 0];
+  const subEntries = statEntries.slice(1);
+
+  return {
+    uid: `exp_${timestamp}_${Math.random().toString(36).slice(2, 8)}`,
+    set: item.setId || null,
+    slot: item.slot ? (EXP_SLOT_MAP[item.slot] || item.slot) : 'casque',
+    rarity: mapRarity(item.rarity),
+    level: 0,
+    mainStat: mainStatEntry[0],
+    mainValue: mainStatEntry[1],
+    subs: subEntries.map(([sid, value]) => ({ id: sid, value })),
+    locked: false,
+    source: 'expedition',
+    expItemId: item.itemId,
+    expItemName: item.itemName,
+    expOriginalStats: item.stats,
+  };
 }
 
 export default async function handler(req, res) {
@@ -35,7 +68,6 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    // Validate server secret
     const secret = req.headers['x-server-secret'];
     if (secret !== GAME_SERVER_SECRET) {
       return res.status(403).json({ error: 'Invalid server secret' });
@@ -43,13 +75,11 @@ export default async function handler(req, res) {
 
     const { deposits, currencyDeposits } = req.body;
 
-    // Handle shared currency deposits (alkahest, marteau_rouge, contribution)
-    // currencyDeposits = [{ username, currencies: { alkahest: N, marteau_rouge: N, contribution: N } }]
+    // Currencies stay in shadow_colosseum_raid — no change
     if (Array.isArray(currencyDeposits) && currencyDeposits.length > 0) {
       return handleCurrencyDeposits(currencyDeposits, res);
     }
 
-    // deposits = [{ username, items: [{ itemId, itemName, rarity, binding, type, slot, stats, setId }] }]
     if (!Array.isArray(deposits) || deposits.length === 0) {
       return res.status(400).json({ error: 'Missing deposits or currencyDeposits array' });
     }
@@ -58,7 +88,6 @@ export default async function handler(req, res) {
     for (const { username, items } of deposits) {
       if (!username || !Array.isArray(items) || items.length === 0) continue;
 
-      // Find user by username (case-insensitive)
       const userResult = await query(
         'SELECT id, device_id FROM users WHERE LOWER(username) = LOWER($1)',
         [username]
@@ -70,10 +99,10 @@ export default async function handler(req, res) {
 
       const deviceId = userResult.rows[0].device_id;
 
-      // Read current shadow_colosseum_raid data
+      // Read shadow_colosseum_data (main save — contains artifactInventory)
       const existing = await query(
         'SELECT data FROM user_storage WHERE device_id = $1 AND storage_key = $2',
-        [deviceId, 'shadow_colosseum_raid']
+        [deviceId, 'shadow_colosseum_data']
       );
 
       let data = {};
@@ -82,106 +111,60 @@ export default async function handler(req, res) {
           ? JSON.parse(existing.rows[0].data) : existing.rows[0].data;
       }
 
-      // Initialize expeditionInventory & replacementLog if missing
-      if (!Array.isArray(data.expeditionInventory)) {
-        data.expeditionInventory = [];
-      }
-      if (!Array.isArray(data.expeditionReplacementLog)) {
-        data.expeditionReplacementLog = [];
+      if (!Array.isArray(data.artifactInventory)) {
+        data.artifactInventory = [];
       }
 
       const timestamp = Date.now();
       const itemResults = [];
 
       for (const item of items) {
-        const inv = data.expeditionInventory;
         const isEquip = EQUIP_TYPES.includes(item.type);
+        if (!isEquip) {
+          itemResults.push({ itemId: item.itemId, action: 'rejected', reason: 'not_equipment' });
+          continue;
+        }
 
-        // ── Inventory has space → just add ──
+        // Convert to artifact format
+        const artifact = convertToArtifact(item, timestamp);
+        const inv = data.artifactInventory;
+
+        // Inventory has space → just add
         if (inv.length < INVENTORY_MAX) {
-          inv.push({
-            ...item,
-            uid: `exp_${timestamp}_${Math.random().toString(36).slice(2, 8)}`,
-            obtainedAt: timestamp,
-            source: 'expedition',
-            locked: false,
-          });
+          inv.push(artifact);
           itemResults.push({ itemId: item.itemId, action: 'added' });
           continue;
         }
 
-        // ── Inventory FULL ──
-
-        if (!isEquip) {
-          // Non-equipment: refuse (consumables, materials, currencies can't replace anything)
-          itemResults.push({ itemId: item.itemId, action: 'rejected', reason: 'inventory_full' });
-          continue;
-        }
-
-        // Equipment: find the weakest non-locked equipment to replace
-        const newScore = calcItemScore(item);
-
-        // Find all non-locked equipment in inventory, sorted by score ascending
+        // Inventory FULL → find weakest non-locked artifact to replace
+        const newScore = calcArtifactScore(artifact);
         let weakestIdx = -1;
         let weakestScore = Infinity;
 
         for (let i = 0; i < inv.length; i++) {
-          const existing = inv[i];
-          if (existing.locked) continue;
-          if (!EQUIP_TYPES.includes(existing.type)) continue;
-
-          const existingScore = calcItemScore(existing);
-          if (existingScore < weakestScore) {
-            weakestScore = existingScore;
+          if (inv[i].locked || inv[i].highlighted) continue;
+          const s = calcArtifactScore(inv[i]);
+          if (s < weakestScore) {
+            weakestScore = s;
             weakestIdx = i;
           }
         }
 
-        // No unlocked equipment found to replace
         if (weakestIdx === -1) {
           itemResults.push({ itemId: item.itemId, action: 'rejected', reason: 'all_locked' });
           continue;
         }
 
-        // New item is weaker than the weakest → don't replace
         if (newScore <= weakestScore) {
           itemResults.push({ itemId: item.itemId, action: 'rejected', reason: 'weaker_than_existing' });
           continue;
         }
 
-        // Replace: log what was replaced
-        const replaced = inv[weakestIdx];
-        data.expeditionReplacementLog.push({
-          timestamp,
-          replacedItem: { uid: replaced.uid, itemId: replaced.itemId, itemName: replaced.itemName, rarity: replaced.rarity, score: weakestScore },
-          newItem: { itemId: item.itemId, itemName: item.itemName, rarity: item.rarity, score: newScore },
-        });
-
-        // Keep log trimmed (last 50 replacements)
-        if (data.expeditionReplacementLog.length > 50) {
-          data.expeditionReplacementLog = data.expeditionReplacementLog.slice(-50);
-        }
-
-        // Replace in-place
-        inv[weakestIdx] = {
-          ...item,
-          uid: `exp_${timestamp}_${Math.random().toString(36).slice(2, 8)}`,
-          obtainedAt: timestamp,
-          source: 'expedition',
-          locked: false,
-        };
-
-        itemResults.push({
-          itemId: item.itemId,
-          action: 'replaced',
-          replacedItem: replaced.itemName,
-          replacedRarity: replaced.rarity,
-          oldScore: weakestScore,
-          newScore,
-        });
+        inv[weakestIdx] = artifact;
+        itemResults.push({ itemId: item.itemId, action: 'replaced', oldScore: weakestScore, newScore });
       }
 
-      // Write back
+      // Write back to shadow_colosseum_data
       const jsonStr = JSON.stringify(data);
       const sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
 
@@ -189,13 +172,13 @@ export default async function handler(req, res) {
         await query(
           `UPDATE user_storage SET data = $1, size_bytes = $2, updated_at = NOW()
            WHERE device_id = $3 AND storage_key = $4`,
-          [jsonStr, sizeBytes, deviceId, 'shadow_colosseum_raid']
+          [jsonStr, sizeBytes, deviceId, 'shadow_colosseum_data']
         );
       } else {
         await query(
           `INSERT INTO user_storage (device_id, storage_key, data, size_bytes, updated_at)
            VALUES ($1, $2, $3, $4, NOW())`,
-          [deviceId, 'shadow_colosseum_raid', jsonStr, sizeBytes]
+          [deviceId, 'shadow_colosseum_data', jsonStr, sizeBytes]
         );
       }
 
@@ -203,14 +186,7 @@ export default async function handler(req, res) {
       const replaced = itemResults.filter(r => r.action === 'replaced').length;
       const rejected = itemResults.filter(r => r.action === 'rejected').length;
 
-      results.push({
-        username,
-        status: 'ok',
-        itemsAdded: added,
-        itemsReplaced: replaced,
-        itemsRejected: rejected,
-        details: itemResults,
-      });
+      results.push({ username, status: 'ok', itemsAdded: added, itemsReplaced: replaced, itemsRejected: rejected, details: itemResults });
     }
 
     return res.status(200).json({ success: true, results });
@@ -221,7 +197,7 @@ export default async function handler(req, res) {
 }
 
 // Handle shared currency deposits (alkahest, marteau_rouge, contribution)
-// These are counters, not inventory items — no size limit, just increment
+// These stay in shadow_colosseum_raid — no change
 async function handleCurrencyDeposits(currencyDeposits, res) {
   try {
     const results = [];
@@ -251,18 +227,15 @@ async function handleCurrencyDeposits(currencyDeposits, res) {
           ? JSON.parse(existing.rows[0].data) : existing.rows[0].data;
       }
 
-      // Initialize expeditionCurrencies if missing
       if (!data.expeditionCurrencies || typeof data.expeditionCurrencies !== 'object') {
         data.expeditionCurrencies = { alkahest: 0, marteau_rouge: 0, contribution: 0 };
       }
 
-      // Increment counters
       const c = data.expeditionCurrencies;
       c.alkahest = (c.alkahest || 0) + (currencies.alkahest || 0);
       c.marteau_rouge = (c.marteau_rouge || 0) + (currencies.marteau_rouge || 0);
       c.contribution = (c.contribution || 0) + (currencies.contribution || 0);
 
-      // Write back
       const jsonStr = JSON.stringify(data);
       const sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
 

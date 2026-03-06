@@ -235,6 +235,7 @@ export default function Codex() {
           hunters.add(typeof e === 'string' ? e : e.id);
         });
         setOwnedHunters(hunters);
+        // Legacy: expeditionInventory may still exist pre-migration
         if (d.expeditionInventory) {
           setExpeditionInventory(d.expeditionInventory);
         }
@@ -243,13 +244,20 @@ export default function Codex() {
   }, []);
 
   // ─── Expedition ownership tracking ───
+  // After migration: expedition items are in artifactInventory with source:'expedition'
+  // Legacy fallback: also check old expeditionInventory array
   const ownedExpSets = useMemo(() => {
     const sets = {};
+    // New: expedition items in artifactInventory
+    for (const art of artifactInventory) {
+      if (art.source === 'expedition' && art.set) sets[art.set] = (sets[art.set] || 0) + 1;
+    }
+    // Legacy: old expeditionInventory (pre-migration)
     for (const item of expeditionInventory) {
       if (item.setId) sets[item.setId] = (sets[item.setId] || 0) + 1;
     }
     return sets;
-  }, [expeditionInventory]);
+  }, [artifactInventory, expeditionInventory]);
 
   const ownedExpWeapons = useMemo(() => {
     const w = new Set();
