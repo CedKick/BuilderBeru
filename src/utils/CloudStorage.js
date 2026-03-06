@@ -403,40 +403,33 @@ class CloudStorageManager {
           // Guard: block stale React writes until component re-reads
           this._autoRestoredSizes[key] = cloudJson.length;
         } else if (key === 'shadow_colosseum_data') {
-          // Always merge server-deposited fields into localStorage
-          // Server/admin scripts can inject weapons, artifacts, alkahest etc.
+          // Normal reload: LOCAL wins. Only merge server-deposited fields from cloud
+          // (expedition deposits, admin scripts) using MAX strategy — never overwrite local bulk data.
           try {
             const localData = JSON.parse(localRaw);
             const cloudData = entry.data;
             let patched = false;
 
-            // Alkahest: MAX
-            if ((cloudData.alkahest || 0) > (localData.alkahest || 0)) {
-              localData.alkahest = cloudData.alkahest;
-              patched = true;
-            }
-            // AccountXp: MAX
-            if ((cloudData.accountXp || 0) > (localData.accountXp || 0)) {
-              localData.accountXp = cloudData.accountXp;
-              patched = true;
-            }
-            // UltimateScrolls: MAX
-            if ((cloudData.ultimateScrolls || 0) > (localData.ultimateScrolls || 0)) {
-              localData.ultimateScrolls = cloudData.ultimateScrolls;
-              patched = true;
-            }
-            // RerollCounts: MAX per artifact
-            const cloudRC = cloudData.rerollCounts || {};
-            const localRC = localData.rerollCounts || {};
-            for (const [uid, count] of Object.entries(cloudRC)) {
-              if ((count || 0) > (localRC[uid] || 0)) {
-                localRC[uid] = count;
+            // Server-deposited scalar fields: take MAX (cloud may have received deposits while offline)
+            for (const field of ['alkahest', 'accountXp', 'ultimateScrolls']) {
+              if ((cloudData[field] || 0) > (localData[field] || 0)) {
+                localData[field] = cloudData[field];
                 patched = true;
               }
             }
-            if (patched) localData.rerollCounts = localRC;
 
-            // WeaponCollection: MAX awakening per weapon + add missing weapons from cloud
+            // Hammers: MAX each
+            const cloudH = cloudData.hammers || {};
+            const localH = localData.hammers || {};
+            for (const [hId, count] of Object.entries(cloudH)) {
+              if ((count || 0) > (localH[hId] || 0)) {
+                localH[hId] = count;
+                patched = true;
+              }
+            }
+            if (patched) localData.hammers = localH;
+
+            // WeaponCollection: add missing weapons from cloud (expedition deposits), MAX awakening
             const cloudWC = cloudData.weaponCollection || {};
             const localWC = localData.weaponCollection || {};
             for (const [wId, aw] of Object.entries(cloudWC)) {
@@ -450,40 +443,20 @@ class CloudStorageManager {
             }
             localData.weaponCollection = localWC;
 
-            // Hammers: MAX each
-            const cloudH = cloudData.hammers || {};
-            const localH = localData.hammers || {};
-            for (const [hId, count] of Object.entries(cloudH)) {
-              if ((count || 0) > (localH[hId] || 0)) {
-                localH[hId] = count;
-                patched = true;
-              }
-            }
-            localData.hammers = localH;
-
-            // ArtifactInventory: union by uid — ONLY when local is suspiciously empty
-            // If local has a reasonable count (>30% of cloud), trust local deletions (user cleanup).
-            // Only force-merge when local looks corrupted/wiped (e.g. cache clear, new device).
+            // ArtifactInventory: ONLY add cloud artifacts missing from local (expedition deposits)
+            // Never remove local artifacts. Never restore deleted artifacts.
             const cloudInv = cloudData.artifactInventory || [];
             const localInv = localData.artifactInventory || [];
-            const localIsSuspiciouslySmall = cloudInv.length > 50 && localInv.length < cloudInv.length * 0.3;
-            if (cloudInv.length > 0 && localIsSuspiciouslySmall) {
-              const localUids = new Set(localInv.map(a => a.uid).filter(Boolean));
-              const missingFromCloud = cloudInv.filter(a => a.uid && !localUids.has(a.uid));
-              if (missingFromCloud.length > 0) {
-                localData.artifactInventory = [...localInv, ...missingFromCloud];
-                // Cap at 1500
-                if (localData.artifactInventory.length > 1500) {
-                  localData.artifactInventory.sort((a, b) => {
-                    if (a.locked && !b.locked) return -1;
-                    if (!a.locked && b.locked) return 1;
-                    return 0;
-                  });
-                  localData.artifactInventory.length = 1500;
-                }
-                patched = true;
-                console.log(`[CloudStorage] Merged ${missingFromCloud.length} cloud-only artifacts into local (local was suspiciously small: ${localInv.length} vs cloud ${cloudInv.length})`);
+            const localUids = new Set(localInv.map(a => a.uid).filter(Boolean));
+            const missingFromCloud = cloudInv.filter(a => a.uid && !localUids.has(a.uid) && a.source === 'expedition');
+            if (missingFromCloud.length > 0) {
+              localData.artifactInventory = [...localInv, ...missingFromCloud];
+              if (localData.artifactInventory.length > 1500) {
+                localData.artifactInventory.sort((a, b) => (a.locked ? -1 : b.locked ? 1 : 0));
+                localData.artifactInventory.length = 1500;
               }
+              patched = true;
+              console.log(`[CloudStorage] Merged ${missingFromCloud.length} expedition artifacts from cloud into local`);
             }
 
             if (patched) {
