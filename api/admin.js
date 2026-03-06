@@ -693,18 +693,32 @@ async function handleMigrateWeapons(req, res) {
       continue;
     }
 
-    // Find weapon artifacts (slot === 'weapon' or original expedition weapon items)
-    const weaponArts = data.artifactInventory.filter(a =>
-      a.slot === 'weapon' || (a.source === 'expedition' && a.expItemId && (a.expItemId.startsWith('exp_') && a.expOriginalStats && !a.set))
-    );
+    if (!data.weaponCollection || typeof data.weaponCollection !== 'object') data.weaponCollection = {};
+    if (!data.hammers) data.hammers = {};
 
-    if (weaponArts.length === 0) {
+    // Fix: remove any non-weapon IDs that were incorrectly placed in weaponCollection
+    const ARMOR_PREFIXES = ['exp_forest_', 'exp_stone_', 'exp_shadow_', 'exp_leaf_', 'exp_crystal_', 'exp_abyss_', 'exp_magma_', 'exp_void_', 'exp_eclipse_'];
+    const removedFromWC = [];
+    for (const wId of Object.keys(data.weaponCollection)) {
+      if (ARMOR_PREFIXES.some(p => wId.startsWith(p))) {
+        delete data.weaponCollection[wId];
+        data.artifactInventory.push({
+          uid: `fix_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          set: null, slot: wId.includes('helm') ? 'casque' : wId.includes('chest') ? 'plastron' : wId.includes('gloves') ? 'gants' : 'bottes',
+          rarity: 'rare', level: 0, mainStat: 'hp_flat', mainValue: 0,
+          subs: [], locked: false, source: 'expedition', expItemId: wId,
+        });
+        removedFromWC.push(wId);
+      }
+    }
+
+    // Find weapon artifacts (slot === 'weapon' ONLY — armor has casque/plastron/gants/bottes)
+    const weaponArts = data.artifactInventory.filter(a => a.slot === 'weapon');
+
+    if (weaponArts.length === 0 && removedFromWC.length === 0) {
       results.push({ username: row.username, status: 'no_weapons', weaponsMoved: 0 });
       continue;
     }
-
-    if (!data.weaponCollection || typeof data.weaponCollection !== 'object') data.weaponCollection = {};
-    if (!data.hammers) data.hammers = {};
 
     let moved = 0;
     const weaponDetails = [];
@@ -739,8 +753,9 @@ async function handleMigrateWeapons(req, res) {
 
     results.push({
       username: row.username,
-      status: 'migrated',
+      status: moved > 0 || removedFromWC.length > 0 ? 'migrated' : 'no_weapons',
       weaponsMoved: moved,
+      armorFixedBack: removedFromWC,
       finalWeaponCollection: Object.keys(data.weaponCollection).length,
       finalInventorySize: data.artifactInventory.length,
       details: weaponDetails,
