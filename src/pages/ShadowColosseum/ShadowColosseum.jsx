@@ -2955,10 +2955,15 @@ export default function ShadowColosseum() {
 
     const deleteUids = new Set(cleanupPreview.toDelete.map(a => a.uid));
 
-    setData(prev => ({
-      ...prev,
-      artifactInventory: prev.artifactInventory.filter(art => !deleteUids.has(art.uid))
-    }));
+    setData(prev => {
+      const newData = {
+        ...prev,
+        artifactInventory: prev.artifactInventory.filter(art => !deleteUids.has(art.uid))
+      };
+      // Force immediate cloud sync so cleanup survives F5
+      cloudStorage.saveAndSync(SAVE_KEY, newData);
+      return newData;
+    });
 
     shadowCoinManager.addCoins(cleanupPreview.totalCoins, 'mass_cleanup');
 

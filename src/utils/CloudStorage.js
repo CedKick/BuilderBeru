@@ -460,10 +460,13 @@ class CloudStorageManager {
             }
             localData.hammers = localH;
 
-            // ArtifactInventory: union by uid (add cloud-only artifacts)
+            // ArtifactInventory: union by uid — ONLY when local is suspiciously empty
+            // If local has a reasonable count (>30% of cloud), trust local deletions (user cleanup).
+            // Only force-merge when local looks corrupted/wiped (e.g. cache clear, new device).
             const cloudInv = cloudData.artifactInventory || [];
             const localInv = localData.artifactInventory || [];
-            if (cloudInv.length > 0) {
+            const localIsSuspiciouslySmall = cloudInv.length > 50 && localInv.length < cloudInv.length * 0.3;
+            if (cloudInv.length > 0 && localIsSuspiciouslySmall) {
               const localUids = new Set(localInv.map(a => a.uid).filter(Boolean));
               const missingFromCloud = cloudInv.filter(a => a.uid && !localUids.has(a.uid));
               if (missingFromCloud.length > 0) {
@@ -478,7 +481,7 @@ class CloudStorageManager {
                   localData.artifactInventory.length = 1500;
                 }
                 patched = true;
-                console.log(`[CloudStorage] Merged ${missingFromCloud.length} cloud-only artifacts into local`);
+                console.log(`[CloudStorage] Merged ${missingFromCloud.length} cloud-only artifacts into local (local was suspiciously small: ${localInv.length} vs cloud ${cloudInv.length})`);
               }
             }
 
