@@ -393,7 +393,7 @@ export default function AdminPanel() {
                 {activeTab === 'hunters' && <HuntersTab data={playerData} setField={setField} />}
                 {activeTab === 'weapons' && <WeaponsTab data={playerData} setField={setField} />}
                 {activeTab === 'account' && <AccountTab data={playerData} setField={setField} />}
-                {activeTab === 'inventory' && <InventoryTab data={playerData} setField={setField} />}
+                {activeTab === 'inventory' && <InventoryTab data={playerData} raidData={raidData} setField={setField} />}
               </>
             )}
           </div>
@@ -1563,9 +1563,13 @@ function AccountTab({ data, setField }) {
 // TAB: Inventory
 // ═══════════════════════════════════════════════════════════
 
-function InventoryTab({ data, setField }) {
+function InventoryTab({ data, raidData, setField }) {
   const inventory = data.artifactInventory || [];
   const equipped = data.artifacts || {};
+  const expInventory = raidData?.expeditionInventory || [];
+  const expCurrencies = raidData?.expeditionCurrencies || {};
+  const expEssences = raidData?.expeditionEssences || {};
+  const [showSection, setShowSection] = useState('all'); // all, artifacts, expedition
 
   const clearInventory = () => {
     if (confirm(`Supprimer les ${inventory.length} artefacts de l'inventaire ?`)) {
@@ -1580,9 +1584,10 @@ function InventoryTab({ data, setField }) {
     }
   };
 
-  // Count by rarity
+  // Count by rarity (combined)
   const rarityCount = {};
-  for (const art of inventory) {
+  const allItems = [...inventory, ...expInventory];
+  for (const art of allItems) {
     const r = art.rarity || 'unknown';
     rarityCount[r] = (rarityCount[r] || 0) + 1;
   }
@@ -1591,13 +1596,19 @@ function InventoryTab({ data, setField }) {
     return acc + Object.keys(equipped[chibiId] || {}).length;
   }, 0);
 
+  const RARITY_C = { common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6', epic: '#a855f7', legendary: '#f59e0b', mythique: '#ef4444' };
+
   return (
     <div className="space-y-6">
       {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-          <div className="text-[10px] text-gray-500 uppercase">Inventaire</div>
-          <div className="text-lg font-bold text-orange-400">{inventory.length}</div>
+          <div className="text-[10px] text-gray-500 uppercase">Artefacts</div>
+          <div className="text-lg font-bold text-orange-400">{inventory.length}<span className="text-xs text-gray-500">/1500</span></div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-3 border border-white/5">
+          <div className="text-[10px] text-gray-500 uppercase">Expedition</div>
+          <div className="text-lg font-bold text-emerald-400">{expInventory.length}<span className="text-xs text-gray-500">/1500</span></div>
         </div>
         <div className="bg-white/5 rounded-lg p-3 border border-white/5">
           <div className="text-[10px] text-gray-500 uppercase">Equipes</div>
@@ -1608,23 +1619,116 @@ function InventoryTab({ data, setField }) {
           <div className="text-lg font-bold text-yellow-400">{inventory.filter(a => a.locked).length}</div>
         </div>
         <div className="bg-white/5 rounded-lg p-3 border border-white/5">
-          <div className="text-[10px] text-gray-500 uppercase">Taille</div>
-          <div className="text-lg font-bold text-gray-300">{(JSON.stringify(inventory).length / 1024).toFixed(1)} KB</div>
+          <div className="text-[10px] text-gray-500 uppercase">Total</div>
+          <div className="text-lg font-bold text-gray-300">{allItems.length}</div>
         </div>
       </div>
 
+      {/* Expedition currencies + essences */}
+      {(expCurrencies.alkahest > 0 || expCurrencies.marteau_rouge > 0 || expCurrencies.contribution > 0 ||
+        expEssences.guerre > 0 || expEssences.arcanique > 0 || expEssences.gardienne > 0) && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {expCurrencies.alkahest > 0 && (
+            <div className="bg-purple-500/10 rounded-lg p-2 border border-purple-500/20 text-center">
+              <div className="text-[10px] text-purple-400 uppercase">Alkahest</div>
+              <div className="font-bold text-purple-300">{expCurrencies.alkahest.toLocaleString()}</div>
+            </div>
+          )}
+          {expCurrencies.marteau_rouge > 0 && (
+            <div className="bg-red-500/10 rounded-lg p-2 border border-red-500/20 text-center">
+              <div className="text-[10px] text-red-400 uppercase">Marteau Rouge</div>
+              <div className="font-bold text-red-300">{expCurrencies.marteau_rouge.toLocaleString()}</div>
+            </div>
+          )}
+          {expCurrencies.contribution > 0 && (
+            <div className="bg-amber-500/10 rounded-lg p-2 border border-amber-500/20 text-center">
+              <div className="text-[10px] text-amber-400 uppercase">Contribution</div>
+              <div className="font-bold text-amber-300">{expCurrencies.contribution.toLocaleString()}</div>
+            </div>
+          )}
+          {expEssences.guerre > 0 && (
+            <div className="bg-red-500/10 rounded-lg p-2 border border-red-500/20 text-center">
+              <div className="text-[10px] text-red-400 uppercase">Essence Guerre</div>
+              <div className="font-bold text-red-300">{expEssences.guerre.toLocaleString()}</div>
+            </div>
+          )}
+          {expEssences.arcanique > 0 && (
+            <div className="bg-blue-500/10 rounded-lg p-2 border border-blue-500/20 text-center">
+              <div className="text-[10px] text-blue-400 uppercase">Essence Arcanique</div>
+              <div className="font-bold text-blue-300">{expEssences.arcanique.toLocaleString()}</div>
+            </div>
+          )}
+          {expEssences.gardienne > 0 && (
+            <div className="bg-green-500/10 rounded-lg p-2 border border-green-500/20 text-center">
+              <div className="text-[10px] text-green-400 uppercase">Essence Gardienne</div>
+              <div className="font-bold text-green-300">{expEssences.gardienne.toLocaleString()}</div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Rarity Breakdown */}
       <div className="bg-white/5 rounded-lg p-4 border border-white/5">
-        <h3 className="text-sm font-bold text-gray-300 mb-3">Par rarete</h3>
+        <h3 className="text-sm font-bold text-gray-300 mb-3">Par rarete (total)</h3>
         <div className="flex flex-wrap gap-3">
           {Object.entries(rarityCount).sort((a, b) => b[1] - a[1]).map(([rarity, count]) => (
             <div key={rarity} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-              <span className="text-xs text-gray-400 capitalize">{rarity}</span>
+              <span className="text-xs capitalize" style={{ color: RARITY_C[rarity] || '#9ca3af' }}>{rarity}</span>
               <span className="ml-2 font-bold text-white">{count}</span>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2">
+        {['all', 'artifacts', 'expedition'].map(s => (
+          <button key={s} onClick={() => setShowSection(s)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${showSection === s ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/5 text-gray-500 hover:text-gray-300'}`}>
+            {s === 'all' ? `Tout (${allItems.length})` : s === 'artifacts' ? `Artefacts (${inventory.length})` : `Expedition (${expInventory.length})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Expedition items list */}
+      {(showSection === 'all' || showSection === 'expedition') && expInventory.length > 0 && (
+        <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+          <h3 className="text-sm font-bold text-emerald-400 mb-3">Items Expedition ({expInventory.length})</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-96 overflow-y-auto">
+            {expInventory.map((item, i) => (
+              <div key={item.uid || i} className="bg-white/5 rounded-lg p-2 border border-white/10 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold capitalize" style={{ color: RARITY_C[item.rarity] || '#9ca3af' }}>{item.itemName || item.itemId}</span>
+                  <span className="text-gray-500">{item.type}</span>
+                </div>
+                {item.stats && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {Object.entries(item.stats).map(([k, v]) => (
+                      <span key={k} className="px-1 py-0.5 bg-black/30 rounded text-[10px] text-gray-400">{k}: {v}</span>
+                    ))}
+                  </div>
+                )}
+                {item.setId && <div className="text-[10px] text-purple-400 mt-1">Set: {item.setId}</div>}
+                {item.locked && <span className="text-[10px] text-yellow-400">verrouille</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Artifacts summary (existing) */}
+      {(showSection === 'all' || showSection === 'artifacts') && inventory.length > 0 && (
+        <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+          <h3 className="text-sm font-bold text-orange-400 mb-3">Artefacts Colosseum ({inventory.length})</h3>
+          <div className="text-xs text-gray-500">
+            {(() => {
+              const bySlot = {};
+              for (const a of inventory) { bySlot[a.slot || 'unknown'] = (bySlot[a.slot || 'unknown'] || 0) + 1; }
+              return Object.entries(bySlot).sort((a, b) => b[1] - a[1]).map(([slot, c]) => `${slot}: ${c}`).join(' | ');
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3">
@@ -1861,6 +1965,10 @@ function DatabaseTab() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [expandedTable, setExpandedTable] = useState(null);
+  const [tableRows, setTableRows] = useState(null);
+  const [rowsLoading, setRowsLoading] = useState(false);
+  const [rowsPage, setRowsPage] = useState(0);
 
   const fetchDb = async () => {
     setLoading(true);
@@ -1878,6 +1986,33 @@ function DatabaseTab() {
     }
   };
 
+  const fetchRows = async (table, page = 0) => {
+    setRowsLoading(true);
+    try {
+      const resp = await fetch(`${API}?action=table-rows&table=${table}&limit=50&offset=${page * 50}`, { headers: authHeaders() });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      if (json.success) {
+        setTableRows(json);
+        setRowsPage(page);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRowsLoading(false);
+    }
+  };
+
+  const toggleTable = (tableName) => {
+    if (expandedTable === tableName) {
+      setExpandedTable(null);
+      setTableRows(null);
+    } else {
+      setExpandedTable(tableName);
+      fetchRows(tableName, 0);
+    }
+  };
+
   useEffect(() => { fetchDb(); }, []);
 
   if (loading && !data) {
@@ -1887,6 +2022,13 @@ function DatabaseTab() {
       </div>
     );
   }
+
+  const truncateCell = (val) => {
+    if (val === null || val === undefined) return <span className="text-gray-600">NULL</span>;
+    const s = String(val);
+    if (s.length > 120) return <span title={s}>{s.slice(0, 120)}...</span>;
+    return s;
+  };
 
   return (
     <div className="space-y-6">
@@ -1911,38 +2053,78 @@ function DatabaseTab() {
       {error && <div className="px-4 py-3 rounded-lg text-sm bg-red-500/10 text-red-400 border border-red-500/20">{error}</div>}
 
       {data && (
-        <div className="bg-white/5 rounded-lg border border-white/10 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10 text-left text-xs text-gray-500">
-                <th className="px-4 py-3">Table</th>
-                <th className="px-3 py-3 text-right">Lignes</th>
-                <th className="px-3 py-3 text-right">Taille donnees</th>
-                <th className="px-3 py-3 text-right">Taille totale</th>
-                <th className="px-3 py-3 text-right">Colonnes</th>
-                <th className="px-3 py-3">Barre</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.tables.map(t => {
-                const pct = data.dbSizeBytes > 0 ? (t.totalBytes / data.dbSizeBytes) * 100 : 0;
-                return (
-                  <tr key={t.name} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="px-4 py-3 font-mono text-white font-bold">{t.name}</td>
-                    <td className="px-3 py-3 text-right font-mono text-gray-300">{t.rows.toLocaleString()}</td>
-                    <td className="px-3 py-3 text-right font-mono text-gray-400">{formatBytes(t.dataBytes)}</td>
-                    <td className="px-3 py-3 text-right font-mono text-blue-400">{formatBytes(t.totalBytes)}</td>
-                    <td className="px-3 py-3 text-right font-mono text-gray-500">{t.columns}</td>
-                    <td className="px-3 py-3 w-32">
-                      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all" style={{ width: `${Math.max(pct, 0.5)}%` }} />
+        <div className="space-y-1">
+          {data.tables.map(t => {
+            const pct = data.dbSizeBytes > 0 ? (t.totalBytes / data.dbSizeBytes) * 100 : 0;
+            const isExpanded = expandedTable === t.name;
+            return (
+              <div key={t.name}>
+                <div
+                  onClick={() => toggleTable(t.name)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors ${isExpanded ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-white/5 border border-white/5 hover:bg-white/10'}`}
+                >
+                  <span className={`text-xs transition-transform ${isExpanded ? 'rotate-90' : ''}`}>&#9654;</span>
+                  <span className="font-mono text-white font-bold flex-1">{t.name}</span>
+                  <span className="font-mono text-gray-300 text-sm w-20 text-right">{t.rows.toLocaleString()}</span>
+                  <span className="font-mono text-gray-500 text-xs w-24 text-right">{formatBytes(t.dataBytes)}</span>
+                  <span className="font-mono text-blue-400 text-xs w-24 text-right">{formatBytes(t.totalBytes)}</span>
+                  <span className="font-mono text-gray-600 text-xs w-8 text-right">{t.columns}</span>
+                  <div className="w-24 h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" style={{ width: `${Math.max(pct, 0.5)}%` }} />
+                  </div>
+                </div>
+
+                {/* Expanded: show rows */}
+                {isExpanded && (
+                  <div className="ml-4 mr-2 mt-1 mb-2 bg-black/30 rounded-lg border border-white/10 overflow-hidden">
+                    {rowsLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    ) : tableRows && tableRows.table === t.name ? (
+                      <div>
+                        {/* Pagination */}
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-xs text-gray-500">
+                          <span>{tableRows.totalRows} lignes total (page {rowsPage + 1}/{Math.ceil(tableRows.totalRows / 50) || 1})</span>
+                          <div className="flex gap-2">
+                            <button disabled={rowsPage === 0} onClick={() => fetchRows(t.name, rowsPage - 1)}
+                              className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 transition-colors">&laquo; Prev</button>
+                            <button disabled={(rowsPage + 1) * 50 >= tableRows.totalRows} onClick={() => fetchRows(t.name, rowsPage + 1)}
+                              className="px-2 py-1 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30 transition-colors">Next &raquo;</button>
+                          </div>
+                        </div>
+                        {/* Table */}
+                        <div className="overflow-x-auto max-h-96">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-white/10">
+                                {tableRows.columns.map(c => (
+                                  <th key={c.name} className="px-2 py-2 text-left text-gray-500 font-mono whitespace-nowrap">
+                                    {c.name} <span className="text-gray-700">{c.type}</span>
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {tableRows.rows.map((row, i) => (
+                                <tr key={i} className="border-b border-white/5 hover:bg-white/5">
+                                  {tableRows.columns.map(c => (
+                                    <td key={c.name} className="px-2 py-1.5 font-mono text-gray-300 max-w-xs truncate whitespace-nowrap">
+                                      {truncateCell(row[c.name])}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

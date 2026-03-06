@@ -4,7 +4,7 @@ import { query } from '../_db/neon.js';
 const GAME_SERVER_SECRET = process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key';
 
 // Inventory limits (mirrored from expedition-server config)
-const INVENTORY_MAX = 200;
+const INVENTORY_MAX = 1500;
 const EQUIP_TYPES = ['armor', 'weapon', 'set_piece'];
 
 // Rarity weights for stat scoring (higher rarity = higher base value)

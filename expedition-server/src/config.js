@@ -120,7 +120,7 @@ export const LOOT = {
   WIPE_STEAL_CHANCE_MAX: 0.40,
   ROLL_MAX: 100,
   SR_PICKS_MAX: 5,  // Each player can SR up to 5 items (can repeat for extra rolls)
-  INVENTORY_MAX: 200,  // Max items in expeditionInventory per player
+  INVENTORY_MAX: 1500,  // Max items in expeditionInventory per player
   EQUIP_TYPES: ['armor', 'weapon', 'set_piece'],  // Types considered "artifacts" (have stats, can auto-replace)
 };
 

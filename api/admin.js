@@ -485,6 +485,56 @@ async function handleExpeditionDashboard(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// TABLE-ROWS — Browse rows of any table (paginated)
+// ═══════════════════════════════════════════════════════════════
+
+async function handleTableRows(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const table = req.query.table;
+  if (!table || !/^[a-z_]+$/.test(table)) {
+    return res.status(400).json({ error: 'Invalid table name' });
+  }
+
+  const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+  const offset = parseInt(req.query.offset, 10) || 0;
+
+  // Get columns info
+  const cols = await query(
+    `SELECT column_name, data_type FROM information_schema.columns
+     WHERE table_name = $1 AND table_schema = 'public' ORDER BY ordinal_position`,
+    [table]
+  );
+
+  // Get rows (truncate large jsonb/text to 500 chars for display)
+  const selectCols = cols.rows.map(c => {
+    if (c.data_type === 'jsonb' || c.data_type === 'json' || c.data_type === 'text') {
+      return `LEFT(CAST("${c.column_name}" AS TEXT), 500) as "${c.column_name}"`;
+    }
+    return `"${c.column_name}"`;
+  }).join(', ');
+
+  const rows = await query(
+    `SELECT ${selectCols} FROM "${table}" ORDER BY 1 DESC LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+
+  const countResult = await query(`SELECT COUNT(*) as cnt FROM "${table}"`);
+
+  return res.status(200).json({
+    success: true,
+    table,
+    columns: cols.rows.map(c => ({ name: c.column_name, type: c.data_type })),
+    rows: rows.rows,
+    totalRows: parseInt(countResult.rows[0].cnt, 10),
+    limit,
+    offset,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -520,6 +570,8 @@ export default async function handler(req, res) {
         return await handleExpeditionDashboard(req, res);
       case 'db-overview':
         return await handleDbOverview(req, res);
+      case 'table-rows':
+        return await handleTableRows(req, res);
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }
