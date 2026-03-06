@@ -1194,7 +1194,7 @@ export class ExpeditionEngine {
     if (byUser.size > 0) {
       const deposits = Array.from(byUser.entries()).map(([username, items]) => ({ username, items }));
       try {
-        const response = await fetch('https://api.builderberu.com/storage/deposit-expedition', {
+        const response = await fetch('http://localhost:3005/api/storage/deposit-expedition', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1242,7 +1242,7 @@ export class ExpeditionEngine {
     if (usernames.length === 0) return;
 
     try {
-      const response = await fetch('https://api.builderberu.com/storage/deposit-expedition', {
+      const response = await fetch('http://localhost:3005/api/storage/deposit-expedition', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
