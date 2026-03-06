@@ -341,8 +341,10 @@ export default function MailInbox() {
           if (!['armor', 'weapon', 'set_piece'].includes(item.type)) return;
 
           // ── WEAPONS → weaponCollection (same as regular weapons)
+          // Boss weapons use "weapon_X" prefix in expedition → map to "X"
           if (item.type === 'weapon') {
-            const wId = item.itemId;
+            const BOSS_MAP = { weapon_excalibur:'excalibur', weapon_mjolnir:'mjolnir', weapon_muramasa:'muramasa', weapon_yggdrasil:'yggdrasil', weapon_gungnir:'gungnir', weapon_nidhogg:'nidhogg', weapon_aegis:'aegis_weapon', weapon_caladbolg:'caladbolg', weapon_thyrsus:'thyrsus', weapon_gram:'gram' };
+            const wId = BOSS_MAP[item.itemId] || item.itemId;
             if (data.weaponCollection[wId] === undefined) {
               data.weaponCollection[wId] = 0; // First copy → A0
             } else if (data.weaponCollection[wId] >= MAX_WEAPON_AWAKENING) {

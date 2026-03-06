@@ -6,6 +6,13 @@ const GAME_SERVER_SECRET = process.env.GAME_SERVER_SECRET || 'manaya-raid-secret
 const INVENTORY_MAX = 1500;
 const EQUIP_TYPES = ['armor', 'weapon', 'set_piece'];
 
+// Boss weapons in expedition use "weapon_X" prefix → map to "X" for weaponCollection
+const BOSS_WEAPON_MAP = {
+  weapon_excalibur: 'excalibur', weapon_mjolnir: 'mjolnir', weapon_muramasa: 'muramasa',
+  weapon_yggdrasil: 'yggdrasil', weapon_gungnir: 'gungnir', weapon_nidhogg: 'nidhogg',
+  weapon_aegis: 'aegis_weapon', weapon_caladbolg: 'caladbolg', weapon_thyrsus: 'thyrsus', weapon_gram: 'gram',
+};
+
 // Slot mapping: expedition → colosseum format
 const EXP_SLOT_MAP = { helm: 'casque', chest: 'plastron', gloves: 'gants', boots: 'bottes' };
 
@@ -133,7 +140,7 @@ export default async function handler(req, res) {
 
         // ── WEAPONS → weaponCollection (same as regular weapons, with awakening)
         if (item.type === 'weapon') {
-          const wId = item.itemId;
+          const wId = BOSS_WEAPON_MAP[item.itemId] || item.itemId;
           const wc = data.weaponCollection;
           if (wc[wId] === undefined) {
             wc[wId] = 0; // First copy → A0
