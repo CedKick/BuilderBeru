@@ -10,6 +10,7 @@ import AchievementToast from './components/AchievementToast';
 import IgrisVsBeru from './components/IgrisVsBeru/IgrisVsBeru';
 import shadowAchievementManager from './utils/ShadowAchievementManager';
 import { isLoggedIn } from './utils/auth';
+import { API_URL } from './utils/api.js';
 
 export default function AppLayout({ children }) {
   const location = useLocation();
@@ -27,7 +28,7 @@ export default function AppLayout({ children }) {
 
       try {
         const token = localStorage.getItem('builderberu_auth_token');
-        const resp = await fetch('/api/factions?action=status', {
+        const resp = await fetch(`${API_URL}/factions?action=status`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

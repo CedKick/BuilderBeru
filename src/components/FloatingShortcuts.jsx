@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Target, Mail, Bell, Sparkles, Users, Plus, X } from 'lucide-react';
 import { isLoggedIn, authHeaders } from '../utils/auth';
+import { API_URL } from '../utils/api.js';
 
 const shortcuts = [
   {
@@ -61,7 +62,7 @@ export default function FloatingShortcuts({ onMascotClick }) {
   // ── Drop-log polling (every 15 min) ──
   useEffect(() => {
     const fetchDropLog = () => {
-      fetch('/api/drop-log?action=recent')
+      fetch(`${API_URL}/drop-log?action=recent`)
         .then(r => r.json())
         .then(d => {
           if (d.success && d.drops && d.drops.length > 0) {
@@ -90,7 +91,7 @@ export default function FloatingShortcuts({ onMascotClick }) {
   useEffect(() => {
     const fetchUnread = () => {
       if (!isLoggedIn()) return;
-      fetch('/api/mail?action=inbox&filter=unread&limit=1', { headers: authHeaders() })
+      fetch(`${API_URL}/mail?action=inbox&filter=unread&limit=1`, { headers: authHeaders() })
         .then(r => r.json())
         .then(d => {
           if (d.success) setUnreadMailCount(d.unreadCount || 0);
@@ -111,7 +112,7 @@ export default function FloatingShortcuts({ onMascotClick }) {
       }
       if (e.detail?.type === 'mail-update') {
         if (!isLoggedIn()) return;
-        fetch('/api/mail?action=inbox&filter=unread&limit=1', { headers: authHeaders() })
+        fetch(`${API_URL}/mail?action=inbox&filter=unread&limit=1`, { headers: authHeaders() })
           .then(r => r.json())
           .then(d => { if (d.success) setUnreadMailCount(d.unreadCount || 0); })
           .catch(() => {});

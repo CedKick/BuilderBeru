@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_URL } from '../../utils/api.js';
 import shadowCoinManager from '../../components/ChibiSystem/ShadowCoinManager';
 import { computeTalentBonuses } from './talentTreeData';
 import { computeTalentBonuses2 } from './talentTree2Data';
@@ -187,7 +188,7 @@ export default function RaidMode() {
     setRankingLoading(true);
     setShowRanking(true);
     try {
-      const resp = await fetch('/api/raid-ranking?action=rankings', {
+      const resp = await fetch(`${API_URL}/raid-ranking?action=rankings`, {
         headers: { ...authHeaders() },
       });
       const data = await resp.json();
@@ -202,7 +203,7 @@ export default function RaidMode() {
   const fetchPlayerDetail = async (entryId) => {
     if (rankingDetail[entryId]) return; // already cached
     try {
-      const resp = await fetch(`/api/raid-ranking?action=player-detail&id=${entryId}`, {
+      const resp = await fetch(`${API_URL}/raid-ranking?action=player-detail&id=${entryId}`, {
         headers: { ...authHeaders() },
       });
       const data = await resp.json();
@@ -258,7 +259,7 @@ export default function RaidMode() {
 
       const compressed = await compressGzip(teamDetail);
 
-      await fetch('/api/raid-ranking?action=submit', {
+      await fetch(`${API_URL}/raid-ranking?action=submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({
@@ -792,7 +793,7 @@ export default function RaidMode() {
         alreadyOwned.add('h_megumin');
         // Log legendary drop
         if (isLoggedIn()) {
-          fetch('/api/drop-log?action=submit', {
+          fetch(`${API_URL}/drop-log?action=submit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...authHeaders() },
             body: JSON.stringify({ itemType: 'hunter', itemId: 'h_megumin', itemName: 'Megumin', itemRarity: 'legendaire' }),
@@ -805,7 +806,7 @@ export default function RaidMode() {
 
       // Faction contribution: +5 points for any raid
       if (isLoggedIn()) {
-        fetch('/api/factions?action=activity-reward', {
+        fetch(`${API_URL}/factions?action=activity-reward`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeaders() },
           body: JSON.stringify({ activity: 'raid' }),

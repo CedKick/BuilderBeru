@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
+import { API_URL } from '../../utils/api.js';
 import AuthModal from '../../components/AuthModal';
 import { CHIBIS, SPRITES, ELEMENTS, MAX_LEVEL, statsAtFull, calculatePowerScore, mergeTalentBonuses } from './colosseumCore';
 import { HUNTERS, loadRaidData, getHunterStars, getHunterSprite } from './raidData';
@@ -178,7 +179,7 @@ export default function PveRanking() {
       const params = new URLSearchParams();
       params.set('action', 'rankings');
       if (filter) params.set('hunterId', filter);
-      const resp = await fetch(`/api/pve-ranking?${params}`, { headers: { ...authHeaders() } });
+      const resp = await fetch(`${API_URL}/pve-ranking?${params}`, { headers: { ...authHeaders() } });
       const json = await resp.json();
       if (json.success) {
         setRankings(json.rankings || []);
@@ -197,7 +198,7 @@ export default function PveRanking() {
   const fetchHunterList = useCallback(async () => {
     if (!loggedIn) return;
     try {
-      const resp = await fetch('/api/pve-ranking?action=hunter-list', { headers: { ...authHeaders() } });
+      const resp = await fetch(`${API_URL}/pve-ranking?action=hunter-list`, { headers: { ...authHeaders() } });
       const json = await resp.json();
       if (json.success) setHunterList(json.hunters || []);
     } catch {}
@@ -216,7 +217,7 @@ export default function PveRanking() {
     setSubmitting(true);
     try {
       const user = getAuthUser();
-      const resp = await fetch('/api/pve-ranking?action=submit', {
+      const resp = await fetch(`${API_URL}/pve-ranking?action=submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({
@@ -272,7 +273,7 @@ export default function PveRanking() {
     // Init table THEN submit + fetch (must wait for table creation)
     const initAndLoad = async () => {
       try {
-        await fetch('/api/pve-ranking?action=init', {
+        await fetch(`${API_URL}/pve-ranking?action=init`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeaders() },
         });
@@ -301,7 +302,7 @@ export default function PveRanking() {
   const fetchEntryDetail = async (entryId) => {
     setDetailLoading(true);
     try {
-      const resp = await fetch(`/api/pve-ranking?action=player-detail&id=${entryId}`, {
+      const resp = await fetch(`${API_URL}/pve-ranking?action=player-detail&id=${entryId}`, {
         headers: { ...authHeaders() },
       });
       const json = await resp.json();

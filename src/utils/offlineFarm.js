@@ -2,6 +2,7 @@
 // Manages farm state (localStorage), API calls, and reward calculation
 
 import { isLoggedIn, authHeaders } from './auth';
+import { API_URL } from './api.js';
 
 // ═══════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -107,7 +108,7 @@ function savePendingFarmResult(apiResult, farmState) {
 export async function startFarm(stageId, options = {}) {
   if (!isLoggedIn()) return { success: false, message: 'Not logged in' };
 
-  const resp = await fetch('/api/factions?action=offline-farm-start', {
+  const resp = await fetch(`${API_URL}/factions?action=offline-farm-start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ stageId }),
@@ -140,7 +141,7 @@ export async function stopFarm() {
   }
 
   try {
-    const resp = await fetch('/api/factions?action=offline-farm-end', {
+    const resp = await fetch(`${API_URL}/factions?action=offline-farm-end`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({}),

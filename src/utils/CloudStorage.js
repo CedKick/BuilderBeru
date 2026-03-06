@@ -12,7 +12,9 @@
  *   await cloudStorage.syncAll();              // push all tracked keys to cloud
  */
 
-const API_BASE = '/api/storage';
+import { API_URL } from './api.js';
+
+const API_BASE = `${API_URL}/storage`;
 const CLIENT_VERSION = 3; // Bump when deploying network-critical changes (track old vs new clients)
 const DEVICE_ID_KEY = 'builderberu_device_id';
 const AUTH_TOKEN_KEY = 'builderberu_auth_token';

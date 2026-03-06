@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import shadowCoinManager from './ChibiSystem/ShadowCoinManager';
 import { getAuthUser } from '../utils/auth';
+import { API_URL } from '../utils/api.js';
 
 // ═══════════════════════════════════════════════════════════════
 // L'OMBRE DE BERU V2 - "L'Ombre Libre"
@@ -1681,7 +1682,7 @@ const FloatingBeruMascot = () => {
   useEffect(() => {
     const pollAdminMessages = async () => {
       try {
-        const resp = await fetch('/api/beru-messages?action=recent');
+        const resp = await fetch(`${API_URL}/beru-messages?action=recent`);
         const data = await resp.json();
 
         if (data.success && data.messages?.length > 0) {

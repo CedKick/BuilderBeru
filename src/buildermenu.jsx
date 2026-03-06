@@ -23,6 +23,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { isLoggedIn, getAuthUser, logout, authHeaders } from './utils/auth';
+import { API_URL } from './utils/api.js';
 import AuthModal from './components/AuthModal';
 
 export default function BuilderMenu({ isOpen, onClose }) {
@@ -54,7 +55,7 @@ export default function BuilderMenu({ isOpen, onClose }) {
   const fetchUnreadCount = async () => {
     if (!isLoggedIn()) return;
     try {
-      const resp = await fetch('/api/mail?action=inbox&filter=unread&limit=1', {
+      const resp = await fetch(`${API_URL}/mail?action=inbox&filter=unread&limit=1`, {
         headers: authHeaders()
       });
       const data = await resp.json();

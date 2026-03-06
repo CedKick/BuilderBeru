@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Inbox, Gift, Trash2, ChevronDown, ChevronUp, Check, X, ArrowLeft, MessageCircle, Send } from 'lucide-react';
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
+import { API_URL } from '../utils/api.js';
 import { cloudStorage } from '../utils/CloudStorage';
 import shadowCoinManager from '../components/ChibiSystem/ShadowCoinManager';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
@@ -191,7 +192,7 @@ export default function MailInbox() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await fetch(`/api/mail?action=inbox&filter=${filter}&limit=100`, {
+      const resp = await fetch(`${API_URL}/mail?action=inbox&filter=${filter}&limit=100`, {
         headers: authHeaders(),
       });
       const data = await resp.json();
@@ -229,7 +230,7 @@ export default function MailInbox() {
 
   const markAsRead = async (mailId) => {
     try {
-      const resp = await fetch('/api/mail?action=mark-read', {
+      const resp = await fetch(`${API_URL}/mail?action=mark-read`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -386,7 +387,7 @@ export default function MailInbox() {
   const claimRewards = async (mailId, rewards) => {
     setClaimingId(mailId);
     try {
-      const resp = await fetch('/api/mail?action=claim', {
+      const resp = await fetch(`${API_URL}/mail?action=claim`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -518,7 +519,7 @@ export default function MailInbox() {
     }
 
     try {
-      const resp = await fetch('/api/mail?action=delete', {
+      const resp = await fetch(`${API_URL}/mail?action=delete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -552,7 +553,7 @@ export default function MailInbox() {
     setSupportSuccess(null);
 
     try {
-      const resp = await fetch('/api/mail?action=contact-support', {
+      const resp = await fetch(`${API_URL}/mail?action=contact-support`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

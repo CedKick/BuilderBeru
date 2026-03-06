@@ -8,6 +8,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResponsiveText, TouchButton, ResponsiveCard } from '../../components/ResponsiveUI';
+import { API_URL } from '../../utils/api.js';
 import shadowCoinManager from '../../components/ChibiSystem/ShadowCoinManager';
 import { TALENT_TREES, computeTalentBonuses, getTreeMaxPoints, getNodeDesc } from './talentTreeData';
 import {
@@ -859,7 +860,7 @@ export default function ShadowColosseum() {
   useEffect(() => {
     if (view !== 'faction_members' || !isLoggedIn()) return;
     setFmLoading(true);
-    fetch('/api/factions?action=faction-members', {
+    fetch(`${API_URL}/factions?action=faction-members`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
     })
@@ -934,7 +935,7 @@ export default function ShadowColosseum() {
   // Fire-and-forget legendary drop logger
   const logLegendaryDrop = (itemType, itemId, itemName, itemRarity, awakening = 0) => {
     if (!isLoggedIn()) return;
-    fetch('/api/drop-log?action=submit', {
+    fetch(`${API_URL}/drop-log?action=submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ itemType, itemId, itemName, itemRarity, awakening }),
@@ -949,7 +950,7 @@ export default function ShadowColosseum() {
     factionBatchCount.current = 0;
     if (factionBatchTimer.current) { clearTimeout(factionBatchTimer.current); factionBatchTimer.current = null; }
     if (count > 0 && isLoggedIn()) {
-      fetch('/api/factions?action=activity-reward', {
+      fetch(`${API_URL}/factions?action=activity-reward`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ activity: 'arc', count }),
@@ -967,7 +968,7 @@ export default function ShadowColosseum() {
       return;
     }
     // Non-arc activities (raid) — send immediately (rare, 1 per raid)
-    fetch('/api/factions?action=activity-reward', {
+    fetch(`${API_URL}/factions?action=activity-reward`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ activity }),
@@ -980,7 +981,7 @@ export default function ShadowColosseum() {
   useEffect(() => {
     if (!isLoggedIn()) return;
     const id = setInterval(() => {
-      fetch('/api/factions?action=heartbeat', {
+      fetch(`${API_URL}/factions?action=heartbeat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         keepalive: true,
@@ -1037,7 +1038,7 @@ export default function ShadowColosseum() {
       setFarmActive(false);
     }
     // Sync farm state + faction points from server
-    fetch('/api/factions?action=status', { headers: { ...authHeaders() } })
+    fetch(`${API_URL}/factions?action=status`, { headers: { ...authHeaders() } })
       .then(r => r.json())
       .then(d => {
         if (d.success) {
@@ -1122,7 +1123,7 @@ export default function ShadowColosseum() {
   // Fetch recent legendary drops
   const lastKnownDropIdRef = useRef(0);
   const fetchDropLog = () => {
-    fetch('/api/drop-log?action=recent')
+    fetch(`${API_URL}/drop-log?action=recent`)
       .then(r => r.json())
       .then(d => {
         if (d.success && d.drops) {
@@ -1148,7 +1149,7 @@ export default function ShadowColosseum() {
   // Fetch unread mail count
   const fetchUnreadMailCount = () => {
     if (!isLoggedIn()) return;
-    fetch('/api/mail?action=inbox&filter=unread&limit=1', {
+    fetch(`${API_URL}/mail?action=inbox&filter=unread&limit=1`, {
       headers: authHeaders()
     })
       .then(r => r.json())
@@ -1230,7 +1231,7 @@ export default function ShadowColosseum() {
     if (!isLoggedIn()) return;
     (async () => {
       try {
-        const resp = await fetch('/api/factions?action=status', { headers: authHeaders() });
+        const resp = await fetch(`${API_URL}/factions?action=status`, { headers: authHeaders() });
         const d = await resp.json();
         if (d.success && d.inFaction && d.buffs) {
           setFactionBuffs(d.buffs);
@@ -1244,7 +1245,7 @@ export default function ShadowColosseum() {
     try {
       const authUser = JSON.parse(localStorage.getItem('builderberu_auth_user'));
       if (!authUser?.username) return;
-      fetch(`/api/raid-profile?username=${encodeURIComponent(authUser.username)}`)
+      fetch(`${API_URL}/raid-profile?username=${encodeURIComponent(authUser.username)}`)
         .then(r => r.json())
         .then(d => { if (d.success && d.profile) setRaidProfileServer(d.profile); })
         .catch(() => {});
@@ -1256,7 +1257,7 @@ export default function ShadowColosseum() {
     try {
       const authUser = JSON.parse(localStorage.getItem('builderberu_auth_user'));
       if (!authUser?.username) return;
-      fetch(`/api/storage/load-raid?username=${encodeURIComponent(authUser.username)}`)
+      fetch(`${API_URL}/storage/load-raid?username=${encodeURIComponent(authUser.username)}`)
         .then(r => r.json())
         .then(d => {
           if (d.success && d.raidData) {
@@ -9062,7 +9063,7 @@ export default function ShadowColosseum() {
                         shadowCoinManager.spendCoins(eqRerollCoinCost);
                         try {
                           const token = localStorage.getItem('builderberu_auth_token');
-                          const resp = await fetch('/api/storage/reroll', {
+                          const resp = await fetch(`${API_URL}/storage/reroll`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
                             body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0 }),
@@ -10609,7 +10610,7 @@ export default function ShadowColosseum() {
 
                 // Also send confirmation mail (no rewards — weapon already added)
                 try {
-                  await fetch('/api/mail?action=self-reward', {
+                  await fetch(`${API_URL}/mail?action=self-reward`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...authHeaders() },
                     body: JSON.stringify({
@@ -10841,7 +10842,7 @@ export default function ShadowColosseum() {
               shadowCoinManager.spendCoins(rerollCoinCost);
               try {
                 const token = localStorage.getItem('builderberu_auth_token');
-                const resp = await fetch('/api/storage/reroll', {
+                const resp = await fetch(`${API_URL}/storage/reroll`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
                   body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0 }),

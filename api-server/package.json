@@ -1,0 +1,13 @@
+{
+  "name": "builderberu-api",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "pg": "^8.16.2",
+    "node-cron": "^3.0.3"
+  }
+}

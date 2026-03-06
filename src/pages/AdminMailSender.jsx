@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Plus, Trash2, Eye, X, Check, Shield } from 'lucide-react';
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
+import { API_URL } from '../utils/api.js';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
 import { HUNTERS } from './ShadowColosseum/raidData';
 
@@ -177,7 +178,7 @@ export default function AdminMailSender() {
     searchTimeoutRef.current = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const resp = await fetch(`/api/mail?action=search-users&q=${encodeURIComponent(term)}`, {
+        const resp = await fetch(`${API_URL}/mail?action=search-users&q=${encodeURIComponent(term)}`, {
           headers: authHeaders(),
         });
         const data = await resp.json();
@@ -271,7 +272,7 @@ export default function AdminMailSender() {
 
       for (const recipient of targetList) {
         try {
-          const resp = await fetch('/api/mail?action=send', {
+          const resp = await fetch(`${API_URL}/mail?action=send`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

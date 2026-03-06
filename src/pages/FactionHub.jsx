@@ -19,6 +19,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import shadowCoinManager from '../components/ChibiSystem/ShadowCoinManager';
+import { API_URL } from '../utils/api.js';
 import FloatingDaijin from '../components/FloatingDaijin';
 import FloatingPod042 from '../components/FloatingPod042';
 
@@ -186,7 +187,7 @@ export default function FactionHub() {
   useEffect(() => {
     if (activeTab !== 'members' || !isLoggedIn()) return;
     setFmLoading(true);
-    fetch('/api/factions?action=faction-members', {
+    fetch(`${API_URL}/factions?action=faction-members`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
     })
@@ -201,7 +202,7 @@ export default function FactionHub() {
   const loadFactionStatus = async () => {
     setLoading(true);
     try {
-      const resp = await fetch('/api/factions?action=status', {
+      const resp = await fetch(`${API_URL}/factions?action=status`, {
         headers: authHeaders(),
       });
       const data = await resp.json();
@@ -223,7 +224,7 @@ export default function FactionHub() {
 
   const loadWeeklyStats = async () => {
     try {
-      const resp = await fetch('/api/factions?action=weekly-stats', {
+      const resp = await fetch(`${API_URL}/factions?action=weekly-stats`, {
         headers: authHeaders(),
       });
       const data = await resp.json();
@@ -238,7 +239,7 @@ export default function FactionHub() {
   // ─── Join faction ────────────────────────────────────────────
   const joinFaction = async (factionId) => {
     try {
-      const resp = await fetch('/api/factions?action=join', {
+      const resp = await fetch(`${API_URL}/factions?action=join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -282,7 +283,7 @@ export default function FactionHub() {
     }
 
     try {
-      const resp = await fetch('/api/factions?action=upgrade-buff', {
+      const resp = await fetch(`${API_URL}/factions?action=upgrade-buff`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -315,7 +316,7 @@ export default function FactionHub() {
     }
 
     try {
-      const resp = await fetch('/api/factions?action=change-faction', {
+      const resp = await fetch(`${API_URL}/factions?action=change-faction`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1071,7 +1072,7 @@ function ShopTab() {
   // Fetch colosseum data for red hammer / alkahest count
   useEffect(() => {
     if (!isLoggedIn()) { setLoading(false); return; }
-    fetch('/api/storage/load', {
+    fetch(`${API_URL}/storage/load`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ key: 'shadow_colosseum_data' }),
@@ -1092,7 +1093,7 @@ function ShopTab() {
     setBuying(true);
     setLootReveal(null);
     try {
-      const resp = await fetch('/api/storage/forge-rouge', {
+      const resp = await fetch(`${API_URL}/storage/forge-rouge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ item }),

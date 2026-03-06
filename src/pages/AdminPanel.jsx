@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Search, User, ChevronLeft, Save, RefreshCw, Package, Sword, Star, TrendingUp, X, Check, AlertTriangle, Activity, Eye, Ban, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
+import { API_URL } from '../utils/api.js';
 import { HUNTERS } from './ShadowColosseum/raidData';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
 
@@ -763,7 +764,7 @@ function DiagnosticsTab({ allUsers }) {
     setLoading(true);
     setError(null);
     try {
-      const resp = await fetch('/api/storage/diagnostics', { headers: authHeaders() });
+      const resp = await fetch(`${API_URL}/storage/diagnostics`, { headers: authHeaders() });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
       if (data.error) throw new Error(data.error);

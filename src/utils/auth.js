@@ -2,6 +2,7 @@
 // Token storage, login, register, logout, authHeaders
 
 import { cloudStorage, CLOUD_KEYS } from './CloudStorage';
+import { API_URL } from './api.js';
 
 const AUTH_TOKEN_KEY = 'builderberu_auth_token';
 const AUTH_USER_KEY = 'builderberu_auth_user';
@@ -67,7 +68,7 @@ function getOrCreateDeviceId() {
 export async function register(username, password) {
   const deviceId = getOrCreateDeviceId();
 
-  const resp = await fetch('/api/auth?action=register', {
+  const resp = await fetch(`${API_URL}/auth?action=register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password, deviceId }),
@@ -87,7 +88,7 @@ export async function register(username, password) {
  * On success: saves token + adopts canonical deviceId + reloads page.
  */
 export async function login(username, password) {
-  const resp = await fetch('/api/auth?action=login', {
+  const resp = await fetch(`${API_URL}/auth?action=login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
@@ -128,7 +129,7 @@ export async function verifySession() {
   if (!token) return null;
 
   try {
-    const resp = await fetch('/api/auth?action=me', {
+    const resp = await fetch(`${API_URL}/auth?action=me`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
     if (!resp.ok) {

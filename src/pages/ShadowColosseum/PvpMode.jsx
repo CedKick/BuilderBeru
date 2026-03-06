@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isLoggedIn, authHeaders } from '../../utils/auth';
+import { API_URL } from '../../utils/api.js';
 import { isFarming, stopFarm } from '../../utils/offlineFarm';
 import AuthModal from '../../components/AuthModal';
 import { computeTalentBonuses } from './talentTreeData';
@@ -498,7 +499,7 @@ export default function PvpMode() {
     const powerScore = computePowerScore(defIds);
 
     try {
-      const resp = await fetch('/api/pvp?action=register-defense', {
+      const resp = await fetch(`${API_URL}/pvp?action=register-defense`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ displayName: displayName.trim(), teamData, powerScore, strategy: pvpData.defenseStrategy || {} }),
@@ -526,7 +527,7 @@ export default function PvpMode() {
     const powerScore = computePowerScore(atkIds);
 
     try {
-      const resp = await fetch(`/api/pvp?action=find-opponents&powerScore=${powerScore}`, {
+      const resp = await fetch(`${API_URL}/pvp?action=find-opponents&powerScore=${powerScore}`, {
         headers: { ...authHeaders() },
       });
       const json = await resp.json();
@@ -784,7 +785,7 @@ export default function PvpMode() {
       })).sort((a, b) => b.damage - a.damage);
       const totalDmg = atkTotalDmg + defTotalDmg;
 
-      fetch('/api/pvp?action=report-result', {
+      fetch(`${API_URL}/pvp?action=report-result`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({
@@ -1477,7 +1478,7 @@ export default function PvpMode() {
   const loadRankings = async () => {
     setLoadingRankings(true);
     try {
-      const resp = await fetch('/api/pvp?action=rankings&limit=50', {
+      const resp = await fetch(`${API_URL}/pvp?action=rankings&limit=50`, {
         headers: { ...authHeaders() },
       });
       const json = await resp.json();
