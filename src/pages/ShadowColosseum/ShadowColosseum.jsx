@@ -10020,17 +10020,27 @@ export default function ShadowColosseum() {
                 legendary: { color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-900/20' },
                 mythique: { color: 'text-red-400', border: 'border-red-500/30', bg: 'bg-red-900/20' },
               };
-              const EXP_SN = { hp_flat: 'PV', atk_flat: 'ATK', def_flat: 'DEF', spd_flat: 'SPD', crit_rate: 'CRIT%', res_flat: 'RES', hp_pct: 'PV%', atk_pct: 'ATK%', def_pct: 'DEF%', crit_dmg: 'CRIT DMG' };
-              const EXP_SC = { hp_flat: 'text-green-400', atk_flat: 'text-red-400', def_flat: 'text-blue-400', spd_flat: 'text-emerald-400', crit_rate: 'text-yellow-400', res_flat: 'text-cyan-400', hp_pct: 'text-green-400', atk_pct: 'text-red-400', def_pct: 'text-blue-400', crit_dmg: 'text-yellow-400' };
+              const EXP_SN = { hp_flat: 'PV', atk_flat: 'ATK', def_flat: 'DEF', spd_flat: 'SPD', crit_rate: 'CRIT%', res_flat: 'RES', hp_pct: 'PV%', atk_pct: 'ATK%', def_pct: 'DEF%', crit_dmg: 'CRIT DMG', heal_received_pct: 'Soins+%', heal_pct: 'Soins%', lifesteal_pct: 'Vol Vie%', mana_regen_pct: 'Mana Regen%', cdr_pct: 'CDR%', armor_pen: 'Perce Armure', dodge_pct: 'Esquive%', thorns_pct: 'Epines%', shield_pct: 'Bouclier%' };
+              const EXP_SC = { hp_flat: 'text-green-400', atk_flat: 'text-red-400', def_flat: 'text-blue-400', spd_flat: 'text-emerald-400', crit_rate: 'text-yellow-400', res_flat: 'text-cyan-400', hp_pct: 'text-green-400', atk_pct: 'text-red-400', def_pct: 'text-blue-400', crit_dmg: 'text-yellow-400', heal_received_pct: 'text-pink-400', heal_pct: 'text-pink-400', lifesteal_pct: 'text-red-300', mana_regen_pct: 'text-blue-300', cdr_pct: 'text-purple-300', armor_pen: 'text-orange-400', dodge_pct: 'text-emerald-300', thorns_pct: 'text-orange-300', shield_pct: 'text-cyan-300' };
 
               const equipExpItem = (item) => {
-                const mappedSlot = EXP_SLOT_MAP[item.slot];
-                if (!mappedSlot) return;
+                // Set pieces (slot: null) → equip in a random compatible slot (casque/plastron/gants/bottes)
+                // Armor items → equip in mapped slot
+                const mappedSlot = item.slot ? EXP_SLOT_MAP[item.slot] : null;
+                const targetSlot = mappedSlot || (() => {
+                  // For set pieces with no slot: find first empty slot, or fallback to casque
+                  const equipped = data.artifacts[id] || {};
+                  for (const s of ['casque', 'plastron', 'gants', 'bottes']) {
+                    if (!equipped[s]) return s;
+                  }
+                  return 'casque'; // all full → replace casque
+                })();
+
                 const statEntries = Object.entries(item.stats || {});
                 const mainStatEntry = statEntries[0] || ['atk_flat', 0];
                 const subEntries = statEntries.slice(1);
                 const forgeArt = {
-                  uid: item.uid, set: item.setId || null, slot: mappedSlot,
+                  uid: item.uid, set: item.setId || null, slot: targetSlot,
                   rarity: item.rarity === 'legendary' ? 'legendaire' : item.rarity === 'epic' ? 'legendaire' : item.rarity === 'uncommon' ? 'rare' : item.rarity === 'common' ? 'rare' : item.rarity,
                   level: 0, mainStat: mainStatEntry[0], mainValue: mainStatEntry[1],
                   subs: subEntries.map(([sid, value]) => ({ id: sid, value })),
@@ -10039,8 +10049,8 @@ export default function ShadowColosseum() {
                 setData(prev => {
                   const prevEquipped = { ...(prev.artifacts[id] || {}) };
                   const prevInv = [...prev.artifactInventory];
-                  if (prevEquipped[mappedSlot]) prevInv.push(prevEquipped[mappedSlot]);
-                  prevEquipped[mappedSlot] = forgeArt;
+                  if (prevEquipped[targetSlot]) prevInv.push(prevEquipped[targetSlot]);
+                  prevEquipped[targetSlot] = forgeArt;
                   return { ...prev, artifacts: { ...prev.artifacts, [id]: prevEquipped }, artifactInventory: prevInv };
                 });
                 setRaidStorage(prev => ({
@@ -10067,9 +10077,9 @@ export default function ShadowColosseum() {
                           className={`p-2 rounded-lg border ${rc.border} ${rc.bg} hover:brightness-125 transition-all text-left`}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
-                              <span className="text-sm">{EXP_SLOT_ICONS[item.slot] || '?'}</span>
+                              <span className="text-sm">{item.slot ? (EXP_SLOT_ICONS[item.slot] || '?') : '\uD83D\uDD17'}</span>
                               <span className={`text-normal-responsive font-bold truncate ${rc.color}`}>
-                                {item.itemName?.split(' ').slice(0, 2).join(' ') || item.itemId}
+                                {item.itemName || item.itemId}
                               </span>
                             </div>
                           </div>
