@@ -1480,10 +1480,10 @@ export default function Codex() {
           {/* ─── Section: SETS ─── */}
           <div>
             <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3 flex items-center gap-2">
-              Sets Expedition (25)
+              Sets Expedition (30)
               {Object.keys(ownedExpSets).length > 0 && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-900/30 text-green-400 normal-case tracking-normal">
-                  {Object.keys(ownedExpSets).length}/25 obtenus
+                  {Object.keys(ownedExpSets).length}/30 obtenus
                 </span>
               )}
             </div>
@@ -1553,7 +1553,7 @@ export default function Codex() {
                             <span key={c} className="text-[9px] px-1 py-0.5 rounded bg-gray-800/60 text-gray-400">{c}</span>
                           ))}
                           <span className={`text-[9px] px-1 py-0.5 rounded ${
-                            s.rarity === 'epique' ? 'bg-purple-900/30 text-purple-300' : 'bg-blue-900/30 text-blue-300'
+                            s.rarity === 'legendaire' ? 'bg-amber-900/30 text-amber-300' : s.rarity === 'epique' ? 'bg-purple-900/30 text-purple-300' : s.rarity === 'uncommon' ? 'bg-gray-800/60 text-gray-400' : 'bg-blue-900/30 text-blue-300'
                           }`}>{s.rarity}</span>
                         </div>
                         <div className="mt-1.5 space-y-0.5">

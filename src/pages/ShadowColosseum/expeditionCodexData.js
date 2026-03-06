@@ -217,6 +217,54 @@ export const EXPEDITION_SETS = {
     bonus2Desc: 'ATK +5%, DEF +5%',
     bonus4Desc: 'Si 3 hunters du meme joueur en vie: ATK +10%, DEF +10%',
   },
+
+  // ── ZONE ARMOR SETS (5) — Armure de zone standard ──
+
+  // Zone Foret
+  set_forest: {
+    id: 'set_forest', name: 'Armure Sylvestre', icon: '🌿', zoneArmor: true,
+    color: 'text-green-400', bg: 'bg-green-500/15', border: 'border-green-500/30',
+    zone: 'foret', rarity: 'uncommon', binding: 'LqE', targetClass: ['all'],
+    desc: 'Armure de base de la Foret (4 pieces: casque, plastron, gants, bottes)',
+    bonus2Desc: 'DEF +8%',
+    bonus4Desc: 'HP +12%',
+  },
+  // Zone Foret (pierre)
+  set_stone: {
+    id: 'set_stone', name: 'Armure de Pierre', icon: '🪨', zoneArmor: true,
+    color: 'text-stone-400', bg: 'bg-stone-500/15', border: 'border-stone-500/30',
+    zone: 'foret', rarity: 'rare', binding: 'LqE', targetClass: ['all'],
+    desc: 'Armure renforcee des Montagnes (4 pieces)',
+    bonus2Desc: 'DEF +12%',
+    bonus4Desc: 'HP +15%, RES +5',
+  },
+  // Zone Foret (ombre)
+  set_shadow: {
+    id: 'set_shadow', name: "Armure d'Ombre", icon: '🌑', zoneArmor: true,
+    color: 'text-violet-400', bg: 'bg-violet-500/15', border: 'border-violet-500/30',
+    zone: 'foret', rarity: 'epique', binding: 'LqE', targetClass: ['all'],
+    desc: "Armure furtive de l'Ombre (4 pieces)",
+    bonus2Desc: 'ATK +12%',
+    bonus4Desc: 'CRIT +6%, CRIT DMG +8%',
+  },
+  // Zone Abysses
+  set_abyss: {
+    id: 'set_abyss', name: 'Armure des Abysses', icon: '🌊', zoneArmor: true,
+    color: 'text-blue-400', bg: 'bg-blue-500/15', border: 'border-blue-500/30',
+    zone: 'abysses', rarity: 'epique', binding: 'LqE', targetClass: ['all'],
+    desc: 'Armure endurante des Abysses (4 pieces)',
+    bonus2Desc: 'HP +15%, DEF +10%',
+    bonus4Desc: 'Degats AoE subis -12%',
+  },
+  // Zone Neant
+  set_void: {
+    id: 'set_void', name: 'Armure du Neant', icon: '🌌', zoneArmor: true,
+    color: 'text-purple-400', bg: 'bg-purple-500/15', border: 'border-purple-500/30',
+    zone: 'neant', rarity: 'legendaire', binding: 'LqR', targetClass: ['all'],
+    desc: 'Armure ultime du Neant (4 pieces)',
+    bonus2Desc: 'ATK +15%',
+    bonus4Desc: 'CRIT +8%, CRIT DMG +12%',
+  },
 };
 
 // ═══════════════════════════════════════════════════════════
