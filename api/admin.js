@@ -766,6 +766,81 @@ async function handleMigrateWeapons(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// PURGE EXPEDITION LOGS (keep last N days, default 30)
+// ═══════════════════════════════════════════════════════════════
+
+async function handlePurgeExpeditionLogs(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const keepDays = parseInt(req.query.days) || 30;
+  const cutoff = new Date(Date.now() - keepDays * 24 * 60 * 60 * 1000).toISOString();
+
+  // Count before
+  const before = {};
+  const tables = ['expedition_loot', 'expedition_loot_rolls'];
+  for (const t of tables) {
+    try {
+      const r = await query(`SELECT count(*) FROM ${t}`);
+      before[t] = parseInt(r.rows[0].count);
+    } catch { before[t] = 0; }
+  }
+
+  // Also check for expedition_state_snapshots and expedition_sessions
+  const extraTables = ['expedition_state_snapshots', 'expedition_sessions'];
+  for (const t of extraTables) {
+    try {
+      const r = await query(`SELECT count(*) FROM ${t}`);
+      before[t] = parseInt(r.rows[0].count);
+      tables.push(t);
+    } catch { /* table doesn't exist */ }
+  }
+
+  // Purge old loot records (keep items from last N days)
+  const deleted = {};
+  try {
+    const r1 = await query(`DELETE FROM expedition_loot_rolls WHERE loot_id IN (SELECT id FROM expedition_loot WHERE rolled_at < $1) RETURNING id`, [cutoff]);
+    deleted.expedition_loot_rolls = r1.rowCount;
+  } catch { deleted.expedition_loot_rolls = 0; }
+
+  try {
+    const r2 = await query(`DELETE FROM expedition_loot WHERE rolled_at < $1 RETURNING id`, [cutoff]);
+    deleted.expedition_loot = r2.rowCount;
+  } catch { deleted.expedition_loot = 0; }
+
+  // Purge old snapshots (keep last N days)
+  try {
+    const r3 = await query(`DELETE FROM expedition_state_snapshots WHERE created_at < $1 RETURNING id`, [cutoff]);
+    deleted.expedition_state_snapshots = r3.rowCount;
+  } catch { deleted.expedition_state_snapshots = 0; }
+
+  // Purge old sessions (keep last N days)
+  try {
+    const r4 = await query(`DELETE FROM expedition_sessions WHERE created_at < $1 RETURNING id`, [cutoff]);
+    deleted.expedition_sessions = r4.rowCount;
+  } catch { deleted.expedition_sessions = 0; }
+
+  // Count after
+  const after = {};
+  for (const t of tables) {
+    try {
+      const r = await query(`SELECT count(*) FROM ${t}`);
+      after[t] = parseInt(r.rows[0].count);
+    } catch { after[t] = 0; }
+  }
+
+  return res.status(200).json({
+    success: true,
+    keepDays,
+    cutoff,
+    before,
+    deleted,
+    after,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -807,6 +882,8 @@ export default async function handler(req, res) {
         return await handleMigrateExpedition(req, res);
       case 'migrate-weapons':
         return await handleMigrateWeapons(req, res);
+      case 'purge-expedition-logs':
+        return await handlePurgeExpeditionLogs(req, res);
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }
