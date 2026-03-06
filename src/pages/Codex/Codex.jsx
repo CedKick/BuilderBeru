@@ -992,6 +992,50 @@ export default function Codex() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* ─── EXPEDITION WEAPONS in Armes tab ─── */}
+          {Object.keys(EXPEDITION_WEAPONS).length > 0 && (
+            <div className="mt-8 pt-6 border-t border-amber-500/20">
+              <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-2">
+                {'\u2694\uFE0F'} Armes d'Expedition ({Object.keys(EXPEDITION_WEAPONS).length})
+                {ownedExpWeapons.size > 0 && (
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-900/30 text-green-400 normal-case tracking-normal">
+                    {ownedExpWeapons.size}/{Object.keys(EXPEDITION_WEAPONS).length} obtenues
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {Object.values(EXPEDITION_WEAPONS).sort((a, b) => b.atk - a.atk).map(w => {
+                  const elColor = { fire: 'text-orange-400', water: 'text-cyan-400', shadow: 'text-purple-400', light: 'text-yellow-300' }[w.element] || 'text-gray-400';
+                  const isOwned = ownedExpWeapons.has(w.id);
+                  return (
+                    <div key={w.id} className={`p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-left ${isOwned ? '' : 'opacity-40'} transition-opacity`}>
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{w.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                            {w.name}
+                            {isOwned && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-900/40 text-green-400 font-medium">Obtenue</span>}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-gray-300">ATK {w.atk}</span>
+                            <span className={`text-[10px] ${elColor}`}>{w.element}</span>
+                            <span className="text-[10px] text-gray-500">{w.weaponType}</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-900/30 text-red-300">{w.rarity}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-[10px] text-amber-400">Bonus: {w.bonusDesc}</div>
+                      <div className="mt-1 text-[10px] text-blue-300">Passif: {w.passiveDesc}</div>
+                      <div className="mt-1 text-[9px] text-gray-500">
+                        Drop: Boss {w.dropBoss + 1} ({w.dropBossName}) — {w.dropChance}% | {w.binding}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </>
       )}
 
