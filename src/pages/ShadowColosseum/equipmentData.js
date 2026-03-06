@@ -784,6 +784,53 @@ export const WEAPONS = {
   w_katana_v:         { id: 'w_katana_v',         name: 'Katana V',             rarity: 'mythique',   element: 'light', weaponType: 'blade',  atk: 120, bonusStat: 'int_pct', bonusValue: 25, icon: '\u2694\uFE0F', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771539430/KatanaV_zv4oke.png', desc: 'Katana du chaos. Scale sur INT/Mana. Empoisonne, buff et protege.', secret: true, passive: 'katana_v_chaos', darkRes: 35, dropSource: 'Monarque Supreme', dropRate: '1/50,000' },
   // Secret — drop 1/80,000 from Archdemon (cumulative pity)
   w_guldan:            { id: 'w_guldan',            name: "Baton de Gul'dan",      rarity: 'mythique',   element: 'wind',  weaponType: 'staff',  atk: 180, bonusStat: 'spd_flat', bonusValue: 20, baseDef: 50, windRes: 10, icon: '\uD83E\uDE84', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638363/batonGuldan_vuu7ez.png', projectile: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638364/projectileGuldan_ii184b.png', desc: "Baton maudit du demon Gul'dan. Un halo eternel protege et renforce son porteur.", secret: true, passive: 'guldan_halo', dropSource: 'Archdemon', dropRate: '1/80,000' },
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPEDITION BOSS WEAPONS (mythique — top tier, rival/surpass secrets)
+  // ═══════════════════════════════════════════════════════════════
+  excalibur:          { id: 'excalibur',          name: 'Excalibur',             rarity: 'mythique',   element: 'light',  weaponType: 'blade',   atk: 280, bonusStat: 'atk_pct',   bonusValue: 20, icon: '\u2694\uFE0F', desc: 'HP > 80%: degats +25%. Kill: auto-heal 3% max HP. Absorbe 1 coup mortel (CD 60s).', expedition: true },
+  mjolnir:            { id: 'mjolnir',            name: 'Mjolnir',               rarity: 'mythique',   element: 'water',  weaponType: 'heavy',   atk: 270, bonusStat: 'def_pct',   bonusValue: 15, icon: '\uD83D\uDD28', desc: '30% chance chaine sur 2 ennemis. Stun 1s tous les 10 coups.', expedition: true },
+  muramasa:           { id: 'muramasa',           name: 'Muramasa',              rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 300, bonusStat: 'crit_dmg',  bonusValue: 30, icon: '\uD83D\uDDE1\uFE0F', desc: 'Chaque crit: +3% ATK (max 30%). Perd 1% HP/stack. 10 stacks: x3.', expedition: true },
+  yggdrasil:          { id: 'yggdrasil',          name: 'Yggdrasil',             rarity: 'mythique',   element: 'light',  weaponType: 'staff',   atk: 220, bonusStat: 'hp_pct',    bonusValue: 30, icon: '\uD83E\uDE84', desc: 'Soins +35%. Overheals = bouclier. Soigne 2 allies proches (30%).', expedition: true, scalingStat: 'int' },
+  gungnir:            { id: 'gungnir',            name: 'Gungnir',               rarity: 'mythique',   element: 'fire',   weaponType: 'polearm', atk: 265, bonusStat: 'spd_flat',  bonusValue: 18, icon: '\uD83D\uDDE1\uFE0F', desc: '1ere attaque x2. Tous les 15s: crit garanti. Perce backline.', expedition: true },
+  nidhogg:            { id: 'nidhogg',            name: 'Nidhogg',               rarity: 'mythique',   element: 'shadow', weaponType: 'scythe',  atk: 255, bonusStat: 'hp_pct',    bonusValue: 15, icon: '\u2694\uFE0F', desc: 'Kill = +5% ATK +3% vol vie (max 5 stacks).', expedition: true },
+  aegis_weapon:       { id: 'aegis_weapon',       name: 'Aegis',                 rarity: 'mythique',   element: 'light',  weaponType: 'shield',  atk: 150, bonusStat: 'def_pct',   bonusValue: 35, icon: '\uD83D\uDEE1\uFE0F', desc: 'Degats subis -25%. Allie meurt: +30% ATK +20% DEF. Aggro +50%.', expedition: true },
+  caladbolg:          { id: 'caladbolg',          name: 'Caladbolg',             rarity: 'mythique',   element: 'fire',   weaponType: 'blade',   atk: 275, bonusStat: 'crit_rate', bonusValue: 15, icon: '\u2694\uFE0F', desc: 'Crits enflamment (3% HP/s, 5s). En feu: ATK +15-25%.', expedition: true },
+  thyrsus:            { id: 'thyrsus',            name: 'Thyrsus',               rarity: 'mythique',   element: 'water',  weaponType: 'staff',   atk: 240, bonusStat: 'int_pct',   bonusValue: 20, icon: '\uD83E\uDE84', desc: '20% sort gratuit. Mana>80%: +20% degats. Mana<20%: regen x3.', expedition: true, scalingStat: 'int' },
+  gram:               { id: 'gram',               name: 'Gram',                  rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 290, bonusStat: 'atk_pct',   bonusValue: 25, icon: '\uD83D\uDD28', desc: 'Tous les 5 coups: AoE 250%. Chaque ennemi: +10% prochain AoE.', expedition: true },
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPEDITION LOOT WEAPONS — Foret (rare)
+  // ═══════════════════════════════════════════════════════════════
+  exp_dagger_forest:  { id: 'exp_dagger_forest',  name: 'Dague Sylvestre',       rarity: 'rare',       element: null,     weaponType: 'blade',   atk: 15, bonusStat: 'spd_flat',  bonusValue: 3,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Dague rapide de la foret', expedition: true },
+  exp_bow_forest:     { id: 'exp_bow_forest',     name: 'Arc de Lierre',         rarity: 'rare',       element: null,     weaponType: 'ranged',  atk: 22, bonusStat: 'crit_rate', bonusValue: 3,  icon: '\uD83C\uDFF9', desc: 'Arc tisse de lierre enchante', expedition: true },
+  exp_sword_forest:   { id: 'exp_sword_forest',   name: 'Epee de Mousse',        rarity: 'rare',       element: null,     weaponType: 'blade',   atk: 30, bonusStat: 'atk_pct',   bonusValue: 3,  icon: '\u2694\uFE0F', desc: 'Lame recouverte de mousse ancienne', expedition: true },
+  exp_staff_forest:   { id: 'exp_staff_forest',   name: 'Baton Ancien',          rarity: 'rare',       element: null,     weaponType: 'staff',   atk: 25, bonusStat: 'res_flat',  bonusValue: 8,  icon: '\uD83E\uDE84', desc: 'Baton impregne de sagesse sylvestre', expedition: true, scalingStat: 'int' },
+  exp_mace_forest:    { id: 'exp_mace_forest',    name: 'Masse Noueuse',         rarity: 'rare',       element: null,     weaponType: 'heavy',   atk: 28, bonusStat: 'def_pct',   bonusValue: 5,  icon: '\uD83D\uDD28', desc: '5% chance stun 0.5s par attaque', expedition: true },
+
+  // ── Expedition Loot — Pierre/Cristal (rare)
+  exp_sword_stone:    { id: 'exp_sword_stone',    name: 'Lame de Granit',        rarity: 'rare',       element: null,     weaponType: 'blade',   atk: 50, bonusStat: 'def_pct',   bonusValue: 8,  icon: '\u2694\uFE0F', desc: 'Lame taillee dans le granit', expedition: true },
+  exp_bow_stone:      { id: 'exp_bow_stone',      name: 'Arc Petrifie',          rarity: 'rare',       element: null,     weaponType: 'ranged',  atk: 45, bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83C\uDFF9', desc: 'Arc petrifie par les ages', expedition: true },
+  exp_spear_crystal:  { id: 'exp_spear_crystal',  name: 'Lance Cristalline',     rarity: 'rare',       element: null,     weaponType: 'polearm', atk: 48, bonusStat: 'spd_flat',  bonusValue: 6,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Perce: ignore 5% DEF', expedition: true },
+  exp_wand_crystal:   { id: 'exp_wand_crystal',   name: 'Baguette de Cristal',   rarity: 'rare',       element: null,     weaponType: 'staff',   atk: 40, bonusStat: 'res_flat',  bonusValue: 10, icon: '\uD83E\uDE84', desc: 'Soins +8%', expedition: true, scalingStat: 'int' },
+  exp_hammer_stone:   { id: 'exp_hammer_stone',   name: 'Marteau de Roc',        rarity: 'rare',       element: null,     weaponType: 'heavy',   atk: 52, bonusStat: 'hp_pct',    bonusValue: 5,  icon: '\uD83D\uDD28', desc: '8% stun 1s. Stun: -10% DEF 3s.', expedition: true },
+
+  // ── Expedition Loot — Ombre/Abysses (legendaire)
+  exp_blade_shadow:   { id: 'exp_blade_shadow',   name: 'Lame du Neant',         rarity: 'legendaire', element: 'shadow', weaponType: 'blade',   atk: 80, bonusStat: 'crit_rate', bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: 'Lame forgee dans le neant', expedition: true },
+  exp_staff_shadow:   { id: 'exp_staff_shadow',   name: 'Sceptre des Tenebres',  rarity: 'legendaire', element: 'shadow', weaponType: 'staff',   atk: 70, bonusStat: 'res_flat',  bonusValue: 15, icon: '\uD83E\uDE84', desc: 'Sceptre des profondeurs', expedition: true, scalingStat: 'int' },
+  exp_axe_abyss:      { id: 'exp_axe_abyss',      name: 'Hache des Profondeurs', rarity: 'legendaire', element: null,     weaponType: 'heavy',   atk: 75, bonusStat: 'hp_pct',    bonusValue: 8,  icon: '\uFA62', desc: 'Vol de vie +5%. Kill: +3% ATK (max +12%).', expedition: true },
+  exp_glaive_abyss:   { id: 'exp_glaive_abyss',   name: 'Glaive des Abysses',    rarity: 'legendaire', element: null,     weaponType: 'blade',   atk: 68, bonusStat: 'crit_rate', bonusValue: 8,  icon: '\u2694\uFE0F', desc: 'Anti-heal -20% soins 4s. Crit: 6s.', expedition: true },
+  exp_orb_abyss:      { id: 'exp_orb_abyss',      name: 'Orbe Abyssale',         rarity: 'legendaire', element: null,     weaponType: 'staff',   atk: 60, bonusStat: 'res_flat',  bonusValue: 12, icon: '\uD83E\uDE84', desc: 'Soins +12%. Overheals = bouclier 5% HP.', expedition: true, scalingStat: 'int' },
+  exp_scythe_abyss:   { id: 'exp_scythe_abyss',   name: 'Faux des Damnes',       rarity: 'legendaire', element: null,     weaponType: 'scythe',  atk: 85, bonusStat: 'crit_rate', bonusValue: 6,  icon: '\u2694\uFE0F', desc: 'Kill: ignore 30% DEF + anti-heal 3s.', expedition: true },
+  exp_whip_abyss:     { id: 'exp_whip_abyss',     name: 'Fouet Abyssal',         rarity: 'legendaire', element: null,     weaponType: 'polearm', atk: 62, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: 'Touche 2 cibles. Bleed 1.5% HP/s 4s.', expedition: true },
+
+  // ── Expedition Loot — Neant (legendaire+)
+  exp_katana_void:    { id: 'exp_katana_void',    name: 'Katana du Neant',       rarity: 'legendaire', element: 'shadow', weaponType: 'blade',   atk: 95, bonusStat: 'crit_rate', bonusValue: 12, icon: '\uD83D\uDDE1\uFE0F', desc: 'Crit: bleed 0.8% HP/s (stack x3). 3 stacks = +10% DMG.', expedition: true },
+  exp_grimoire_void:  { id: 'exp_grimoire_void',  name: 'Grimoire du Neant',     rarity: 'legendaire', element: 'shadow', weaponType: 'staff',   atk: 80, bonusStat: 'res_flat',  bonusValue: 20, icon: '\uD83E\uDE84', desc: '15% Silence 2s. Anti-heal -30%. Mana regen +15%.', expedition: true, scalingStat: 'int' },
+  exp_halberd_void:   { id: 'exp_halberd_void',   name: 'Hallebarde du Vide',    rarity: 'legendaire', element: 'shadow', weaponType: 'heavy',   atk: 100, bonusStat: 'def_pct',  bonusValue: 10, icon: '\uFA62', desc: 'Chaque 3e coup: AoE 150%. -15% ATK 4s + anti-heal 2s.', expedition: true },
+  exp_talisman_void:  { id: 'exp_talisman_void',  name: 'Talisman Sacre',        rarity: 'legendaire', element: null,     weaponType: 'staff',   atk: 70, bonusStat: 'hp_pct',    bonusValue: 12, icon: '\uD83E\uDE84', desc: 'Bouclier 8% HP (15s). Soins +20%. Allies: +5% DEF.', expedition: true, scalingStat: 'int' },
+  exp_claws_void:     { id: 'exp_claws_void',     name: 'Griffes Spectrales',    rarity: 'legendaire', element: 'shadow', weaponType: 'blade',   atk: 88, bonusStat: 'spd_flat',  bonusValue: 15, icon: '\uD83D\uDDE1\uFE0F', desc: 'Double frappe 20%. Bleed on crit. Kill: reset CD.', expedition: true },
+  exp_lance_briseur:  { id: 'exp_lance_briseur',  name: 'Lance Brise-Tyran',     rarity: 'legendaire', element: null,     weaponType: 'polearm', atk: 75, bonusStat: 'def_pct',   bonusValue: 12, icon: '\uD83D\uDDE1\uFE0F', desc: 'Boss ATK -30% 8s (CD 20s). Allies: +10% DEF. Tank ideal.', expedition: true },
 };
 
 export const WEAPON_PRICES = { rare: 500, legendaire: 2000, mythique: 5000 };
@@ -1037,6 +1084,253 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'Degats Vent +15%', stats: { windDamage: 15 } },
     { desc: 'Ignore 20% DEF + RES +15 + Tous Degats +5%', stats: { defPen: 20, res_flat: 15, allDamage: 5 } },
   ],
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPEDITION BOSS WEAPONS — A1-A5 passives (rival/surpass secrets)
+  // ═══════════════════════════════════════════════════════════════
+  excalibur: [
+    { desc: 'Degats Lumiere +16%', stats: { lightDamage: 16 } },
+    { desc: 'ATK +14%', stats: { atk_pct: 14 } },
+    { desc: 'CRIT +12%', stats: { crit_rate: 12 } },
+    { desc: 'CRIT DMG +22%', stats: { crit_dmg: 22 } },
+    { desc: 'Ignore 16% DEF + Tous Degats +14%', stats: { defPen: 16, allDamage: 14 } },
+  ],
+  mjolnir: [
+    { desc: 'Degats Eau +14%', stats: { waterDamage: 14 } },
+    { desc: 'DEF +15%', stats: { def_pct: 15 } },
+    { desc: 'PV +12%', stats: { hp_pct: 12 } },
+    { desc: 'ATK +12%', stats: { atk_pct: 12 } },
+    { desc: 'Ignore 12% DEF + Tous Degats +12%', stats: { defPen: 12, allDamage: 12 } },
+  ],
+  muramasa: [
+    { desc: 'Degats Ombre +18%', stats: { shadowDamage: 18 } },
+    { desc: 'CRIT DMG +22%', stats: { crit_dmg: 22 } },
+    { desc: 'ATK +15%', stats: { atk_pct: 15 } },
+    { desc: 'CRIT +14%', stats: { crit_rate: 14 } },
+    { desc: 'Ignore 18% DEF + Tous Degats +14%', stats: { defPen: 18, allDamage: 14 } },
+  ],
+  yggdrasil: [
+    { desc: 'Degats Lumiere +12%', stats: { lightDamage: 12 } },
+    { desc: 'PV +14%', stats: { hp_pct: 14 } },
+    { desc: 'DEF +12%', stats: { def_pct: 12 } },
+    { desc: 'RES +14', stats: { res_flat: 14 } },
+    { desc: 'PV +10% + Tous Degats +10%', stats: { hp_pct: 10, allDamage: 10 } },
+  ],
+  gungnir: [
+    { desc: 'Degats Feu +15%', stats: { fireDamage: 15 } },
+    { desc: 'SPD +14', stats: { spd_flat: 14 } },
+    { desc: 'ATK +13%', stats: { atk_pct: 13 } },
+    { desc: 'CRIT +11%', stats: { crit_rate: 11 } },
+    { desc: 'Ignore 15% DEF + Tous Degats +12%', stats: { defPen: 15, allDamage: 12 } },
+  ],
+  nidhogg: [
+    { desc: 'Degats Ombre +15%', stats: { shadowDamage: 15 } },
+    { desc: 'ATK +13%', stats: { atk_pct: 13 } },
+    { desc: 'CRIT +11%', stats: { crit_rate: 11 } },
+    { desc: 'CRIT DMG +18%', stats: { crit_dmg: 18 } },
+    { desc: 'Ignore 14% DEF + Tous Degats +12%', stats: { defPen: 14, allDamage: 12 } },
+  ],
+  aegis_weapon: [
+    { desc: 'Degats Lumiere +10%', stats: { lightDamage: 10 } },
+    { desc: 'DEF +20%', stats: { def_pct: 20 } },
+    { desc: 'PV +16%', stats: { hp_pct: 16 } },
+    { desc: 'RES +16', stats: { res_flat: 16 } },
+    { desc: 'DEF +14% + PV +14%', stats: { def_pct: 14, hp_pct: 14 } },
+  ],
+  caladbolg: [
+    { desc: 'Degats Feu +16%', stats: { fireDamage: 16 } },
+    { desc: 'CRIT +13%', stats: { crit_rate: 13 } },
+    { desc: 'ATK +13%', stats: { atk_pct: 13 } },
+    { desc: 'CRIT DMG +20%', stats: { crit_dmg: 20 } },
+    { desc: 'Ignore 15% DEF + Tous Degats +12%', stats: { defPen: 15, allDamage: 12 } },
+  ],
+  thyrsus: [
+    { desc: 'Degats Eau +14%', stats: { waterDamage: 14 } },
+    { desc: 'INT +14%', stats: { int_pct: 14 } },
+    { desc: 'SPD +12', stats: { spd_flat: 12 } },
+    { desc: 'RES +12', stats: { res_flat: 12 } },
+    { desc: 'Ignore 12% DEF + Tous Degats +12%', stats: { defPen: 12, allDamage: 12 } },
+  ],
+  gram: [
+    { desc: 'Degats Feu +18%', stats: { fireDamage: 18 } },
+    { desc: 'ATK +16%', stats: { atk_pct: 16 } },
+    { desc: 'CRIT DMG +22%', stats: { crit_dmg: 22 } },
+    { desc: 'CRIT +12%', stats: { crit_rate: 12 } },
+    { desc: 'Ignore 18% DEF + Tous Degats +15%', stats: { defPen: 18, allDamage: 15 } },
+  ],
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPEDITION LOOT WEAPONS — A1-A5 passives
+  // ═══════════════════════════════════════════════════════════════
+
+  // Foret (rare tier — small passives)
+  exp_dagger_forest: [
+    { desc: 'SPD +3', stats: { spd_flat: 3 } },
+    { desc: 'CRIT +2%', stats: { crit_rate: 2 } },
+    { desc: 'ATK +3%', stats: { atk_pct: 3 } },
+    { desc: 'CRIT DMG +5%', stats: { crit_dmg: 5 } },
+    { desc: 'Ignore 3% DEF', stats: { defPen: 3 } },
+  ],
+  exp_bow_forest: [
+    { desc: 'CRIT +3%', stats: { crit_rate: 3 } },
+    { desc: 'ATK +3%', stats: { atk_pct: 3 } },
+    { desc: 'SPD +3', stats: { spd_flat: 3 } },
+    { desc: 'CRIT DMG +5%', stats: { crit_dmg: 5 } },
+    { desc: 'Ignore 3% DEF', stats: { defPen: 3 } },
+  ],
+  exp_sword_forest: [
+    { desc: 'ATK +3%', stats: { atk_pct: 3 } },
+    { desc: 'CRIT +2%', stats: { crit_rate: 2 } },
+    { desc: 'PV +3%', stats: { hp_pct: 3 } },
+    { desc: 'DEF +3%', stats: { def_pct: 3 } },
+    { desc: 'SPD +3', stats: { spd_flat: 3 } },
+  ],
+  exp_staff_forest: [
+    { desc: 'RES +4', stats: { res_flat: 4 } },
+    { desc: 'INT +3%', stats: { int_pct: 3 } },
+    { desc: 'PV +3%', stats: { hp_pct: 3 } },
+    { desc: 'DEF +3%', stats: { def_pct: 3 } },
+    { desc: 'Tous Degats +3%', stats: { allDamage: 3 } },
+  ],
+  exp_mace_forest: [
+    { desc: 'DEF +3%', stats: { def_pct: 3 } },
+    { desc: 'PV +3%', stats: { hp_pct: 3 } },
+    { desc: 'ATK +3%', stats: { atk_pct: 3 } },
+    { desc: 'RES +3', stats: { res_flat: 3 } },
+    { desc: 'SPD +3', stats: { spd_flat: 3 } },
+  ],
+
+  // Pierre/Cristal (rare tier — medium passives)
+  exp_sword_stone: [
+    { desc: 'ATK +4%', stats: { atk_pct: 4 } },
+    { desc: 'DEF +4%', stats: { def_pct: 4 } },
+    { desc: 'CRIT +3%', stats: { crit_rate: 3 } },
+    { desc: 'PV +4%', stats: { hp_pct: 4 } },
+    { desc: 'Ignore 3% DEF', stats: { defPen: 3 } },
+  ],
+  exp_bow_stone: [
+    { desc: 'CRIT +4%', stats: { crit_rate: 4 } },
+    { desc: 'ATK +4%', stats: { atk_pct: 4 } },
+    { desc: 'SPD +4', stats: { spd_flat: 4 } },
+    { desc: 'CRIT DMG +6%', stats: { crit_dmg: 6 } },
+    { desc: 'Ignore 3% DEF', stats: { defPen: 3 } },
+  ],
+  exp_spear_crystal: [
+    { desc: 'SPD +4', stats: { spd_flat: 4 } },
+    { desc: 'ATK +4%', stats: { atk_pct: 4 } },
+    { desc: 'CRIT +3%', stats: { crit_rate: 3 } },
+    { desc: 'CRIT DMG +6%', stats: { crit_dmg: 6 } },
+    { desc: 'Ignore 4% DEF', stats: { defPen: 4 } },
+  ],
+  exp_wand_crystal: [
+    { desc: 'INT +4%', stats: { int_pct: 4 } },
+    { desc: 'RES +5', stats: { res_flat: 5 } },
+    { desc: 'PV +4%', stats: { hp_pct: 4 } },
+    { desc: 'DEF +3%', stats: { def_pct: 3 } },
+    { desc: 'Tous Degats +3%', stats: { allDamage: 3 } },
+  ],
+  exp_hammer_stone: [
+    { desc: 'PV +4%', stats: { hp_pct: 4 } },
+    { desc: 'DEF +4%', stats: { def_pct: 4 } },
+    { desc: 'ATK +4%', stats: { atk_pct: 4 } },
+    { desc: 'RES +4', stats: { res_flat: 4 } },
+    { desc: 'Ignore 3% DEF', stats: { defPen: 3 } },
+  ],
+
+  // Ombre/Abysses (legendaire tier — solid passives)
+  exp_blade_shadow: [
+    { desc: 'Degats Ombre +8%', stats: { shadowDamage: 8 } },
+    { desc: 'ATK +7%', stats: { atk_pct: 7 } },
+    { desc: 'CRIT +6%', stats: { crit_rate: 6 } },
+    { desc: 'CRIT DMG +12%', stats: { crit_dmg: 12 } },
+    { desc: 'Ignore 6% DEF', stats: { defPen: 6 } },
+  ],
+  exp_staff_shadow: [
+    { desc: 'Degats Ombre +8%', stats: { shadowDamage: 8 } },
+    { desc: 'INT +7%', stats: { int_pct: 7 } },
+    { desc: 'RES +8', stats: { res_flat: 8 } },
+    { desc: 'PV +6%', stats: { hp_pct: 6 } },
+    { desc: 'Tous Degats +6%', stats: { allDamage: 6 } },
+  ],
+  exp_axe_abyss: [
+    { desc: 'ATK +7%', stats: { atk_pct: 7 } },
+    { desc: 'PV +6%', stats: { hp_pct: 6 } },
+    { desc: 'CRIT +5%', stats: { crit_rate: 5 } },
+    { desc: 'CRIT DMG +10%', stats: { crit_dmg: 10 } },
+    { desc: 'Ignore 5% DEF', stats: { defPen: 5 } },
+  ],
+  exp_glaive_abyss: [
+    { desc: 'CRIT +6%', stats: { crit_rate: 6 } },
+    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'SPD +6', stats: { spd_flat: 6 } },
+    { desc: 'CRIT DMG +10%', stats: { crit_dmg: 10 } },
+    { desc: 'Ignore 6% DEF', stats: { defPen: 6 } },
+  ],
+  exp_orb_abyss: [
+    { desc: 'INT +7%', stats: { int_pct: 7 } },
+    { desc: 'RES +8', stats: { res_flat: 8 } },
+    { desc: 'PV +7%', stats: { hp_pct: 7 } },
+    { desc: 'DEF +5%', stats: { def_pct: 5 } },
+    { desc: 'Tous Degats +5%', stats: { allDamage: 5 } },
+  ],
+  exp_scythe_abyss: [
+    { desc: 'ATK +7%', stats: { atk_pct: 7 } },
+    { desc: 'CRIT +6%', stats: { crit_rate: 6 } },
+    { desc: 'CRIT DMG +12%', stats: { crit_dmg: 12 } },
+    { desc: 'SPD +5', stats: { spd_flat: 5 } },
+    { desc: 'Ignore 6% DEF + Tous Degats +5%', stats: { defPen: 6, allDamage: 5 } },
+  ],
+  exp_whip_abyss: [
+    { desc: 'SPD +6', stats: { spd_flat: 6 } },
+    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'CRIT +5%', stats: { crit_rate: 5 } },
+    { desc: 'PV +5%', stats: { hp_pct: 5 } },
+    { desc: 'Ignore 5% DEF', stats: { defPen: 5 } },
+  ],
+
+  // Neant (legendaire+ tier — strong passives)
+  exp_katana_void: [
+    { desc: 'Degats Ombre +10%', stats: { shadowDamage: 10 } },
+    { desc: 'CRIT +8%', stats: { crit_rate: 8 } },
+    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'CRIT DMG +15%', stats: { crit_dmg: 15 } },
+    { desc: 'Ignore 8% DEF + Tous Degats +8%', stats: { defPen: 8, allDamage: 8 } },
+  ],
+  exp_grimoire_void: [
+    { desc: 'Degats Ombre +10%', stats: { shadowDamage: 10 } },
+    { desc: 'INT +10%', stats: { int_pct: 10 } },
+    { desc: 'RES +10', stats: { res_flat: 10 } },
+    { desc: 'PV +8%', stats: { hp_pct: 8 } },
+    { desc: 'Tous Degats +8%', stats: { allDamage: 8 } },
+  ],
+  exp_halberd_void: [
+    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'DEF +8%', stats: { def_pct: 8 } },
+    { desc: 'PV +8%', stats: { hp_pct: 8 } },
+    { desc: 'CRIT DMG +14%', stats: { crit_dmg: 14 } },
+    { desc: 'Ignore 8% DEF + Tous Degats +8%', stats: { defPen: 8, allDamage: 8 } },
+  ],
+  exp_talisman_void: [
+    { desc: 'PV +10%', stats: { hp_pct: 10 } },
+    { desc: 'INT +8%', stats: { int_pct: 8 } },
+    { desc: 'DEF +8%', stats: { def_pct: 8 } },
+    { desc: 'RES +10', stats: { res_flat: 10 } },
+    { desc: 'Tous Degats +8% + PV +6%', stats: { allDamage: 8, hp_pct: 6 } },
+  ],
+  exp_claws_void: [
+    { desc: 'Degats Ombre +10%', stats: { shadowDamage: 10 } },
+    { desc: 'SPD +10', stats: { spd_flat: 10 } },
+    { desc: 'CRIT +8%', stats: { crit_rate: 8 } },
+    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'Ignore 8% DEF + Tous Degats +8%', stats: { defPen: 8, allDamage: 8 } },
+  ],
+  exp_lance_briseur: [
+    { desc: 'DEF +10%', stats: { def_pct: 10 } },
+    { desc: 'PV +10%', stats: { hp_pct: 10 } },
+    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'RES +10', stats: { res_flat: 10 } },
+    { desc: 'DEF +8% + PV +8%', stats: { def_pct: 8, hp_pct: 8 } },
+  ],
 };
 
 export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
@@ -1181,7 +1475,7 @@ export function rollUltimeWeaponDrop(rc) {
     const ultWeapons = Object.values(WEAPONS).filter(w => w.ultime);
     return ultWeapons.length > 0 ? ultWeapons[Math.floor(Math.random() * ultWeapons.length)].id : null;
   }
-  const mythiques = Object.values(WEAPONS).filter(w => !w.secret && !w.ultime && w.rarity === 'mythique');
+  const mythiques = Object.values(WEAPONS).filter(w => !w.secret && !w.ultime && !w.expedition && w.rarity === 'mythique');
   return mythiques.length > 0 ? mythiques[Math.floor(Math.random() * mythiques.length)].id : null;
 }
 

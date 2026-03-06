@@ -115,8 +115,14 @@ export default async function handler(req, res) {
         data.artifactInventory = [];
       }
 
+      // Ensure weaponCollection exists
+      if (!data.weaponCollection || typeof data.weaponCollection !== 'object') {
+        data.weaponCollection = {};
+      }
+
       const timestamp = Date.now();
       const itemResults = [];
+      const MAX_WEAPON_AWAKENING = 100;
 
       for (const item of items) {
         const isEquip = EQUIP_TYPES.includes(item.type);
@@ -125,7 +131,26 @@ export default async function handler(req, res) {
           continue;
         }
 
-        // Convert to artifact format
+        // ── WEAPONS → weaponCollection (same as regular weapons, with awakening)
+        if (item.type === 'weapon') {
+          const wId = item.itemId;
+          const wc = data.weaponCollection;
+          if (wc[wId] === undefined) {
+            wc[wId] = 0; // First copy → A0
+            itemResults.push({ itemId: wId, action: 'weapon_added', awakening: 0 });
+          } else if (wc[wId] >= MAX_WEAPON_AWAKENING) {
+            // Already max → convert to 5 red hammers
+            if (!data.hammers) data.hammers = {};
+            data.hammers.marteau_rouge = (data.hammers.marteau_rouge || 0) + 5;
+            itemResults.push({ itemId: wId, action: 'weapon_max_hammers', hammers: 5 });
+          } else {
+            wc[wId] = wc[wId] + 1; // Duplicate → +1 awakening
+            itemResults.push({ itemId: wId, action: 'weapon_awakened', awakening: wc[wId] });
+          }
+          continue;
+        }
+
+        // ── ARMOR/SET_PIECE → artifactInventory
         const artifact = convertToArtifact(item, timestamp);
         const inv = data.artifactInventory;
 

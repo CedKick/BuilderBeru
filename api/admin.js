@@ -667,6 +667,90 @@ async function handleMigrateExpedition(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// MIGRATE EXPEDITION WEAPONS from artifactInventory to weaponCollection
+// ═══════════════════════════════════════════════════════════════
+
+async function handleMigrateWeapons(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const MAX_WEAPON_AWAKENING = 100;
+
+  // Get all users with shadow_colosseum_data
+  const saveRows = await query(`
+    SELECT s.device_id, u.username, s.data as save_data
+    FROM user_storage s
+    JOIN users u ON u.device_id = s.device_id
+    WHERE s.storage_key = 'shadow_colosseum_data'
+  `);
+
+  const results = [];
+  for (const row of saveRows.rows) {
+    const data = typeof row.save_data === 'string' ? JSON.parse(row.save_data) : row.save_data;
+    if (!Array.isArray(data.artifactInventory)) {
+      results.push({ username: row.username, status: 'no_inventory', weaponsMoved: 0 });
+      continue;
+    }
+
+    // Find weapon artifacts (slot === 'weapon' or original expedition weapon items)
+    const weaponArts = data.artifactInventory.filter(a =>
+      a.slot === 'weapon' || (a.source === 'expedition' && a.expItemId && (a.expItemId.startsWith('exp_') && a.expOriginalStats && !a.set))
+    );
+
+    if (weaponArts.length === 0) {
+      results.push({ username: row.username, status: 'no_weapons', weaponsMoved: 0 });
+      continue;
+    }
+
+    if (!data.weaponCollection || typeof data.weaponCollection !== 'object') data.weaponCollection = {};
+    if (!data.hammers) data.hammers = {};
+
+    let moved = 0;
+    const weaponDetails = [];
+
+    for (const art of weaponArts) {
+      // Determine weapon ID: use expItemId if available, otherwise try to infer
+      const wId = art.expItemId || art.uid;
+      if (!wId) continue;
+
+      if (data.weaponCollection[wId] === undefined) {
+        data.weaponCollection[wId] = 0;
+        weaponDetails.push({ id: wId, action: 'added', awakening: 0 });
+      } else if (data.weaponCollection[wId] >= MAX_WEAPON_AWAKENING) {
+        data.hammers.marteau_rouge = (data.hammers.marteau_rouge || 0) + 5;
+        weaponDetails.push({ id: wId, action: 'max_hammers' });
+      } else {
+        data.weaponCollection[wId] += 1;
+        weaponDetails.push({ id: wId, action: 'awakened', awakening: data.weaponCollection[wId] });
+      }
+      moved++;
+    }
+
+    // Remove weapon artifacts from artifactInventory
+    const weaponUids = new Set(weaponArts.map(a => a.uid));
+    data.artifactInventory = data.artifactInventory.filter(a => !weaponUids.has(a.uid));
+
+    // Write back
+    const saveJson = JSON.stringify(data);
+    const saveSize = Buffer.byteLength(saveJson, 'utf8');
+    await query(`UPDATE user_storage SET data = $1, size_bytes = $2, updated_at = NOW() WHERE device_id = $3 AND storage_key = 'shadow_colosseum_data'`,
+      [saveJson, saveSize, row.device_id]);
+
+    results.push({
+      username: row.username,
+      status: 'migrated',
+      weaponsMoved: moved,
+      finalWeaponCollection: Object.keys(data.weaponCollection).length,
+      finalInventorySize: data.artifactInventory.length,
+      details: weaponDetails,
+    });
+  }
+
+  return res.status(200).json({ success: true, results });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -706,6 +790,8 @@ export default async function handler(req, res) {
         return await handleTableRows(req, res);
       case 'migrate-expedition':
         return await handleMigrateExpedition(req, res);
+      case 'migrate-weapons':
+        return await handleMigrateWeapons(req, res);
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }

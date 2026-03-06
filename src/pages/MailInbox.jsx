@@ -330,14 +330,30 @@ export default function MailInbox() {
       const EXP_SLOT_MAP = { helm: 'casque', chest: 'plastron', gloves: 'gants', boots: 'bottes' };
       const mapRarity = (r) => r === 'legendary' ? 'legendaire' : r === 'epic' ? 'legendaire' : (r === 'uncommon' || r === 'common') ? 'rare' : r;
 
-      // Items → artifactInventory (in data = shadow_colosseum_data)
+      // Items → weapons go to weaponCollection, armor/set_piece go to artifactInventory
       if (rewards.expeditionItems && Array.isArray(rewards.expeditionItems)) {
         if (!Array.isArray(data.artifactInventory)) data.artifactInventory = [];
         const timestamp = Date.now();
         let scrollCount = 0;
+        const MAX_WEAPON_AWAKENING = 100;
         rewards.expeditionItems.forEach(item => {
           if (item.itemId === 'exp_ultimate_scroll') { scrollCount++; return; }
           if (!['armor', 'weapon', 'set_piece'].includes(item.type)) return;
+
+          // ── WEAPONS → weaponCollection (same as regular weapons)
+          if (item.type === 'weapon') {
+            const wId = item.itemId;
+            if (data.weaponCollection[wId] === undefined) {
+              data.weaponCollection[wId] = 0; // First copy → A0
+            } else if (data.weaponCollection[wId] >= MAX_WEAPON_AWAKENING) {
+              data.hammers.marteau_rouge = (data.hammers.marteau_rouge || 0) + 5;
+            } else {
+              data.weaponCollection[wId] += 1; // Duplicate → +1 awakening
+            }
+            return;
+          }
+
+          // ── ARMOR/SET_PIECE → artifactInventory
           const statEntries = Object.entries(item.stats || {});
           const mainStatEntry = statEntries[0] || ['atk_flat', 0];
           const subEntries = statEntries.slice(1);
