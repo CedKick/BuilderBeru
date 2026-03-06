@@ -8959,8 +8959,8 @@ export default function ShadowColosseum() {
                             )}
                             {/* Header: Set name + rarity + level */}
                             <div className="flex items-center gap-1 mb-0.5">
-                              <span className="text-normal-responsive">{setDef?.icon || '?'}</span>
-                              <span className={`text-tiny-responsive font-bold truncate flex-1 ${setDef?.color || 'text-gray-300'}`}>{setDef?.name || '?'}</span>
+                              <span className="text-normal-responsive">{setDef?.icon || (art.source === 'expedition' ? '\uD83C\uDF3F' : '?')}</span>
+                              <span className={`text-tiny-responsive font-bold truncate flex-1 ${setDef?.color || (art.source === 'expedition' ? 'text-emerald-400' : 'text-gray-300')}`}>{setDef?.name || art.expItemName || '?'}</span>
                               <span className={`text-tiny-responsive font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars || ''}</span>
                             </div>
                             {/* Slot + level + grade */}
@@ -8977,8 +8977,8 @@ export default function ShadowColosseum() {
                             </div>
                             {/* Main stat */}
                             <div className="flex items-center gap-1 py-0.5 border-t border-b border-white/5">
-                              <span className="text-normal-responsive">{mainDef?.icon || '?'}</span>
-                              <span className={`text-small-responsive font-medium ${getStatColor(art.mainStat, hClass, hElement)}`}>{mainDef?.name || '?'}</span>
+                              <span className="text-normal-responsive">{mainDef?.icon || (art.source === 'expedition' ? '\uD83C\uDF3F' : '?')}</span>
+                              <span className={`text-small-responsive font-medium ${getStatColor(art.mainStat, hClass, hElement)}`}>{mainDef?.name || ({ heal_received_pct: 'Soins+%', heal_pct: 'Soins%', lifesteal_pct: 'Vol Vie%', mana_regen_pct: 'Mana%', cdr_pct: 'CDR%', armor_pen: 'Perce', dodge_pct: 'Esquive%', thorns_pct: 'Epines%', shield_pct: 'Bouclier%' }[art.mainStat] || art.mainStat)}</span>
                               <span className={`text-normal-responsive font-black ml-auto ${getStatColor(art.mainStat, hClass, hElement)}`}>{art.mainValue}</span>
                               {(art.enchants?.main || 0) > 0 && <span className="text-tiny-responsive text-green-400 font-bold">(+{art.enchants.main.toFixed(1)})</span>}
                             </div>
@@ -8990,7 +8990,7 @@ export default function ShadowColosseum() {
                                 const subEnch = art.enchants?.subs?.[sub.id] || 0;
                                 return (
                                   <div key={si} className={`text-tiny-responsive truncate ${subColor}`}>
-                                    {subDef?.name || sub.id} +{sub.value}{subEnch > 0 && <span className="text-green-400"> (+{subEnch.toFixed(1)})</span>}
+                                    {subDef?.name || ({ heal_received_pct: 'Soins+%', heal_pct: 'Soins%', lifesteal_pct: 'Vol Vie%', mana_regen_pct: 'Mana%', cdr_pct: 'CDR%', armor_pen: 'Perce', dodge_pct: 'Esquive%', thorns_pct: 'Epines%', shield_pct: 'Bouclier%' }[sub.id] || sub.id)} +{sub.value}{subEnch > 0 && <span className="text-green-400"> (+{subEnch.toFixed(1)})</span>}
                                   </div>
                                 );
                               })}
