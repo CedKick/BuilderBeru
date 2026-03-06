@@ -2,7 +2,7 @@
 // Point d'entrée DrawBeru avec choix Solo/Multi
 // Par Kaisel pour le Monarque des Ombres
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { drawBeruModels, getModel } from './config/models';
 import {
@@ -13,6 +13,7 @@ import {
 } from '../../components/drawberu/MultiplayerUI';
 import useMultiplayer from './hooks/useMultiplayer';
 import DrawBeru from './DrawBeru';
+import { DRAWBERU_PROCESS_URL } from '../../utils/api';
 
 // États du launcher
 const LAUNCHER_STATES = {
@@ -52,6 +53,12 @@ const DrawBeruLauncher = () => {
     } catch (e) {}
     return 'default';
   });
+
+  // Custom image upload
+  const [customModelData, setCustomModelData] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState(null); // null | 'uploading' | 'error'
+  const [uploadError, setUploadError] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Multiplayer hook
   const multiplayer = useMultiplayer();
@@ -157,7 +164,61 @@ const DrawBeruLauncher = () => {
     if (multiplayer.room) {
       multiplayer.leaveRoom();
     }
+    setCustomModelData(null);
     setCurrentState(LAUNCHER_STATES.SELECT_HUNTER);
+  };
+
+  const handleCustomImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setUploadError('Image trop lourde (max 10MB)');
+      return;
+    }
+
+    setUploadStatus('uploading');
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch(`${DRAWBERU_PROCESS_URL}/process?n_colors=8`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Erreur ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Build custom model data compatible with DrawBeru
+      const model = {
+        id: 'custom',
+        name: file.name.replace(/\.[^.]+$/, ''),
+        reference: `data:image/png;base64,${data.reference}`,
+        template: `data:image/png;base64,${data.template}`,
+        canvasSize: data.canvas_size,
+        palette: data.palette,
+      };
+
+      setCustomModelData(model);
+      setUploadStatus(null);
+      setCurrentState(LAUNCHER_STATES.PLAYING_SOLO);
+
+    } catch (err) {
+      console.error('DrawBeru process error:', err);
+      setUploadError(err.message || 'Erreur lors du traitement');
+      setUploadStatus(null);
+    }
+
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   // ========================================================================
@@ -168,9 +229,10 @@ const DrawBeruLauncher = () => {
   if (currentState === LAUNCHER_STATES.PLAYING_SOLO) {
     return (
       <DrawBeru
-        initialHunter={selectedHunter}
-        initialModel={selectedModel}
+        initialHunter={customModelData ? 'custom' : selectedHunter}
+        initialModel={customModelData ? 'custom' : selectedModel}
         onBack={handleLeaveGame}
+        customModelData={customModelData}
       />
     );
   }
@@ -291,6 +353,48 @@ const DrawBeruLauncher = () => {
           onHunterChange={handleHunterChange}
           onModelChange={handleModelChange}
         />
+
+        {/* Custom Image Upload */}
+        <div className="mt-6 bg-purple-900/20 rounded-xl border border-dashed border-purple-500/40 p-5">
+          <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+            <span>📤</span>
+            <span>Ou upload ta propre image</span>
+          </h3>
+          <p className="text-purple-300/70 text-sm mb-3">
+            Charge une image couleur, on g\u00e9n\u00e8re le coloriage automatiquement
+          </p>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handleCustomImageUpload}
+            className="hidden"
+            id="custom-image-upload"
+          />
+
+          <label
+            htmlFor="custom-image-upload"
+            className={`block w-full text-center py-3 rounded-lg font-medium cursor-pointer transition-all ${
+              uploadStatus === 'uploading'
+                ? 'bg-yellow-600/50 text-yellow-200 cursor-wait'
+                : 'bg-purple-600/40 hover:bg-purple-600/60 text-purple-200 hover:text-white'
+            }`}
+          >
+            {uploadStatus === 'uploading' ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="animate-spin">⏳</span>
+                Traitement en cours... (5-10s)
+              </span>
+            ) : (
+              '📁 Choisir une image (PNG, JPG, WEBP)'
+            )}
+          </label>
+
+          {uploadError && (
+            <p className="text-red-400 text-sm mt-2">❌ {uploadError}</p>
+          )}
+        </div>
 
         {/* Continue Button */}
         <div className="mt-8">

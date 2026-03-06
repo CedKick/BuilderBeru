@@ -1,9 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { drawBeruModels, getModel, getHunterModels } from './config/models';
-import { BrushEngine, MANGA_BRUSHES } from './BrushEngine';
+import { BrushEngine } from './BrushEngine';
 import ChibiBubble from '../../components/ChibiBubble';
 import ColoringGame from './ColoringGame';
+import { BRUSH_TYPES } from './constants/brushTypes';
+import { CHIBI_PAINTERS, CHIBI_INTERACTIONS, CHIBI_AFFINITIES, MAX_ACTIVE_CHIBIS } from './constants/chibiData';
+import useZoomPan from './hooks/useZoomPan';
+import useCheatCode from './hooks/useCheatCode';
 
 // ⚡ HOOK MOBILE SIMPLIFIÉ (au lieu d'importer un fichier externe)
 const useIsMobile = () => {
@@ -71,60 +75,6 @@ const useTouchGestures = (enabled, onPinch, onPan) => {
     return { handleTouchStart, handleTouchMove, handleTouchEnd };
 };
 
-// 🎨 BRUSH TYPES CONFIGURATION - Mapping vers MANGA_BRUSHES
-// Ces types sont utilisés pour la compatibilité avec l'UI existante
-const BRUSH_TYPES = {
-    pen: {
-        id: 'gpen',
-        name: 'G-Pen',
-        icon: '✒️',
-        description: 'Encrage manga professionnel',
-        ...MANGA_BRUSHES.gpen
-    },
-    pencil: {
-        id: 'pencil',
-        name: 'Crayon Manga',
-        icon: '✏️',
-        description: 'Esquisse avec grain',
-        ...MANGA_BRUSHES.pencil
-    },
-    marker: {
-        id: 'marker',
-        name: 'Feutre Copic',
-        icon: '🖍️',
-        description: 'Coloriage semi-transparent',
-        ...MANGA_BRUSHES.marker
-    },
-    airbrush: {
-        id: 'airbrush',
-        name: 'Aérographe',
-        icon: '💨',
-        description: 'Dégradés et ombres douces',
-        ...MANGA_BRUSHES.airbrush
-    },
-    pixel: {
-        id: 'pixel',
-        name: 'Pixel',
-        icon: '▪️',
-        description: 'Pixel art',
-        ...MANGA_BRUSHES.pixel
-    },
-    // Nouveaux pinceaux manga
-    mapping: {
-        id: 'mapping',
-        name: 'Mapping Pen',
-        icon: '🖊️',
-        description: 'Lignes fines et détails',
-        ...MANGA_BRUSHES.mapping
-    },
-    softbrush: {
-        id: 'softbrush',
-        name: 'Brush Doux',
-        icon: '🖌️',
-        description: 'Ombres et dégradés',
-        ...MANGA_BRUSHES.softbrush
-    }
-};
 
 const DrawBeruFixed = ({
     // Props pour le mode multi
@@ -133,6 +83,8 @@ const DrawBeruFixed = ({
     multiplayerMode = false,
     multiplayer = null,
     onBack = null,
+    // Props pour image custom (upload utilisateur)
+    customModelData = null,
 }) => {
     const { t } = useTranslation();
     const isMobile = useIsMobile();
@@ -142,6 +94,13 @@ const DrawBeruFixed = ({
     const layersRef = useRef([]);
     const referenceCanvasRef = useRef(null);
     const overlayCanvasRef = useRef(null);
+
+    // P0 PERF: Cached template image (avoid reloading in renderLayers)
+    const templateImgRef = useRef(null);
+    // P0 PERF: Throttle renderLayers via rAF
+    const renderRafRef = useRef(null);
+    // P0 PERF: Cached reference ImageData for auto-pipette
+    const refImageDataCacheRef = useRef(null);
 
     // 🎨 Helper: Récupère le dernier dessin visité depuis localStorage
     const getLastDrawing = () => {
@@ -185,6 +144,10 @@ const DrawBeruFixed = ({
     const [gameMode, setGameMode] = useState(false);
     const [referenceImageData, setReferenceImageData] = useState(null);
 
+    // P3: Shortcuts help overlay & save indicator
+    const [showShortcuts, setShowShortcuts] = useState(false);
+    const [saveIndicator, setSaveIndicator] = useState(null); // 'saving' | 'saved' | 'error' | null
+
     // 📱 MOBILE TOOLBAR SCROLL - Gestion du scroll et tap vs long-press
     const mobileToolbarRef = useRef(null);
     const toolbarTouchStartRef = useRef({ x: 0, y: 0, time: 0 });
@@ -193,19 +156,14 @@ const DrawBeruFixed = ({
     const LONG_PRESS_THRESHOLD = 150; // ms avant de considérer comme drag
     const DRAG_THRESHOLD = 10; // px de mouvement pour considérer comme drag
 
-    // Zoom & Pan
-    const [zoomLevel, setZoomLevel] = useState(1);
-    const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-    const [isPanning, setIsPanning] = useState(false);
-    const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
-    const MAX_ZOOM = isMobile ? 25 : 10;
-    const ZOOM_STEP = isMobile ? 0.5 : 0.25;
-
-    // Reference canvas states
-    const [refZoomLevel, setRefZoomLevel] = useState(1);
-    const [refPanOffset, setRefPanOffset] = useState({ x: 0, y: 0 });
-    const [isRefPanning, setIsRefPanning] = useState(false);
-    const [lastRefPanPoint, setLastRefPanPoint] = useState({ x: 0, y: 0 });
+    // Zoom & Pan (extracted hook)
+    const {
+        zoomLevel, panOffset, isPanning, setPanOffset,
+        handleZoom, handleWheel, startPan, handlePan, stopPan, resetView,
+        refZoomLevel, refPanOffset, isRefPanning, setRefPanOffset,
+        handleRefZoom, handleRefWheel, startRefPan, handleRefPan, stopRefPan, resetRefView,
+        MAX_ZOOM, ZOOM_STEP,
+    } = useZoomPan({ isMobile, canvasRef, overlayCanvasRef });
     const [debugPoint, setDebugPoint] = useState(null);
     const [showReference, setShowReference] = useState(true);
 
@@ -225,13 +183,8 @@ const DrawBeruFixed = ({
     const [coloringProgress, setColoringProgress] = useState(0);
     const [progressDetails, setProgressDetails] = useState(null);
 
-    // 🎮 CHEAT CODE STATES
-    const [cheatModeActive, setCheatModeActive] = useState(false);
-    const [cheatCooldown, setCheatCooldown] = useState(null);
-    const [cheatTimeRemaining, setCheatTimeRemaining] = useState(10);
-    const [pressedKeys, setPressedKeys] = useState(new Set());
-    const cheatTimerRef = useRef(null);
-    const cheatCountdownRef = useRef(null);
+    // Cheat code (extracted hook)
+    const { cheatModeActive, cheatCooldown, cheatTimeRemaining } = useCheatCode(isMobile);
 
     // 🎨 AUTO-PIPETTE MODE - Colorie avec les couleurs du modèle de référence
     const [autoPipetteMode, setAutoPipetteMode] = useState(false);
@@ -247,195 +200,8 @@ const DrawBeruFixed = ({
     const [pendingChibiId, setPendingChibiId] = useState(null); // Chibi en attente de zone
     const zoneSelectionRef = useRef(null);
 
-    // 🎨 Configuration des Chibis dessinateurs (DOIT être avant les états qui l'utilisent)
-    // 🤝 SYSTÈME D'AFFINITÉS ENTRE CHIBIS
-    // 'synergy' = bonus ensemble, 'neutral' = normal, 'chaotic' = interactions conflictuelles
-    const CHIBI_AFFINITIES = {
-        'beru_papillon-tank': 'chaotic',      // Béru et Tank = chaos total
-        'tank-beru_papillon': 'chaotic',
-        // Futurs duos...
-        // 'beru_papillon-tankette': 'synergy',
-        // 'tank-tankette': 'synergy',
-    };
-
-    // 🎭 DIALOGUES D'INTERACTIONS ENTRE CHIBIS
-    const CHIBI_INTERACTIONS = {
-        // 🐻 Quand Tank troll le travail de Béru
-        'tank_trolls_beru': [
-            { from: 'tank', message: "Oups ! J'ai glissé sur ton beau coloriage~ 🐾" },
-            { from: 'tank', message: "Hehe... C'était trop parfait, fallait corriger ça !" },
-            { from: 'tank', message: "WOUAF ! *splash sur le travail de Béru*" },
-            { from: 'tank', message: "Cette couleur est MIEUX, fais-moi confiance !" },
-            { from: 'tank', message: "*roule sur le dessin* ...Oups?" },
-            { from: 'tank', message: "L'art abstrait c'est SOUS-ESTIMÉ !" },
-            { from: 'tank', message: "Un peu de CHAOS pour égayer tout ça~" },
-            { from: 'tank', message: "Béru colorie trop bien... ça m'énerve !" },
-            { from: 'tank', message: "*patte maladroite* C'est pas ma faute !" },
-            { from: 'tank', message: "Qui a dit que le rose allait pas là ? MOI." },
-        ],
-        // 🦋 Réactions de Béru quand Tank troll
-        'beru_reacts_to_troll': [
-            { from: 'beru_papillon', message: "KIII ?! Tank qu'est-ce que tu fais ?!" },
-            { from: 'beru_papillon', message: "...Tu as VRAIMENT fait ça ? 😤" },
-            { from: 'beru_papillon', message: "Mes belles couleurs... *soupir*" },
-            { from: 'beru_papillon', message: "Je vais devoir repasser derrière... ENCORE." },
-            { from: 'beru_papillon', message: "Tank... on avait dit PAS sur ma zone !" },
-            { from: 'beru_papillon', message: "*flutter furieux* Tu vas voir !" },
-            { from: 'beru_papillon', message: "Je... je respire... calmement..." },
-            { from: 'beru_papillon', message: "C'est la TROISIÈME fois aujourd'hui !" },
-            { from: 'beru_papillon', message: "Pourquoi je travaille avec ce chien..." },
-            { from: 'beru_papillon', message: "*ailes qui tremblent de frustration*" },
-        ],
-        // 🦋 Quand Béru rattrape les dégâts de Tank
-        'beru_fixes_tank': [
-            { from: 'beru_papillon', message: "Bon... je répare ça. Comme d'habitude." },
-            { from: 'beru_papillon', message: "*soupir* Au travail..." },
-            { from: 'beru_papillon', message: "Un jour il apprendra... un jour." },
-            { from: 'beru_papillon', message: "Précision chirurgicale pour effacer le chaos~" },
-            { from: 'beru_papillon', message: "Cette tache... n'a JAMAIS existé." },
-            { from: 'beru_papillon', message: "Patience est mère de vertu... *répare*" },
-            { from: 'beru_papillon', message: "Allez hop, on nettoie les bêtises~" },
-            { from: 'beru_papillon', message: "Le perfectionnisme a un prix..." },
-        ],
-        // 🐻 Réaction de Tank quand Béru corrige
-        'tank_reacts_to_fix': [
-            { from: 'tank', message: "Hé ! C'était de l'ART ça !" },
-            { from: 'tank', message: "...Bon ok c'était moche. Mais QUAND MÊME !" },
-            { from: 'tank', message: "*boude dans son coin*" },
-            { from: 'tank', message: "Pfff... perfectionniste va." },
-            { from: 'tank', message: "Tu verras, un jour mon style sera reconnu !" },
-            { from: 'tank', message: "C'était du GÉNIE incompris !" },
-            { from: 'tank', message: "*grogne* Je recommencerai..." },
-            { from: 'tank', message: "Même pas vrai que c'était moche !" },
-        ],
-        // 🦋 Dialogues solo variés - Béru concentré
-        'beru_solo_focused': [
-            { from: 'beru_papillon', message: "Cette nuance... parfaite." },
-            { from: 'beru_papillon', message: "La précision est un art~" },
-            { from: 'beru_papillon', message: "Chaque pixel compte..." },
-            { from: 'beru_papillon', message: "Kiii~ C'est beau non ?" },
-            { from: 'beru_papillon', message: "L'ombre ici... oui, exactement là." },
-            { from: 'beru_papillon', message: "Mes ailes frémissent de satisfaction~" },
-        ],
-        // 🐻 Dialogues solo variés - Tank chaotique
-        'tank_solo_chaos': [
-            { from: 'tank', message: "WOUAF ! *splash aléatoire*" },
-            { from: 'tank', message: "Cette couleur ? Ou celle-là ? ...Les deux !" },
-            { from: 'tank', message: "*tourne en rond* OÙ colorier..." },
-            { from: 'tank', message: "Hehe... personne regarde ? *splash*" },
-            { from: 'tank', message: "L'imprévu c'est la VIE !" },
-            { from: 'tank', message: "Je suis un ARTISTE incompris !" },
-        ],
-
-        // 🌟 MESSAGES LÉGENDAIRES - Ultra rares (0.5%, cooldown 3 jours)
-        'legendary_tank': [
-            { from: 'tank', message: "Hein ? … Attends… c'était pas une bêtise ?" },
-            { from: 'tank', message: "...Béru ? T'es vraiment fort en fait." },
-            { from: 'tank', message: "*regarde son travail* ...C'est... beau?" },
-        ],
-        'legendary_beru': [
-            { from: 'beru_papillon', message: "…… …Merci Tank." },
-            { from: 'beru_papillon', message: "Tu sais quoi ? ...Continue comme ça." },
-            { from: 'beru_papillon', message: "*sourire* On fait une bonne équipe." },
-        ],
-
-        // 🔥 Messages par ÉTAT ÉMOTIONNEL - Tank
-        'tank_overexcited': [
-            { from: 'tank', message: "CHAOS IS ART ! 🎨🐕" },
-            { from: 'tank', message: "JE SUIS UNSTOPPABLE !!!" },
-            { from: 'tank', message: "ENCORE ! ENCORE ! ENCOOORE !" },
-            { from: 'tank', message: "*mode destruction totale activé*" },
-        ],
-
-        // 🔥 Messages par ÉTAT ÉMOTIONNEL - Béru résigné
-        'beru_resigned': [
-            { from: 'beru_papillon', message: "Pourquoi je travaille avec ce chien..." },
-            { from: 'beru_papillon', message: "*soupir infini* ...D'accord." },
-            { from: 'beru_papillon', message: "Je ne ressens plus rien." },
-            { from: 'beru_papillon', message: "C'est ça ma vie maintenant..." },
-        ],
-    };
-
-    const CHIBI_PAINTERS = {
-        beru_papillon: {
-            id: 'beru_papillon',
-            name: 'Béru-Papillon',
-            entityType: 'beru',
-            sprites: {
-                back: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422906/alecto_up_dwahgh.png',
-                front: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png'
-            },
-            stats: {
-                endurance: 80,
-                speed: 60,
-                pixelPrecision: 2
-            },
-            pixelSize: 2,
-            duration: 60,
-            colorMode: 'accurate',
-            movementMode: 'zone',
-            inkSplash: false,
-            zoneConfig: {
-                minSize: 8,
-                maxSize: 25,
-                shapes: ['rect', 'square', 'triangle'],
-            },
-            // 🔧 Messages de base (utilisés quand seul)
-            messages: [
-                "Kiii... mais avec grâce maintenant !",
-                "Mes ailes chatouillent les ombres...",
-                "Entre deux mondes, je danse.",
-                "Un papillon de l'ombre... artistique !",
-                "Mes couleurs sont aussi précises que mes griffes~",
-            ],
-            startMessage: "C'est parti ! Je vais colorier avec précision~",
-            endMessage: "Mission accomplie ! À la prochaine~",
-            // 🤝 Affinités
-            affinities: { tank: 'chaotic' },
-            // 🎯 Comportement en duo chaotique
-            chaoticBehavior: {
-                fixesOthersMess: true,       // Rattrape les erreurs des autres
-                fixChance: 0.15,              // 15% de chance de partir réparer
-                reactionDelay: 2000,          // Délai avant réaction (ms)
-            }
-        },
-        tank: {
-            id: 'tank',
-            name: 'Tank',
-            entityType: 'tank',
-            sprites: {
-                back: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png',
-                front: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png'
-            },
-            stats: {
-                endurance: 50,
-                speed: 40,
-                pixelPrecision: 5
-            },
-            pixelSize: 5,
-            duration: 45,
-            colorMode: 'troll',
-            movementMode: 'random',
-            inkSplash: true,
-            inkSplashChance: 0.08,
-            messages: [
-                "Hehe... cette couleur va être PARFAITE !",
-                "*splash* Oups, c'est pas la bonne couleur ?",
-                "L'art c'est subjectif, non ?",
-                "TANK SMASH... avec de la peinture !",
-            ],
-            startMessage: "Wouaf ! Tank va t'aider... à sa manière !",
-            endMessage: "Hehe... c'est beau non ? ...Non ? WOUAF !",
-            affinities: { beru_papillon: 'chaotic' },
-            // 🎯 Comportement en duo chaotique
-            chaoticBehavior: {
-                trollsOthersWork: true,      // Troll le travail des autres
-                trollChance: 0.12,            // 12% de chance de troller
-                trollRadius: 30,              // Rayon autour du travail de l'autre
-                reactionDelay: 1500,
-            }
-        }
-    };
+    // Chibi data imported from ./constants/chibiData.js
+    // (CHIBI_AFFINITIES, CHIBI_INTERACTIONS, CHIBI_PAINTERS, MAX_ACTIVE_CHIBIS)
 
     // 🎭 État des interactions entre chibis
     const [chibiInteractionState, setChibiInteractionState] = useState({
@@ -485,9 +251,6 @@ const DrawBeruFixed = ({
         chibiSelect: 0,
     });
     const BUTTON_COOLDOWN_MS = 300; // 300ms entre chaque clic
-
-    // 🦋 AUTO-DRAW MULTI-CHIBI - Système pour jusqu'à 2 Chibis dessinateurs
-    const MAX_ACTIVE_CHIBIS = 2;
 
     // État pour chaque chibi actif: { [id]: { active, timeRemaining, position, facingFront, message, direction } }
     const [activeChibis, setActiveChibis] = useState({});
@@ -626,7 +389,7 @@ const DrawBeruFixed = ({
         ? multiplayer.settings.eraserAllowed
         : true;
 
-    const currentModelData = getModel(selectedHunter, selectedModel);
+    const currentModelData = customModelData || getModel(selectedHunter, selectedModel);
     const availableModels = getHunterModels(selectedHunter);
 
     // Touch gestures
@@ -752,6 +515,14 @@ const DrawBeruFixed = ({
             templateImg.src = currentModelData.template;
         }
 
+        // P0 PERF: Pre-load and cache template image for renderLayers
+        const cachedTemplateImg = new Image();
+        cachedTemplateImg.crossOrigin = "anonymous";
+        cachedTemplateImg.onload = () => {
+            templateImgRef.current = cachedTemplateImg;
+        };
+        cachedTemplateImg.src = currentModelData.template;
+
         // Load reference
         const refCanvas = referenceCanvasRef.current;
         if (refCanvas) {
@@ -762,96 +533,20 @@ const DrawBeruFixed = ({
                 refCanvas.height = refImg.height;
                 const refCtx = refCanvas.getContext('2d');
                 refCtx.drawImage(refImg, 0, 0);
+                // P0 PERF: Cache reference ImageData for auto-pipette
+                try {
+                    refImageDataCacheRef.current = refCtx.getImageData(0, 0, refImg.width, refImg.height);
+                } catch (e) { /* cross-origin fallback */ }
             };
             refImg.src = currentModelData.reference;
         }
-    }, [currentModelData, selectedHunter, selectedModel]);
 
-    // 🎮 CHEAT CODE: Détection de la combinaison A+E+R+T+Shift
-    useEffect(() => {
-        // Desktop uniquement
-        if (isMobile) return;
-
-        const handleKeyDown = (e) => {
-            setPressedKeys(prev => {
-                const newKeys = new Set(prev);
-                newKeys.add(e.key.toLowerCase());
-
-                // Vérifier si la combinaison correcte est pressée
-                if (newKeys.has('a') && newKeys.has('e') && newKeys.has('r') &&
-                    newKeys.has('t') && e.shiftKey) {
-                    activateCheatMode();
-                }
-
-                return newKeys;
-            });
-        };
-
-        const handleKeyUp = (e) => {
-            setPressedKeys(prev => {
-                const newKeys = new Set(prev);
-                newKeys.delete(e.key.toLowerCase());
-                return newKeys;
-            });
-        };
-
-        const activateCheatMode = () => {
-            // Vérifier le cooldown
-            const now = Date.now();
-            const storedCooldown = localStorage.getItem('drawberu_cheat_cooldown');
-
-            if (storedCooldown) {
-                const cooldownEnd = parseInt(storedCooldown);
-                if (now < cooldownEnd) {
-                    const remainingMinutes = Math.ceil((cooldownEnd - now) / 60000);
-                    alert(`⏳ Cheat code en cooldown ! Réessayez dans ${remainingMinutes} minute(s).`);
-                    return;
-                }
-            }
-
-            // Activer le cheat mode
-            setCheatModeActive(true);
-            setCheatTimeRemaining(10);
-
-            // Décompte
-            let timeLeft = 10;
-            cheatCountdownRef.current = setInterval(() => {
-                timeLeft--;
-                setCheatTimeRemaining(timeLeft);
-                if (timeLeft <= 0) {
-                    clearInterval(cheatCountdownRef.current);
-                }
-            }, 1000);
-
-            // Timer de 10 secondes
-            if (cheatTimerRef.current) {
-                clearTimeout(cheatTimerRef.current);
-            }
-
-            cheatTimerRef.current = setTimeout(() => {
-                setCheatModeActive(false);
-
-                // Définir le cooldown d'1 heure
-                const cooldownEnd = Date.now() + (60 * 60 * 1000); // 1 heure
-                localStorage.setItem('drawberu_cheat_cooldown', cooldownEnd.toString());
-                setCheatCooldown(cooldownEnd);
-            }, 10000); // 10 secondes
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-
+        // Cleanup: invalidate caches on model change
         return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-            if (cheatTimerRef.current) {
-                clearTimeout(cheatTimerRef.current);
-            }
-            if (cheatCountdownRef.current) {
-                clearInterval(cheatCountdownRef.current);
-            }
+            templateImgRef.current = null;
+            refImageDataCacheRef.current = null;
         };
-    }, [isMobile]);
+    }, [currentModelData, selectedHunter, selectedModel]);
 
     // 🎯 Identifiant stable des chibis actifs (ne change pas quand timeRemaining change)
     const activeChibiIds = Object.keys(activeChibis)
@@ -2256,57 +1951,49 @@ const DrawBeruFixed = ({
         renderLayers();
     }, [multiplayerMode, multiplayer?.undoEvents]);
 
-    // 🎨 FEATURE 3: Fixed renderLayers to ensure proper color rendering
+    // P0 PERF: renderLayers uses cached template (no network request per call)
     const renderLayers = () => {
         const canvas = canvasRef.current;
-        // Use alpha: true and willReadFrequently for proper color handling
+        if (!canvas) return;
         const ctx = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
 
-        const templateImg = new Image();
-        templateImg.crossOrigin = "anonymous";
-        templateImg.onload = () => {
-            // Reset composite operation to ensure proper color rendering
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.globalAlpha = 1;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            layers.forEach((layer, index) => {
-                if (layer.visible && layersRef.current[index]) {
-                    ctx.globalCompositeOperation = 'source-over';
-                    ctx.globalAlpha = layer.opacity;
-                    ctx.drawImage(layersRef.current[index], 0, 0);
-                    ctx.globalAlpha = 1;
-                }
-            });
+        // Use cached template image (loaded once in useEffect)
+        if (templateImgRef.current) {
+            ctx.drawImage(templateImgRef.current, 0, 0, canvas.width, canvas.height);
+        }
 
-            // Calculer la progression après le rendu
-            setTimeout(() => updateProgress(), 500);
-        };
-        templateImg.onerror = () => {
-            console.warn('Could not load template for render');
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.globalAlpha = 1;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            layers.forEach((layer, index) => {
-                if (layer.visible && layersRef.current[index]) {
-                    ctx.globalCompositeOperation = 'source-over';
-                    ctx.globalAlpha = layer.opacity;
-                    ctx.drawImage(layersRef.current[index], 0, 0);
-                    ctx.globalAlpha = 1;
-                }
-            });
-            // Calculer la progression même en cas d'erreur
-            setTimeout(() => updateProgress(), 500);
-        };
-        templateImg.src = currentModelData.template;
+        layers.forEach((layer, index) => {
+            if (layer.visible && layersRef.current[index]) {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = layer.opacity;
+                ctx.drawImage(layersRef.current[index], 0, 0);
+                ctx.globalAlpha = 1;
+            }
+        });
+
+        // Calculer la progression (throttled)
+        setTimeout(() => updateProgress(), 500);
     };
 
-    // FONCTION DE CALCUL DU POURCENTAGE DE COLORIAGE
+    // P0 PERF: Throttled renderLayers - max once per animation frame (for use during drawing)
+    const renderLayersThrottled = () => {
+        if (renderRafRef.current) return; // already scheduled
+        renderRafRef.current = requestAnimationFrame(() => {
+            renderRafRef.current = null;
+            renderLayers();
+        });
+    };
+
+    // P0 PERF: calculateColoringProgress uses cached template (no network request)
     const calculateColoringProgress = () => {
         const canvas = canvasRef.current;
+        const cachedTemplate = templateImgRef.current;
 
-        if (!canvas || !currentModelData || !imagesLoaded) {
+        if (!canvas || !currentModelData || !imagesLoaded || !cachedTemplate) {
             return Promise.resolve({
                 percentage: 0,
                 coloredPixels: 0,
@@ -2315,96 +2002,67 @@ const DrawBeruFixed = ({
             });
         }
 
-        return new Promise((resolve) => {
-            const templateCanvas = document.createElement('canvas');
-            templateCanvas.width = canvas.width;
-            templateCanvas.height = canvas.height;
-            const templateCtx = templateCanvas.getContext('2d');
+        // Synchronous now - no Image loading needed
+        const templateCanvas = document.createElement('canvas');
+        templateCanvas.width = canvas.width;
+        templateCanvas.height = canvas.height;
+        const templateCtx = templateCanvas.getContext('2d');
+        templateCtx.drawImage(cachedTemplate, 0, 0, templateCanvas.width, templateCanvas.height);
+        const templateData = templateCtx.getImageData(0, 0, templateCanvas.width, templateCanvas.height);
 
-            const templateImg = new Image();
-            templateImg.crossOrigin = "anonymous";
+        const coloringCanvas = document.createElement('canvas');
+        coloringCanvas.width = canvas.width;
+        coloringCanvas.height = canvas.height;
+        const coloringCtx = coloringCanvas.getContext('2d');
+        coloringCtx.drawImage(cachedTemplate, 0, 0, coloringCanvas.width, coloringCanvas.height);
 
-            templateImg.onload = () => {
-                // Dessiner le template de base
-                templateCtx.drawImage(templateImg, 0, 0, templateCanvas.width, templateCanvas.height);
+        layers.forEach((layer, index) => {
+            if (layer.visible && layersRef.current[index]) {
+                coloringCtx.globalAlpha = layer.opacity;
+                coloringCtx.drawImage(layersRef.current[index], 0, 0);
+                coloringCtx.globalAlpha = 1;
+            }
+        });
 
-                // Obtenir les données du template
-                const templateData = templateCtx.getImageData(0, 0, templateCanvas.width, templateCanvas.height);
+        const coloringData = coloringCtx.getImageData(0, 0, coloringCanvas.width, coloringCanvas.height);
 
-                // Créer un canvas avec tout le coloriage actuel
-                const coloringCanvas = document.createElement('canvas');
-                coloringCanvas.width = canvas.width;
-                coloringCanvas.height = canvas.height;
-                const coloringCtx = coloringCanvas.getContext('2d');
+        let totalColorablePixels = 0;
+        let coloredPixels = 0;
 
-                // Dessiner le template de base
-                coloringCtx.drawImage(templateImg, 0, 0, coloringCanvas.width, coloringCanvas.height);
+        for (let i = 0; i < templateData.data.length; i += 4) {
+            const templateR = templateData.data[i];
+            const templateG = templateData.data[i + 1];
+            const templateB = templateData.data[i + 2];
+            const templateA = templateData.data[i + 3];
 
-                // Ajouter tous les layers visibles
-                layers.forEach((layer, index) => {
-                    if (layer.visible && layersRef.current[index]) {
-                        coloringCtx.globalAlpha = layer.opacity;
-                        coloringCtx.drawImage(layersRef.current[index], 0, 0);
-                        coloringCtx.globalAlpha = 1;
-                    }
-                });
+            const coloringR = coloringData.data[i];
+            const coloringG = coloringData.data[i + 1];
+            const coloringB = coloringData.data[i + 2];
 
-                // Obtenir les données du coloriage final
-                const coloringData = coloringCtx.getImageData(0, 0, coloringCanvas.width, coloringCanvas.height);
+            if (templateA > 0 && !(templateR > 240 && templateG > 240 && templateB > 240)) {
+                totalColorablePixels++;
 
-                // Calculer le pourcentage
-                let totalColorablePixels = 0;
-                let coloredPixels = 0;
+                const hasChanged = Math.abs(coloringR - templateR) > 10 ||
+                    Math.abs(coloringG - templateG) > 10 ||
+                    Math.abs(coloringB - templateB) > 10;
 
-                for (let i = 0; i < templateData.data.length; i += 4) {
-                    const templateR = templateData.data[i];
-                    const templateG = templateData.data[i + 1];
-                    const templateB = templateData.data[i + 2];
-                    const templateA = templateData.data[i + 3];
-
-                    const coloringR = coloringData.data[i];
-                    const coloringG = coloringData.data[i + 1];
-                    const coloringB = coloringData.data[i + 2];
-
-                    // Vérifier si c'est une zone colorable (pas transparente et pas complètement blanche)
-                    if (templateA > 0 && !(templateR > 240 && templateG > 240 && templateB > 240)) {
-                        totalColorablePixels++;
-
-                        // Vérifier si le pixel a été modifié par rapport au template
-                        const hasChanged = Math.abs(coloringR - templateR) > 10 ||
-                            Math.abs(coloringG - templateG) > 10 ||
-                            Math.abs(coloringB - templateB) > 10;
-
-                        if (hasChanged) {
-                            coloredPixels++;
-                        }
-                    }
+                if (hasChanged) {
+                    coloredPixels++;
                 }
+            }
+        }
 
-                const percentage = totalColorablePixels > 0 ?
-                    Math.round((coloredPixels / totalColorablePixels) * 100) : 0;
+        const percentage = totalColorablePixels > 0 ?
+            Math.round((coloredPixels / totalColorablePixels) * 100) : 0;
 
-                resolve({
-                    percentage,
-                    coloredPixels,
-                    totalColorablePixels,
-                    details: {
-                        layers: layers.filter(l => l.visible).length,
-                        canvasSize: `${canvas.width}x${canvas.height}`
-                    }
-                });
-            };
-
-            templateImg.onerror = () => {
-                resolve({
-                    percentage: 0,
-                    coloredPixels: 0,
-                    totalColorablePixels: 0,
-                    details: { layers: 0, canvasSize: '0x0' }
-                });
-            };
-
-            templateImg.src = currentModelData.template;
+        return Promise.resolve({
+            percentage,
+            coloredPixels,
+            totalColorablePixels,
+            details: {
+                layers: layers.filter(l => l.visible).length,
+                canvasSize: `${canvas.width}x${canvas.height}`
+            }
         });
     };
 
@@ -2493,6 +2151,10 @@ const DrawBeruFixed = ({
                     e.preventDefault();
                     redo();
                 }
+                if (e.key === 's' || e.key === 'S') {
+                    e.preventDefault();
+                    saveColoring();
+                }
             }
 
             if (!e.ctrlKey && !e.metaKey) {
@@ -2510,6 +2172,9 @@ const DrawBeruFixed = ({
                     e.preventDefault();
                     setBrushSize(prev => Math.min(50, Math.round((prev + 0.1) * 10) / 10));
                 }
+                if (e.key === '?') {
+                    setShowShortcuts(prev => !prev);
+                }
             }
         };
 
@@ -2526,10 +2191,6 @@ const DrawBeruFixed = ({
         return { x, y };
     };
 
-    const handleZoom = (delta) => {
-        const newZoom = Math.max(0.5, Math.min(MAX_ZOOM, zoomLevel + delta));
-        setZoomLevel(newZoom);
-    };
 
     // 🔢 FEATURE 2: Brush Size Controls
     const incrementBrushSize = () => {
@@ -3056,25 +2717,37 @@ const DrawBeruFixed = ({
         let colorToUse = selectedColor;
         let brushSizeToUse = brushSize;
 
-        // Fonction helper pour récupérer la couleur d'une position (TOUJOURS depuis la référence pour couleurs pures)
+        // P0 PERF: Read color from cached ImageData (no getImageData per pixel)
         const getColorAtPosition = (posX, posY) => {
             let color = selectedColor;
 
-            // TOUJOURS lire depuis referenceCanvasRef pour avoir les vraies couleurs (sans opacité appliquée)
             const canvas = canvasRef.current;
             const refCanvas = referenceCanvasRef.current;
-            if (refCanvas && canvas) {
+            const cachedData = refImageDataCacheRef.current;
+
+            if (cachedData && refCanvas && canvas) {
+                const refX = Math.floor(posX * cachedData.width / canvas.width);
+                const refY = Math.floor(posY * cachedData.height / canvas.height);
+
+                if (refX >= 0 && refX < cachedData.width && refY >= 0 && refY < cachedData.height) {
+                    const idx = (refY * cachedData.width + refX) * 4;
+                    const r = cachedData.data[idx];
+                    const g = cachedData.data[idx + 1];
+                    const b = cachedData.data[idx + 2];
+                    const a = cachedData.data[idx + 3];
+                    if (a > 0) {
+                        color = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+                    }
+                }
+            } else if (refCanvas && canvas) {
+                // Fallback: direct getImageData if cache not ready
                 try {
-                    // 🔄 Convertir les coordonnées du canvas de dessin vers le canvas de référence (proportionnel)
                     const refX = Math.floor(posX * refCanvas.width / canvas.width);
                     const refY = Math.floor(posY * refCanvas.height / canvas.height);
-
-                    // Vérifier les limites
                     if (refX >= 0 && refX < refCanvas.width && refY >= 0 && refY < refCanvas.height) {
                         const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
                         const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
                         if (pixel[3] > 0) {
-                            // 🎨 FIX V2: Utiliser les valeurs RGB PURES (couleurs vives, pas fades)
                             const r = pixel[0];
                             const g = pixel[1];
                             const b = pixel[2];
@@ -3143,7 +2816,8 @@ const DrawBeruFixed = ({
         // ✨ PRECISION: Sauvegarder le dernier point pour l'interpolation
         lastPointRef.current = currentPoint;
 
-        renderLayers();
+        // P0 PERF: Throttled render during drawing (max once per frame)
+        renderLayersThrottled();
     };
 
     // 🎨 FEATURE 4: Pipette reads ALWAYS from reference image, regardless of overlay state
@@ -3334,14 +3008,16 @@ const DrawBeruFixed = ({
             userData.user.accounts.default.colorings[selectedHunter][selectedModel] = coloringData;
 
             try {
+                setSaveIndicator('saving');
                 localStorage.setItem('builderberu_users', JSON.stringify(userData));
-                alert(`✅ Coloriage sauvegardé !\n\nHunter: ${selectedHunter}\nModèle: ${selectedModel}\nCalques: ${coloringData.layers.length}`);
+                setSaveIndicator('saved');
+                setTimeout(() => setSaveIndicator(null), 2500);
             } catch (e) {
                 console.error('❌ Error saving:', e);
+                setSaveIndicator('error');
+                setTimeout(() => setSaveIndicator(null), 4000);
                 if (e.name === 'QuotaExceededError') {
                     alert('⚠️ Espace localStorage plein !');
-                } else {
-                    alert('❌ Erreur de sauvegarde');
                 }
             }
         };
@@ -3592,94 +3268,6 @@ const DrawBeruFixed = ({
     };
 
     // Canvas event handlers
-    const handleWheel = (e) => {
-        // Vérifier si la molette est utilisée sur le canvas ou l'overlay
-        const isOnCanvas = e.target === canvasRef.current ||
-                          e.target === overlayCanvasRef.current;
-
-        if (isOnCanvas) {
-            // Si sur le canvas, empêcher le scroll et zoomer
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-            handleZoom(delta);
-        }
-        // Si pas sur le canvas, laisser le scroll normal fonctionner
-    };
-
-    const startPan = (e) => {
-        if (e.button === 2 || (e.button === 0 && e.ctrlKey)) {
-            setIsPanning(true);
-            setLastPanPoint({ x: e.clientX, y: e.clientY });
-            e.preventDefault();
-        }
-    };
-
-    const handlePan = (e) => {
-        if (isPanning) {
-            const deltaX = e.clientX - lastPanPoint.x;
-            const deltaY = e.clientY - lastPanPoint.y;
-
-            setPanOffset(prev => ({
-                x: prev.x + deltaX,
-                y: prev.y + deltaY
-            }));
-
-            setLastPanPoint({ x: e.clientX, y: e.clientY });
-        }
-    };
-
-    const stopPan = () => {
-        setIsPanning(false);
-    };
-
-    // Reference canvas handlers
-    const handleRefZoom = (delta) => {
-        const newZoom = Math.max(0.5, Math.min(3, refZoomLevel + delta));
-        setRefZoomLevel(newZoom);
-    };
-
-    const resetRefView = () => {
-        setRefZoomLevel(1);
-        setRefPanOffset({ x: 0, y: 0 });
-    };
-
-    const handleRefWheel = (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        handleRefZoom(delta);
-    };
-
-    const startRefPan = (e) => {
-        if (e.button === 2 || (e.button === 0 && e.ctrlKey)) {
-            setIsRefPanning(true);
-            setLastRefPanPoint({ x: e.clientX, y: e.clientY });
-            e.preventDefault();
-        }
-    };
-
-    const handleRefPan = (e) => {
-        if (isRefPanning) {
-            const deltaX = e.clientX - lastRefPanPoint.x;
-            const deltaY = e.clientY - lastRefPanPoint.y;
-
-            setRefPanOffset(prev => ({
-                x: prev.x + deltaX,
-                y: prev.y + deltaY
-            }));
-
-            setLastRefPanPoint({ x: e.clientX, y: e.clientY });
-        }
-    };
-
-    const stopRefPan = () => {
-        setIsRefPanning(false);
-    };
-
-    const resetView = () => {
-        setZoomLevel(1);
-        setPanOffset({ x: 0, y: 0 });
-    };
-
     if (!currentModelData) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
@@ -4797,6 +4385,52 @@ const DrawBeruFixed = ({
                 </div>
             )}
 
+            {/* 💾 SAVE INDICATOR */}
+            {saveIndicator && (
+                <div className="fixed bottom-6 right-6 z-[9999] transition-all duration-300">
+                    <div className={`px-4 py-2 rounded-lg shadow-lg text-sm font-medium ${
+                        saveIndicator === 'saving' ? 'bg-yellow-600 text-white' :
+                        saveIndicator === 'saved' ? 'bg-green-600 text-white' :
+                        'bg-red-600 text-white'
+                    }`}>
+                        {saveIndicator === 'saving' && '💾 Sauvegarde...'}
+                        {saveIndicator === 'saved' && '✅ Sauvegardé !'}
+                        {saveIndicator === 'error' && '❌ Erreur de sauvegarde'}
+                    </div>
+                </div>
+            )}
+
+            {/* ⌨️ SHORTCUTS HELP OVERLAY */}
+            {showShortcuts && (
+                <div className="fixed inset-0 z-[9998] bg-black/60 flex items-center justify-center" onClick={() => setShowShortcuts(false)}>
+                    <div className="bg-[#1a1030] border border-purple-500/30 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-white text-lg font-bold">⌨️ Raccourcis Clavier</h3>
+                            <button onClick={() => setShowShortcuts(false)} className="text-gray-400 hover:text-white text-xl">✕</button>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                            {[
+                                ['B', 'Pinceau'],
+                                ['E', 'Gomme'],
+                                ['I', 'Pipette'],
+                                ['[ / ]', 'Taille du pinceau -/+'],
+                                ['Ctrl+Z', 'Annuler'],
+                                ['Ctrl+Shift+Z / Ctrl+Y', 'Refaire'],
+                                ['Ctrl+S', 'Sauvegarder'],
+                                ['Clic droit + glisser', 'Déplacer le canvas'],
+                                ['Molette', 'Zoom'],
+                                ['?', 'Afficher/masquer cette aide'],
+                            ].map(([key, desc]) => (
+                                <div key={key} className="flex justify-between items-center py-1 border-b border-white/10">
+                                    <kbd className="bg-white/10 text-purple-300 px-2 py-0.5 rounded text-xs font-mono">{key}</kbd>
+                                    <span className="text-gray-300">{desc}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* 🎨 AUTO-PIPETTE NOTIFICATION DESKTOP */}
             {autoPipetteMode && !cheatModeActive && !autoDrawBeruActive && (
                 <div className="fixed top-4 right-4 z-[10000]">
@@ -5267,8 +4901,17 @@ const DrawBeruFixed = ({
                             <button
                                 onClick={saveColoring}
                                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                                title="Sauvegarder (Ctrl+S)"
                             >
                                 💾 Sauvegarder
+                            </button>
+
+                            <button
+                                onClick={() => setShowShortcuts(true)}
+                                className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-lg transition-colors"
+                                title="Raccourcis clavier (?)"
+                            >
+                                ⌨️
                             </button>
 
                             <button

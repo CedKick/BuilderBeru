@@ -46,14 +46,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806323/pays1_color_li1nz4.png",
         canvasSize: { width: 600, height: 600 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#192004",
+          "2": "#4C4D00",
+          "3": "#2D5360",
+          "4": "#855422",
+          "5": "#6D6F60",
+          "6": "#8A9593",
+          "7": "#DCC097",
+          "8": "#FDF3DB"
         }
       }
     }
@@ -69,14 +69,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806336/pays2_uncolor_blvzlg.png",
         canvasSize: { width: 1200, height: 800 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#1C2940",
+          "2": "#7C461F",
+          "3": "#54545D",
+          "4": "#9D7251",
+          "5": "#D87E26",
+          "6": "#797C90",
+          "7": "#DAB287",
+          "8": "#FFF4DA"
         }
       }
     }
@@ -92,14 +92,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806410/berserk2_uncolor_mwaxpw.png",
         canvasSize: { width: 800, height: 1200 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#141415",
+          "2": "#2E2E2E",
+          "3": "#5E5E5F",
+          "4": "#767677",
+          "5": "#8E8E90",
+          "6": "#A6A6A9",
+          "7": "#BFBFBF",
+          "8": "#EFEFEF"
         }
       },
       second: {
@@ -109,14 +109,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806349/berserk1_uncolor_jaiyjd.png",
         canvasSize: { width: 800, height: 1200 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#151515",
+          "2": "#353535",
+          "3": "#545454",
+          "4": "#737373",
+          "5": "#939393",
+          "6": "#AAAAAA",
+          "7": "#C1C1C1",
+          "8": "#EFEFEF"
         }
       }
     }
@@ -132,14 +132,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806376/mang3__uncolor_sjl4gi.png",
         canvasSize: { width: 800, height: 1200 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#21140E",
+          "2": "#3B404B",
+          "3": "#825838",
+          "4": "#636A7D",
+          "5": "#E3813F",
+          "6": "#9E969E",
+          "7": "#E7AB81",
+          "8": "#FFE1B4"
         }
       }
     }
@@ -155,14 +155,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806427/mang5_uncolor_frxdrq.png",
         canvasSize: { width: 800, height: 1200 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#163D63",
+          "2": "#622D28",
+          "3": "#CD341C",
+          "4": "#4693B3",
+          "5": "#A87D6D",
+          "6": "#FA8E18",
+          "7": "#FFB77B",
+          "8": "#D1DBCC"
         }
       }
     }
@@ -178,14 +178,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806436/mang7_uncolor_dv8kql.png",
         canvasSize: { width: 800, height: 1200 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#1A1511",
+          "2": "#623C52",
+          "3": "#96551A",
+          "4": "#C5585B",
+          "5": "#F1682B",
+          "6": "#FCA40C",
+          "7": "#E69958",
+          "8": "#D7AC9A"
         }
       }
     }
@@ -201,14 +201,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806439/mang6_uncolor_kjtgmd.png",
         canvasSize: { width: 800, height: 1200 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#2B140B",
+          "2": "#123350",
+          "3": "#733F25",
+          "4": "#3C5987",
+          "5": "#CB5027",
+          "6": "#AB7F8E",
+          "7": "#F79C5E",
+          "8": "#FFD0AC"
         }
       }
     }
@@ -224,14 +224,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806431/mang9_uncolor_seoglc.png",
         canvasSize: { width: 800, height: 1200 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#1C150C",
+          "2": "#974204",
+          "3": "#424759",
+          "4": "#8F695A",
+          "5": "#D8914D",
+          "6": "#F9D801",
+          "7": "#F1E67F",
+          "8": "#F0EBF1"
         }
       }
     }
@@ -247,14 +247,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806435/mang8_uncolor_zt52od.png",
         canvasSize: { width: 1200, height: 800 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#222209",
+          "2": "#586E19",
+          "3": "#87A71E",
+          "4": "#8D7F5C",
+          "5": "#AFA274",
+          "6": "#C1C24B",
+          "7": "#C9BF9C",
+          "8": "#F8ECCA"
         }
       }
     }
@@ -270,14 +270,14 @@ export const drawBeruModels = {
         template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806432/mang10_uncolor_u245ry.png",
         canvasSize: { width: 1200, height: 800 },
         palette: {
-          "1": "#dd724f",
-          "2": "#f9c072",
-          "3": "#973a13",
-          "4": "#591d19",
-          "5": "#e77c0b",
-          "6": "#faab43",
-          "7": "#9a243c",
-          "8": "#d24424"
+          "1": "#171610",
+          "2": "#604D38",
+          "3": "#4A6C82",
+          "4": "#987F60",
+          "5": "#859EAD",
+          "6": "#E89768",
+          "7": "#D2BCA4",
+          "8": "#FEE8CF"
         }
       }
     }

@@ -24,6 +24,11 @@ export default defineConfig({
             console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
           });
         },
+      },
+      '/drawberu-process': {
+        target: 'https://api.builderberu.com',
+        changeOrigin: true,
+        secure: false,
       }
     }
   },
