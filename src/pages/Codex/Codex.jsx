@@ -1149,6 +1149,54 @@ export default function Codex() {
             );
           })()}
 
+          {/* ─── Expedition Unique Artifacts ─── */}
+          {(aFilterSource === 'all' || aFilterSource === 'expedition') && (() => {
+            const uniques = Object.values(EXPEDITION_UNIQUES).filter(u =>
+              !search || u.name.toLowerCase().includes(search.toLowerCase())
+            );
+            if (uniques.length === 0) return null;
+            const tiers = [1, 2, 3, 4];
+            const tierLabel = { 1: 'Tier 1 (Boss 1-3)', 2: 'Tier 2 (Boss 4-8)', 3: 'Tier 3 (Boss 9-12)', 4: 'Tier 4 (Boss 13-15)' };
+            return (
+              <div className="mb-6">
+                <div className="text-xs font-bold uppercase tracking-wider mb-3 text-amber-400">Artefacts Uniques Expedition</div>
+                {tiers.map(tier => {
+                  const tierUniques = uniques.filter(u => u.tier === tier);
+                  if (tierUniques.length === 0) return null;
+                  return (
+                    <div key={tier} className="mb-4">
+                      <div className="text-[10px] text-gray-500 font-bold mb-2">{tierLabel[tier]}</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                        {tierUniques.map(u => {
+                          const owned = ownedExpUniques.has(u.id);
+                          return (
+                            <div key={u.id} className={`p-3 rounded-xl border transition-all ${
+                              owned ? 'border-amber-500/40 bg-amber-500/10' : 'border-gray-700/30 bg-gray-800/20 opacity-60'
+                            }`}>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl">{u.icon}</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className={`text-sm font-bold ${u.color}`}>{u.name}</div>
+                                  <div className="text-[10px] text-gray-500">{u.slot} - {u.rarity} ({u.binding})</div>
+                                </div>
+                                {owned && <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">Obtenu</span>}
+                              </div>
+                              <div className="mt-1.5 space-y-0.5">
+                                <div className="text-[10px] text-yellow-400">Stats : {u.statsDesc}</div>
+                                <div className="text-[10px] text-purple-400">Passif : {u.passiveDesc}</div>
+                                <div className="text-[10px] text-gray-600 italic">Obtention : {u.achievementDesc}</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {/* Reference section: Slots, Main stats, Sub stats */}
           <div className="mt-8 mb-6">
             <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Reference : Slots & Stats</div>
