@@ -2960,8 +2960,11 @@ export default function ShadowColosseum() {
         ...prev,
         artifactInventory: prev.artifactInventory.filter(art => !deleteUids.has(art.uid))
       };
-      // Force immediate cloud sync so cleanup survives F5
-      cloudStorage.saveAndSync(SAVE_KEY, newData);
+      // Force immediate cloud sync so cleanup survives F5 (bypass all throttles)
+      cloudStorage.save(SAVE_KEY, newData);
+      // Invalidate ETags so next page load fetches fresh cloud data (not cached 304)
+      try { localStorage.removeItem('_cs_etag_' + SAVE_KEY); localStorage.removeItem('_cs_etag__all'); } catch {}
+      cloudStorage.syncKey(SAVE_KEY);
       return newData;
     });
 
