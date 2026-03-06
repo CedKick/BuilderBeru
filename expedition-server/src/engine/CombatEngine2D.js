@@ -92,6 +92,34 @@ export class CombatEngine2D {
     // 6. Process bleed DoTs on all entities
     this.processBleedDots(dt, [...characters, ...mobs, ...(boss ? [boss] : [])]);
 
+    // 7. Resolve passive_aoe events — apply AoE damage to nearby enemies
+    const aoesToResolve = this.events.filter(e => e.type === 'passive_aoe' && e.damage > 0);
+    for (const aoe of aoesToResolve) {
+      const source = aliveChars.find(c => c.id === aoe.charId);
+      if (!source) continue;
+      const targets = [...mobs.filter(m => m.alive)];
+      if (boss?.alive) targets.push(boss);
+      let hitCount = 0;
+      for (const enemy of targets) {
+        // If radius=0 and target specified, single-target (counters)
+        if (aoe.radius === 0 && aoe.target) {
+          if (enemy.id !== aoe.target) continue;
+        } else if (aoe.radius > 0) {
+          const dist = Math.abs((source.x || 0) - (enemy.x || 0));
+          if (dist > aoe.radius) continue;
+        }
+        const actualDmg = enemy.takeDamage ? enemy.takeDamage(aoe.damage) : aoe.damage;
+        source.stats.damageDealt += actualDmg;
+        hitCount++;
+        this.events.push({ type: 'aoe_hit', source: aoe.charId, target: enemy.id, amount: actualDmg, passive: aoe.passive });
+        if (!enemy.alive) {
+          source.stats.kills++;
+          this.passives.onKill(source, enemy, this.events);
+          this.events.push({ type: 'kill', killer: source.id, target: enemy.id, targetName: enemy.name });
+        }
+      }
+    }
+
     // Check end conditions again after all actions
     const stillAlive = characters.filter(c => c.alive);
     const mobsLeft = mobs.filter(m => m.alive);

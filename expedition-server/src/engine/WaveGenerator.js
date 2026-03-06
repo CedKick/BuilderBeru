@@ -26,8 +26,8 @@ export function generateEncounterSequence(bossCount = 15) {
     const waveTier = TIER_TO_WAVE[lootTier] || 'tier1';
     const wavePool = WAVE_COMPOSITIONS[waveTier] || WAVE_COMPOSITIONS.tier1;
 
-    // 2-4 mob waves before each boss (fewer waves for later bosses to reduce tedium)
-    const baseWaves = bossIdx < 5 ? 3 : bossIdx < 10 ? 2 : 2;
+    // 3-5 mob waves before each boss (more waves = more AoE value)
+    const baseWaves = bossIdx < 5 ? 4 : bossIdx < 10 ? 3 : 3;
     const waveCount = baseWaves + Math.floor(Math.random() * 2);
     for (let w = 0; w < waveCount; w++) {
       const composition = wavePool[Math.floor(Math.random() * wavePool.length)];
