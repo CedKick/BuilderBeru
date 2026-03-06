@@ -1,4 +1,11 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "previews": false
+    }
+  },
+  "ignoreCommand": "git diff --quiet HEAD~1 HEAD -- src/ api/ index.html package.json vite.config.js public/",
   "crons": [
     {
       "path": "/api/cron/vacuum",
