@@ -378,6 +378,9 @@ export function rollHammerDrop(tier, isBoss) {
 export const MAX_ARTIFACT_LEVEL = 20;
 export const MAX_ARTIFACT_INVENTORY = 1500;
 
+// Expedition artifacts get +30% on all stat rolls (mainStat base/perLevel, sub ranges, enchant bonuses)
+const EXPEDITION_BONUS = 1.3;
+
 /** Trim artifact inventory to MAX_ARTIFACT_INVENTORY. Removes lowest-scored unlocked artifacts first. */
 export function trimArtifactInventory(inventory) {
   if (!inventory || inventory.length <= MAX_ARTIFACT_INVENTORY) return inventory;
@@ -440,11 +443,12 @@ export function generateArtifact(rarity, slotId = null) {
 export function enhanceArtifact(artifact) {
   if (artifact.level >= MAX_ARTIFACT_LEVEL) return artifact;
   const newLevel = artifact.level + 1;
+  const expMult = artifact.source === 'expedition' ? EXPEDITION_BONUS : 1;
 
   // MainStat grows every level (base + perLevel * level)
   const mainDef = MAIN_STAT_VALUES[artifact.mainStat];
   const newMainValue = mainDef
-    ? +(mainDef.base + mainDef.perLevel * newLevel).toFixed(1)
+    ? +((mainDef.base + mainDef.perLevel * newLevel) * expMult).toFixed(1)
     : artifact.mainValue; // safety: keep current value if mainStat ID unknown
 
   // Subs: deep copy, IDs never change
@@ -458,7 +462,7 @@ export function enhanceArtifact(artifact) {
       const milestone = Math.floor(newLevel / 5); // 1, 2, 3, 4
       const bonusMult = 1 + (milestone - 1) * 0.25; // 1x, 1.25x, 1.5x, 1.75x
       const baseRoll = subDef.range[0] + Math.floor(Math.random() * (subDef.range[1] - subDef.range[0] + 1));
-      const roll = Math.ceil(baseRoll * bonusMult);
+      const roll = Math.ceil(baseRoll * bonusMult * expMult);
       newSubs[idx] = { ...newSubs[idx], value: newSubs[idx].value + roll };
     }
   }
@@ -481,6 +485,7 @@ export function getRerollCoinCost(rerollCount) {
 
 /** Reroll all sub-stats on an artifact. Keeps set/slot/rarity/mainStat. Resets level to 0. */
 export function rerollArtifact(artifact) {
+  const expMult = artifact.source === 'expedition' ? EXPEDITION_BONUS : 1;
   const subCount = RARITY_SUB_COUNT[artifact.rarity].initial;
   const available = SUB_STAT_POOL.filter(s => s.id !== artifact.mainStat);
   const subs = [];
@@ -490,9 +495,11 @@ export function rerollArtifact(artifact) {
     if (!cands.length) break;
     const pick = cands[Math.floor(Math.random() * cands.length)];
     used.add(pick.id);
-    subs.push({ id: pick.id, value: pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)) });
+    const baseVal = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
+    subs.push({ id: pick.id, value: Math.ceil(baseVal * expMult) });
   }
-  return { ...artifact, level: 0, mainValue: MAIN_STAT_VALUES[artifact.mainStat].base, subs };
+  const mainBase = MAIN_STAT_VALUES[artifact.mainStat].base;
+  return { ...artifact, level: 0, mainValue: +(mainBase * expMult).toFixed(1), subs };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -528,18 +535,19 @@ function rollEnchantBonus(statId, baseValue) {
  * Re-enchanting re-rolls (can go up or down).
  */
 export function enchantArtifactStat(artifact, statKey) {
+  const expMult = artifact.source === 'expedition' ? EXPEDITION_BONUS : 1;
   const enchants = { main: artifact.enchants?.main || 0, subs: { ...(artifact.enchants?.subs || {}) } };
 
   if (statKey === 'main') {
     const previousBonus = enchants.main || 0;
-    const bonus = rollEnchantBonus(artifact.mainStat, artifact.mainValue);
+    const bonus = +(rollEnchantBonus(artifact.mainStat, artifact.mainValue) * expMult).toFixed(1);
     enchants.main = bonus;
     return { artifact: { ...artifact, enchants }, bonus, previousBonus };
   } else {
     const sub = artifact.subs.find(s => s.id === statKey);
     if (!sub) return { artifact, bonus: 0, previousBonus: 0 };
     const previousBonus = enchants.subs[statKey] || 0;
-    const bonus = rollEnchantBonus(statKey, sub.value);
+    const bonus = +(rollEnchantBonus(statKey, sub.value) * expMult).toFixed(1);
     enchants.subs[statKey] = bonus;
     return { artifact: { ...artifact, enchants }, bonus, previousBonus };
   }
@@ -550,10 +558,11 @@ export function enchantArtifactStat(artifact, statKey) {
  * Resets main enchant to 0. Keeps subs/enchants on subs.
  */
 export function rerollArtifactMainStat(artifact) {
+  const expMult = artifact.source === 'expedition' ? EXPEDITION_BONUS : 1;
   const pool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat);
   const newMainStat = pool[Math.floor(Math.random() * pool.length)];
   const def = MAIN_STAT_VALUES[newMainStat];
-  const newMainValue = +(def.base + def.perLevel * artifact.level).toFixed(1);
+  const newMainValue = +((def.base + def.perLevel * artifact.level) * expMult).toFixed(1);
   const enchants = { main: 0, subs: { ...(artifact.enchants?.subs || {}) } };
   return {
     artifact: { ...artifact, mainStat: newMainStat, mainValue: newMainValue, enchants },
@@ -567,6 +576,7 @@ export function rerollArtifactMainStat(artifact) {
  * No duplicates between main and subs.
  */
 export function rerollArtifactFull(artifact, lockedStats = new Set()) {
+  const expMult = artifact.source === 'expedition' ? EXPEDITION_BONUS : 1;
   // Main stat: keep if locked, otherwise reroll from slot-specific pool
   let newMainStat = artifact.mainStat;
   let newMainValue = artifact.mainValue;
@@ -579,7 +589,7 @@ export function rerollArtifactFull(artifact, lockedStats = new Set()) {
       newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
     }
     const def = MAIN_STAT_VALUES[newMainStat];
-    newMainValue = def ? def.base : artifact.mainValue;
+    newMainValue = def ? +(def.base * expMult).toFixed(1) : artifact.mainValue;
   }
 
   // Subs: keep locked ones, reroll the rest
@@ -594,7 +604,8 @@ export function rerollArtifactFull(artifact, lockedStats = new Set()) {
     if (!cands.length) break;
     const pick = cands[Math.floor(Math.random() * cands.length)];
     usedIds.add(pick.id);
-    newRerolled.push({ id: pick.id, value: pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)) });
+    const baseVal = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
+    newRerolled.push({ id: pick.id, value: Math.ceil(baseVal * expMult) });
   }
   const subs = [...lockedSubs, ...newRerolled];
 
@@ -610,7 +621,7 @@ export function rerollArtifactFull(artifact, lockedStats = new Set()) {
   // Level always resets to 0, main value resets to base
   if (lockedStats.has('main')) {
     const def = MAIN_STAT_VALUES[newMainStat];
-    newMainValue = def ? def.base : newMainValue;
+    newMainValue = def ? +(def.base * expMult).toFixed(1) : newMainValue;
   }
 
   // Preserve statLocks for locked stats, clear for rerolled ones
