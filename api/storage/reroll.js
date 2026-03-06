@@ -56,8 +56,9 @@ const ENCHANT_MAIN_STAT_POOL = [
 
 const RARITY_INITIAL_SUBS = { rare: 4, legendaire: 4, mythique: 4 };
 const REROLL_LOCK_COSTS = [10, 22, 45, 70, 100]; // index = number of locked stats (0-4)
+const EXPEDITION_BONUS = 1.3; // +30% stats for expedition items
 
-function generateNewSubs(rarity, mainStatId, lockedSubs = []) {
+function generateNewSubs(rarity, mainStatId, lockedSubs = [], expMult = 1) {
   const subCount = RARITY_INITIAL_SUBS[rarity] || 2;
   // Start with locked subs (preserved as-is)
   const subs = [...lockedSubs];
@@ -70,7 +71,7 @@ function generateNewSubs(rarity, mainStatId, lockedSubs = []) {
     if (candidates.length === 0) break;
     const pick = candidates[Math.floor(Math.random() * candidates.length)];
     used.add(pick.id);
-    const value = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
+    const value = Math.ceil((pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1))) * expMult);
     subs.push({ id: pick.id, value });
   }
   return subs;
@@ -154,6 +155,7 @@ export default async function handler(req, res) {
     const mainLocked = lockedSet.has('main');
     const lockedSubs = (artifact.subs || []).filter(s => lockedSet.has(s.id));
     const oldEnchants = artifact.enchants || { main: 0, subs: {} };
+    const expMult = artifact.source === 'expedition' ? EXPEDITION_BONUS : 1;
 
     // Full reroll: main stat + subs. Normal reroll: subs only.
     let newMainStat = artifact.mainStat;
@@ -167,10 +169,10 @@ export default async function handler(req, res) {
       const mainPool = slotPool.filter(s => s !== artifact.mainStat && !lockedSubIds.has(s));
       if (mainPool.length > 0) {
         newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
-        newMainValue = MAIN_STAT_BASE[newMainStat] || artifact.mainValue;
+        newMainValue = Math.ceil((MAIN_STAT_BASE[newMainStat] || artifact.mainValue) * expMult);
       }
     }
-    const newSubs = generateNewSubs(artifact.rarity, newMainStat, lockedSubs);
+    const newSubs = generateNewSubs(artifact.rarity, newMainStat, lockedSubs, expMult);
 
     // Build new enchants: keep enchant levels for locked stats, reset unlocked
     const newEnchants = { main: mainLocked ? (oldEnchants.main || 0) : 0, subs: {} };

@@ -1778,8 +1778,52 @@ export const EXPEDITION_ARTIFACT_SETS = {
   },
 };
 
+// Zone armor sets (regular expedition armor items that share a zone setId)
+export const EXPEDITION_ZONE_SETS = {
+  set_forest: {
+    id: 'set_forest', name: 'Armure Sylvestre', icon: '\uD83C\uDF3F', expedition: true,
+    color: 'text-green-400', bg: 'bg-green-500/15', border: 'border-green-500/30',
+    desc: 'Equipement de la Foret',
+    bonus2: { defPercent: 8 }, bonus2Desc: 'DEF +8%',
+    bonus4: { hpPercent: 12 }, bonus4Desc: 'HP +12%',
+    passive2: null, passive4: null,
+  },
+  set_stone: {
+    id: 'set_stone', name: 'Armure de Pierre', icon: '\uD83E\uDEA8', expedition: true,
+    color: 'text-stone-400', bg: 'bg-stone-500/15', border: 'border-stone-500/30',
+    desc: 'Equipement des Montagnes',
+    bonus2: { defPercent: 12 }, bonus2Desc: 'DEF +12%',
+    bonus4: { hpPercent: 15, res: 5 }, bonus4Desc: 'HP +15%, RES +5',
+    passive2: null, passive4: null,
+  },
+  set_shadow: {
+    id: 'set_shadow', name: "Armure d'Ombre", icon: '\uD83C\uDF11', expedition: true,
+    color: 'text-violet-400', bg: 'bg-violet-500/15', border: 'border-violet-500/30',
+    desc: "Equipement de l'Ombre",
+    bonus2: { atkPercent: 12 }, bonus2Desc: 'ATK +12%',
+    bonus4: { critRate: 6, critDamage: 8 }, bonus4Desc: 'CRIT +6%, CRIT DMG +8%',
+    passive2: null, passive4: null,
+  },
+  set_abyss: {
+    id: 'set_abyss', name: 'Armure des Abysses', icon: '\uD83C\uDF0A', expedition: true,
+    color: 'text-blue-400', bg: 'bg-blue-500/15', border: 'border-blue-500/30',
+    desc: 'Equipement des Abysses',
+    bonus2: { hpPercent: 15, defPercent: 10 }, bonus2Desc: 'HP +15%, DEF +10%',
+    bonus4: {}, bonus4Desc: 'Degats AoE subis -12%',
+    passive2: null, passive4: null,
+  },
+  set_void: {
+    id: 'set_void', name: 'Armure du Neant', icon: '\uD83C\uDF0C', expedition: true,
+    color: 'text-purple-400', bg: 'bg-purple-500/15', border: 'border-purple-500/30',
+    desc: 'Equipement du Neant',
+    bonus2: { atkPercent: 15 }, bonus2Desc: 'ATK +15%',
+    bonus4: { critRate: 8, critDamage: 12 }, bonus4Desc: 'CRIT +8%, CRIT DMG +12%',
+    passive2: null, passive4: null,
+  },
+};
+
 // Merge all sets into ALL_ARTIFACT_SETS (defined earlier as let)
-ALL_ARTIFACT_SETS = { ...ALL_ARTIFACT_SETS, ...ARC2_ARTIFACT_SETS, ...ULTIME_ARTIFACT_SETS, ...EXPEDITION_ARTIFACT_SETS };
+ALL_ARTIFACT_SETS = { ...ALL_ARTIFACT_SETS, ...ARC2_ARTIFACT_SETS, ...ULTIME_ARTIFACT_SETS, ...EXPEDITION_ARTIFACT_SETS, ...EXPEDITION_ZONE_SETS };
 
 // ═══════════════════════════════════════════════════════════════
 // SET CATEGORY MAPPING
@@ -1789,7 +1833,7 @@ const _colKeys = new Set(Object.keys(ARTIFACT_SETS));
 const _raidKeys = new Set(Object.keys(RAID_ARTIFACT_SETS));
 const _arc2Keys = new Set(Object.keys(ARC2_ARTIFACT_SETS));
 const _ultKeys = new Set(Object.keys(ULTIME_ARTIFACT_SETS));
-const _expKeys = new Set(Object.keys(EXPEDITION_ARTIFACT_SETS));
+const _expKeys = new Set([...Object.keys(EXPEDITION_ARTIFACT_SETS), ...Object.keys(EXPEDITION_ZONE_SETS)]);
 
 export function getSetCategory(setId) {
   if (_colKeys.has(setId)) return 'colosseum';
