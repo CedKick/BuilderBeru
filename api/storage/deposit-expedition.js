@@ -4,7 +4,7 @@ import { query } from '../_db/neon.js';
 const GAME_SERVER_SECRET = process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key';
 
 const INVENTORY_MAX = 1500;
-const EQUIP_TYPES = ['armor', 'weapon', 'set_piece'];
+const EQUIP_TYPES = ['armor', 'weapon', 'set_piece', 'unique'];
 
 // Boss weapons in expedition use "weapon_X" prefix → map to "X" for weaponCollection
 const BOSS_WEAPON_MAP = {

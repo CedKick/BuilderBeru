@@ -338,7 +338,7 @@ export default function MailInbox() {
         const MAX_WEAPON_AWAKENING = 100;
         rewards.expeditionItems.forEach(item => {
           if (item.itemId === 'exp_ultimate_scroll') { scrollCount++; return; }
-          if (!['armor', 'weapon', 'set_piece'].includes(item.type)) return;
+          if (!['armor', 'weapon', 'set_piece', 'unique'].includes(item.type)) return;
 
           // ── WEAPONS → weaponCollection (same as regular weapons)
           // Boss weapons use "weapon_X" prefix in expedition → map to "X"

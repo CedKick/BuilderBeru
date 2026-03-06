@@ -79,9 +79,28 @@ const ITEM_STATS = {
   exp_eclipse_chest: { slot: 'chest', stats: { hp_flat: 2200, def_flat: 55, res_flat: 10 }, setId: null },
 };
 
-// Set piece items (from expedition sets)
-const SET_PIECE_STATS = {
-  // Will be handled generically - set pieces have their setId in the item_id
+// Unique artifacts (boss drop legendaries — slot from expeditionUniques.js)
+const UNIQUE_STATS = {
+  unique_oeil_monarque:    { slot: 'anneau',   stats: { crit_rate: 10 } },
+  unique_larme_foret:      { slot: 'collier',  stats: { hp_regen_pct: 2 } },
+  unique_coeur_pierre:     { slot: 'plastron', stats: { def_pct: 15 } },
+  unique_fragment_sentinelle: { slot: 'casque', stats: { atk_pct: 10, def_pct: 10 } },
+  unique_voile_seigneur:   { slot: 'bottes',   stats: { spd_pct: 15 } },
+  unique_plume_ange_noir:  { slot: 'boucles',  stats: { all_dmg_pct: 12 } },
+  unique_sceau_commandant: { slot: 'bracelet', stats: {} },
+  unique_marque_survivant: { slot: 'anneau',   stats: {} },
+  unique_essence_primordiale: { slot: 'collier', stats: { all_stats_pct: 5 } },
+  unique_croc_warg:        { slot: 'gants',    stats: { crit_rate: 8 } },
+  unique_cape_fantome:     { slot: 'plastron', stats: { dodge_pct: 12 } },
+  unique_talisman_sage:    { slot: 'boucles',  stats: { heal_pct: 20 } },
+  unique_bague_architecte: { slot: 'anneau',   stats: { all_dmg_pct: 8 } },
+  unique_amulette_pionnier:{ slot: 'collier',  stats: { hp_pct: 20 } },
+  unique_diademe_astral:   { slot: 'casque',   stats: { mana_pct: 25 } },
+  unique_gantelets_colosse:{ slot: 'gants',    stats: { atk_pct: 15 } },
+  unique_sceaux_abysse:    { slot: 'bracelet', stats: { lifesteal_pct: 10 } },
+  unique_bottes_explorateur: { slot: 'bottes', stats: { spd_pct: 20 } },
+  unique_couronne_vainqueur: { slot: 'casque', stats: { crit_dmg_pct: 25 } },
+  unique_relique_temps:    { slot: 'boucles',  stats: { cd_reduction_pct: 15 } },
 };
 
 function convertToArtifact(itemId, itemName, rarity) {
@@ -99,6 +118,22 @@ function convertToArtifact(itemId, itemName, rarity) {
         subs: statEntries.slice(1).map(([id, value]) => ({ id, value })),
         locked: false, source: 'expedition', expItemId: itemId, expItemName: itemName,
       };
+    }
+    // Try unique: item_id like "unique_xxx"
+    if (itemId && itemId.startsWith('unique_')) {
+      const uInfo = UNIQUE_STATS[itemId];
+      if (uInfo) {
+        const statEntries = Object.entries(uInfo.stats);
+        const mainStatEntry = statEntries[0] || ['atk_flat', 0];
+        return {
+          uid: `exp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          set: null, slot: uInfo.slot, rarity: mapRarity(rarity), level: 0,
+          mainStat: mainStatEntry[0], mainValue: mainStatEntry[1],
+          subs: statEntries.slice(1).map(([id, value]) => ({ id, value })),
+          locked: true, source: 'expedition', expItemId: itemId, expItemName: itemName,
+          isUnique: true,
+        };
+      }
     }
     return null; // Unknown item (scroll, currency, etc.)
   }
