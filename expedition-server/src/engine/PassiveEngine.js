@@ -136,6 +136,18 @@ export class PassiveEngine {
         celestialSpdBurstCD: 0,    // Souffle Celeste: burst cooldown
         purifyTimer: 0,            // Purification Sacree: cleanse tick timer
         breezeShields: new Map(),  // Brise Guerissante: target -> shield HP remaining
+        // ── Phase 2 Weapons ──
+        ragnarokHitCount: 0,       // Ragnarok: AoE every 3 hits
+        kusanagiStacks: 0,         // Kusanagi: +5% ATK per crit (max 10)
+        gaeFirstAttack: true,      // Gae Bolg: first attack x3
+        gaeDashTimer: 10,          // Gae Bolg: dash every 10s
+        masamuneSaveCD: 0,         // Masamune: absorb lethal CD 45s
+        masamuneSavesLeft: 2,      // Masamune: 2 lethal absorbs
+        tyrfingStacks: 0,          // Tyrfing: kill stacks (max 10)
+        tyrfingInvincibleCD: 0,    // Tyrfing: invincible CD 60s
+        fragarachHitCount: 0,      // Fragarach: tornado every 5 hits
+        tacosStacks: 0,            // Tacos Eternel: +10% all stats per kill (infinite)
+        amenoRezUsed: false,       // Ame-no-nuhoko: rez 1 ally per combat
       });
 
       // ── Apply combat-start passives ──
@@ -440,6 +452,69 @@ export class PassiveEngine {
       bonusDamage += Math.floor(damage * 0.25);
     }
 
+    // ── RAGNAROK: every 3rd hit = AoE 400% fire + -20% DEF debuff ──
+    if (this.hasWeapon(char.id, 'ragnarok')) {
+      s.ragnarokHitCount++;
+      if (s.ragnarokHitCount >= 3) {
+        s.ragnarokHitCount = 0;
+        const aoeDmg = Math.floor(char.getOffensiveStat() * 4.0);
+        events.push({ type: 'passive_aoe', charId: char.id, passive: 'ragnarok_aoe', damage: aoeDmg, radius: 200 });
+        if (target.addDebuff) target.addDebuff('def_shred', 20, 8, char.id);
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'ragnarok_fury', message: 'Ragnarök: AoE feu! -20% DEF' });
+      }
+    }
+
+    // ── KUSANAGI: ignore 20% DEF permanent ──
+    if (this.hasWeapon(char.id, 'kusanagi')) {
+      bonusDamage += Math.floor(damage * 0.20);
+    }
+
+    // ── GAE BOLG: first attack x3 ──
+    if (this.hasWeapon(char.id, 'gae_bolg') && s.gaeFirstAttack) {
+      s.gaeFirstAttack = false;
+      bonusDamage += Math.floor(damage * 2.0); // total = x3
+      events.push({ type: 'passive_proc', charId: char.id, passive: 'gae_bolg_first', message: 'Gáe Bolg: Premiere attaque x3!' });
+    }
+
+    // ── MASAMUNE: HP > 50% = +35% damage ──
+    if (this.hasWeapon(char.id, 'masamune') && char.hp / char.maxHp > 0.5) {
+      bonusDamage += Math.floor(damage * 0.35);
+    }
+
+    // ── LONGINUS: ignore 30% DEF + +25% vs boss ──
+    if (this.hasWeapon(char.id, 'longinus')) {
+      bonusDamage += Math.floor(damage * 0.30);
+      if (target.isBoss) bonusDamage += Math.floor(damage * 0.25);
+    }
+
+    // ── FRAGARACH: every 5th hit = tornado 350% ──
+    if (this.hasWeapon(char.id, 'fragarach')) {
+      s.fragarachHitCount++;
+      if (s.fragarachHitCount >= 5) {
+        s.fragarachHitCount = 0;
+        const tornDmg = Math.floor(char.getOffensiveStat() * 3.5);
+        events.push({ type: 'passive_aoe', charId: char.id, passive: 'fragarach_tornado', damage: tornDmg, radius: 200 });
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'fragarach_wind', message: 'Fragarach: Tornado!' });
+      }
+    }
+
+    // ── TACOS ETERNEL: per-hit confusion debuff ──
+    if (this.hasWeapon(char.id, 'tacos_eternel')) {
+      if (target.addDebuff) target.addDebuff('confusion', 30, 2, char.id);
+    }
+
+    // ── AME-NO-NUHOKO: +5% random stat to random teammate per hit ──
+    if (this.hasWeapon(char.id, 'amenonuhoko')) {
+      const allChars = this.getAllAliveAllies(char.id);
+      if (allChars.length > 0) {
+        const ally = allChars[Math.floor(Math.random() * allChars.length)];
+        const stats = ['atk', 'def', 'spd'];
+        const stat = stats[Math.floor(Math.random() * stats.length)];
+        const boost = Math.floor((ally[stat] || 100) * 0.05);
+        if (boost > 0) ally.addBuff(stat, boost, 999, 'amenonuhoko');
+      }
+    }
+
     // ── WIND RUSH (Ailes du Vent): first attack = guaranteed crit ──
     if (this.hasPassive(char.id, 'wind_rush') && s.windRushFirstAttack) {
       s.windRushFirstAttack = false;
@@ -655,6 +730,23 @@ export class PassiveEngine {
       s.greedCritStacks = Math.min(10, s.greedCritStacks + increment);
       char.addBuff('crit', s.greedCritStacks, 999, 'burning_greed');
     }
+
+    // ── KUSANAGI: +5% ATK per crit (max 50%, 10 stacks). At 10 = x5 next hit ──
+    if (this.hasWeapon(char.id, 'kusanagi')) {
+      if (s.kusanagiStacks < 10) {
+        s.kusanagiStacks++;
+        char.addBuff('atk', Math.floor(char.atk * 0.05 * s.kusanagiStacks), 999, 'kusanagi');
+      }
+      if (s.kusanagiStacks >= 10) {
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'kusanagi_x5', message: 'Kusanagi: Prochain coup x5!' });
+      }
+    }
+
+    // ── LONGINUS: crit = sacred wave 150% ──
+    if (this.hasWeapon(char.id, 'longinus')) {
+      const waveDmg = Math.floor(char.getOffensiveStat() * 1.5);
+      events.push({ type: 'passive_aoe', charId: char.id, passive: 'longinus_wave', damage: waveDmg, radius: 250 });
+    }
   }
 
   // ═══════════════════════════════════════════════════════
@@ -729,6 +821,42 @@ export class PassiveEngine {
       s.voidVoiceDots.delete(target.id);
     }
 
+    // ── RAGNAROK: kill = reset hit counter ──
+    if (this.hasWeapon(char.id, 'ragnarok')) {
+      s.ragnarokHitCount = 0;
+    }
+
+    // ── MASAMUNE: kill = heal 10% + shield 5% ──
+    if (this.hasWeapon(char.id, 'masamune')) {
+      char.heal(Math.floor(char.maxHp * 0.10));
+      events.push({ type: 'passive_proc', charId: char.id, passive: 'masamune_heal', message: 'Masamune: Heal 10% + bouclier!' });
+    }
+
+    // ── TYRFING: kill = +8% ATK +5% lifesteal (max 10 stacks) ──
+    if (this.hasWeapon(char.id, 'tyrfing')) {
+      if (s.tyrfingStacks < 10) {
+        s.tyrfingStacks++;
+        char._lifesteal = (char._lifesteal || 0) + 5;
+        char.addBuff('atk', Math.floor(char.atk * 0.08 * s.tyrfingStacks), 999, 'tyrfing_curse');
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'tyrfing_stack', stacks: s.tyrfingStacks });
+      }
+    }
+
+    // ── TACOS ETERNEL: kill = +10% all stats (stack infinite) ──
+    if (this.hasWeapon(char.id, 'tacos_eternel')) {
+      s.tacosStacks++;
+      char.addBuff('atk', Math.floor(char.atk * 0.10), 999, 'tacos_power');
+      char.addBuff('def', Math.floor(char.def * 0.10), 999, 'tacos_power');
+      char.addBuff('spd', Math.floor(char.spd * 0.10), 999, 'tacos_power');
+      events.push({ type: 'passive_proc', charId: char.id, passive: 'tacos_stack', stacks: s.tacosStacks, message: `Tacos Éternel: +${s.tacosStacks * 10}% tous stats!` });
+      // At 5 stacks: AoE kebab 500%
+      if (s.tacosStacks % 5 === 0) {
+        const kebabDmg = Math.floor(char.getOffensiveStat() * 5.0);
+        events.push({ type: 'passive_aoe', charId: char.id, passive: 'tacos_kebab', damage: kebabDmg, radius: 300 });
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'tacos_kebab', message: 'Tacos Éternel: AoE KEBAB 500%! 🌮' });
+      }
+    }
+
     // ── RAGE ETERNELLE: +3 stacks on kill ──
     if (this.has2pcPassive(char.id, 'eternal_rage_stack')) {
       s.eternalRageStacks = Math.min(15, s.eternalRageStacks + 3);
@@ -799,6 +927,11 @@ export class PassiveEngine {
         events.push({ type: 'passive_proc', charId: healer.id, passive: 'healing_breeze',
           target: target.id, message: `Brise Guerissante: ${target.name} +SPD + bouclier ${breezeShield}!` });
       }
+    }
+
+    // ── AME-NO-NUHOKO: Soins +50% ──
+    if (this.hasWeapon(healer.id, 'amenonuhoko')) {
+      bonusHeal += Math.floor(healAmount * 0.50);
     }
 
     return { bonusHeal, shieldAmount };
@@ -959,6 +1092,22 @@ export class PassiveEngine {
       return { preventDeath: true, rezHpPercent: 10, bonusDef: 0, bonusDefDuration: 0 };
     }
 
+    // ── MASAMUNE: absorb 2 lethal blows (CD 45s) ──
+    if (this.hasWeapon(char.id, 'masamune') && s.masamuneSavesLeft > 0 && s.masamuneSaveCD <= 0) {
+      s.masamuneSavesLeft--;
+      s.masamuneSaveCD = 45;
+      events.push({ type: 'passive_proc', charId: char.id, passive: 'masamune_save', message: `Masamune: Coup mortel absorbe! (${s.masamuneSavesLeft} restant)` });
+      return { preventDeath: true, rezHpPercent: 15, bonusDef: 0, bonusDefDuration: 0 };
+    }
+
+    // ── TYRFING: HP < 30% = ATK x2 + invincible 3s (CD 60s) ──
+    if (this.hasWeapon(char.id, 'tyrfing') && s.tyrfingInvincibleCD <= 0) {
+      s.tyrfingInvincibleCD = 60;
+      char.addBuff('atk', Math.floor(char.atk * 1.0), 3, 'tyrfing_rage');
+      events.push({ type: 'passive_proc', charId: char.id, passive: 'tyrfing_rage', message: 'Tyrfing: ATK x2 + Invincible 3s!' });
+      return { preventDeath: true, rezHpPercent: 25, bonusDef: 100, bonusDefDuration: 3 };
+    }
+
     // ── SIPHON VITAL 4pc: <30% HP = lifesteal 100% for 2 ticks (CD 10s) ──
     if (this.hasPassive(char.id, 'vital_surge') && s.siphonEmergencyCD <= 0) {
       if (char.hp / char.maxHp < 0.30) {
@@ -977,6 +1126,17 @@ export class PassiveEngine {
           events.push({ type: 'passive_proc', charId, passive: 'aegis_ally_death', message: 'Aegis: Allie tombe! ATK +30%!' });
         }
       }
+    }
+
+    // ── AME-NO-NUHOKO: resurrect 1 ally per combat ──
+    for (const [charId, cs] of this.state) {
+      if (charId === char.id) continue;
+      if (cs.weaponDef?.id !== 'amenonuhoko' || cs.amenoRezUsed) continue;
+      const holder = this.findChar(charId);
+      if (!holder || !holder.alive) continue;
+      cs.amenoRezUsed = true;
+      events.push({ type: 'passive_proc', charId, passive: 'ameno_rez', message: `Ame-no-nuhoko: Resurrection de ${char.name}!` });
+      return { preventDeath: true, rezHpPercent: 40, bonusDef: 0, bonusDefDuration: 0 };
     }
 
     // ── SC WEAPON: GUL'DAN — resurrect first dead ally (once per combat) ──
@@ -1065,6 +1225,17 @@ export class PassiveEngine {
     if (this.hasWeapon(char.id, 'thyrsus') && Math.random() < 0.20) {
       events.push({ type: 'passive_proc', charId: char.id, passive: 'thyrsus_free', message: 'Thyrsus: Sort gratuit!' });
       return { freeCast: true };
+    }
+
+    // ── EA STAFF: 30% chance free cast + Mana > 90%: +40% DMG ──
+    if (this.hasWeapon(char.id, 'ea_staff')) {
+      if (Math.random() < 0.30) {
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'ea_free', message: 'Ea: Sort gratuit!' });
+        return { freeCast: true, doubleDamage: char.mana / char.maxMana > 0.90 };
+      }
+      if (char.mana / char.maxMana > 0.90) {
+        return { freeCast: false, doubleDamage: true };
+      }
     }
 
     // ── ECHO TEMPOREL 4pc: every 3 spells, next = free ──
@@ -1157,6 +1328,10 @@ export class PassiveEngine {
       if (s.eternalRageCritTimer > 0) s.eternalRageCritTimer -= dt;
       if (s.siphonEmergencyCD > 0) s.siphonEmergencyCD -= dt;
       if (s.infamyManaCD > 0) s.infamyManaCD -= dt;
+      // Phase 2 weapon cooldowns
+      if (s.gaeDashTimer > 0) s.gaeDashTimer -= dt;
+      if (s.masamuneSaveCD > 0) s.masamuneSaveCD -= dt;
+      if (s.tyrfingInvincibleCD > 0) s.tyrfingInvincibleCD -= dt;
       if (s.arcaneAdaptiveRegenCD > 0) s.arcaneAdaptiveRegenCD -= dt;
       for (const [targetId, cd] of s.cdVitalAutoHeal) {
         s.cdVitalAutoHeal.set(targetId, cd - dt);
@@ -1182,6 +1357,14 @@ export class PassiveEngine {
             }
           }
         }
+      }
+
+      // ── GAE BOLG: dash + AoE 200% every 10s ──
+      if (this.hasWeapon(char.id, 'gae_bolg') && s.gaeDashTimer <= 0 && char.alive) {
+        s.gaeDashTimer = 10;
+        const dashDmg = Math.floor(char.getOffensiveStat() * 2.0);
+        events.push({ type: 'passive_aoe', charId: char.id, passive: 'gae_bolg_dash', damage: dashDmg, radius: 300 });
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'gae_bolg_dash', message: 'Gáe Bolg: Dash + AoE!' });
       }
 
       // ── HARMONIE CELESTE: mega-heal every 30s ──
@@ -1436,4 +1619,5 @@ export class PassiveEngine {
   _characters = [];
   setCharacters(chars) { this._characters = chars; }
   findChar(charId) { return this._characters.find(c => c.id === charId); }
+  getAllAliveAllies(excludeId) { return this._characters.filter(c => c.id !== excludeId && c.alive); }
 }

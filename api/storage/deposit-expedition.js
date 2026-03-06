@@ -11,6 +11,10 @@ const BOSS_WEAPON_MAP = {
   weapon_excalibur: 'excalibur', weapon_mjolnir: 'mjolnir', weapon_muramasa: 'muramasa',
   weapon_yggdrasil: 'yggdrasil', weapon_gungnir: 'gungnir', weapon_nidhogg: 'nidhogg',
   weapon_aegis: 'aegis_weapon', weapon_caladbolg: 'caladbolg', weapon_thyrsus: 'thyrsus', weapon_gram: 'gram',
+  weapon_ragnarok: 'ragnarok', weapon_kusanagi: 'kusanagi', weapon_gae_bolg: 'gae_bolg',
+  weapon_masamune: 'masamune', weapon_longinus: 'longinus', weapon_tyrfing: 'tyrfing',
+  weapon_ea_staff: 'ea_staff', weapon_fragarach: 'fragarach', weapon_tacos_eternel: 'tacos_eternel',
+  weapon_amenonuhoko: 'amenonuhoko',
 };
 
 // Slot mapping: expedition → colosseum format

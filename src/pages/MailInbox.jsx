@@ -343,7 +343,7 @@ export default function MailInbox() {
           // ── WEAPONS → weaponCollection (same as regular weapons)
           // Boss weapons use "weapon_X" prefix in expedition → map to "X"
           if (item.type === 'weapon') {
-            const BOSS_MAP = { weapon_excalibur:'excalibur', weapon_mjolnir:'mjolnir', weapon_muramasa:'muramasa', weapon_yggdrasil:'yggdrasil', weapon_gungnir:'gungnir', weapon_nidhogg:'nidhogg', weapon_aegis:'aegis_weapon', weapon_caladbolg:'caladbolg', weapon_thyrsus:'thyrsus', weapon_gram:'gram' };
+            const BOSS_MAP = { weapon_excalibur:'excalibur', weapon_mjolnir:'mjolnir', weapon_muramasa:'muramasa', weapon_yggdrasil:'yggdrasil', weapon_gungnir:'gungnir', weapon_nidhogg:'nidhogg', weapon_aegis:'aegis_weapon', weapon_caladbolg:'caladbolg', weapon_thyrsus:'thyrsus', weapon_gram:'gram', weapon_ragnarok:'ragnarok', weapon_kusanagi:'kusanagi', weapon_gae_bolg:'gae_bolg', weapon_masamune:'masamune', weapon_longinus:'longinus', weapon_tyrfing:'tyrfing', weapon_ea_staff:'ea_staff', weapon_fragarach:'fragarach', weapon_tacos_eternel:'tacos_eternel', weapon_amenonuhoko:'amenonuhoko' };
             const wId = BOSS_MAP[item.itemId] || item.itemId;
             if (data.weaponCollection[wId] === undefined) {
               data.weaponCollection[wId] = 0; // First copy → A0

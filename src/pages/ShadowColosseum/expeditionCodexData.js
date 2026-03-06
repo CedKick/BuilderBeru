@@ -366,6 +366,90 @@ export const EXPEDITION_WEAPONS = {
     dropBoss: 9, dropChance: 4,
     get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
   },
+
+  // ═══════════════════════════════════════════════════════════════
+  // PHASE 2 — Overcreep weapons (boss 1-10)
+  // ═══════════════════════════════════════════════════════════════
+  ragnarok: {
+    id: 'ragnarok', name: 'Ragnarök', atk: 350,
+    element: 'fire', weaponType: 'heavy', rarity: 'mythique', binding: 'LqR',
+    icon: '🔥', bonusDesc: 'ATK +30%',
+    passiveDesc: 'Tous les 3 coups: AoE 400% feu (200px). Ennemis brules: -20% DEF. Kill: reset CD.',
+    dropBoss: 0, dropChance: 10,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
+  kusanagi: {
+    id: 'kusanagi', name: 'Kusanagi', atk: 360,
+    element: 'shadow', weaponType: 'blade', rarity: 'mythique', binding: 'LqR',
+    icon: '⚔️', bonusDesc: 'CRIT DMG +35%',
+    passiveDesc: 'Crits: +5% ATK (max 50%). 10 stacks: coup x5. Ignore 20% DEF permanent.',
+    dropBoss: 1, dropChance: 10,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
+  gae_bolg: {
+    id: 'gae_bolg', name: 'Gáe Bolg', atk: 340,
+    element: 'water', weaponType: 'polearm', rarity: 'mythique', binding: 'LqR',
+    icon: '🔱', bonusDesc: 'SPD +22',
+    passiveDesc: 'Perce en ligne. 1ere attaque: x3. Tous les 10s: dash 300px + AoE 200%. (INT scaling)',
+    dropBoss: 2, dropChance: 10,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
+  masamune: {
+    id: 'masamune', name: 'Masamune', atk: 370,
+    element: 'light', weaponType: 'blade', rarity: 'mythique', binding: 'LqR',
+    icon: '✨', bonusDesc: 'ATK +28%',
+    passiveDesc: 'HP > 50%: +35% degats. Kill: heal 10% + bouclier 5%. Absorbe 2 coups mortels (CD 45s).',
+    dropBoss: 3, dropChance: 8,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
+  longinus: {
+    id: 'longinus', name: 'Lance de Longinus', atk: 390,
+    element: 'light', weaponType: 'polearm', rarity: 'mythique', binding: 'LqR',
+    icon: '🌟', bonusDesc: 'CRIT +20',
+    passiveDesc: 'Ignore 30% DEF. Crits: onde sacree 250px (150%). Boss: +25% degats permanent. (INT scaling)',
+    dropBoss: 4, dropChance: 8,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
+  tyrfing: {
+    id: 'tyrfing', name: 'Tyrfing', atk: 355,
+    element: 'shadow', weaponType: 'scythe', rarity: 'mythique', binding: 'LqR',
+    icon: '💀', bonusDesc: 'Vol de vie +20%',
+    passiveDesc: 'Kill: +8% ATK +5% vol vie (10 stacks). HP < 30%: ATK x2 + invincible 3s (CD 60s). (INT scaling)',
+    dropBoss: 5, dropChance: 10,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
+  ea_staff: {
+    id: 'ea_staff', name: 'Ea, Bâton des Cieux', atk: 345,
+    element: 'fire', weaponType: 'staff', rarity: 'mythique', binding: 'LqR',
+    icon: '🪄', bonusDesc: 'INT +30%',
+    passiveDesc: '30% sort gratuit. Mana > 90%: tous degats +40%. AoE: rayon +50%. (INT scaling)',
+    dropBoss: 6, dropChance: 10,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
+  fragarach: {
+    id: 'fragarach', name: 'Fragarach', atk: 365,
+    element: 'wind', weaponType: 'blade', rarity: 'mythique', binding: 'LqR',
+    icon: '🌪️', bonusDesc: 'ATK +25%, SPD +12',
+    passiveDesc: 'Esquive +15%. Apres esquive: contre-attaque 300% + stun 2s. Tous les 5 coups: tornado 350%.',
+    dropBoss: 7, dropChance: 8,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
+  tacos_eternel: {
+    id: 'tacos_eternel', name: 'Tacos Éternel de Rayan', atk: 400,
+    element: 'fire', weaponType: 'heavy', rarity: 'mythique', binding: 'LqR',
+    icon: '🌮', bonusDesc: 'ATK +35%',
+    passiveDesc: 'Chaque coup: confus 2s (-30% precision). Kill: +10% tous stats (stack infini). 5 stacks: AoE kebab 500%. Rayan va pleurer son tacos.',
+    dropBoss: 8, dropChance: 8,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
+  amenonuhoko: {
+    id: 'amenonuhoko', name: 'Ame-no-nuhoko', atk: 380,
+    element: 'water', weaponType: 'staff', rarity: 'mythique', binding: 'LqR',
+    icon: '🌊', bonusDesc: 'Soins +40%, HP +25%',
+    passiveDesc: 'Soins +50%. Overheals = bouclier 30% HP. Resurrecte 1 allie. Chaque attaque: +5% stat aleatoire a un coequipier aleatoire (stack infini). (INT scaling)',
+    dropBoss: 9, dropChance: 8,
+    get dropBossName() { return BOSS_NAMES[this.dropBoss]; },
+  },
 };
 
 // ═══════════════════════════════════════════════════════════

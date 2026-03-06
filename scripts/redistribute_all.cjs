@@ -6,6 +6,7 @@ const pool = new Pool({ connectionString: 'postgresql://builderberu:beru-local-2
 
 const WEAPON_IDS = new Set([
   'excalibur','mjolnir','muramasa','yggdrasil','gungnir','nidhogg','aegis_weapon','caladbolg','thyrsus','gram',
+  'ragnarok','kusanagi','gae_bolg','masamune','longinus','tyrfing','ea_staff','fragarach','tacos_eternel','amenonuhoko',
   'exp_dagger_forest','exp_bow_forest','exp_sword_forest','exp_staff_forest','exp_mace_forest',
   'exp_sword_stone','exp_bow_stone','exp_spear_crystal','exp_wand_crystal','exp_hammer_stone',
   'exp_blade_shadow','exp_staff_shadow','exp_axe_abyss','exp_glaive_abyss','exp_orb_abyss','exp_scythe_abyss','exp_whip_abyss',
@@ -17,6 +18,10 @@ const BOSS_WEAPON_MAP = {
   weapon_excalibur: 'excalibur', weapon_mjolnir: 'mjolnir', weapon_muramasa: 'muramasa',
   weapon_yggdrasil: 'yggdrasil', weapon_gungnir: 'gungnir', weapon_nidhogg: 'nidhogg',
   weapon_aegis: 'aegis_weapon', weapon_caladbolg: 'caladbolg', weapon_thyrsus: 'thyrsus', weapon_gram: 'gram',
+  weapon_ragnarok: 'ragnarok', weapon_kusanagi: 'kusanagi', weapon_gae_bolg: 'gae_bolg',
+  weapon_masamune: 'masamune', weapon_longinus: 'longinus', weapon_tyrfing: 'tyrfing',
+  weapon_ea_staff: 'ea_staff', weapon_fragarach: 'fragarach', weapon_tacos_eternel: 'tacos_eternel',
+  weapon_amenonuhoko: 'amenonuhoko',
 };
 
 const REAL_PLAYERS = new Set(['Kly', 'damon', 'shy', 'Bobby', 'GRRRRRRRRRRRRRR']);

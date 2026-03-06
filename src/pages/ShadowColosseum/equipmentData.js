@@ -800,6 +800,20 @@ export const WEAPONS = {
   gram:               { id: 'gram',               name: 'Gram',                  rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 290, bonusStat: 'atk_pct',   bonusValue: 25, icon: '\uD83D\uDD28', desc: 'Tous les 5 coups: AoE 250%. Chaque ennemi: +10% prochain AoE.', expedition: true },
 
   // ═══════════════════════════════════════════════════════════════
+  // EXPEDITION PHASE 2 WEAPONS (mythique — overcreep, boss 1-10)
+  // ═══════════════════════════════════════════════════════════════
+  ragnarok:           { id: 'ragnarok',           name: 'Ragnarök',                    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 350, bonusStat: 'atk_pct',   bonusValue: 30, icon: '🔥', desc: 'Tous les 3 coups: AoE 400% feu (200px). Ennemis brules: -20% DEF. Kill: reset CD.', expedition: true },
+  kusanagi:           { id: 'kusanagi',           name: 'Kusanagi',                    rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 360, bonusStat: 'crit_dmg',  bonusValue: 35, icon: '⚔️', desc: 'Crits: +5% ATK (max 50%). 10 stacks: coup x5. Ignore 20% DEF permanent.', expedition: true },
+  gae_bolg:           { id: 'gae_bolg',           name: 'Gáe Bolg',                   rarity: 'mythique',   element: 'water',  weaponType: 'polearm', atk: 340, bonusStat: 'spd_flat',  bonusValue: 22, icon: '🔱', desc: 'Perce en ligne. 1ere attaque: x3. Tous les 10s: dash 300px + AoE 200%.', expedition: true, scalingStat: 'int' },
+  masamune:           { id: 'masamune',           name: 'Masamune',                    rarity: 'mythique',   element: 'light',  weaponType: 'blade',   atk: 370, bonusStat: 'atk_pct',   bonusValue: 28, icon: '✨', desc: 'HP > 50%: +35% degats. Kill: heal 10% + bouclier 5%. Absorbe 2 coups mortels (CD 45s).', expedition: true },
+  longinus:           { id: 'longinus',           name: 'Lance de Longinus',           rarity: 'mythique',   element: 'light',  weaponType: 'polearm', atk: 390, bonusStat: 'crit_rate', bonusValue: 20, icon: '🌟', desc: 'Ignore 30% DEF. Crits: onde sacree 250px (150%). Boss: +25% degats permanent.', expedition: true, scalingStat: 'int' },
+  tyrfing:            { id: 'tyrfing',            name: 'Tyrfing',                     rarity: 'mythique',   element: 'shadow', weaponType: 'scythe',  atk: 355, bonusStat: 'hp_pct',    bonusValue: 20, icon: '💀', desc: 'Kill: +8% ATK +5% vol vie (10 stacks). HP < 30%: ATK x2 + invincible 3s (CD 60s).', expedition: true, scalingStat: 'int' },
+  ea_staff:           { id: 'ea_staff',           name: 'Ea, Bâton des Cieux',         rarity: 'mythique',   element: 'fire',   weaponType: 'staff',   atk: 345, bonusStat: 'int_pct',   bonusValue: 30, icon: '🪄', desc: '30% sort gratuit. Mana > 90%: tous degats +40%. AoE: rayon +50%.', expedition: true, scalingStat: 'int' },
+  fragarach:          { id: 'fragarach',          name: 'Fragarach',                   rarity: 'mythique',   element: 'wind',   weaponType: 'blade',   atk: 365, bonusStat: 'atk_pct',   bonusValue: 25, icon: '🌪️', desc: 'Esquive +15%. Apres esquive: contre-attaque 300% + stun 2s. Tous les 5 coups: tornado 350%.', expedition: true },
+  tacos_eternel:      { id: 'tacos_eternel',      name: 'Tacos Éternel de Rayan',      rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 400, bonusStat: 'atk_pct',   bonusValue: 35, icon: '🌮', desc: 'Chaque coup: confus 2s (-30% precision). Kill: +10% tous stats (stack infini). 5 stacks: AoE kebab 500%.', expedition: true },
+  amenonuhoko:        { id: 'amenonuhoko',        name: 'Ame-no-nuhoko',               rarity: 'mythique',   element: 'water',  weaponType: 'staff',   atk: 380, bonusStat: 'hp_pct',    bonusValue: 25, icon: '🌊', desc: 'Soins +50%. Overheals = bouclier 30% HP. Resurrecte 1 allie. Chaque attaque: +5% stat aleatoire a un coequipier aleatoire (stack infini).', expedition: true, scalingStat: 'int' },
+
+  // ═══════════════════════════════════════════════════════════════
   // EXPEDITION LOOT WEAPONS — Foret (rare)
   // ═══════════════════════════════════════════════════════════════
   exp_dagger_forest:  { id: 'exp_dagger_forest',  name: 'Dague Sylvestre',       rarity: 'rare',       element: null,     weaponType: 'blade',   atk: 15, bonusStat: 'spd_flat',  bonusValue: 3,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Dague rapide de la foret', expedition: true },
@@ -1330,6 +1344,80 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'ATK +6%', stats: { atk_pct: 6 } },
     { desc: 'RES +10', stats: { res_flat: 10 } },
     { desc: 'DEF +8% + PV +8%', stats: { def_pct: 8, hp_pct: 8 } },
+  ],
+
+  // ═══════════════════════════════════════════════════════════════
+  // PHASE 2 WEAPONS — Overcreep awakening passives
+  // ═══════════════════════════════════════════════════════════════
+  ragnarok: [
+    { desc: 'Degats Feu +18%', stats: { fireDamage: 18 } },
+    { desc: 'ATK +16%', stats: { atk_pct: 16 } },
+    { desc: 'CRIT +12%', stats: { crit_rate: 12 } },
+    { desc: 'CRIT DMG +20%', stats: { crit_dmg: 20 } },
+    { desc: 'Ignore 18% DEF + Tous Degats +16%', stats: { defPen: 18, allDamage: 16 } },
+  ],
+  kusanagi: [
+    { desc: 'Degats Ombre +20%', stats: { shadowDamage: 20 } },
+    { desc: 'CRIT DMG +25%', stats: { crit_dmg: 25 } },
+    { desc: 'ATK +18%', stats: { atk_pct: 18 } },
+    { desc: 'CRIT +14%', stats: { crit_rate: 14 } },
+    { desc: 'Ignore 22% DEF + Ombre +12%', stats: { defPen: 22, shadowDamage: 12 } },
+  ],
+  gae_bolg: [
+    { desc: 'Degats Eau +16%', stats: { waterDamage: 16 } },
+    { desc: 'SPD +15', stats: { spd_flat: 15 } },
+    { desc: 'INT +16%', stats: { int_pct: 16 } },
+    { desc: 'CRIT +10%', stats: { crit_rate: 10 } },
+    { desc: 'Ignore 16% DEF + Tous Degats +14%', stats: { defPen: 16, allDamage: 14 } },
+  ],
+  masamune: [
+    { desc: 'Degats Lumiere +20%', stats: { lightDamage: 20 } },
+    { desc: 'ATK +18%', stats: { atk_pct: 18 } },
+    { desc: 'PV +15%', stats: { hp_pct: 15 } },
+    { desc: 'CRIT DMG +22%', stats: { crit_dmg: 22 } },
+    { desc: 'Ignore 20% DEF + Lumiere +14%', stats: { defPen: 20, lightDamage: 14 } },
+  ],
+  longinus: [
+    { desc: 'Degats Lumiere +22%', stats: { lightDamage: 22 } },
+    { desc: 'CRIT +16%', stats: { crit_rate: 16 } },
+    { desc: 'INT +18%', stats: { int_pct: 18 } },
+    { desc: 'CRIT DMG +24%', stats: { crit_dmg: 24 } },
+    { desc: 'Ignore 25% DEF + Tous Degats +18%', stats: { defPen: 25, allDamage: 18 } },
+  ],
+  tyrfing: [
+    { desc: 'Degats Ombre +18%', stats: { shadowDamage: 18 } },
+    { desc: 'INT +18%', stats: { int_pct: 18 } },
+    { desc: 'PV +18%', stats: { hp_pct: 18 } },
+    { desc: 'CRIT +12%', stats: { crit_rate: 12 } },
+    { desc: 'Ignore 20% DEF + Ombre +14%', stats: { defPen: 20, shadowDamage: 14 } },
+  ],
+  ea_staff: [
+    { desc: 'Degats Feu +20%', stats: { fireDamage: 20 } },
+    { desc: 'INT +18%', stats: { int_pct: 18 } },
+    { desc: 'Tous Degats +14%', stats: { allDamage: 14 } },
+    { desc: 'CRIT DMG +20%', stats: { crit_dmg: 20 } },
+    { desc: 'Ignore 18% DEF + Feu +16%', stats: { defPen: 18, fireDamage: 16 } },
+  ],
+  fragarach: [
+    { desc: 'Degats Vent +20%', stats: { windDamage: 20 } },
+    { desc: 'ATK +16%', stats: { atk_pct: 16 } },
+    { desc: 'SPD +12', stats: { spd_flat: 12 } },
+    { desc: 'CRIT +14%', stats: { crit_rate: 14 } },
+    { desc: 'Ignore 20% DEF + Vent +16%', stats: { defPen: 20, windDamage: 16 } },
+  ],
+  tacos_eternel: [
+    { desc: 'Degats Feu +25%', stats: { fireDamage: 25 } },
+    { desc: 'ATK +20%', stats: { atk_pct: 20 } },
+    { desc: 'CRIT DMG +28%', stats: { crit_dmg: 28 } },
+    { desc: 'CRIT +16%', stats: { crit_rate: 16 } },
+    { desc: 'Ignore 28% DEF + Tous Degats +22%', stats: { defPen: 28, allDamage: 22 } },
+  ],
+  amenonuhoko: [
+    { desc: 'Degats Eau +22%', stats: { waterDamage: 22 } },
+    { desc: 'INT +20%', stats: { int_pct: 20 } },
+    { desc: 'PV +20%', stats: { hp_pct: 20 } },
+    { desc: 'Tous Degats +16%', stats: { allDamage: 16 } },
+    { desc: 'Ignore 18% DEF + Eau +18%', stats: { defPen: 18, waterDamage: 18 } },
   ],
 };
 

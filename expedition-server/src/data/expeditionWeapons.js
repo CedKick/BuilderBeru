@@ -190,6 +190,196 @@ export const EXPEDITION_WEAPONS = {
     dropBoss: 14, // Boss 15
     dropChance: 0.3,
   },
+
+  // ═══════════════════════════════════════════════════════
+  // PHASE 2 — OVERCREEP WEAPONS (Boss 1-10)
+  // ATK 340-400, surpass all existing weapons
+  // ═══════════════════════════════════════════════════════
+
+  ragnarok: {
+    id: 'ragnarok',
+    name: 'Ragnarök',
+    atk: 350,
+    element: 'fire',
+    type: 'heavy',
+    rarity: 'mythique',
+    binding: 'lqr',
+    bonus: { atk_pct: 30 },
+    passive: {
+      id: 'ragnarok_fury',
+      description: 'Tous les 3 coups: AoE 400% feu (200px). Ennemis brules: -20% DEF. Kill: reset CD.',
+      triggers: ['on_hit', 'on_kill'],
+    },
+    dropBoss: 0, // Boss 1
+    dropChance: 10,
+  },
+
+  kusanagi: {
+    id: 'kusanagi',
+    name: 'Kusanagi',
+    atk: 360,
+    element: 'shadow',
+    type: 'blade',
+    rarity: 'mythique',
+    binding: 'lqr',
+    bonus: { crit_dmg_pct: 35 },
+    passive: {
+      id: 'kusanagi_edge',
+      description: 'Crits: +5% ATK (max 50%). A 10 stacks: coup x5. Ignore 20% DEF permanent.',
+      triggers: ['on_crit', 'passive'],
+    },
+    dropBoss: 1, // Boss 2
+    dropChance: 10,
+  },
+
+  gae_bolg: {
+    id: 'gae_bolg',
+    name: 'Gáe Bolg',
+    atk: 340,
+    element: 'water',
+    type: 'polearm',
+    rarity: 'mythique',
+    binding: 'lqr',
+    scalingStat: 'int',
+    bonus: { spd_flat: 22 },
+    passive: {
+      id: 'gae_bolg_pierce',
+      description: 'Perce en ligne. 1ere attaque: x3. Tous les 10s: dash 300px + AoE 200%.',
+      triggers: ['on_hit', 'periodic'],
+    },
+    dropBoss: 2, // Boss 3
+    dropChance: 10,
+  },
+
+  masamune: {
+    id: 'masamune',
+    name: 'Masamune',
+    atk: 370,
+    element: 'light',
+    type: 'blade',
+    rarity: 'mythique',
+    binding: 'lqr',
+    bonus: { atk_pct: 28 },
+    passive: {
+      id: 'masamune_zen',
+      description: 'HP > 50%: +35% degats. Kill: heal 10% + bouclier 5%. Absorbe 2 coups mortels (CD 45s).',
+      triggers: ['on_hit', 'on_kill', 'on_death'],
+    },
+    dropBoss: 3, // Boss 4
+    dropChance: 8,
+  },
+
+  longinus: {
+    id: 'longinus',
+    name: 'Lance de Longinus',
+    atk: 390,
+    element: 'light',
+    type: 'polearm',
+    rarity: 'mythique',
+    binding: 'lqr',
+    scalingStat: 'int',
+    bonus: { crit_rate: 20 },
+    passive: {
+      id: 'holy_lance',
+      description: 'Ignore 30% DEF. Crits: onde sacree 250px (150%). Boss: +25% degats permanent.',
+      triggers: ['on_crit', 'passive'],
+    },
+    dropBoss: 4, // Boss 5
+    dropChance: 8,
+  },
+
+  tyrfing: {
+    id: 'tyrfing',
+    name: 'Tyrfing',
+    atk: 355,
+    element: 'shadow',
+    type: 'scythe',
+    rarity: 'mythique',
+    binding: 'lqr',
+    scalingStat: 'int',
+    bonus: { hp_pct: 20 },
+    passive: {
+      id: 'tyrfing_curse',
+      description: 'Kill: +8% ATK +5% vol vie (10 stacks). HP < 30%: ATK x2 + invincible 3s (CD 60s).',
+      triggers: ['on_kill', 'on_low_hp'],
+    },
+    dropBoss: 5, // Boss 6
+    dropChance: 10,
+  },
+
+  ea_staff: {
+    id: 'ea_staff',
+    name: 'Ea, Bâton des Cieux',
+    atk: 345,
+    element: 'fire',
+    type: 'staff',
+    rarity: 'mythique',
+    binding: 'lqr',
+    scalingStat: 'int',
+    bonus: { int_pct: 30 },
+    passive: {
+      id: 'ea_heaven',
+      description: '30% sort gratuit. Mana > 90%: tous degats +40%. Sorts AoE: rayon +50%.',
+      triggers: ['on_skill', 'passive'],
+    },
+    dropBoss: 6, // Boss 7
+    dropChance: 10,
+  },
+
+  fragarach: {
+    id: 'fragarach',
+    name: 'Fragarach',
+    atk: 365,
+    element: 'wind',
+    type: 'blade',
+    rarity: 'mythique',
+    binding: 'lqr',
+    bonus: { atk_pct: 25 },
+    passive: {
+      id: 'fragarach_wind',
+      description: 'Esquive +15%. Apres esquive: contre-attaque 300% + stun 2s. Tous les 5 coups: tornado 350%.',
+      triggers: ['on_dodge', 'on_hit'],
+    },
+    dropBoss: 7, // Boss 8
+    dropChance: 8,
+  },
+
+  tacos_eternel: {
+    id: 'tacos_eternel',
+    name: 'Tacos Éternel de Rayan',
+    atk: 400,
+    element: 'fire',
+    type: 'heavy',
+    rarity: 'mythique',
+    binding: 'lqr',
+    bonus: { atk_pct: 35 },
+    passive: {
+      id: 'tacos_power',
+      description: 'Chaque coup: ennemi confus 2s (-30% precision). Kill: +10% tous stats (stack infini). 5 stacks: AoE kebab 500%. Rayan pleure.',
+      triggers: ['on_hit', 'on_kill'],
+    },
+    dropBoss: 8, // Boss 9
+    dropChance: 8,
+  },
+
+  amenonuhoko: {
+    id: 'amenonuhoko',
+    name: 'Ame-no-nuhoko',
+    atk: 380,
+    element: 'water',
+    type: 'staff',
+    rarity: 'mythique',
+    binding: 'lqr',
+    scalingStat: 'int',
+    bonus: { hp_pct: 25 },
+    passive: {
+      id: 'divine_creation',
+      description: 'Soins +50%. Overheals = bouclier (30% HP max). Resurrecte 1 allie/combat. Chaque attaque: +5% stat aleatoire a un coequipier aleatoire (stack infini).',
+      triggers: ['on_heal', 'on_hit', 'on_ally_death'],
+    },
+    dropBoss: 9, // Boss 10
+    dropChance: 8,
+  },
 };
 
 export function getWeaponById(weaponId) {

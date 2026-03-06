@@ -98,6 +98,8 @@ export const LOOT_TABLES = {
     { itemId: 'set_nova_arcanique_piece', name: 'Piece: Nova Arcanique', rarity: 'epic', dropChance: 3, setId: 'nova_arcanique' },
     // Unique (legendary)
     { itemId: 'unique_oeil_monarque', name: 'Oeil du Monarque', rarity: 'legendary', dropChance: 2, uniqueId: 'oeil_monarque' },
+    // Phase 2 weapon
+    { itemId: 'weapon_ragnarok', name: 'Ragnarök', rarity: 'mythique', dropChance: 10, weaponId: 'ragnarok' },
     { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
@@ -126,6 +128,8 @@ export const LOOT_TABLES = {
     { itemId: 'set_fureur_titan_piece', name: 'Piece: Fureur du Titan', rarity: 'epic', dropChance: 3, setId: 'fureur_titan' },
     // Unique (legendary)
     { itemId: 'unique_coeur_pierre', name: 'Coeur de Pierre', rarity: 'legendary', dropChance: 2, uniqueId: 'coeur_pierre' },
+    // Phase 2 weapon
+    { itemId: 'weapon_kusanagi', name: 'Kusanagi', rarity: 'mythique', dropChance: 10, weaponId: 'kusanagi' },
     { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
@@ -158,6 +162,8 @@ export const LOOT_TABLES = {
     { itemId: 'exp_bow_stone', name: 'Arc Petrifie', rarity: 'rare', dropChance: 12 },
     // Unique
     { itemId: 'unique_voile_seigneur', name: 'Voile du Seigneur', rarity: 'legendary', dropChance: 2, uniqueId: 'voile_seigneur' },
+    // Phase 2 Mythique
+    { itemId: 'weapon_gae_bolg', name: 'Gáe Bolg', rarity: 'mythique', dropChance: 10, weaponId: 'gae_bolg' },
     { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
@@ -191,6 +197,8 @@ export const LOOT_TABLES = {
     { itemId: 'exp_shadow_gloves', name: "Griffes d'Ombre", rarity: 'epic', dropChance: 12 },
     // Unique
     { itemId: 'unique_fragment_sentinelle', name: 'Fragment de Sentinelle', rarity: 'legendary', dropChance: 2, uniqueId: 'fragment_sentinelle' },
+    // Phase 2 Mythique
+    { itemId: 'weapon_masamune', name: 'Masamune', rarity: 'mythique', dropChance: 8, weaponId: 'masamune' },
     { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
@@ -223,6 +231,8 @@ export const LOOT_TABLES = {
     { itemId: 'exp_shadow_boots', name: "Sandales d'Ombre", rarity: 'epic', dropChance: 14 },
     // Unique
     { itemId: 'unique_plume_ange_noir', name: 'Plume de l\'Ange Noir', rarity: 'legendary', dropChance: 2, uniqueId: 'plume_ange_noir' },
+    // Phase 2 Mythique
+    { itemId: 'weapon_longinus', name: 'Lance de Longinus', rarity: 'mythique', dropChance: 8, weaponId: 'longinus' },
     { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
@@ -267,6 +277,8 @@ export const LOOT_TABLES = {
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 3 },
     // Unique
     { itemId: 'unique_larme_foret', name: 'Larme de la Foret', rarity: 'legendary', dropChance: 2, uniqueId: 'larme_foret' },
+    // Phase 2 Mythique
+    { itemId: 'weapon_tyrfing', name: 'Tyrfing', rarity: 'mythique', dropChance: 10, weaponId: 'tyrfing' },
     { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
@@ -303,6 +315,8 @@ export const LOOT_TABLES = {
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 3 },
     // Unique
     { itemId: 'unique_sceau_commandant', name: 'Sceau du Commandant', rarity: 'legendary', dropChance: 2, uniqueId: 'sceau_commandant' },
+    // Phase 2 Mythique
+    { itemId: 'weapon_ea_staff', name: 'Ea, Bâton des Cieux', rarity: 'mythique', dropChance: 10, weaponId: 'ea_staff' },
     { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
@@ -351,6 +365,8 @@ export const LOOT_TABLES = {
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 4 },
     // Unique
     { itemId: 'unique_croc_warg', name: 'Croc du Warg', rarity: 'legendary', dropChance: 2, uniqueId: 'croc_warg' },
+    // Phase 2 Mythique
+    { itemId: 'weapon_fragarach', name: 'Fragarach', rarity: 'mythique', dropChance: 8, weaponId: 'fragarach' },
     { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
@@ -397,6 +413,8 @@ export const LOOT_TABLES = {
     { itemId: 'exp_katana_void', name: 'Katana du Neant', rarity: 'legendary', dropChance: 5 },
     // Unique
     { itemId: 'unique_cape_fantome', name: 'Cape du Fantome', rarity: 'legendary', dropChance: 2, uniqueId: 'cape_fantome' },
+    // Phase 2 Mythique
+    { itemId: 'weapon_tacos_eternel', name: 'Tacos Éternel de Rayan', rarity: 'mythique', dropChance: 8, weaponId: 'tacos_eternel' },
     { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
@@ -446,6 +464,8 @@ export const LOOT_TABLES = {
     { itemId: 'weapon_caladbolg', name: 'Caladbolg', rarity: 'mythique', dropChance: 2, weaponId: 'caladbolg' },
     // Unique
     { itemId: 'unique_talisman_sage', name: 'Talisman du Sage', rarity: 'legendary', dropChance: 2, uniqueId: 'talisman_sage' },
+    // Phase 2 Mythique
+    { itemId: 'weapon_amenonuhoko', name: 'Ame-no-nuhoko', rarity: 'mythique', dropChance: 8, weaponId: 'amenonuhoko' },
     { itemId: 'exp_ultimate_scroll', name: 'Parchemin Ultimate', rarity: 'epic', dropChance: 100 },
   ],
 
