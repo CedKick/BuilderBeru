@@ -1055,10 +1055,11 @@ export default function Codex() {
               <option value="raid">Raid</option>
               <option value="arc2">ARC II</option>
               <option value="ultime">Ultime</option>
+              <option value="expedition">Expedition</option>
             </select>
           </div>
 
-          <div className="text-[10px] text-gray-600 mb-3">{filteredSets.length} set{filteredSets.length > 1 ? 's' : ''} d'artefacts</div>
+          <div className="text-[10px] text-gray-600 mb-3">{filteredSets.length + (aFilterSource === 'all' || aFilterSource === 'expedition' ? EXPEDITION_SETS.filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase())).length : 0)} set{filteredSets.length > 1 ? 's' : ''} d'artefacts</div>
 
           {/* Sets by source */}
           {['base', 'raid', 'arc2', 'ultime'].map(src => {
@@ -1100,6 +1101,53 @@ export default function Codex() {
               </div>
             );
           })}
+
+          {/* ─── Expedition Sets ─── */}
+          {(aFilterSource === 'all' || aFilterSource === 'expedition') && (() => {
+            const expFiltered = EXPEDITION_SETS.filter(s =>
+              !search || s.name.toLowerCase().includes(search.toLowerCase())
+            );
+            if (expFiltered.length === 0) return null;
+            return (
+              <div className="mb-6">
+                <div className="text-xs font-bold uppercase tracking-wider mb-3 text-emerald-400">Sets Expedition ({expFiltered.length})</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {expFiltered.map(s => {
+                    const count = ownedExpSets[s.id] || 0;
+                    return (
+                      <motion.div key={s.id} whileHover={{ scale: 1.02 }}
+                        className={`relative p-3.5 rounded-xl border text-left transition-all ${s.border} ${s.bg}`}>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-2xl">{s.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-bold ${s.color}`}>{s.name}</div>
+                            <div className="text-[10px] text-gray-500">{s.desc}</div>
+                          </div>
+                          {count > 0 && (
+                            <span className="text-[10px] font-bold text-green-400 bg-green-500/15 px-2 py-0.5 rounded-full">x{count}</span>
+                          )}
+                        </div>
+                        <div className="mt-2 space-y-0.5">
+                          <div className="text-[10px] text-green-400">2p : {s.bonus2Desc}</div>
+                          <div className="text-[10px] text-blue-400">4p : {s.bonus4Desc}</div>
+                        </div>
+                        {s.rarity && (
+                          <div className="mt-1.5 flex items-center gap-2">
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded ${
+                              s.rarity === 'legendary' ? 'bg-yellow-500/15 text-yellow-400' :
+                              s.rarity === 'epic' ? 'bg-purple-500/15 text-purple-400' :
+                              'bg-blue-500/15 text-blue-400'
+                            }`}>{s.rarity}</span>
+                            {s.zone && <span className="text-[9px] text-gray-600">{s.zone}</span>}
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Reference section: Slots, Main stats, Sub stats */}
           <div className="mt-8 mb-6">
