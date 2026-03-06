@@ -1059,7 +1059,7 @@ export default function Codex() {
             </select>
           </div>
 
-          <div className="text-[10px] text-gray-600 mb-3">{filteredSets.length + (aFilterSource === 'all' || aFilterSource === 'expedition' ? EXPEDITION_SETS.filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase())).length : 0)} set{filteredSets.length > 1 ? 's' : ''} d'artefacts</div>
+          <div className="text-[10px] text-gray-600 mb-3">{filteredSets.length + (aFilterSource === 'all' || aFilterSource === 'expedition' ? Object.values(EXPEDITION_SETS).filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase())).length : 0)} set{filteredSets.length > 1 ? 's' : ''} d'artefacts</div>
 
           {/* Sets by source */}
           {['base', 'raid', 'arc2', 'ultime'].map(src => {
@@ -1104,7 +1104,7 @@ export default function Codex() {
 
           {/* ─── Expedition Sets ─── */}
           {(aFilterSource === 'all' || aFilterSource === 'expedition') && (() => {
-            const expFiltered = EXPEDITION_SETS.filter(s =>
+            const expFiltered = Object.values(EXPEDITION_SETS).filter(s =>
               !search || s.name.toLowerCase().includes(search.toLowerCase())
             );
             if (expFiltered.length === 0) return null;
