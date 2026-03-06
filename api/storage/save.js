@@ -507,8 +507,8 @@ export default async function handler(req, res) {
         );
       }
 
-      // CHECK 3: Always protect server-deposited fields (alkahest, rerollCounts)
-      // These can be written by game-server via deposit-alkahest API while client has stale data
+      // CHECK 3: Always protect server-deposited fields (alkahest, rerollCounts, weaponCollection, artifactInventory)
+      // These can be written by game-server / admin scripts while client has stale data
       if (!merged && key === 'shadow_colosseum_data') {
         const cloudData = typeof existing.rows[0].data === 'string'
           ? JSON.parse(existing.rows[0].data)
@@ -541,10 +541,78 @@ export default async function handler(req, res) {
           patched = true;
         }
 
+        // WeaponCollection: MAX awakening per weapon (server scripts inject expedition weapons)
+        const cloudWC = cloudData.weaponCollection || {};
+        const incomingWC = finalData.weaponCollection || {};
+        const mergedWC = { ...incomingWC };
+        for (const [wId, aw] of Object.entries(cloudWC)) {
+          if (mergedWC[wId] === undefined) {
+            // Cloud has a weapon the client doesn't → KEEP IT (server-injected)
+            mergedWC[wId] = aw;
+            patched = true;
+          } else {
+            // Both have it → MAX awakening
+            const maxAw = Math.max(mergedWC[wId] || 0, aw || 0);
+            if (maxAw > (mergedWC[wId] || 0)) patched = true;
+            mergedWC[wId] = maxAw;
+          }
+        }
+        finalData = { ...finalData, weaponCollection: mergedWC };
+
+        // Hammers: MAX each (overflow from max-awakened weapons)
+        const cloudH = cloudData.hammers || {};
+        const incomingH = finalData.hammers || {};
+        const mergedH = { ...incomingH };
+        for (const [hId, count] of Object.entries(cloudH)) {
+          mergedH[hId] = Math.max(mergedH[hId] || 0, count || 0);
+          if ((count || 0) > (incomingH[hId] || 0)) patched = true;
+        }
+        finalData = { ...finalData, hammers: mergedH };
+
+        // ArtifactInventory: union by uid (server scripts inject expedition artifacts)
+        const cloudInv = cloudData.artifactInventory || [];
+        const incomingInv = finalData.artifactInventory || [];
+        if (cloudInv.length > 0) {
+          const incomingUids = new Set(incomingInv.map(a => a.uid).filter(Boolean));
+          const missingFromCloud = cloudInv.filter(a => a.uid && !incomingUids.has(a.uid));
+          if (missingFromCloud.length > 0) {
+            // Add cloud-only artifacts (server-injected expedition items)
+            const merged = [...incomingInv, ...missingFromCloud];
+            // Cap at 1500, remove weakest unlocked if needed
+            if (merged.length > 1500) {
+              // Score: mainValue + subs + rarity bonus
+              const score = (a) => {
+                let s = 0;
+                if (typeof a.mainValue === 'number') s += Math.abs(a.mainValue);
+                if (Array.isArray(a.subs)) a.subs.forEach(sub => { if (typeof sub.value === 'number') s += Math.abs(sub.value); });
+                s += ({ rare: 40, legendaire: 160, mythique: 320 }[a.rarity] || 0);
+                return s;
+              };
+              merged.sort((a, b) => {
+                if (a.locked && !b.locked) return -1;
+                if (!a.locked && b.locked) return 1;
+                return score(b) - score(a);
+              });
+              merged.length = 1500;
+            }
+            finalData = { ...finalData, artifactInventory: merged };
+            patched = true;
+            console.log(`[save] Preserved ${missingFromCloud.length} cloud-only artifacts for ${deviceId}`);
+          }
+        }
+
+        // UltimateScrolls: MAX (server deposits via expedition)
+        const cloudScrolls = cloudData.ultimateScrolls || 0;
+        const incomingScrolls = finalData.ultimateScrolls || 0;
+        if (cloudScrolls > incomingScrolls) {
+          finalData = { ...finalData, ultimateScrolls: cloudScrolls };
+          patched = true;
+        }
+
         if (patched) {
           jsonStr = JSON.stringify(finalData);
           sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
-          console.log(`[save] PATCHED server fields for ${deviceId}: alkahest=${finalData.alkahest}`);
+          console.log(`[save] PATCHED server fields for ${deviceId}: alkahest=${finalData.alkahest}, weapons=${Object.keys(finalData.weaponCollection || {}).length}, arts=${(finalData.artifactInventory || []).length}`);
         }
       }
 

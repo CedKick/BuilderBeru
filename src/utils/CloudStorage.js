@@ -402,21 +402,29 @@ class CloudStorageManager {
           // Guard: block stale React writes until component re-reads
           this._autoRestoredSizes[key] = cloudJson.length;
         } else if (key === 'shadow_colosseum_data') {
-          // Always protect server-deposited fields (alkahest, rerollCounts)
-          // These can be written by game-server while client has stale local data
+          // Always merge server-deposited fields into localStorage
+          // Server/admin scripts can inject weapons, artifacts, alkahest etc.
           try {
             const localData = JSON.parse(localRaw);
             const cloudData = entry.data;
             let patched = false;
+
+            // Alkahest: MAX
             if ((cloudData.alkahest || 0) > (localData.alkahest || 0)) {
               localData.alkahest = cloudData.alkahest;
               patched = true;
             }
-            // AccountXp: always keep MAX (never lose levels on device change)
+            // AccountXp: MAX
             if ((cloudData.accountXp || 0) > (localData.accountXp || 0)) {
               localData.accountXp = cloudData.accountXp;
               patched = true;
             }
+            // UltimateScrolls: MAX
+            if ((cloudData.ultimateScrolls || 0) > (localData.ultimateScrolls || 0)) {
+              localData.ultimateScrolls = cloudData.ultimateScrolls;
+              patched = true;
+            }
+            // RerollCounts: MAX per artifact
             const cloudRC = cloudData.rerollCounts || {};
             const localRC = localData.rerollCounts || {};
             for (const [uid, count] of Object.entries(cloudRC)) {
@@ -425,10 +433,58 @@ class CloudStorageManager {
                 patched = true;
               }
             }
+            if (patched) localData.rerollCounts = localRC;
+
+            // WeaponCollection: MAX awakening per weapon + add missing weapons from cloud
+            const cloudWC = cloudData.weaponCollection || {};
+            const localWC = localData.weaponCollection || {};
+            for (const [wId, aw] of Object.entries(cloudWC)) {
+              if (localWC[wId] === undefined) {
+                localWC[wId] = aw;
+                patched = true;
+              } else if ((aw || 0) > (localWC[wId] || 0)) {
+                localWC[wId] = aw;
+                patched = true;
+              }
+            }
+            localData.weaponCollection = localWC;
+
+            // Hammers: MAX each
+            const cloudH = cloudData.hammers || {};
+            const localH = localData.hammers || {};
+            for (const [hId, count] of Object.entries(cloudH)) {
+              if ((count || 0) > (localH[hId] || 0)) {
+                localH[hId] = count;
+                patched = true;
+              }
+            }
+            localData.hammers = localH;
+
+            // ArtifactInventory: union by uid (add cloud-only artifacts)
+            const cloudInv = cloudData.artifactInventory || [];
+            const localInv = localData.artifactInventory || [];
+            if (cloudInv.length > 0) {
+              const localUids = new Set(localInv.map(a => a.uid).filter(Boolean));
+              const missingFromCloud = cloudInv.filter(a => a.uid && !localUids.has(a.uid));
+              if (missingFromCloud.length > 0) {
+                localData.artifactInventory = [...localInv, ...missingFromCloud];
+                // Cap at 1500
+                if (localData.artifactInventory.length > 1500) {
+                  localData.artifactInventory.sort((a, b) => {
+                    if (a.locked && !b.locked) return -1;
+                    if (!a.locked && b.locked) return 1;
+                    return 0;
+                  });
+                  localData.artifactInventory.length = 1500;
+                }
+                patched = true;
+                console.log(`[CloudStorage] Merged ${missingFromCloud.length} cloud-only artifacts into local`);
+              }
+            }
+
             if (patched) {
-              localData.rerollCounts = localRC;
               localStorage.setItem(key, JSON.stringify(localData));
-              console.log(`[CloudStorage] Patched server fields for "${key}": alkahest=${localData.alkahest}`);
+              console.log(`[CloudStorage] Patched server fields for "${key}": alkahest=${localData.alkahest}, weapons=${Object.keys(localData.weaponCollection || {}).length}, arts=${(localData.artifactInventory || []).length}`);
             }
           } catch { /* ignore parse errors */ }
         }
