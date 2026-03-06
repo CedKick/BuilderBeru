@@ -1,6 +1,7 @@
 import { query } from './_db/neon.js';
 import { extractUser } from './_utils/auth.js';
 import { validatePvpTeam } from './_utils/validate.js';
+import { sendCompressed } from './_utils/compress.js';
 
 const ELO_K = 32;
 const MIN_RATING = 100;
@@ -183,7 +184,7 @@ async function handleFindOpponents(req, res) {
     foughtToday: matchMap[r.device_id]?.count || 0,
   }));
 
-  return res.status(200).json({ success: true, opponents, dailyRemaining });
+  return sendCompressed(req, res, 200, { success: true, opponents, dailyRemaining });
 }
 
 async function handleReportResult(req, res) {

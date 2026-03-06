@@ -18,6 +18,7 @@ const DEVICE_ID_KEY = 'builderberu_device_id';
 const AUTH_TOKEN_KEY = 'builderberu_auth_token';
 const TRACKED_KEYS_KEY = 'builderberu_cloud_keys';
 const HASH_PREFIX = '_cs_h_'; // localStorage prefix for persisted sync hashes
+const ETAG_PREFIX = '_cs_etag_'; // localStorage prefix for ETag cache
 
 // Fast sampled hash — O(500) regardless of string size, good enough for dirty detection
 function _computeHash(str) {
@@ -232,14 +233,36 @@ class CloudStorageManager {
     return this.loadCloud(key);
   }
 
-  /** Load from cloud backend */
+  /** Load from cloud backend (uses ETag for conditional requests — 304 = zero transfer) */
   async loadCloud(key) {
     try {
       const deviceId = getDeviceId();
+      const headers = { ..._getAuthHeaders() };
+
+      // Send cached ETag for conditional request
+      const cachedEtag = localStorage.getItem(ETAG_PREFIX + key);
+      if (cachedEtag) {
+        headers['If-None-Match'] = cachedEtag;
+      }
+
       const resp = await fetch(`${API_BASE}/load?deviceId=${encodeURIComponent(deviceId)}&key=${encodeURIComponent(key)}`, {
-        headers: { ..._getAuthHeaders() },
+        headers,
       });
+
+      // 304 Not Modified — data hasn't changed, use localStorage cache
+      if (resp.status === 304) {
+        this._online = true;
+        return this.loadLocal(key);
+      }
+
       if (!resp.ok) return null;
+
+      // Store ETag from response for next request
+      const etag = resp.headers.get('ETag');
+      if (etag) {
+        try { localStorage.setItem(ETAG_PREFIX + key, etag); } catch {}
+      }
+
       const json = await resp.json();
       // Anti-cheat: detect suspension from server
       if (json.suspended) {
@@ -260,14 +283,36 @@ class CloudStorageManager {
     }
   }
 
-  /** Load all keys from cloud for this device */
+  /** Load all keys from cloud for this device (uses ETag — 304 = zero transfer) */
   async loadAllCloud() {
     try {
       const deviceId = getDeviceId();
+      const headers = { ..._getAuthHeaders() };
+
+      // Send cached ETag for conditional request
+      const cachedEtag = localStorage.getItem(ETAG_PREFIX + '_all');
+      if (cachedEtag) {
+        headers['If-None-Match'] = cachedEtag;
+      }
+
       const resp = await fetch(`${API_BASE}/load?deviceId=${encodeURIComponent(deviceId)}`, {
-        headers: { ..._getAuthHeaders() },
+        headers,
       });
+
+      // 304 Not Modified — nothing changed, return null to skip merge
+      if (resp.status === 304) {
+        this._online = true;
+        return '_not_modified_';
+      }
+
       if (!resp.ok) return null;
+
+      // Store ETag from response
+      const etag = resp.headers.get('ETag');
+      if (etag) {
+        try { localStorage.setItem(ETAG_PREFIX + '_all', etag); } catch {}
+      }
+
       const json = await resp.json();
       if (json.success) {
         this._online = true;
@@ -309,6 +354,14 @@ class CloudStorageManager {
       // Offline — just use localStorage
       this._initialized = true;
       if (this._readyResolve) this._readyResolve();
+      return;
+    }
+    if (cloudEntries === '_not_modified_') {
+      // 304 Not Modified — cloud data hasn't changed, skip merge
+      this._initialized = true;
+      if (this._readyResolve) this._readyResolve();
+      console.log('[CloudStorage] Initial sync: 304 Not Modified — zero transfer');
+      try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
       return;
     }
 
@@ -570,6 +623,8 @@ class CloudStorageManager {
       this._pendingData.delete(key);
       this._lastSyncHash[key] = dataHash;
       try { localStorage.setItem(HASH_PREFIX + key, dataHash); } catch {} // Persist hash across page reloads
+      // Invalidate ETags — data changed, next load should fetch fresh
+      try { localStorage.removeItem(ETAG_PREFIX + key); localStorage.removeItem(ETAG_PREFIX + '_all'); } catch {}
       _lastSyncTime[key] = Date.now();
       this._setSyncStatus(key, 'synced');
       return json.success;

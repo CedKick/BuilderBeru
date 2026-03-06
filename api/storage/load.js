@@ -1,6 +1,7 @@
 import { query } from '../_db/neon.js';
 import { extractUser } from '../_utils/auth.js';
 import { checkSuspension, getBeruSuspendMessage } from '../_utils/anticheat.js';
+import { sendCompressed } from '../_utils/compress.js';
 
 export default async function handler(req, res) {
   const origin = req.headers.origin;
@@ -8,7 +9,8 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, If-None-Match');
+  res.setHeader('Access-Control-Expose-Headers', 'ETag');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
@@ -55,6 +57,14 @@ export default async function handler(req, res) {
       if (result.rows.length === 0) {
         return res.status(200).json({ success: true, data: null });
       }
+
+      // ETag: based on updated_at timestamp — if client has same version, skip transfer
+      const etag = `"${new Date(result.rows[0].updated_at).getTime()}"`;
+      if (req.headers['if-none-match'] === etag) {
+        return res.status(304).end(); // Zero bytes transferred
+      }
+      res.setHeader('ETag', etag);
+
       const resp = {
         success: true,
         data: result.rows[0].data,
@@ -65,7 +75,7 @@ export default async function handler(req, res) {
         resp.suspendedReason = suspension.reason;
         resp.beruMessage = getBeruSuspendMessage();
       }
-      return res.status(200).json(resp);
+      return sendCompressed(req, res, 200, resp);
     }
 
     // Load all keys for this device
@@ -75,8 +85,20 @@ export default async function handler(req, res) {
     );
 
     const entries = {};
+    // ETag for load-all: max updated_at across all keys
+    let maxUpdated = 0;
     for (const row of result.rows) {
       entries[row.storage_key] = { data: row.data, updatedAt: row.updated_at };
+      const ts = new Date(row.updated_at).getTime();
+      if (ts > maxUpdated) maxUpdated = ts;
+    }
+
+    if (maxUpdated > 0) {
+      const etag = `"all-${maxUpdated}"`;
+      if (req.headers['if-none-match'] === etag) {
+        return res.status(304).end();
+      }
+      res.setHeader('ETag', etag);
     }
 
     const resp = { success: true, entries };
@@ -85,7 +107,7 @@ export default async function handler(req, res) {
       resp.suspendedReason = suspension.reason;
       resp.beruMessage = getBeruSuspendMessage();
     }
-    return res.status(200).json(resp);
+    return sendCompressed(req, res, 200, resp);
   } catch (err) {
     console.error('Load error:', err);
     return res.status(500).json({ success: false, error: 'Erreur serveur' });

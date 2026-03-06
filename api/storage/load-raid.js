@@ -1,4 +1,5 @@
 import { query } from '../_db/neon.js';
+import { sendCompressed } from '../_utils/compress.js';
 
 export default async function handler(req, res) {
   const origin = req.headers.origin;
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
     const data = typeof result.rows[0].data === 'string'
       ? JSON.parse(result.rows[0].data) : result.rows[0].data;
 
-    return res.status(200).json({ success: true, raidData: data });
+    return sendCompressed(req, res, 200, { success: true, raidData: data });
   } catch (err) {
     console.error('[load-raid] Error:', err);
     return res.status(500).json({ error: 'Server error' });

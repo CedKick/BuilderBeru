@@ -1,5 +1,6 @@
 import { query } from './_db/neon.js';
 import { extractUser } from './_utils/auth.js';
+import { sendCompressed } from './_utils/compress.js';
 
 // ─── Init: create v2 table ─────────────────────────────────
 
@@ -160,7 +161,7 @@ async function handleRankings(req, res) {
     }
   }
 
-  return res.status(200).json({ success: true, rankings, total, myHunters, myBestRank, page: pageNum });
+  return sendCompressed(req, res, 200, { success: true, rankings, total, myHunters, myBestRank, page: pageNum });
 }
 
 // ─── Player detail: full hunter data ────────────────────────
