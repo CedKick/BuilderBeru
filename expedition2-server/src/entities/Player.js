@@ -469,8 +469,10 @@ export class Player {
   }
 
   heal(amount) {
-    if (!this.alive) return;
+    if (!this.alive) return 0;
+    const before = this.hp;
     this.hp = Math.min(this.maxHp, this.hp + amount);
+    return this.hp - before;
   }
 
   setInput(x, y) {

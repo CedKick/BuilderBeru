@@ -149,63 +149,135 @@
       background: rgba(0,0,0,0.7); border: 1px solid #333; border-radius: 4px;
       pointer-events: none; z-index: 10; overflow: hidden;
     }
-    #join-screen {
+    /* ── LOBBY ── */
+    #lobby-screen {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: radial-gradient(ellipse at center, #1a0808 0%, #0a0505 70%);
       display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
     }
-    #join-screen h1 { color: #ff6a3d; font-size: 42px; text-shadow: 0 0 30px rgba(255,80,0,0.6); margin-bottom: 8px; }
-    #join-screen p { color: #886; margin-bottom: 24px; }
-    #join-screen input {
+    #lobby-screen h1 { color: #ff6a3d; font-size: 42px; text-shadow: 0 0 30px rgba(255,80,0,0.6); margin-bottom: 4px; }
+    #lobby-screen .subtitle { color: #886; margin-bottom: 16px; font-size: 13px; }
+    #lobby-screen input {
       background: #1a1a25; border: 2px solid #ff6a3d; color: #ffd;
       padding: 10px 20px; font-size: 18px; border-radius: 8px; text-align: center; outline: none; width: 250px;
     }
-    #join-screen button {
-      margin-top: 16px; padding: 12px 40px;
+    #lobby-screen button {
+      padding: 10px 30px;
       background: linear-gradient(135deg, #c44, #ff6a3d); border: none;
-      color: #fff; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer;
+      color: #fff; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer;
     }
-    #join-screen button:hover { transform: scale(1.05); }
+    #lobby-screen button:hover { transform: scale(1.05); }
+    .lobby-step { display: none; flex-direction: column; align-items: center; gap: 12px; }
+    .lobby-step.active { display: flex; }
+    /* Room UI */
+    #room-panel { background: rgba(0,0,0,0.6); border: 1px solid #ff6a3d33; border-radius: 12px; padding: 20px 30px; min-width: 400px; max-width: 500px; }
+    #room-code-display { color: #ff6a3d; font-size: 36px; font-weight: bold; letter-spacing: 8px; text-align: center; margin: 8px 0; text-shadow: 0 0 20px rgba(255,80,0,0.4); }
+    .player-list { list-style: none; margin: 12px 0; padding: 0; }
+    .player-list li { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; margin: 4px 0; background: rgba(255,255,255,0.03); font-size: 13px; color: #ccc; }
+    .player-list li.ready { border-left: 3px solid #4ade80; }
+    .player-list li.bot { opacity: 0.7; }
+    .player-list .player-class { font-size: 11px; color: #888; margin-left: auto; }
+    .player-list .ready-badge { color: #4ade80; font-size: 10px; font-weight: bold; }
+    .player-list .bot-badge { color: #f80; font-size: 9px; }
+    /* Bot selector */
+    .bot-selector { display: flex; gap: 6px; margin: 8px 0; justify-content: center; }
+    .bot-btn { padding: 6px 14px; background: rgba(255,255,255,0.05); border: 1px solid #444; border-radius: 6px; color: #aaa; font-size: 12px; cursor: pointer; }
+    .bot-btn:hover { border-color: #f80; color: #f80; }
+    .bot-btn.active { border-color: #ff6a3d; color: #ff6a3d; background: rgba(255,106,61,0.1); }
+    /* Countdown overlay */
+    #countdown-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center;
+      z-index: 110; flex-direction: column;
+    }
+    #countdown-overlay.active { display: flex; }
+    #countdown-number { color: #ff6a3d; font-size: 120px; font-weight: bold; text-shadow: 0 0 60px rgba(255,80,0,0.6); }
+    #countdown-label { color: #886; font-size: 16px; margin-top: -10px; }
   </style>
 </head>
 <body>
-<div id="join-screen">
-  <h1>RAGNAROS</h1>
-  <p>Shadow Colosseum — Raid Multi PVE (jusqu'a 10 joueurs)</p>
-  <input id="username-input" type="text" placeholder="Ton pseudo..." maxlength="20" autofocus>
-  <div id="class-select" style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;justify-content:center;">
-    <div class="class-btn selected" data-class="archer" style="cursor:pointer;padding:10px 14px;border-radius:8px;border:2px solid #4ade80;background:rgba(74,222,128,0.15);text-align:center;min-width:80px;transition:all 0.2s">
-      <div style="font-size:22px">&#127993;</div>
-      <div style="color:#4ade80;font-size:12px;font-weight:bold">Archer</div>
-      <div style="color:#888;font-size:9px">Rapide | Crit</div>
-    </div>
-    <div class="class-btn" data-class="berserker" style="cursor:pointer;padding:10px 14px;border-radius:8px;border:2px solid #444;background:rgba(239,68,68,0.08);text-align:center;min-width:80px;transition:all 0.2s">
-      <div style="font-size:22px">&#9876;</div>
-      <div style="color:#ef4444;font-size:12px;font-weight:bold">Berserker</div>
-      <div style="color:#888;font-size:9px">ATK+ | Melee</div>
-    </div>
-    <div class="class-btn" data-class="warrior" style="cursor:pointer;padding:10px 14px;border-radius:8px;border:2px solid #444;background:rgba(245,158,11,0.08);text-align:center;min-width:80px;transition:all 0.2s">
-      <div style="font-size:22px">&#128737;</div>
-      <div style="color:#f59e0b;font-size:12px;font-weight:bold">Warrior</div>
-      <div style="color:#888;font-size:9px">Equi. | Slam</div>
-    </div>
-    <div class="class-btn" data-class="tank" style="cursor:pointer;padding:10px 14px;border-radius:8px;border:2px solid #444;background:rgba(96,165,250,0.08);text-align:center;min-width:80px;transition:all 0.2s">
-      <div style="font-size:22px">&#128737;</div>
-      <div style="color:#60a5fa;font-size:12px;font-weight:bold">Tank</div>
-      <div style="color:#888;font-size:9px">HP+ | Protect</div>
-    </div>
-    <div class="class-btn" data-class="healer" style="cursor:pointer;padding:10px 14px;border-radius:8px;border:2px solid #444;background:rgba(167,139,250,0.08);text-align:center;min-width:80px;transition:all 0.2s">
-      <div style="font-size:22px">&#10010;</div>
-      <div style="color:#a78bfa;font-size:12px;font-weight:bold">Healer</div>
-      <div style="color:#888;font-size:9px">Soin | Glace</div>
-    </div>
-    <div class="class-btn" data-class="mage" style="cursor:pointer;padding:10px 14px;border-radius:8px;border:2px solid #444;background:rgba(192,132,252,0.08);text-align:center;min-width:80px;transition:all 0.2s">
-      <div style="font-size:22px">&#9733;</div>
-      <div style="color:#c084fc;font-size:12px;font-weight:bold">Mage</div>
-      <div style="color:#888;font-size:9px">Magie | Range</div>
+<div id="lobby-screen">
+  <!-- Step 1: Connect -->
+  <div id="step-connect" class="lobby-step active">
+    <h1>RAGNAROS</h1>
+    <p class="subtitle">Shadow Colosseum — Raid Multi PVE</p>
+    <input id="username-input" type="text" placeholder="Ton pseudo..." maxlength="20" autofocus>
+    <button id="connect-btn" style="margin-top:12px">Connexion</button>
+  </div>
+
+  <!-- Step 2: Create or Join Room -->
+  <div id="step-room-choice" class="lobby-step">
+    <h1>RAGNAROS</h1>
+    <p class="subtitle" id="welcome-text">Bienvenue, Player</p>
+    <button id="create-room-btn">Creer une salle</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+      <input id="room-code-input" type="text" placeholder="Code salle..." maxlength="4" style="width:140px;text-transform:uppercase;letter-spacing:4px;font-size:20px;">
+      <button id="join-room-btn" style="padding:10px 20px">Rejoindre</button>
     </div>
   </div>
-  <button id="join-btn" style="margin-top:16px">Entrer dans l'arene</button>
+
+  <!-- Step 3: In Room (Lobby) -->
+  <div id="step-room" class="lobby-step">
+    <div id="room-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:#888;font-size:11px;">SALLE</span>
+        <button id="leave-room-btn" style="padding:4px 12px;font-size:11px;background:#333;border:1px solid #555;">Quitter</button>
+      </div>
+      <div id="room-code-display">----</div>
+
+      <!-- Class Select -->
+      <div style="color:#999;font-size:11px;margin-bottom:6px;text-align:center;">CHOISIS TA CLASSE</div>
+      <div id="lobby-class-select" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">
+        <div class="class-btn" data-class="archer" style="cursor:pointer;padding:8px 10px;border-radius:6px;border:2px solid #444;background:rgba(74,222,128,0.08);text-align:center;min-width:65px;transition:all 0.2s">
+          <div style="font-size:18px">&#127993;</div>
+          <div style="color:#4ade80;font-size:10px;font-weight:bold">Archer</div>
+        </div>
+        <div class="class-btn" data-class="berserker" style="cursor:pointer;padding:8px 10px;border-radius:6px;border:2px solid #444;background:rgba(239,68,68,0.08);text-align:center;min-width:65px;transition:all 0.2s">
+          <div style="font-size:18px">&#9876;</div>
+          <div style="color:#ef4444;font-size:10px;font-weight:bold">Berserker</div>
+        </div>
+        <div class="class-btn" data-class="warrior" style="cursor:pointer;padding:8px 10px;border-radius:6px;border:2px solid #444;background:rgba(245,158,11,0.08);text-align:center;min-width:65px;transition:all 0.2s">
+          <div style="font-size:18px">&#128737;</div>
+          <div style="color:#f59e0b;font-size:10px;font-weight:bold">Warrior</div>
+        </div>
+        <div class="class-btn" data-class="tank" style="cursor:pointer;padding:8px 10px;border-radius:6px;border:2px solid #444;background:rgba(96,165,250,0.08);text-align:center;min-width:65px;transition:all 0.2s">
+          <div style="font-size:18px">&#128737;</div>
+          <div style="color:#60a5fa;font-size:10px;font-weight:bold">Tank</div>
+        </div>
+        <div class="class-btn" data-class="healer" style="cursor:pointer;padding:8px 10px;border-radius:6px;border:2px solid #444;background:rgba(167,139,250,0.08);text-align:center;min-width:65px;transition:all 0.2s">
+          <div style="font-size:18px">&#10010;</div>
+          <div style="color:#a78bfa;font-size:10px;font-weight:bold">Healer</div>
+        </div>
+        <div class="class-btn" data-class="mage" style="cursor:pointer;padding:8px 10px;border-radius:6px;border:2px solid #444;background:rgba(192,132,252,0.08);text-align:center;min-width:65px;transition:all 0.2s">
+          <div style="font-size:18px">&#9733;</div>
+          <div style="color:#c084fc;font-size:10px;font-weight:bold">Mage</div>
+        </div>
+      </div>
+
+      <!-- Players List -->
+      <div style="color:#999;font-size:11px;margin-bottom:4px;">JOUEURS</div>
+      <ul class="player-list" id="player-list"></ul>
+
+      <!-- Bot Selector -->
+      <div style="color:#999;font-size:11px;margin-top:8px;text-align:center;">BOTS</div>
+      <div class="bot-selector" id="bot-selector">
+        <div class="bot-btn active" data-count="0">Aucun</div>
+        <div class="bot-btn" data-count="2">+2</div>
+        <div class="bot-btn" data-count="3">+3</div>
+        <div class="bot-btn" data-count="4">+4</div>
+      </div>
+
+      <!-- Ready Button -->
+      <div style="text-align:center;margin-top:12px;">
+        <button id="ready-btn" style="padding:12px 50px;font-size:16px;opacity:0.4;cursor:not-allowed;" disabled>PRET</button>
+        <div id="ready-hint" style="color:#666;font-size:10px;margin-top:4px;">Selectionne une classe d'abord</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="countdown-overlay">
+  <div id="countdown-number">5</div>
+  <div id="countdown-label">Le combat commence...</div>
 </div>
 <canvas id="game"></canvas>
 <div id="boss-bar">
@@ -1548,38 +1620,31 @@ function updateSpellSlot(id, cdMs) {
 // =======================================
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('mousedown', e => {
-  if (e.button === 0) { mouseDown = true; sendMsg({ type: 'basic', aimX: mouseWorldX, aimY: mouseWorldY }); }
+  if (e.button === 0) { mouseDown = true; sendInput({ type: 'basic', aimX: mouseWorldX, aimY: mouseWorldY }); }
   if (e.button === 2) {
     rightMouseDown = true;
-    sendMsg({ type: 'secondary', aimX: mouseWorldX, aimY: mouseWorldY });
+    sendInput({ type: 'secondary', aimX: mouseWorldX, aimY: mouseWorldY });
   }
 });
 canvas.addEventListener('mouseup', e => {
   if (e.button === 0) mouseDown = false;
   if (e.button === 2) {
     rightMouseDown = false;
-    sendMsg({ type: 'secondary_stop' });
+    sendInput({ type: 'secondary_stop' });
   }
 });
-setInterval(() => { if (mouseDown) sendMsg({ type: 'basic', aimX: mouseWorldX, aimY: mouseWorldY }); }, 200);
+setInterval(() => { if (mouseDown) sendInput({ type: 'basic', aimX: mouseWorldX, aimY: mouseWorldY }); }, 200);
 
 let chargingSkillB = false;
 window.addEventListener('keydown', e => {
   const k = e.key.toLowerCase(); if (keys[k]) return; keys[k] = true; updateMovement();
-  if (k === 'r') sendMsg({ type: 'ultimate', aimX: mouseWorldX, aimY: mouseWorldY });
-  if (k === 'a') sendMsg({ type: 'skillA', aimX: mouseWorldX, aimY: mouseWorldY });
+  if (k === 'r') sendInput({ type: 'ultimate', aimX: mouseWorldX, aimY: mouseWorldY });
+  if (k === 'a') sendInput({ type: 'skillA', aimX: mouseWorldX, aimY: mouseWorldY });
   if (k === 'e') {
-    // Skill B — may be charged (berserker) or instant
     chargingSkillB = true;
-    sendMsg({ type: 'skillB', aimX: mouseWorldX, aimY: mouseWorldY });
+    sendInput({ type: 'skillB', aimX: mouseWorldX, aimY: mouseWorldY });
   }
-  if (k === ' ') { e.preventDefault(); sendMsg({ type: 'dash' }); }
-  if (k === 't' && (status === 'victory' || status === 'defeat')) {
-    document.getElementById('death-overlay').classList.remove('active');
-    document.getElementById('status-msg').style.display = 'none';
-    bossDeathTime = 0;
-    sendMsg({ type: 'restart' });
-  }
+  if (k === ' ') { e.preventDefault(); sendInput({ type: 'dash' }); }
 });
 window.addEventListener('keyup', e => {
   const k = e.key.toLowerCase();
@@ -1587,7 +1652,7 @@ window.addEventListener('keyup', e => {
   updateMovement();
   if (k === 'e' && chargingSkillB) {
     chargingSkillB = false;
-    sendMsg({ type: 'skillB_release', aimX: mouseWorldX, aimY: mouseWorldY });
+    sendInput({ type: 'skillB_release', aimX: mouseWorldX, aimY: mouseWorldY });
   }
 });
 
@@ -1595,9 +1660,10 @@ function updateMovement() {
   let ix = 0, iy = 0;
   if (keys['z']||keys['w']||keys['arrowup']) iy -= 1; if (keys['s']||keys['arrowdown']) iy += 1;
   if (keys['q']||keys['arrowleft']) ix -= 1; if (keys['d']||keys['arrowright']) ix += 1;
-  if (ix !== inputX || iy !== inputY) { inputX = ix; inputY = iy; sendMsg({ type: 'move', x: ix, y: iy, aimX: mouseWorldX, aimY: mouseWorldY }); }
+  if (ix !== inputX || iy !== inputY) { inputX = ix; inputY = iy; sendInput({ type: 'move', x: ix, y: iy, aimX: mouseWorldX, aimY: mouseWorldY }); }
 }
-setInterval(() => { sendMsg({ type: 'move', x: inputX, y: inputY, aimX: mouseWorldX, aimY: mouseWorldY }); }, 100);
+setInterval(() => { sendInput({ type: 'move', x: inputX, y: inputY, aimX: mouseWorldX, aimY: mouseWorldY }); }, 100);
+// sendMsg for lobby messages (raw), sendInput for game inputs (wrapped)
 function sendMsg(msg) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg)); }
 
 // =======================================
@@ -1694,30 +1760,182 @@ function drawMinimap() {
 }
 
 // =======================================
-//  WEBSOCKET
+//  LOBBY & WEBSOCKET
 // =======================================
-let selectedClass = 'archer';
-function connect(username) {
+const CLASS_COLORS = { archer:'#4ade80', berserker:'#ef4444', warrior:'#f59e0b', tank:'#60a5fa', healer:'#a78bfa', mage:'#c084fc' };
+const SPELL_ICONS = {
+  archer: { basic:'\u{1F3F9}', secondary:'\u{1F4A8}', skillA:'\u{1F327}', skillB:'\u{1F4A3}', ultimate:'\u26A1' },
+  berserker: { basic:'\u2694', secondary:'\u{1F6E1}', skillA:'\u{1F525}', skillB:'\u26A1', ultimate:'\u{1F300}' },
+  warrior: { basic:'\u2694', secondary:'\u{1F4A5}', skillA:'\u{1F300}', skillB:'\u{1F3C3}', ultimate:'\u2620' },
+  tank: { basic:'\u{1F6E1}', secondary:'\u{1F6E1}', skillA:'\u{1F4E2}', skillB:'\u{1F48E}', ultimate:'\u{1F3F0}' },
+  healer: { basic:'\u2728', secondary:'\u271A', skillA:'\u{1F49A}', skillB:'\u2744', ultimate:'\u2744' },
+  mage: { basic:'\u2733', secondary:'\u{1F525}', skillA:'\u{1F4A5}', skillB:'\u{1F4AB}', ultimate:'\u26A1' },
+};
+
+let selectedClass = null;
+let myClientId = null;
+let currentRoom = null;
+let isReady = false;
+let username = 'Player';
+
+function showStep(stepId) {
+  document.querySelectorAll('.lobby-step').forEach(s => s.classList.remove('active'));
+  document.getElementById(stepId).classList.add('active');
+}
+
+function updateSpellBarIcons(cls) {
+  const icons = SPELL_ICONS[cls] || SPELL_ICONS.archer;
+  document.getElementById('basic-icon').textContent = icons.basic;
+  document.getElementById('secondary-icon').textContent = icons.secondary;
+  document.getElementById('skillA-icon').textContent = icons.skillA;
+  document.getElementById('skillB-icon').textContent = icons.skillB;
+  document.getElementById('ultimate-icon').textContent = icons.ultimate;
+  const manaLabel = document.querySelector('#player-hud .bar-container:nth-child(2) .bar-label');
+  if (cls === 'warrior') {
+    manaLabel.textContent = 'RG'; manaLabel.style.color = '#f80';
+    document.getElementById('player-mana-fill').style.background = 'linear-gradient(180deg,#f80,#c40)';
+  } else {
+    manaLabel.textContent = 'MP'; manaLabel.style.color = '#4af';
+    document.getElementById('player-mana-fill').style.background = 'linear-gradient(180deg,#6af,#26a)';
+  }
+}
+
+function updatePlayerList(room) {
+  if (!room) return;
+  const list = document.getElementById('player-list');
+  let html = '';
+  for (const p of room.players) {
+    const isMe = p.id === myClientId;
+    const cls = p.class ? `<span class="player-class" style="color:${CLASS_COLORS[p.class] || '#888'}">${p.class}</span>` : '<span class="player-class">---</span>';
+    const readyBadge = p.ready ? '<span class="ready-badge">PRET</span>' : '';
+    const botBadge = p.isBot ? '<span class="bot-badge">[BOT]</span>' : '';
+    html += `<li class="${p.ready ? 'ready' : ''} ${p.isBot ? 'bot' : ''}">
+      <span style="color:${isMe ? '#4af' : '#ccc'};font-weight:${isMe ? 'bold' : 'normal'}">${p.username}${isMe ? ' (toi)' : ''}</span>
+      ${botBadge}${readyBadge}${cls}
+    </li>`;
+  }
+  list.innerHTML = html;
+}
+
+function updateReadyBtn() {
+  const btn = document.getElementById('ready-btn');
+  const hint = document.getElementById('ready-hint');
+  if (!selectedClass) {
+    btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
+    btn.textContent = 'PRET';
+    hint.textContent = 'Selectionne une classe d\'abord';
+  } else {
+    btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
+    btn.textContent = isReady ? 'ANNULER' : 'PRET !';
+    btn.style.background = isReady ? '#333' : 'linear-gradient(135deg, #c44, #ff6a3d)';
+    hint.textContent = isReady ? 'En attente des autres joueurs...' : '';
+  }
+}
+
+// ── WebSocket ──
+function connect() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${proto}//${location.host}/ws`);
-  ws.onopen = () => { connected = true; ws.send(JSON.stringify({ type: 'join', username, playerClass: selectedClass })); };
+  ws = new WebSocket(`${proto}//${location.host}/ws?username=${encodeURIComponent(username)}`);
+
+  ws.onopen = () => { connected = true; };
+
   ws.onmessage = e => {
     const msg = JSON.parse(e.data);
     switch (msg.type) {
-      case 'joined':
-        playerId = msg.playerId;
-        mapData = { width: msg.width, height: msg.height, platform: msg.platform, walls: msg.walls, bossSpawn: msg.bossSpawn, playerSpawn: msg.playerSpawn };
-        camera.x = msg.playerSpawn.x - canvas.width/2; camera.y = msg.playerSpawn.y - canvas.height/2;
-        mapCanvas = null; break;
+      // ── Lobby messages ──
+      case 'connected':
+        myClientId = msg.id;
+        playerId = msg.id;
+        username = msg.username;
+        document.getElementById('welcome-text').textContent = `Bienvenue, ${username}`;
+        showStep('step-room-choice');
+        break;
+
+      case 'room_created':
+      case 'room_joined':
+        currentRoom = msg.room;
+        document.getElementById('room-code-display').textContent = msg.code;
+        updatePlayerList(msg.room);
+        updateReadyBtn();
+        showStep('step-room');
+        break;
+
+      case 'player_joined':
+      case 'player_left':
+      case 'class_selected':
+      case 'ready_changed':
+      case 'bots_updated':
+        if (msg.room) { currentRoom = msg.room; updatePlayerList(msg.room); }
+        break;
+
+      case 'new_host':
+        break;
+
+      case 'countdown_start':
+        document.getElementById('countdown-overlay').classList.add('active');
+        document.getElementById('countdown-number').textContent = msg.seconds;
+        break;
+
+      case 'countdown_tick':
+        document.getElementById('countdown-number').textContent = msg.seconds;
+        playBeep(400 + (5 - msg.seconds) * 100, 100, 0.06);
+        break;
+
+      case 'countdown_cancelled':
+        document.getElementById('countdown-overlay').classList.remove('active');
+        isReady = false;
+        updateReadyBtn();
+        break;
+
+      case 'game_start':
+        document.getElementById('countdown-overlay').classList.remove('active');
+        document.getElementById('lobby-screen').style.display = 'none';
+        status = 'fighting';
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        updateSpellBarIcons(selectedClass);
+        requestAnimationFrame(render);
+        break;
+
+      case 'room_reset':
+        currentRoom = msg.room;
+        document.getElementById('lobby-screen').style.display = '';
+        showStep('step-room');
+        updatePlayerList(msg.room);
+        isReady = false;
+        selectedClass = null;
+        updateReadyBtn();
+        // Reset game state
+        gameState = null; myPlayer = null; mapData = null; mapCanvas = null;
+        status = 'lobby'; bossDeathTime = 0;
+        document.getElementById('death-overlay').classList.remove('active');
+        document.getElementById('status-msg').style.display = 'none';
+        // Reset class selection UI
+        document.querySelectorAll('#lobby-class-select .class-btn').forEach(b => {
+          b.style.borderColor = '#444';
+        });
+        break;
+
+      // ── Game messages ──
       case 'state':
-        // Phase transition detection
         if (gameState && gameState.boss && msg.boss && msg.boss.phase > gameState.boss.phase) {
           showPhaseTransition(msg.boss.phase);
         }
         gameState = msg; myPlayer = msg.players.find(p => p.id === playerId) || null;
+        // Set map data from first state if not set
+        if (!mapData && msg.mapData) {
+          mapData = msg.mapData;
+          camera.x = mapData.playerSpawn.x - canvas.width/2;
+          camera.y = mapData.playerSpawn.y - canvas.height/2;
+          mapCanvas = null;
+        }
         if (msg.boss && msg.boss.damageEvents) processDamageEvents(msg.boss.damageEvents);
         break;
-      case 'fight_start': status = 'fighting'; document.getElementById('status-msg').style.display = 'none'; break;
+
+      case 'fight_start':
+        status = 'fighting';
+        document.getElementById('status-msg').style.display = 'none';
+        break;
+
       case 'fight_end':
         status = msg.result;
         if (msg.result === 'victory') {
@@ -1727,72 +1945,96 @@ function connect(username) {
           el.style.display = 'block'; el.textContent = 'DEFAITE...'; el.style.color = '#f44';
         }
         break;
+
+      case 'error':
+        console.warn('[Server]', msg.message);
+        break;
     }
   };
-  ws.onclose = () => { connected = false; setTimeout(() => connect(username), 3000); };
+
+  ws.onclose = () => {
+    connected = false;
+    // Back to connect screen
+    showStep('step-connect');
+    currentRoom = null;
+    setTimeout(() => connect(), 3000);
+  };
 }
 
+// ── Send game inputs wrapped ──
+function sendInput(input) {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'input', input }));
+}
+
+// ── Death restart ──
 document.getElementById('death-restart').addEventListener('click', () => {
+  // Room reset is handled server-side after 10s, just hide overlay
   document.getElementById('death-overlay').classList.remove('active');
   document.getElementById('status-msg').style.display = 'none';
   bossDeathTime = 0;
-  sendMsg({ type: 'restart' });
 });
-// Class selection
-const CLASS_COLORS = { archer:'#4ade80', berserker:'#ef4444', warrior:'#f59e0b', tank:'#60a5fa', healer:'#a78bfa', mage:'#c084fc' };
-const CLASS_ICONS = { archer:'\u{1F3F9}', berserker:'\u2694', warrior:'\u{1F6E1}', tank:'\u{1F6E1}', healer:'\u271A', mage:'\u2733' };
-// Spell bar icons per class
-const SPELL_ICONS = {
-  archer: { basic:'\u{1F3F9}', secondary:'\u{1F4A8}', skillA:'\u{1F327}', skillB:'\u{1F4A3}', ultimate:'\u26A1' },
-  berserker: { basic:'\u2694', secondary:'\u{1F6E1}', skillA:'\u{1F525}', skillB:'\u26A1', ultimate:'\u{1F300}' },
-  warrior: { basic:'\u2694', secondary:'\u{1F4A5}', skillA:'\u{1F300}', skillB:'\u{1F3C3}', ultimate:'\u2620' },
-  tank: { basic:'\u{1F6E1}', secondary:'\u{1F6E1}', skillA:'\u{1F4E2}', skillB:'\u{1F48E}', ultimate:'\u{1F3F0}' },
-  healer: { basic:'\u2728', secondary:'\u271A', skillA:'\u{1F49A}', skillB:'\u2744', ultimate:'\u2744' },
-  mage: { basic:'\u2733', secondary:'\u{1F525}', skillA:'\u{1F4A5}', skillB:'\u{1F4AB}', ultimate:'\u26A1' },
-};
-const SPELL_NAMES = {
-  archer: { basic:'Tir rapide', secondary:'Tir charge', skillA:'Pluie de fleches', skillB:'Piege', ultimate:'Barrage' },
-  berserker: { basic:'Frappe', secondary:'Garde', skillA:'Rage', skillB:'Frappe chargee', ultimate:'Tourbillon' },
-  warrior: { basic:'Combo', secondary:'Frappe lourde', skillA:'Tempete', skillB:'Dash', ultimate:'Execution' },
-  tank: { basic:'Bouclier', secondary:'Bloquer', skillA:'Provocation', skillB:'Bouclier Sacre', ultimate:'Forteresse' },
-  healer: { basic:'Lumiere', secondary:'Cercle Soin', skillA:'Soin Zone', skillB:'Purification', ultimate:'Cercle Glace' },
-  mage: { basic:'Trait arcanique', secondary:'Orbe de feu', skillA:'Explosion', skillB:'Teleport', ultimate:'Rayon' },
-};
-function updateSpellBarIcons(cls) {
-  const icons = SPELL_ICONS[cls] || SPELL_ICONS.archer;
-  document.getElementById('basic-icon').textContent = icons.basic;
-  document.getElementById('secondary-icon').textContent = icons.secondary;
-  document.getElementById('skillA-icon').textContent = icons.skillA;
-  document.getElementById('skillB-icon').textContent = icons.skillB;
-  document.getElementById('ultimate-icon').textContent = icons.ultimate;
-  // Update mana bar label for rage classes
-  const manaLabel = document.querySelector('#player-hud .bar-container:nth-child(2) .bar-label');
-  if (cls === 'warrior') {
-    manaLabel.textContent = 'RG';
-    manaLabel.style.color = '#f80';
-    document.getElementById('player-mana-fill').style.background = 'linear-gradient(180deg,#f80,#c40)';
-  }
+
+// ── Lobby UI Events ──
+// Step 1: Connect
+document.getElementById('connect-btn').addEventListener('click', doConnect);
+document.getElementById('username-input').addEventListener('keydown', e => { if (e.key === 'Enter') doConnect(); });
+function doConnect() {
+  username = document.getElementById('username-input').value.trim() || 'Player';
+  connect();
 }
-document.querySelectorAll('#class-select .class-btn').forEach(btn => {
+
+// Step 2: Create/Join Room
+document.getElementById('create-room-btn').addEventListener('click', () => {
+  sendMsg({ type: 'create_room' });
+});
+document.getElementById('join-room-btn').addEventListener('click', () => {
+  const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+  if (code.length !== 4) return;
+  sendMsg({ type: 'join_room', code });
+});
+document.getElementById('room-code-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('join-room-btn').click();
+});
+
+// Step 3: Room Lobby
+document.getElementById('leave-room-btn').addEventListener('click', () => {
+  sendMsg({ type: 'leave_room' });
+  currentRoom = null;
+  isReady = false;
+  selectedClass = null;
+  showStep('step-room-choice');
+});
+
+// Class selection in lobby
+document.querySelectorAll('#lobby-class-select .class-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('#class-select .class-btn').forEach(b => {
-      b.classList.remove('selected');
+    if (isReady) return; // Can't change class while ready
+    document.querySelectorAll('#lobby-class-select .class-btn').forEach(b => {
       b.style.borderColor = '#444';
     });
-    btn.classList.add('selected');
     selectedClass = btn.dataset.class;
     btn.style.borderColor = CLASS_COLORS[selectedClass] || '#4af';
+    sendMsg({ type: 'select_class', class: selectedClass });
+    updateReadyBtn();
   });
 });
-document.getElementById('join-btn').addEventListener('click', join);
-document.getElementById('username-input').addEventListener('keydown', e => { if (e.key === 'Enter') join(); });
-function join() {
-  const u = document.getElementById('username-input').value.trim() || 'Player';
-  document.getElementById('join-screen').style.display = 'none';
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  updateSpellBarIcons(selectedClass);
-  connect(u); requestAnimationFrame(render);
-}
+
+// Bot selector
+document.querySelectorAll('#bot-selector .bot-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#bot-selector .bot-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    sendMsg({ type: 'add_bots', count: parseInt(btn.dataset.count) });
+  });
+});
+
+// Ready button
+document.getElementById('ready-btn').addEventListener('click', () => {
+  if (!selectedClass) return;
+  sendMsg({ type: 'player_ready' });
+  isReady = !isReady;
+  updateReadyBtn();
+});
 </script>
 </body>
 </html>

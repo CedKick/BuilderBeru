@@ -4697,21 +4697,25 @@ export default function ShadowColosseum() {
               </div>
             </Link>
 
-            {/* Coming soon bosses */}
-            <div className="p-4 rounded-xl border border-gray-700/30 bg-gray-900/30 opacity-50 cursor-not-allowed">
+            {/* Ragnaros — Boss 2 */}
+            <Link
+              to="/shadow-colosseum/ragnaros"
+              className="block p-4 rounded-xl border border-orange-500/30 bg-gradient-to-r from-orange-900/20 to-red-900/20 hover:from-orange-900/40 hover:to-red-900/40 transition-all group cursor-pointer"
+            >
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-orange-900/40 to-red-900/40 border border-gray-700/30 flex items-center justify-center text-3xl flex-shrink-0">
+                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-orange-900/40 to-red-900/40 border border-orange-500/30 flex items-center justify-center text-3xl flex-shrink-0">
                   {'\uD83D\uDD25'}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-500 text-base">Ragnaros</span>
-                    <span className="text-small-responsive px-2 py-0.5 rounded-full bg-gray-700/30 text-gray-500 border border-gray-600/30">BIENTOT</span>
+                    <span className="font-bold text-orange-400 text-base group-hover:text-orange-300">Ragnaros</span>
+                    <span className="text-small-responsive px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 font-bold">BETA</span>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">By Fire Be Purged!</p>
+                  <p className="text-xs text-gray-400 mt-1">By Fire Be Purged! — Jusqu'a 10 joueurs</p>
                 </div>
+                <div className="text-gray-500 group-hover:text-orange-400 text-xl transition-colors">{'\u2192'}</div>
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* ═══ CHARACTER SHEET ═══ */}
@@ -5352,7 +5356,7 @@ export default function ShadowColosseum() {
               <span className="font-bold text-emerald-400 group-hover:text-emerald-300">MODE PVE MULTI</span>
               <span className="text-xs text-gray-400">— Boss Coop en ligne</span>
             </div>
-            <p className="text-normal-responsive text-gray-500 mt-0.5">3-5 joueurs vs Boss en temps reel ! Beta test</p>
+            <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 10 joueurs vs Boss en temps reel ! Beta test</p>
           </button>
 
           {/* PVP Button */}

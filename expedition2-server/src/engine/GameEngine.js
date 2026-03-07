@@ -5,6 +5,7 @@ import { GAME } from '../config.js';
 import { Player, CLASS_SKILLS } from '../entities/Player.js';
 import { Boss } from '../entities/Boss.js';
 import { getMapData } from '../data/mapData.js';
+import { buildPlayerStats } from '../data/playerStatsAdapter.js';
 
 export class GameEngine {
   constructor(broadcast) {
@@ -29,11 +30,37 @@ export class GameEngine {
     this.rageMeter = new Map(); // playerId -> { rage: 0-100, lastHitTime }
     this.RAGE_GAIN_PER_SEC = 8;
     this.RAGE_MAX_MULT = 1.5;
+
+    // When true, skip auto bot spawning (room system manages bots)
+    this.skipAutoBot = false;
+
+    // Combat stats tracking (for loot/rewards)
+    this.healTracker = new Map();  // playerId -> totalHealing
+    this.deathTracker = new Map(); // playerId -> deathCount
+    this.difficulty = 'NORMAL';
   }
 
-  addPlayer(id, username, playerClass) {
+  addPlayer(id, username, playerClass, profileData = null) {
     const player = new Player(id, username, playerClass);
+
+    // Apply profile stats if available (leveled gear, etc.)
+    if (profileData) {
+      const stats = buildPlayerStats(playerClass, profileData);
+      player.hp = stats.hp;
+      player.maxHp = stats.maxHp;
+      player.mana = stats.mana;
+      player.maxMana = stats.maxMana;
+      player.atk = stats.atk;
+      player.def = stats.def || 0;
+      player.speed = stats.speed;
+      player.critRate = stats.critRate;
+      player.critDmg = stats.critDmg;
+      if (stats.useRage) player.useRage = true;
+    }
+
     this.players.set(id, player);
+    this.healTracker.set(id, 0);
+    this.deathTracker.set(id, 0);
     return { type: 'map_data', data: getMapData() };
   }
 
@@ -266,8 +293,9 @@ export class GameEngine {
           const ddx = p.x - player.x, ddy = p.y - player.y;
           if (ddx * ddx + ddy * ddy < result.radius * result.radius) {
             const healed = p.heal(result.healAmount);
-            if (healed > 0 && this.boss) {
-              this.boss.addDamageEvent(p.x, p.y - 20, healed, 'heal');
+            if (healed > 0) {
+              this.trackHeal(player.id, healed);
+              if (this.boss) this.boss.addDamageEvent(p.x, p.y - 20, healed, 'heal');
             }
           }
         }
@@ -338,7 +366,8 @@ export class GameEngine {
           if (!p.alive) continue;
           const ddx = p.x - player.x, ddy = p.y - player.y;
           if (ddx * ddx + ddy * ddy < result.radius * result.radius) {
-            p.heal(1000);
+            const healed = p.heal(1000);
+            this.trackHeal(player.id, healed);
             if (this.boss) this.boss.addDamageEvent(p.x, p.y - 20, 1000, 'heal');
           }
         }
@@ -898,8 +927,10 @@ export class GameEngine {
 
   start() {
     if (this.status === 'fighting') return;
-    for (const [id] of this.players) {
-      if (id.startsWith('bot_')) this.players.delete(id);
+    if (!this.skipAutoBot) {
+      for (const [id] of this.players) {
+        if (id.startsWith('bot_')) this.players.delete(id);
+      }
     }
 
     this.boss = new Boss();
@@ -913,7 +944,7 @@ export class GameEngine {
     this.dpsTracker = new Map();
     this.fightStart = Date.now();
 
-    this.spawnBots();
+    if (!this.skipAutoBot) this.spawnBots();
 
     for (const p of this.players.values()) {
       if (!p.isBot) {
@@ -940,12 +971,23 @@ export class GameEngine {
       clearInterval(this.tickInterval);
       this.tickInterval = null;
     }
+    this.fightEnd = Date.now();
     this.broadcast({
       type: 'fight_end',
       result: this.status,
       boss: this.boss?.toState() || null,
     });
     console.log(`[GameEngine] Fight ended: ${this.status}`);
+  }
+
+  getBossHpPercent() {
+    if (!this.boss) return 100;
+    return Math.max(0, Math.round((this.boss.hp / this.boss.maxHp) * 100));
+  }
+
+  getFightElapsed() {
+    const end = this.fightEnd || Date.now();
+    return Math.max(1, Math.floor((end - this.fightStart) / 1000));
   }
 
   tick() {
@@ -1088,7 +1130,10 @@ export class GameEngine {
           const ddx = p.x - e.x, ddy = p.y - e.y;
           if (ddx * ddx + ddy * ddy < (e.radius || 80) * (e.radius || 80)) {
             const healed = p.heal(e.healPerTick || 2000);
-            if (healed > 0 && this.boss) this.boss.addDamageEvent(p.x, p.y - 20, healed, 'heal');
+            if (healed > 0) {
+              this.trackHeal(e.owner, healed);
+              if (this.boss) this.boss.addDamageEvent(p.x, p.y - 20, healed, 'heal');
+            }
           }
         }
       }
@@ -1125,7 +1170,10 @@ export class GameEngine {
             const ddx = p.x - e.x, ddy = p.y - e.y;
             if (ddx * ddx + ddy * ddy < e.radius * e.radius) {
               const healed = p.heal(e.healPerTick);
-              if (healed > 0 && this.boss) this.boss.addDamageEvent(p.x, p.y - 20, healed, 'heal');
+              if (healed > 0) {
+                this.trackHeal(e.owner, healed);
+                if (this.boss) this.boss.addDamageEvent(p.x, p.y - 20, healed, 'heal');
+              }
             }
           }
         }
@@ -1162,7 +1210,7 @@ export class GameEngine {
 
     // Broadcast state (10Hz)
     if (this.tickCount % 2 === 0) {
-      this.broadcast({
+      const stateMsg = {
         type: 'state',
         tick: this.tickCount,
         players: playersArray.map(p => p.toState()),
@@ -1192,7 +1240,12 @@ export class GameEngine {
         aggroRanking: this.getAggroRanking(),
         fightTime: Math.floor((Date.now() - this.fightStart) / 1000),
         rageMeters: Object.fromEntries([...this.rageMeter].map(([id, r]) => [id, Math.floor(r.rage)])),
-      });
+      };
+      // Include map data on first broadcast so clients can build the map
+      if (this.tickCount <= 4) {
+        stateMsg.mapData = getMapData();
+      }
+      this.broadcast(stateMsg);
     }
   }
 
@@ -1256,6 +1309,34 @@ export class GameEngine {
   onPlayerHit(playerId) {
     const r = this.rageMeter.get(playerId);
     if (r) { r.rage = 0; r.lastHitTime = Date.now(); }
+
+    // Track death
+    const player = this.players.get(playerId);
+    if (player && !player.alive) {
+      this.deathTracker.set(playerId, (this.deathTracker.get(playerId) || 0) + 1);
+    }
+  }
+
+  trackHeal(healerId, amount) {
+    if (amount > 0) {
+      this.healTracker.set(healerId, (this.healTracker.get(healerId) || 0) + amount);
+    }
+  }
+
+  getPlayerCombatStats() {
+    const elapsed = Math.max(1, (Date.now() - this.fightStart) / 1000);
+    const stats = {};
+    for (const [id, player] of this.players) {
+      if (player.isBot) continue;
+      stats[id] = {
+        damageDealt: this.dpsTracker.get(id) || 0,
+        healingDone: this.healTracker.get(id) || 0,
+        deaths: this.deathTracker.get(id) || 0,
+        elapsed: Math.floor(elapsed),
+        playerClass: player.playerClass,
+      };
+    }
+    return stats;
   }
 
   getStatus() {

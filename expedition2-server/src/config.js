@@ -50,6 +50,14 @@ export const GAME = {
   BOSS_RADIUS: 100,
 };
 
+// ── Room / Lobby ──
+export const ROOM = {
+  MAX_PLAYERS: 6,
+  MIN_PLAYERS: 1,      // 1 player (+ bots) can start
+  CODE_LENGTH: 4,
+  READY_COUNTDOWN: 5,  // seconds
+};
+
 // ── Walls / Pillars (collision rectangles) ──
 export const WALLS = [
   // Pillars around the arena (for cover during wrath_of_ragnaros)
