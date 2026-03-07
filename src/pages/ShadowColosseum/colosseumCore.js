@@ -97,7 +97,6 @@ export const MAX_LEVEL = 140;
 
 // ─── Account Level System ───────────────────────────────────
 export const MAX_ACCOUNT_LEVEL = 12000;
-export const CHEATER_RESET_LEVEL = 5000;
 
 export const ACCOUNT_XP_FOR_LEVEL = (lvl) => {
   const base = 80 + lvl * 25;
@@ -157,15 +156,11 @@ export function sanitizeAccountXp(data) {
   const maxLegitXp = accountXpForLevel(MAX_ACCOUNT_LEVEL);
   // Allow up to 1 level of overflow XP (earned in the battle that hit cap)
   const overflowBuffer = ACCOUNT_XP_FOR_LEVEL(MAX_ACCOUNT_LEVEL + 1);
-  if (data.accountXp > maxLegitXp + overflowBuffer) {
-    const resetXp = accountXpForLevel(CHEATER_RESET_LEVEL);
-    console.warn(`[Anti-cheat] Account XP ${data.accountXp} exceeds max (Lv${MAX_ACCOUNT_LEVEL}). Resetting to Lv${CHEATER_RESET_LEVEL}.`);
+  if (data.accountXp > maxLegitXp) {
+    console.warn(`[Anti-cheat] Account XP ${data.accountXp} exceeds max (Lv${MAX_ACCOUNT_LEVEL}). Capping to max.`);
     return {
       ...data,
-      accountXp: resetXp,
-      accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, mana: 0 },
-      accountAllocations: 0,
-      _cheaterReset: true,
+      accountXp: maxLegitXp,
     };
   }
   return data;

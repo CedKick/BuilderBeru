@@ -89,6 +89,9 @@ export class WebSocketServer {
       case 'player_ready':
         this.roomManager.playerReady(ws, client);
         break;
+      case 'add_bots':
+        this.roomManager.addBots(ws, client, msg);
+        break;
 
       // ── Hunter Selection ──
       case 'select_hunters':

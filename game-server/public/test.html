@@ -373,6 +373,18 @@
         <div id="profileDisplay" style="margin-bottom:6px"></div>
         <div id="status" class="lobby-status">Deconnecte</div>
 
+        <!-- Bot selector (visible in room) -->
+        <div id="botSection" style="display:none;margin:8px 0;background:rgba(124,58,237,0.1);border:1px solid #7c3aed44;border-radius:8px;padding:8px 12px;text-align:center">
+          <div style="font-size:11px;color:#a78bfa;font-weight:bold;margin-bottom:6px">🤖 COEQUIPIERS BOTS</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+            <button onclick="setBots(0)" class="bot-btn" data-count="0" style="padding:4px 12px;border-radius:4px;border:1px solid #444;background:#1a1a2e;color:#ccc;cursor:pointer;font-size:12px;font-weight:bold">Aucun</button>
+            <button onclick="setBots(2)" class="bot-btn" data-count="2" style="padding:4px 12px;border-radius:4px;border:1px solid #444;background:#1a1a2e;color:#ccc;cursor:pointer;font-size:12px;font-weight:bold">+2</button>
+            <button onclick="setBots(3)" class="bot-btn" data-count="3" style="padding:4px 12px;border-radius:4px;border:1px solid #444;background:#1a1a2e;color:#ccc;cursor:pointer;font-size:12px;font-weight:bold">+3</button>
+            <button onclick="setBots(4)" class="bot-btn" data-count="4" style="padding:4px 12px;border-radius:4px;border:1px solid #444;background:#1a1a2e;color:#ccc;cursor:pointer;font-size:12px;font-weight:bold">+4</button>
+          </div>
+          <div style="font-size:8px;color:#64748b;margin-top:4px">Les bots jouent intelligemment et connaissent les mecaniques du boss</div>
+        </div>
+
         <!-- PRÊT / Status (always visible at top!) -->
         <div style="margin:8px 0;text-align:center" id="readyZone">
           <button onclick="toggleReady()" id="btnReady" style="display:none;width:100%;padding:12px;font-size:16px;font-weight:bold;letter-spacing:2px;border-radius:8px;background:#10b981;color:white;border:none;cursor:pointer;box-shadow:0 0 20px rgba(16,185,129,0.3)">⚔️ PRET !</button>
@@ -1628,6 +1640,7 @@
         document.getElementById('readyHint').innerHTML = '🚪 Cree ou rejoins une salle pour commencer';
         document.getElementById('readyHint').style.display = 'block';
         document.getElementById('btnReady').style.display = 'none';
+        document.getElementById('botSection').style.display = 'none';
         refreshRoomList(); // Auto-fetch room list on connect
         // Create profile on connect if doesn't exist, then sync to server
         const profile = getOrCreateProfile(username);
@@ -1647,6 +1660,7 @@
         document.getElementById('btnReady').style.display = 'none';
         document.getElementById('readyHint').style.display = 'block';
         document.getElementById('readyHint').innerHTML = '🚪 Connecte-toi puis cree ou rejoins une salle';
+        document.getElementById('botSection').style.display = 'none';
         document.getElementById('btnBrowse').disabled = true;
         document.getElementById('roomList').innerHTML = '';
         ws = null; myId = null; inRoom = false; gameState = null; roomInfo = null;
@@ -1676,6 +1690,20 @@
         hunterStars: 0,
       });
     }
+    let currentBotCount = 0;
+    function setBots(count) {
+      if (!inRoom) return;
+      currentBotCount = count;
+      send({ type: 'add_bots', count });
+      // Highlight active button
+      document.querySelectorAll('.bot-btn').forEach(btn => {
+        const c = parseInt(btn.dataset.count);
+        btn.style.background = c === count ? '#7c3aed' : '#1a1a2e';
+        btn.style.color = c === count ? '#fff' : '#ccc';
+        btn.style.borderColor = c === count ? '#a78bfa' : '#444';
+      });
+    }
+
     function toggleReady() {
       const cls = document.getElementById('classSelect').value;
       if (cls && inRoom) send({ type: 'select_class', class: cls });
@@ -1710,6 +1738,7 @@
       // Show PRET button, hide hint
       document.getElementById('btnReady').style.display = 'block';
       document.getElementById('readyHint').style.display = 'none';
+      document.getElementById('botSection').style.display = 'block';
       const cls = document.getElementById('classSelect').value;
       if (cls) { send({ type: 'select_class', class: cls }); }
       selectHunters();
@@ -1723,9 +1752,11 @@
         const cls = CLASS_LABELS[p.class] || '???';
         const readyCls = p.ready ? 'ready' : 'not-ready';
         const isMe = p.id === myId;
+        const isBot = p.isBot || (p.id && p.id.startsWith('bot_'));
         const lvl = isMe && profile ? ' Lv.' + profile.level : '';
         const hunter = p.mainHunter ? (' [' + (HUNTER_LIST[p.mainHunter]?.name || p.mainHunter) + ']') : '';
-        return '<div class="' + readyCls + '">' + p.username + (isMe ? ' *' : '') + lvl + ' - ' + cls + hunter + (p.ready ? ' \u2713' : '') + '</div>';
+        const botTag = isBot ? ' <span style="color:#a78bfa;font-size:9px">[BOT]</span>' : '';
+        return '<div class="' + readyCls + '">' + (isBot ? '🤖 ' : '') + p.username + (isMe ? ' *' : '') + lvl + ' - ' + cls + hunter + botTag + (p.ready ? ' \u2713' : '') + '</div>';
       }).join('');
       document.getElementById('roomPlayers').innerHTML = html;
     }
@@ -1742,7 +1773,7 @@
           log('Joined: ' + msg.room.code, 'info'); onJoinedRoom(); updateRoomDisplay(); break;
         case 'player_joined': log(msg.player.username + ' joined', 'info'); roomInfo = msg.room; updateRoomDisplay(); break;
         case 'player_left': log('Player left', 'info'); roomInfo = msg.room; updateRoomDisplay(); break;
-        case 'class_selected': case 'difficulty_changed': case 'ready_changed': case 'hunters_selected':
+        case 'class_selected': case 'difficulty_changed': case 'ready_changed': case 'hunters_selected': case 'bots_updated':
           roomInfo = msg.room; updateRoomDisplay(); break;
         case 'countdown_start':
         case 'countdown_tick': {
@@ -2134,6 +2165,7 @@
           document.getElementById('gameEndOverlay').style.display = 'none';
           document.getElementById('deathOverlay').style.display = 'none';
           document.getElementById('game').classList.remove('dead-filter');
+          document.getElementById('botSection').style.display = 'block';
           updateRoomDisplay();
           updateGearPanel();
           updateForgePanel();

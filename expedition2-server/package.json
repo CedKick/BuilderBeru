@@ -1,0 +1,14 @@
+{
+  "name": "expedition2-ragnaros",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Expedition II — Ragnaros boss fight (2D top-down)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

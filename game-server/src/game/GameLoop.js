@@ -2,6 +2,7 @@ import { SERVER, BOSS } from '../config.js';
 import { GameState } from './GameState.js';
 import { CombatEngine } from './CombatEngine.js';
 import { PhysicsEngine } from './PhysicsEngine.js';
+import { BotAI } from './BotAI.js';
 import { calculateXpReward } from '../data/playerProfile.js';
 import { generateRaidArtifact, generateRaidWeaponDrop, FEATHER_DROP_RATES, calculateAlkahestReward, rollHunterDrops, rollSetUltimeDrops } from '../data/raidGearData.js';
 
@@ -20,6 +21,14 @@ export class GameLoop {
     this.onEnd = null; // callback
     this._interval = null;
     this._lastTime = 0;
+
+    // Initialize bot AI controllers for bot players
+    this.botAIs = new Map();
+    for (const def of players) {
+      if (def.isBot) {
+        this.botAIs.set(def.id, new BotAI(def.id, def.class));
+      }
+    }
   }
 
   start() {
@@ -76,6 +85,16 @@ export class GameLoop {
 
   _update(dt) {
     const gs = this.state;
+
+    // 0. Bot AI — generate inputs for bot players
+    for (const [botId, botAI] of this.botAIs) {
+      const player = gs.getPlayer(botId);
+      if (!player || !player.alive) continue;
+      const botInputs = botAI.think(player, gs, dt);
+      for (const input of botInputs) {
+        this.inputQueue.push({ playerId: botId, input, tick: this.tick });
+      }
+    }
 
     // 1. Process all queued inputs
     this._processInputs();

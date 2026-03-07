@@ -1,5 +1,6 @@
 import { ROOM, DIFFICULTY } from '../config.js';
 import { GameLoop } from '../game/GameLoop.js';
+import { generateBotId, pickBotClasses, pickBotName } from '../game/BotAI.js';
 
 export class RoomManager {
   constructor(wsServer) {
@@ -258,6 +259,57 @@ export class RoomManager {
     room.gameLoop.queueInput(client.id, msg.input);
   }
 
+  addBots(ws, client, msg) {
+    const room = this._getRoom(client);
+    if (!room || room.state !== 'waiting') return;
+    if (room.host !== client.id) {
+      this._send(ws, { type: 'error', message: 'Only host can add bots' });
+      return;
+    }
+
+    const count = Math.max(0, Math.min(4, parseInt(msg.count) || 0));
+
+    // Remove existing bots first
+    for (const [id, slot] of room.players) {
+      if (slot.isBot) room.players.delete(id);
+    }
+
+    if (count === 0) {
+      this.wsServer.broadcast(room.code, {
+        type: 'bots_updated',
+        room: this._serializeRoom(room),
+      });
+      return;
+    }
+
+    // Find player's class to pick good comp
+    const hostSlot = room.players.get(client.id);
+    const playerClass = hostSlot?.class || 'dps_cac';
+    const botClasses = pickBotClasses(playerClass, count);
+    const usedNames = new Set([...room.players.values()].map(p => p.username));
+
+    for (let i = 0; i < count; i++) {
+      const botId = generateBotId();
+      const botName = pickBotName(usedNames);
+      usedNames.add(botName);
+
+      room.players.set(botId, {
+        id: botId,
+        username: botName,
+        class: botClasses[i],
+        ready: true,
+        isBot: true,
+      });
+    }
+
+    this.wsServer.broadcast(room.code, {
+      type: 'bots_updated',
+      room: this._serializeRoom(room),
+    });
+
+    console.log(`[Room] ${count} bots added to ${room.code} (classes: ${botClasses.join(', ')})`);
+  }
+
   _checkAllReady(room) {
     if (room.players.size < ROOM.MIN_PLAYERS) return;
 
@@ -324,6 +376,7 @@ export class RoomManager {
         id: p.id,
         username: p.username,
         class: p.class,
+        isBot: p.isBot || false,
         colosseumData: Object.keys(colosseumData).length > 0 ? colosseumData : null,
       };
     });
@@ -448,6 +501,7 @@ export class RoomManager {
         username: p.username,
         class: p.class,
         ready: p.ready,
+        isBot: p.isBot || false,
         mainHunter: p.mainHunter || null,
         supportHunters: p.supportHunters || [],
       })),

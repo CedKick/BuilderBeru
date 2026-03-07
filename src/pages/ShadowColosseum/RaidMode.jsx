@@ -13,7 +13,7 @@ import {
   STAT_PER_POINT, STAT_ORDER, STAT_META, POINTS_PER_LEVEL, MAX_LEVEL,
   statsAt, statsAtFull, xpForLevel, getElementMult, getElementMultRaid, getEffStat,
   applySkillUpgrades, computeAttack, aiPickSkill, spdToInterval,
-  accountLevelFromXp, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT,
+  accountLevelFromXp, accountXpForLevel, MAX_ACCOUNT_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
   mergeTalentBonuses, fmtNum, BASE_CD_MS, getIntelCDR, getManaScaledPower,
 } from './colosseumCore';
@@ -916,7 +916,7 @@ export default function RaidMode() {
         newColoData.chibiLevels[c.id] = { level: newLvl, xp: newXp };
       });
       const raidAccountXp = Math.floor((30 + rc * 15 + (isFullClear ? 50 : 0)) * tierData.xpMult);
-      newColoData.accountXp = (newColoData.accountXp || 0) + raidAccountXp;
+      newColoData.accountXp = Math.min((newColoData.accountXp || 0) + raidAccountXp, accountXpForLevel(MAX_ACCOUNT_LEVEL));
       setColoData(newColoData);
       // Force immediate cloud sync — raid XP is critical, don't rely on debounce
       cloudStorage.saveAndSync(SAVE_KEY, newColoData);
