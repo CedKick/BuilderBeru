@@ -32,6 +32,7 @@ import {
   KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS, KATANA_V_BUFF_CHANCE,
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
   GULDAN_HEAL_PER_STACK, GULDAN_DEF_PER_HIT, GULDAN_ATK_PER_HIT, GULDAN_SPD_CHANCE, GULDAN_SPD_BOOST, GULDAN_SPD_MAX_STACKS, GULDAN_STUN_CHANCE,
+  initExpPassive, expPassiveBeforeAttack, expPassiveAfterAttack, expPassiveOnDamageTaken, EXPEDITION_PASSIVE_IDS,
 } from './equipmentData';
 import { BattleStyles } from './BattleVFX';
 import SharedDPSGraph from './SharedBattleComponents/SharedDPSGraph';
@@ -375,6 +376,8 @@ export default function PvpMode() {
         ...(wId && WEAPONS[wId]?.passive === 'katana_z_fury' ? { katanaZStacks: 0 } : {}),
         ...(wId && WEAPONS[wId]?.passive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
         ...(wId && WEAPONS[wId]?.passive === 'guldan_halo' ? { guldanState: { healStacks: 0, defBonus: 0, atkBonus: 0, spdStacks: 0 } } : {}),
+        // Expedition weapon passive state
+        ...(wId && WEAPONS[wId]?.passive && EXPEDITION_PASSIVE_IDS.includes(WEAPONS[wId].passive) ? initExpPassive(WEAPONS[wId].passive) : {}),
         // ULTIME passive state
         eternalRageStacks: 0,
         celestialShield: 0,
@@ -387,6 +390,7 @@ export default function PvpMode() {
       },
       talentBonuses: mergedTb,
       hunterPassive,
+      weaponPassiveId: wId && WEAPONS[wId] ? WEAPONS[wId].passive : null,
       isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support' || HUNTERS[id]?.class === 'tank',
       hunterClass: HUNTERS[id]?.class || 'fighter',
       lastAttackAt: 0, attackInterval: spdToInterval(spd2),
@@ -973,6 +977,14 @@ export default function PvpMode() {
         if (gs.spdStacks > 0) unit.atk = Math.floor(unit.atk * (1 + gs.spdStacks * GULDAN_SPD_BOOST * 0.1));
       }
 
+      // ─── Expedition Weapon Passives: beforeAttack ───
+      if (unit.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(unit.weaponPassiveId)) {
+        const expBefore = expPassiveBeforeAttack(unit.passiveState, unit.weaponPassiveId, unit, target, result?.isCrit || false, false);
+        if (expBefore.atkMult > 0) unit.atk = Math.floor(unit.atk * (1 + expBefore.atkMult));
+        if (expBefore.defPenPct > 0) target.def = Math.floor(target.def * (1 - expBefore.defPenPct));
+        for (const msg of expBefore.log) logEntries.push({ text: `${unit.name} : ${msg}`, time: elapsed, type: 'passive' });
+      }
+
       // ─── ULTIME artifact passives: beforeAttack ───
       // Eternal Rage: +1% ATK per stack — individual
       const eRageP = unit.passives?.find(p => p.type === 'eternalRageStack');
@@ -1139,6 +1151,25 @@ export default function PvpMode() {
           target.passiveState.vitalOverhealShield -= absorbed;
           dmg -= absorbed;
         }
+        // ─── Expedition Weapon Passives: onDamageTaken ───
+        if (dmg > 0 && target.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(target.weaponPassiveId)) {
+          const expDmg = expPassiveOnDamageTaken(target.passiveState, target.weaponPassiveId, target, dmg);
+          dmg = expDmg.reducedDmg;
+          if (expDmg.counterDmg > 0 && unit.alive) {
+            unit.hp -= expDmg.counterDmg;
+            if (unit.hp <= 0) { unit.hp = 0; unit.alive = false; }
+            if (dpsWindowTracker.current[target.id] !== undefined) dpsWindowTracker.current[target.id] += expDmg.counterDmg;
+            setDetailedLogs(prev => {
+              const tLog = prev[target.id]; if (!tLog) return prev;
+              return { ...prev, [target.id]: { ...tLog, totalDamage: tLog.totalDamage + expDmg.counterDmg } };
+            });
+          }
+          if (expDmg.absorbed) {
+            dmg = 0;
+            logEntries.push({ text: `${target.name} absorbe le coup fatal !`, time: elapsed, type: 'passive' });
+          }
+          for (const msg of expDmg.log) logEntries.push({ text: `${target.name} : ${msg}`, time: elapsed, type: 'passive' });
+        }
         target.hp -= dmg;
 
         if (dpsTracker.current[unit.id] !== undefined) {
@@ -1240,6 +1271,33 @@ export default function PvpMode() {
           if (stunProcs > 0 && target.alive) {
             target.lastAttackAt = now + target.attackInterval; // delay target's next attack
           }
+        }
+
+        // ─── Expedition Weapon Passives: afterAttack ───
+        if (unit.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(unit.weaponPassiveId)) {
+          const expAfter = expPassiveAfterAttack(unit.passiveState, unit.weaponPassiveId, unit, target, result.damage, result.isCrit, !target.alive);
+          if (expAfter.healAmount > 0) {
+            unit.hp = Math.min(unit.maxHp, unit.hp + expAfter.healAmount);
+            if (healWindowTracker.current[unit.id] !== undefined) healWindowTracker.current[unit.id] += expAfter.healAmount;
+            if (healReceivedWindowTracker.current[unit.id] !== undefined) healReceivedWindowTracker.current[unit.id] += expAfter.healAmount;
+            setDetailedLogs(prev => {
+              const log = prev[unit.id]; if (!log) return prev;
+              return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + expAfter.healAmount, healReceived: (log.healReceived || 0) + expAfter.healAmount } };
+            });
+          }
+          if (expAfter.bonusDmg > 0 && target.alive) {
+            target.hp -= expAfter.bonusDmg;
+            if (target.hp <= 0) { target.hp = 0; target.alive = false; }
+            if (dpsWindowTracker.current[unit.id] !== undefined) dpsWindowTracker.current[unit.id] += expAfter.bonusDmg;
+            setDetailedLogs(prev => {
+              const aLog = prev[unit.id]; if (!aLog) return prev;
+              return { ...prev, [unit.id]: { ...aLog, totalDamage: aLog.totalDamage + expAfter.bonusDmg } };
+            });
+          }
+          if (expAfter.shield > 0) {
+            unit.shield = (unit.shield || 0) + expAfter.shield;
+          }
+          for (const msg of expAfter.log) logEntries.push({ text: `${unit.name} : ${msg}`, time: elapsed, type: 'passive' });
         }
 
         // ─── ULTIME artifact passives: afterAttack ───

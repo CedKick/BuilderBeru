@@ -18,7 +18,7 @@ const BOSS_WEAPON_MAP = {
 };
 
 // Slot mapping: expedition → colosseum format
-const EXP_SLOT_MAP = { helm: 'casque', chest: 'plastron', gloves: 'gants', boots: 'bottes' };
+const EXP_SLOT_MAP = { helm: 'casque', chest: 'plastron', gloves: 'gants', boots: 'bottes', necklace: 'collier', bracelet: 'bracelet', ring: 'anneau', earring: 'boucles' };
 
 // Rarity mapping: expedition → colosseum format
 function mapRarity(r) {

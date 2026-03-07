@@ -84,6 +84,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_forest_chest', name: 'Plastron Sylvestre', rarity: 'uncommon', dropChance: 28 },
     { itemId: 'exp_forest_gloves', name: 'Gantelets Sylvestres', rarity: 'uncommon', dropChance: 25 },
     { itemId: 'exp_forest_boots', name: 'Bottes Sylvestres', rarity: 'uncommon', dropChance: 25 },
+    // Accessoires Sylvestres (uncommon)
+    { itemId: 'exp_forest_necklace', name: 'Collier Sylvestre', rarity: 'uncommon', dropChance: 25 },
+    { itemId: 'exp_forest_ring', name: 'Anneau Sylvestre', rarity: 'uncommon', dropChance: 25 },
     // Sets zone Foret (rare)
     { itemId: 'set_ecailles_drake_piece', name: 'Piece: Ecailles de Drake', rarity: 'rare', dropChance: 18, setId: 'ecailles_drake' },
     { itemId: 'set_crocs_loup_piece', name: 'Piece: Crocs du Loup', rarity: 'rare', dropChance: 18, setId: 'crocs_loup' },
@@ -110,6 +113,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_stone_chest', name: 'Plastron de Pierre', rarity: 'rare', dropChance: 22 },
     { itemId: 'exp_stone_gloves', name: 'Gantelets de Pierre', rarity: 'rare', dropChance: 20 },
     { itemId: 'exp_stone_boots', name: 'Bottes de Pierre', rarity: 'rare', dropChance: 20 },
+    // Accessoires de Pierre (rare)
+    { itemId: 'exp_stone_necklace', name: 'Collier de Pierre', rarity: 'rare', dropChance: 20 },
+    { itemId: 'exp_stone_bracelet', name: 'Bracelet de Pierre', rarity: 'rare', dropChance: 20 },
     // Sets zone Foret — complets (rare)
     { itemId: 'set_plumes_phenix_piece', name: 'Piece: Plumes de Phenix', rarity: 'rare', dropChance: 18, setId: 'plumes_phenix' },
     { itemId: 'set_ronce_vivante_piece', name: 'Piece: Ronce Vivante', rarity: 'rare', dropChance: 18, setId: 'ronce_vivante' },
@@ -140,6 +146,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_shadow_chest', name: "Tunique d'Ombre", rarity: 'epic', dropChance: 16 },
     { itemId: 'exp_shadow_gloves', name: "Griffes d'Ombre", rarity: 'epic', dropChance: 14 },
     { itemId: 'exp_shadow_boots', name: "Sandales d'Ombre", rarity: 'epic', dropChance: 14 },
+    // Accessoires d'Ombre (epic)
+    { itemId: 'exp_shadow_necklace', name: "Pendentif d'Ombre", rarity: 'epic', dropChance: 16 },
+    { itemId: 'exp_shadow_ring', name: "Anneau d'Ombre", rarity: 'epic', dropChance: 16 },
     // Sets zone Foret — complets (rare)
     { itemId: 'set_griffes_wyverne_piece', name: 'Piece: Griffes de Wyverne', rarity: 'rare', dropChance: 20, setId: 'griffes_wyverne' },
     { itemId: 'set_ronce_vivante_piece', name: 'Piece: Ronce Vivante', rarity: 'rare', dropChance: 16, setId: 'ronce_vivante' },
@@ -174,6 +183,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_crystal_chest', name: 'Armure Cristalline', rarity: 'rare', dropChance: 18 },
     { itemId: 'exp_crystal_gloves', name: 'Gants Cristallins', rarity: 'rare', dropChance: 16 },
     { itemId: 'exp_crystal_boots', name: 'Bottes Cristallines', rarity: 'rare', dropChance: 16 },
+    // Accessoires Cristallins (rare)
+    { itemId: 'exp_crystal_necklace', name: 'Collier Cristallin', rarity: 'rare', dropChance: 16 },
+    { itemId: 'exp_crystal_ring', name: 'Anneau Cristallin', rarity: 'rare', dropChance: 16 },
     // Sets zone Foret — complets (rare)
     { itemId: 'set_ecailles_drake_piece', name: 'Piece: Ecailles de Drake', rarity: 'rare', dropChance: 20, setId: 'ecailles_drake' },
     { itemId: 'set_plumes_phenix_piece', name: 'Piece: Plumes de Phenix', rarity: 'rare', dropChance: 20, setId: 'plumes_phenix' },
@@ -209,6 +221,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_crystal_chest', name: 'Armure Cristalline', rarity: 'rare', dropChance: 16 },
     { itemId: 'exp_crystal_gloves', name: 'Gants Cristallins', rarity: 'rare', dropChance: 14 },
     { itemId: 'exp_crystal_boots', name: 'Bottes Cristallines', rarity: 'rare', dropChance: 14 },
+    // Accessoires Cristallins (rare)
+    { itemId: 'exp_crystal_necklace', name: 'Collier Cristallin', rarity: 'rare', dropChance: 16 },
+    { itemId: 'exp_crystal_ring', name: 'Anneau Cristallin', rarity: 'rare', dropChance: 16 },
     // Sets zone Foret — complets (rare, taux eleves)
     { itemId: 'set_griffes_wyverne_piece', name: 'Piece: Griffes de Wyverne', rarity: 'rare', dropChance: 22, setId: 'griffes_wyverne' },
     { itemId: 'set_crocs_loup_piece', name: 'Piece: Crocs du Loup', rarity: 'rare', dropChance: 20, setId: 'crocs_loup' },
@@ -247,6 +262,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_abyss_chest', name: 'Cuirasse des Abysses', rarity: 'epic', dropChance: 18 },
     { itemId: 'exp_abyss_gloves', name: 'Gantelets des Abysses', rarity: 'epic', dropChance: 16 },
     { itemId: 'exp_abyss_boots', name: 'Bottes des Abysses', rarity: 'epic', dropChance: 16 },
+    // Accessoires des Abysses (epic)
+    { itemId: 'exp_abyss_necklace', name: 'Collier des Abysses', rarity: 'epic', dropChance: 16 },
+    { itemId: 'exp_abyss_bracelet', name: 'Bracelet des Abysses', rarity: 'epic', dropChance: 16 },
     // Medium sets Abysses (epic)
     { itemId: 'set_souffle_glacial_piece', name: 'Piece: Souffle Glacial', rarity: 'epic', dropChance: 18, setId: 'souffle_glacial' },
     { itemId: 'set_cendres_ardentes_piece', name: 'Piece: Cendres Ardentes', rarity: 'epic', dropChance: 18, setId: 'cendres_ardentes' },
@@ -289,6 +307,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_abyss_chest', name: 'Cuirasse des Abysses', rarity: 'epic', dropChance: 18 },
     { itemId: 'exp_abyss_gloves', name: 'Gantelets des Abysses', rarity: 'epic', dropChance: 16 },
     { itemId: 'exp_abyss_boots', name: 'Bottes des Abysses', rarity: 'epic', dropChance: 16 },
+    // Accessoires des Abysses (epic)
+    { itemId: 'exp_abyss_ring', name: 'Anneau des Abysses', rarity: 'epic', dropChance: 16 },
+    { itemId: 'exp_abyss_earring', name: 'Boucles des Abysses', rarity: 'epic', dropChance: 16 },
     // Medium sets Abysses (epic)
     { itemId: 'set_murmure_ombre_piece', name: "Piece: Murmure d'Ombre", rarity: 'epic', dropChance: 18, setId: 'murmure_ombre' },
     { itemId: 'set_lumiere_sacree_piece', name: 'Piece: Lumiere Sacree', rarity: 'epic', dropChance: 18, setId: 'lumiere_sacree' },
@@ -327,6 +348,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_magma_helm', name: 'Casque de Magma', rarity: 'epic', dropChance: 18 },
     { itemId: 'exp_magma_chest', name: 'Plastron de Magma', rarity: 'epic', dropChance: 18 },
     { itemId: 'exp_magma_gloves', name: 'Gants de Lave', rarity: 'epic', dropChance: 16 },
+    // Accessoires des Abysses (epic)
+    { itemId: 'exp_abyss_necklace', name: 'Collier des Abysses', rarity: 'epic', dropChance: 16 },
+    { itemId: 'exp_abyss_earring', name: 'Boucles des Abysses', rarity: 'epic', dropChance: 16 },
     // Medium sets Abysses (epic)
     { itemId: 'set_cuirasse_fer_piece', name: 'Piece: Cuirasse de Fer', rarity: 'epic', dropChance: 18, setId: 'cuirasse_fer' },
     { itemId: 'set_souffle_glacial_piece', name: 'Piece: Souffle Glacial', rarity: 'epic', dropChance: 16, setId: 'souffle_glacial' },
@@ -376,6 +400,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_magma_helm', name: 'Casque de Magma', rarity: 'epic', dropChance: 18 },
     { itemId: 'exp_magma_chest', name: 'Plastron de Magma', rarity: 'epic', dropChance: 18 },
     { itemId: 'exp_magma_gloves', name: 'Gants de Lave', rarity: 'epic', dropChance: 14 },
+    // Accessoires Abysses + Ombre (epic)
+    { itemId: 'exp_abyss_ring', name: 'Anneau des Abysses', rarity: 'epic', dropChance: 14 },
+    { itemId: 'exp_shadow_bracelet', name: "Bracelet d'Ombre", rarity: 'epic', dropChance: 14 },
     // Medium sets Abysses (epic)
     { itemId: 'set_souffle_glacial_piece', name: 'Piece: Souffle Glacial', rarity: 'epic', dropChance: 18, setId: 'souffle_glacial' },
     { itemId: 'set_cendres_ardentes_piece', name: 'Piece: Cendres Ardentes', rarity: 'epic', dropChance: 18, setId: 'cendres_ardentes' },
@@ -424,6 +451,9 @@ export const LOOT_TABLES = {
     // Armure Magma (epic)
     { itemId: 'exp_magma_helm', name: 'Casque de Magma', rarity: 'epic', dropChance: 16 },
     { itemId: 'exp_magma_chest', name: 'Plastron de Magma', rarity: 'epic', dropChance: 16 },
+    // Accessoires Abysses + Ombre (epic)
+    { itemId: 'exp_abyss_bracelet', name: 'Bracelet des Abysses', rarity: 'epic', dropChance: 14 },
+    { itemId: 'exp_shadow_earring', name: "Boucles d'Ombre", rarity: 'epic', dropChance: 14 },
     // Medium sets Abysses (epic)
     { itemId: 'set_cuirasse_fer_piece', name: 'Piece: Cuirasse de Fer', rarity: 'epic', dropChance: 18, setId: 'cuirasse_fer' },
     { itemId: 'set_murmure_ombre_piece', name: "Piece: Murmure d'Ombre", rarity: 'epic', dropChance: 18, setId: 'murmure_ombre' },
@@ -480,6 +510,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_void_chest', name: 'Plastron du Neant', rarity: 'legendary', dropChance: 10 },
     { itemId: 'exp_void_gloves', name: 'Griffes du Neant', rarity: 'legendary', dropChance: 8 },
     { itemId: 'exp_void_boots', name: 'Bottes du Neant', rarity: 'legendary', dropChance: 8 },
+    // Accessoires du Neant (legendary)
+    { itemId: 'exp_void_necklace', name: 'Amulette du Neant', rarity: 'legendary', dropChance: 10 },
+    { itemId: 'exp_void_ring', name: 'Anneau du Neant', rarity: 'legendary', dropChance: 10 },
     // Medium sets Neant (epic — taux tres eleves, quasi-garanti avec 5x)
     { itemId: 'set_ailes_vent_piece', name: 'Piece: Ailes du Vent', rarity: 'epic', dropChance: 20, setId: 'ailes_vent' },
     { itemId: 'set_sang_guerrier_piece', name: 'Piece: Sang du Guerrier', rarity: 'epic', dropChance: 20, setId: 'sang_guerrier' },
@@ -527,6 +560,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_void_chest', name: 'Plastron du Neant', rarity: 'legendary', dropChance: 10 },
     { itemId: 'exp_void_gloves', name: 'Griffes du Neant', rarity: 'legendary', dropChance: 10 },
     { itemId: 'exp_void_boots', name: 'Bottes du Neant', rarity: 'legendary', dropChance: 10 },
+    // Accessoires du Neant (legendary)
+    { itemId: 'exp_void_bracelet', name: 'Bracelet du Neant', rarity: 'legendary', dropChance: 10 },
+    { itemId: 'exp_void_earring', name: 'Boucles du Neant', rarity: 'legendary', dropChance: 10 },
     // Medium sets Neant (epic — quasi-garanti)
     { itemId: 'set_totem_ancestral_piece', name: 'Piece: Totem Ancestral', rarity: 'epic', dropChance: 20, setId: 'totem_ancestral' },
     { itemId: 'set_brume_mystique_piece', name: 'Piece: Brume Mystique', rarity: 'epic', dropChance: 20, setId: 'brume_mystique' },
@@ -575,6 +611,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_void_chest', name: 'Plastron du Neant', rarity: 'legendary', dropChance: 12 },
     { itemId: 'exp_void_gloves', name: 'Griffes du Neant', rarity: 'legendary', dropChance: 10 },
     { itemId: 'exp_void_boots', name: 'Bottes du Neant', rarity: 'legendary', dropChance: 10 },
+    // Accessoires du Neant (legendary)
+    { itemId: 'exp_void_necklace', name: 'Amulette du Neant', rarity: 'legendary', dropChance: 10 },
+    { itemId: 'exp_void_ring', name: 'Anneau du Neant', rarity: 'legendary', dropChance: 10 },
     // Medium sets Neant (epic — abondant)
     { itemId: 'set_lien_meute_piece', name: 'Piece: Lien de Meute', rarity: 'epic', dropChance: 22, setId: 'lien_meute' },
     { itemId: 'set_ailes_vent_piece', name: 'Piece: Ailes du Vent', rarity: 'epic', dropChance: 20, setId: 'ailes_vent' },
@@ -623,6 +662,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_void_helm', name: 'Diademe du Neant', rarity: 'legendary', dropChance: 10 },
     { itemId: 'exp_void_gloves', name: 'Griffes du Neant', rarity: 'legendary', dropChance: 10 },
     { itemId: 'exp_void_boots', name: 'Bottes du Neant', rarity: 'legendary', dropChance: 10 },
+    // Accessoires du Neant (legendary)
+    { itemId: 'exp_void_bracelet', name: 'Bracelet du Neant', rarity: 'legendary', dropChance: 12 },
+    { itemId: 'exp_void_earring', name: 'Boucles du Neant', rarity: 'legendary', dropChance: 12 },
     // Medium sets Neant (epic — tous presents, taux massifs)
     { itemId: 'set_ailes_vent_piece', name: 'Piece: Ailes du Vent', rarity: 'epic', dropChance: 22, setId: 'ailes_vent' },
     { itemId: 'set_sang_guerrier_piece', name: 'Piece: Sang du Guerrier', rarity: 'epic', dropChance: 22, setId: 'sang_guerrier' },
@@ -672,6 +714,9 @@ export const LOOT_TABLES = {
     { itemId: 'exp_void_chest', name: 'Plastron du Neant', rarity: 'legendary', dropChance: 12 },
     { itemId: 'exp_void_gloves', name: 'Griffes du Neant', rarity: 'legendary', dropChance: 10 },
     { itemId: 'exp_void_boots', name: 'Bottes du Neant', rarity: 'legendary', dropChance: 10 },
+    // Accessoires du Neant (legendary)
+    { itemId: 'exp_void_necklace', name: 'Amulette du Neant', rarity: 'legendary', dropChance: 12 },
+    { itemId: 'exp_void_ring', name: 'Anneau du Neant', rarity: 'legendary', dropChance: 12 },
     // Medium sets Neant (epic — quasi-garanti)
     { itemId: 'set_ailes_vent_piece', name: 'Piece: Ailes du Vent', rarity: 'epic', dropChance: 22, setId: 'ailes_vent' },
     { itemId: 'set_sang_guerrier_piece', name: 'Piece: Sang du Guerrier', rarity: 'epic', dropChance: 22, setId: 'sang_guerrier' },

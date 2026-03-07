@@ -802,16 +802,16 @@ export const WEAPONS = {
   // ═══════════════════════════════════════════════════════════════
   // EXPEDITION PHASE 2 WEAPONS (mythique — overcreep, boss 1-10)
   // ═══════════════════════════════════════════════════════════════
-  ragnarok:           { id: 'ragnarok',           name: 'Ragnarök',                    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 350, bonusStat: 'atk_pct',   bonusValue: 30, icon: '🔥', desc: 'Tous les 3 coups: AoE 400% feu (200px). Ennemis brules: -20% DEF. Kill: reset CD.', expedition: true },
-  kusanagi:           { id: 'kusanagi',           name: 'Kusanagi',                    rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 360, bonusStat: 'crit_dmg',  bonusValue: 35, icon: '⚔️', desc: 'Crits: +5% ATK (max 50%). 10 stacks: coup x5. Ignore 20% DEF permanent.', expedition: true },
-  gae_bolg:           { id: 'gae_bolg',           name: 'Gáe Bolg',                   rarity: 'mythique',   element: 'water',  weaponType: 'polearm', atk: 340, bonusStat: 'spd_flat',  bonusValue: 22, icon: '🔱', desc: 'Perce en ligne. 1ere attaque: x3. Tous les 10s: dash 300px + AoE 200%.', expedition: true, scalingStat: 'int' },
-  masamune:           { id: 'masamune',           name: 'Masamune',                    rarity: 'mythique',   element: 'light',  weaponType: 'blade',   atk: 370, bonusStat: 'atk_pct',   bonusValue: 28, icon: '✨', desc: 'HP > 50%: +35% degats. Kill: heal 10% + bouclier 5%. Absorbe 2 coups mortels (CD 45s).', expedition: true },
-  longinus:           { id: 'longinus',           name: 'Lance de Longinus',           rarity: 'mythique',   element: 'light',  weaponType: 'polearm', atk: 390, bonusStat: 'crit_rate', bonusValue: 20, icon: '🌟', desc: 'Ignore 30% DEF. Crits: onde sacree 250px (150%). Boss: +25% degats permanent.', expedition: true, scalingStat: 'int' },
-  tyrfing:            { id: 'tyrfing',            name: 'Tyrfing',                     rarity: 'mythique',   element: 'shadow', weaponType: 'scythe',  atk: 355, bonusStat: 'hp_pct',    bonusValue: 20, icon: '💀', desc: 'Kill: +8% ATK +5% vol vie (10 stacks). HP < 30%: ATK x2 + invincible 3s (CD 60s).', expedition: true, scalingStat: 'int' },
-  ea_staff:           { id: 'ea_staff',           name: 'Ea, Bâton des Cieux',         rarity: 'mythique',   element: 'fire',   weaponType: 'staff',   atk: 345, bonusStat: 'int_pct',   bonusValue: 30, icon: '🪄', desc: '30% sort gratuit. Mana > 90%: tous degats +40%. AoE: rayon +50%.', expedition: true, scalingStat: 'int' },
-  fragarach:          { id: 'fragarach',          name: 'Fragarach',                   rarity: 'mythique',   element: 'wind',   weaponType: 'blade',   atk: 365, bonusStat: 'atk_pct',   bonusValue: 25, icon: '🌪️', desc: 'Esquive +15%. Apres esquive: contre-attaque 300% + stun 2s. Tous les 5 coups: tornado 350%.', expedition: true },
-  tacos_eternel:      { id: 'tacos_eternel',      name: 'Tacos Éternel de Rayan',      rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 400, bonusStat: 'atk_pct',   bonusValue: 35, icon: '🌮', desc: 'Chaque coup: confus 2s (-30% precision). Kill: +10% tous stats (stack infini). 5 stacks: AoE kebab 500%.', expedition: true },
-  amenonuhoko:        { id: 'amenonuhoko',        name: 'Ame-no-nuhoko',               rarity: 'mythique',   element: 'water',  weaponType: 'staff',   atk: 380, bonusStat: 'hp_pct',    bonusValue: 25, icon: '🌊', desc: 'Soins +50%. Overheals = bouclier 30% HP. Resurrecte 1 allie. Chaque attaque: +5% stat aleatoire a un coequipier aleatoire (stack infini).', expedition: true, scalingStat: 'int' },
+  ragnarok:           { id: 'ragnarok',           name: 'Ragnarök',                    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 350, bonusStat: 'atk_pct',   bonusValue: 30, icon: '🔥', desc: 'Tous les 3 coups: AoE 400% feu (200px). Ennemis brules: -20% DEF. Kill: reset CD.', expedition: true, passive: 'ragnarok_fury' },
+  kusanagi:           { id: 'kusanagi',           name: 'Kusanagi',                    rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 360, bonusStat: 'crit_dmg',  bonusValue: 35, icon: '⚔️', desc: 'Crits: +5% ATK (max 50%). 10 stacks: coup x5. Ignore 20% DEF permanent.', expedition: true, passive: 'kusanagi_shadow' },
+  gae_bolg:           { id: 'gae_bolg',           name: 'Gáe Bolg',                   rarity: 'mythique',   element: 'water',  weaponType: 'polearm', atk: 340, bonusStat: 'spd_flat',  bonusValue: 22, icon: '🔱', desc: 'Perce en ligne. 1ere attaque: x3. Tous les 3 tours: AoE 200%.', expedition: true, scalingStat: 'int', passive: 'gae_bolg_pierce' },
+  masamune:           { id: 'masamune',           name: 'Masamune',                    rarity: 'mythique',   element: 'light',  weaponType: 'blade',   atk: 370, bonusStat: 'atk_pct',   bonusValue: 28, icon: '✨', desc: 'HP > 50%: +35% degats. Kill: heal 10% + bouclier 5%. Absorbe 2 coups mortels (CD 15T).', expedition: true, passive: 'masamune_blade' },
+  longinus:           { id: 'longinus',           name: 'Lance de Longinus',           rarity: 'mythique',   element: 'light',  weaponType: 'polearm', atk: 390, bonusStat: 'crit_rate', bonusValue: 20, icon: '🌟', desc: 'Ignore 30% DEF. Crits: onde sacree 150%. Boss: +25% degats permanent.', expedition: true, scalingStat: 'int', passive: 'longinus_holy' },
+  tyrfing:            { id: 'tyrfing',            name: 'Tyrfing',                     rarity: 'mythique',   element: 'shadow', weaponType: 'scythe',  atk: 355, bonusStat: 'hp_pct',    bonusValue: 20, icon: '💀', desc: 'Kill: +8% ATK +5% vol vie (10 stacks). HP < 30%: ATK x2 + invincible 1T (CD 20T).', expedition: true, scalingStat: 'int', passive: 'tyrfing_curse' },
+  ea_staff:           { id: 'ea_staff',           name: 'Ea, Bâton des Cieux',         rarity: 'mythique',   element: 'fire',   weaponType: 'staff',   atk: 345, bonusStat: 'int_pct',   bonusValue: 30, icon: '🪄', desc: '30% coup double. HP > 70%: tous degats +40%.', expedition: true, scalingStat: 'int', passive: 'ea_celestial' },
+  fragarach:          { id: 'fragarach',          name: 'Fragarach',                   rarity: 'mythique',   element: 'wind',   weaponType: 'blade',   atk: 365, bonusStat: 'atk_pct',   bonusValue: 25, icon: '🌪️', desc: '15% esquive + contre 300%. Tous les 5 coups: tornado 350%.', expedition: true, passive: 'fragarach_wind' },
+  tacos_eternel:      { id: 'tacos_eternel',      name: 'Tacos Éternel de Rayan',      rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 400, bonusStat: 'atk_pct',   bonusValue: 35, icon: '🌮', desc: 'Chaque coup: -30% ATK ennemi. Kill: +10% tous stats (stack infini). 5 stacks: AoE kebab 500%.', expedition: true, passive: 'tacos_chaos' },
+  amenonuhoko:        { id: 'amenonuhoko',        name: 'Ame-no-nuhoko',               rarity: 'mythique',   element: 'water',  weaponType: 'staff',   atk: 380, bonusStat: 'hp_pct',    bonusValue: 25, icon: '🌊', desc: 'Vol de vie 15%. Overheal = bouclier (30% HP max). Resurrecte 1x a 40% HP. +15% stats permanent.', expedition: true, scalingStat: 'int', passive: 'amenonuhoko_divine' },
 
   // ═══════════════════════════════════════════════════════════════
   // EXPEDITION LOOT WEAPONS — Foret (rare)
@@ -1492,6 +1492,286 @@ export const GULDAN_ATK_PER_HIT = 0.015;           // +1.5% ATK per hit (stackab
 export const GULDAN_SPD_CHANCE = 0.25;             // 25% chance to boost attack speed — was 50%
 export const GULDAN_SPD_BOOST = 0.80;              // +80% SPD boost per stack — was 200%
 export const GULDAN_SPD_MAX_STACKS = 3;            // max 3 SPD stacks
+
+// ═══════════════════════════════════════════════════════════════
+// EXPEDITION WEAPON PASSIVES — shared across all combat modes
+// ═══════════════════════════════════════════════════════════════
+
+// List of all expedition passive IDs for easy checking
+export const EXPEDITION_PASSIVE_IDS = [
+  'ragnarok_fury', 'kusanagi_shadow', 'gae_bolg_pierce', 'masamune_blade',
+  'longinus_holy', 'tyrfing_curse', 'ea_celestial', 'fragarach_wind',
+  'tacos_chaos', 'amenonuhoko_divine',
+];
+
+/** Initialize passiveState fields for an expedition weapon passive */
+export function initExpPassive(passiveId) {
+  switch (passiveId) {
+    case 'ragnarok_fury':     return { ragnarokHits: 0 };
+    case 'kusanagi_shadow':   return { kusanagiStacks: 0, kusanagiX5: false };
+    case 'gae_bolg_pierce':   return { gaeBolgFirst: true, gaeBolgTurns: 0 };
+    case 'masamune_blade':    return { masamuneSaves: 2, masamuneCD: 0, masamuneShield: 0 };
+    case 'longinus_holy':     return {};
+    case 'tyrfing_curse':     return { tyrfingStacks: 0, tyrfingLifesteal: 0, tyrfingInvCD: 0, tyrfingInvActive: false };
+    case 'ea_celestial':      return { eaDoubleStrike: false };
+    case 'fragarach_wind':    return { fragarachHits: 0 };
+    case 'tacos_chaos':       return { tacosStacks: 0, tacosKills: 0 };
+    case 'amenonuhoko_divine': return { amenoShield: 0, amenoRezUsed: false };
+    default: return {};
+  }
+}
+
+/**
+ * Before-attack phase: modify atkMult and fighter stats.
+ * Returns { atkMult, bonusDmg, defPenPct, log[], dodgeChance, doubleStrike }
+ */
+export function expPassiveBeforeAttack(ps, passiveId, fighter, enemy, isCrit, isBoss) {
+  const r = { atkMult: 0, bonusDmg: 0, defPenPct: 0, log: [], dodgeChance: 0, doubleStrike: false };
+  if (!passiveId) return r;
+  switch (passiveId) {
+    case 'ragnarok_fury':
+      // Nothing before attack
+      break;
+    case 'kusanagi_shadow':
+      // Permanent 20% DEF ignore + stacked ATK
+      r.defPenPct += 0.20;
+      if (ps.kusanagiStacks > 0) {
+        r.atkMult += ps.kusanagiStacks * 0.05;
+        r.log.push(`Kusanagi x${ps.kusanagiStacks} ! ATK +${ps.kusanagiStacks * 5}%`);
+      }
+      if (ps.kusanagiX5) {
+        r.atkMult += 4.0; // x5 total (1 + 4)
+        r.log.push('Kusanagi ULTIME ! Degats x5 !');
+      }
+      break;
+    case 'gae_bolg_pierce':
+      if (ps.gaeBolgFirst) {
+        r.atkMult += 2.0; // x3 total
+        r.log.push('Gae Bolg ! Premiere attaque x3 !');
+      }
+      break;
+    case 'masamune_blade':
+      if (fighter.hp > fighter.maxHp * 0.5) {
+        r.atkMult += 0.35;
+        r.log.push('Masamune : HP > 50%, DMG +35%');
+      }
+      break;
+    case 'longinus_holy':
+      r.defPenPct += 0.30;
+      if (isBoss) {
+        r.atkMult += 0.25;
+        r.log.push('Longinus : +25% vs Boss !');
+      }
+      break;
+    case 'tyrfing_curse':
+      if (ps.tyrfingStacks > 0) {
+        r.atkMult += ps.tyrfingStacks * 0.08;
+        r.log.push(`Tyrfing x${ps.tyrfingStacks} ! ATK +${ps.tyrfingStacks * 8}%`);
+      }
+      if (fighter.hp < fighter.maxHp * 0.3 && ps.tyrfingInvCD <= 0) {
+        r.atkMult += 1.0; // ATK x2
+        r.log.push('Tyrfing RAGE ! HP < 30% → ATK x2 + Invincible !');
+      }
+      break;
+    case 'ea_celestial':
+      if (fighter.hp > fighter.maxHp * 0.7) {
+        r.atkMult += 0.40;
+        r.log.push('Ea Celeste : HP > 70%, DMG +40%');
+      }
+      if (Math.random() < 0.30) {
+        r.doubleStrike = true;
+        r.log.push('Ea : Coup double !');
+      }
+      break;
+    case 'fragarach_wind':
+      r.dodgeChance += 0.15;
+      break;
+    case 'tacos_chaos':
+      if (ps.tacosStacks > 0) {
+        r.atkMult += ps.tacosStacks * 0.10;
+        r.log.push(`Tacos x${ps.tacosStacks} ! Tous stats +${ps.tacosStacks * 10}%`);
+      }
+      break;
+    case 'amenonuhoko_divine':
+      r.atkMult += 0.15; // permanent +15% stats
+      break;
+  }
+  return r;
+}
+
+/**
+ * After-attack phase: update state, apply post-hit effects.
+ * Mutates ps in-place. Returns { log[], healAmount, bonusDmg, enemyDebuffs[], shield }
+ */
+export function expPassiveAfterAttack(ps, passiveId, fighter, enemy, damage, isCrit, killed) {
+  const r = { log: [], healAmount: 0, bonusDmg: 0, enemyDebuffs: [], shield: 0 };
+  if (!passiveId) return r;
+  switch (passiveId) {
+    case 'ragnarok_fury':
+      ps.ragnarokHits++;
+      if (killed) ps.ragnarokHits = 0;
+      if (ps.ragnarokHits >= 3) {
+        ps.ragnarokHits = 0;
+        r.bonusDmg = Math.floor(fighter.atk * 4.0);
+        r.enemyDebuffs.push({ type: 'def', val: -0.20, turns: 3 });
+        r.log.push(`Ragnarok AoE ! +${r.bonusDmg} degats feu ! Ennemi: -20% DEF`);
+      }
+      break;
+    case 'kusanagi_shadow':
+      if (ps.kusanagiX5) ps.kusanagiX5 = false; // consume
+      if (isCrit && ps.kusanagiStacks < 10) {
+        ps.kusanagiStacks++;
+        r.log.push(`Kusanagi crit ! Stack ${ps.kusanagiStacks}/10`);
+        if (ps.kusanagiStacks >= 10) {
+          ps.kusanagiX5 = true;
+          ps.kusanagiStacks = 0;
+          r.log.push('Kusanagi CHARGE ! Prochain coup x5 !');
+        }
+      }
+      break;
+    case 'gae_bolg_pierce':
+      ps.gaeBolgFirst = false;
+      ps.gaeBolgTurns++;
+      if (ps.gaeBolgTurns >= 3) {
+        ps.gaeBolgTurns = 0;
+        r.bonusDmg = Math.floor(fighter.atk * 2.0);
+        r.log.push(`Gae Bolg Dash ! +${r.bonusDmg} degats AoE !`);
+      }
+      break;
+    case 'masamune_blade':
+      if (ps.masamuneCD > 0) ps.masamuneCD--;
+      if (killed) {
+        r.healAmount = Math.floor(fighter.maxHp * 0.10);
+        r.shield = Math.floor(fighter.maxHp * 0.05);
+        ps.masamuneShield += r.shield;
+        r.log.push(`Masamune Kill ! +${r.healAmount} PV, +${r.shield} bouclier`);
+      }
+      break;
+    case 'longinus_holy':
+      if (isCrit) {
+        r.bonusDmg = Math.floor(fighter.atk * 1.5);
+        r.log.push(`Longinus Onde Sacree ! +${r.bonusDmg} degats !`);
+      }
+      break;
+    case 'tyrfing_curse':
+      if (fighter.hp < fighter.maxHp * 0.3 && ps.tyrfingInvCD <= 0) {
+        ps.tyrfingInvActive = true;
+        ps.tyrfingInvCD = 20;
+      }
+      if (ps.tyrfingInvCD > 0) ps.tyrfingInvCD--;
+      if (killed && ps.tyrfingStacks < 10) {
+        ps.tyrfingStacks++;
+        ps.tyrfingLifesteal = ps.tyrfingStacks * 5;
+        r.log.push(`Tyrfing Kill ! Stack ${ps.tyrfingStacks}/10, Vol vie ${ps.tyrfingLifesteal}%`);
+      }
+      if (ps.tyrfingLifesteal > 0 && damage > 0) {
+        r.healAmount = Math.floor(damage * ps.tyrfingLifesteal / 100);
+        if (r.healAmount > 0) r.log.push(`Tyrfing Vol vie : +${r.healAmount} PV`);
+      }
+      break;
+    case 'ea_celestial':
+      // No post-attack state changes
+      break;
+    case 'fragarach_wind':
+      ps.fragarachHits++;
+      if (ps.fragarachHits >= 5) {
+        ps.fragarachHits = 0;
+        r.bonusDmg = Math.floor(fighter.atk * 3.5);
+        r.log.push(`Fragarach Tornado ! +${r.bonusDmg} degats !`);
+      }
+      break;
+    case 'tacos_chaos':
+      r.enemyDebuffs.push({ type: 'atk', val: -0.30, turns: 2 });
+      r.log.push('Tacos Confusion ! Ennemi: -30% ATK 2T');
+      if (killed) {
+        ps.tacosStacks++;
+        ps.tacosKills++;
+        r.log.push(`Tacos Kill ! +10% tous stats (x${ps.tacosStacks})`);
+        if (ps.tacosKills % 5 === 0) {
+          r.bonusDmg = Math.floor(fighter.atk * 5.0);
+          r.log.push(`AoE KEBAB ! +${r.bonusDmg} degats massifs !`);
+        }
+      }
+      break;
+    case 'amenonuhoko_divine':
+      if (damage > 0) {
+        r.healAmount = Math.floor(damage * 0.15);
+        const maxShield = Math.floor(fighter.maxHp * 0.30);
+        const currentHP = fighter.hp + r.healAmount;
+        if (currentHP > fighter.maxHp) {
+          const overheal = currentHP - fighter.maxHp;
+          r.healAmount -= overheal;
+          ps.amenoShield = Math.min(maxShield, (ps.amenoShield || 0) + overheal);
+          r.log.push(`Amenonuhoko : +${overheal} bouclier (${ps.amenoShield}/${maxShield})`);
+        }
+        if (r.healAmount > 0) r.log.push(`Amenonuhoko Vol vie : +${r.healAmount} PV`);
+      }
+      break;
+  }
+  return r;
+}
+
+/**
+ * On-damage-taken phase: handle shields, dodge counter, lethal absorption.
+ * Returns { reducedDmg, counterDmg, log[], absorbed }
+ */
+export function expPassiveOnDamageTaken(ps, passiveId, fighter, incomingDmg) {
+  const r = { reducedDmg: incomingDmg, counterDmg: 0, log: [], absorbed: false };
+  if (!passiveId) return r;
+  switch (passiveId) {
+    case 'masamune_blade':
+      // Shield absorbs damage first
+      if (ps.masamuneShield > 0) {
+        const absorbed = Math.min(ps.masamuneShield, r.reducedDmg);
+        ps.masamuneShield -= absorbed;
+        r.reducedDmg -= absorbed;
+        if (absorbed > 0) r.log.push(`Masamune Bouclier absorbe ${absorbed} degats`);
+      }
+      // Lethal blow absorption
+      if (fighter.hp - r.reducedDmg <= 0 && ps.masamuneSaves > 0 && ps.masamuneCD <= 0) {
+        r.reducedDmg = fighter.hp - 1; // survive with 1 HP
+        ps.masamuneSaves--;
+        ps.masamuneCD = 15;
+        r.absorbed = true;
+        r.log.push(`Masamune Immortel ! Coup mortel absorbe (${ps.masamuneSaves} restants)`);
+      }
+      break;
+    case 'tyrfing_curse':
+      if (ps.tyrfingInvActive) {
+        r.reducedDmg = 0;
+        ps.tyrfingInvActive = false;
+        r.log.push('Tyrfing Invincible ! 0 degats ce tour !');
+      }
+      break;
+    case 'fragarach_wind':
+      // Dodge already handled via dodgeChance in beforeAttack
+      // Counter on dodge: 300% damage
+      if (Math.random() < 0.15) {
+        r.reducedDmg = 0;
+        r.counterDmg = Math.floor(fighter.atk * 3.0);
+        r.log.push(`Fragarach Esquive + Contre-attaque ! ${r.counterDmg} degats !`);
+      }
+      break;
+    case 'amenonuhoko_divine':
+      // Shield absorbs damage
+      if (ps.amenoShield > 0) {
+        const absorbed = Math.min(ps.amenoShield, r.reducedDmg);
+        ps.amenoShield -= absorbed;
+        r.reducedDmg -= absorbed;
+        if (absorbed > 0) r.log.push(`Amenonuhoko Bouclier : -${absorbed} degats`);
+      }
+      // Self-rez on lethal
+      if (fighter.hp - r.reducedDmg <= 0 && !ps.amenoRezUsed) {
+        r.reducedDmg = fighter.hp - Math.floor(fighter.maxHp * 0.40);
+        if (r.reducedDmg < 0) r.reducedDmg = 0;
+        ps.amenoRezUsed = true;
+        r.absorbed = true;
+        r.log.push('Amenonuhoko Resurrection ! Revient a 40% HP !');
+      }
+      break;
+  }
+  return r;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // MERGE EQUIPMENT BONUSES

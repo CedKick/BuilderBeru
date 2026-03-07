@@ -13,18 +13,30 @@ export const EXPEDITION_ITEMS = [
   { id: 'exp_forest_chest', name: 'Plastron Sylvestre', type: 'armor', slot: 'chest', rarity: 'uncommon', binding: 'lqe', stats: { hp_flat: 800, def_flat: 15 }, setId: 'set_forest' },
   { id: 'exp_forest_gloves', name: 'Gantelets Sylvestres', type: 'armor', slot: 'gloves', rarity: 'uncommon', binding: 'lqe', stats: { atk_flat: 15, crit_rate: 3 }, setId: 'set_forest' },
   { id: 'exp_forest_boots', name: 'Bottes Sylvestres', type: 'armor', slot: 'boots', rarity: 'uncommon', binding: 'lqe', stats: { spd_flat: 8, def_flat: 10 }, setId: 'set_forest' },
+  { id: 'exp_forest_necklace', name: 'Collier Sylvestre', type: 'armor', slot: 'necklace', rarity: 'uncommon', binding: 'lqe', stats: { hp_pct: 5, def_flat: 8 }, setId: 'set_forest' },
+  { id: 'exp_forest_bracelet', name: 'Bracelet Sylvestre', type: 'armor', slot: 'bracelet', rarity: 'uncommon', binding: 'lqe', stats: { atk_pct: 4, def_flat: 6 }, setId: 'set_forest' },
+  { id: 'exp_forest_ring', name: 'Anneau Sylvestre', type: 'armor', slot: 'ring', rarity: 'uncommon', binding: 'lqe', stats: { atk_flat: 12, crit_rate: 2 }, setId: 'set_forest' },
+  { id: 'exp_forest_earring', name: 'Boucles Sylvestres', type: 'armor', slot: 'earring', rarity: 'uncommon', binding: 'lqe', stats: { hp_pct: 4, atk_flat: 10 }, setId: 'set_forest' },
 
   // ── SET: Carapace de Pierre (Boss 2) — rare ──
   { id: 'exp_stone_helm', name: 'Heaume de Pierre', type: 'armor', slot: 'helm', rarity: 'rare', binding: 'lqe', stats: { hp_flat: 800, def_flat: 20 }, setId: 'set_stone' },
   { id: 'exp_stone_chest', name: 'Plastron de Pierre', type: 'armor', slot: 'chest', rarity: 'rare', binding: 'lqe', stats: { hp_flat: 1200, def_flat: 30 }, setId: 'set_stone' },
   { id: 'exp_stone_gloves', name: 'Gantelets de Pierre', type: 'armor', slot: 'gloves', rarity: 'rare', binding: 'lqe', stats: { def_flat: 20, res_flat: 5 }, setId: 'set_stone' },
   { id: 'exp_stone_boots', name: 'Bottes de Pierre', type: 'armor', slot: 'boots', rarity: 'rare', binding: 'lqe', stats: { def_flat: 15, hp_flat: 600 }, setId: 'set_stone' },
+  { id: 'exp_stone_necklace', name: 'Collier de Pierre', type: 'armor', slot: 'necklace', rarity: 'rare', binding: 'lqe', stats: { hp_pct: 8, def_flat: 15 }, setId: 'set_stone' },
+  { id: 'exp_stone_bracelet', name: 'Bracelet de Pierre', type: 'armor', slot: 'bracelet', rarity: 'rare', binding: 'lqe', stats: { def_pct: 6, hp_flat: 400 }, setId: 'set_stone' },
+  { id: 'exp_stone_ring', name: 'Anneau de Pierre', type: 'armor', slot: 'ring', rarity: 'rare', binding: 'lqe', stats: { def_flat: 18, res_flat: 4 }, setId: 'set_stone' },
+  { id: 'exp_stone_earring', name: 'Boucles de Pierre', type: 'armor', slot: 'earring', rarity: 'rare', binding: 'lqe', stats: { hp_pct: 6, def_flat: 12 }, setId: 'set_stone' },
 
   // ── SET: Voile d'Ombre (Boss 3) — epic ──
   { id: 'exp_shadow_helm', name: 'Capuche d\'Ombre', type: 'armor', slot: 'helm', rarity: 'epic', binding: 'lqe', stats: { atk_flat: 25, crit_rate: 5 }, setId: 'set_shadow' },
   { id: 'exp_shadow_chest', name: 'Tunique d\'Ombre', type: 'armor', slot: 'chest', rarity: 'epic', binding: 'lqe', stats: { atk_flat: 35, hp_flat: 500 }, setId: 'set_shadow' },
   { id: 'exp_shadow_gloves', name: 'Griffes d\'Ombre', type: 'armor', slot: 'gloves', rarity: 'epic', binding: 'lqe', stats: { atk_flat: 30, crit_rate: 8 }, setId: 'set_shadow' },
   { id: 'exp_shadow_boots', name: 'Sandales d\'Ombre', type: 'armor', slot: 'boots', rarity: 'epic', binding: 'lqe', stats: { spd_flat: 15, atk_flat: 20 }, setId: 'set_shadow' },
+  { id: 'exp_shadow_necklace', name: 'Pendentif d\'Ombre', type: 'armor', slot: 'necklace', rarity: 'epic', binding: 'lqe', stats: { atk_pct: 8, crit_rate: 4 }, setId: 'set_shadow' },
+  { id: 'exp_shadow_bracelet', name: 'Bracelet d\'Ombre', type: 'armor', slot: 'bracelet', rarity: 'epic', binding: 'lqe', stats: { atk_pct: 6, spd_flat: 8 }, setId: 'set_shadow' },
+  { id: 'exp_shadow_ring', name: 'Anneau d\'Ombre', type: 'armor', slot: 'ring', rarity: 'epic', binding: 'lqe', stats: { crit_rate: 6, crit_dmg: 10 }, setId: 'set_shadow' },
+  { id: 'exp_shadow_earring', name: 'Boucles d\'Ombre', type: 'armor', slot: 'earring', rarity: 'epic', binding: 'lqe', stats: { atk_pct: 7, hp_flat: 350 }, setId: 'set_shadow' },
 
   // ── Armure Feuillue (Boss 1-2 trash) — common ──
   { id: 'exp_leaf_helm', name: 'Chapeau de Feuilles', type: 'armor', slot: 'helm', rarity: 'common', binding: 'lqe', stats: { hp_flat: 300, def_flat: 5 } },
@@ -35,6 +47,8 @@ export const EXPEDITION_ITEMS = [
   { id: 'exp_crystal_chest', name: 'Armure Cristalline', type: 'armor', slot: 'chest', rarity: 'rare', binding: 'lqe', stats: { hp_flat: 1000, def_flat: 22 } },
   { id: 'exp_crystal_gloves', name: 'Gants Cristallins', type: 'armor', slot: 'gloves', rarity: 'rare', binding: 'lqe', stats: { atk_flat: 20, crit_rate: 5, spd_flat: 3 } },
   { id: 'exp_crystal_boots', name: 'Bottes Cristallines', type: 'armor', slot: 'boots', rarity: 'rare', binding: 'lqe', stats: { spd_flat: 10, def_flat: 12 } },
+  { id: 'exp_crystal_necklace', name: 'Collier Cristallin', type: 'armor', slot: 'necklace', rarity: 'rare', binding: 'lqe', stats: { hp_pct: 6, atk_flat: 12 } },
+  { id: 'exp_crystal_ring', name: 'Anneau Cristallin', type: 'armor', slot: 'ring', rarity: 'rare', binding: 'lqe', stats: { crit_rate: 4, atk_flat: 15 } },
 
   // ══════════════════════════════════════════════════════
   // ZONE ABYSSES — Armor (Boss 6-10)
@@ -45,6 +59,10 @@ export const EXPEDITION_ITEMS = [
   { id: 'exp_abyss_chest', name: 'Cuirasse des Abysses', type: 'armor', slot: 'chest', rarity: 'epic', binding: 'lqe', stats: { hp_flat: 1500, def_flat: 38 }, setId: 'set_abyss' },
   { id: 'exp_abyss_gloves', name: 'Gantelets des Abysses', type: 'armor', slot: 'gloves', rarity: 'epic', binding: 'lqe', stats: { atk_flat: 40, crit_rate: 8 }, setId: 'set_abyss' },
   { id: 'exp_abyss_boots', name: 'Bottes des Abysses', type: 'armor', slot: 'boots', rarity: 'epic', binding: 'lqe', stats: { spd_flat: 14, def_flat: 22, hp_flat: 400 }, setId: 'set_abyss' },
+  { id: 'exp_abyss_necklace', name: 'Collier des Abysses', type: 'armor', slot: 'necklace', rarity: 'epic', binding: 'lqe', stats: { hp_pct: 10, def_flat: 20 }, setId: 'set_abyss' },
+  { id: 'exp_abyss_bracelet', name: 'Bracelet des Abysses', type: 'armor', slot: 'bracelet', rarity: 'epic', binding: 'lqe', stats: { atk_pct: 8, def_flat: 15 }, setId: 'set_abyss' },
+  { id: 'exp_abyss_ring', name: 'Anneau des Abysses', type: 'armor', slot: 'ring', rarity: 'epic', binding: 'lqe', stats: { atk_flat: 35, crit_dmg: 12 }, setId: 'set_abyss' },
+  { id: 'exp_abyss_earring', name: 'Boucles des Abysses', type: 'armor', slot: 'earring', rarity: 'epic', binding: 'lqe', stats: { hp_pct: 8, spd_flat: 10 }, setId: 'set_abyss' },
 
   // ── Armure de Magma (Boss 8-10) — epic ──
   { id: 'exp_magma_helm', name: 'Casque de Magma', type: 'armor', slot: 'helm', rarity: 'epic', binding: 'lqe', stats: { hp_flat: 1100, atk_flat: 20 } },
@@ -60,6 +78,10 @@ export const EXPEDITION_ITEMS = [
   { id: 'exp_void_chest', name: 'Plastron du Neant', type: 'armor', slot: 'chest', rarity: 'legendary', binding: 'lqr', stats: { hp_flat: 2000, def_flat: 50, atk_flat: 20 }, setId: 'set_void' },
   { id: 'exp_void_gloves', name: 'Griffes du Neant', type: 'armor', slot: 'gloves', rarity: 'legendary', binding: 'lqr', stats: { atk_flat: 55, crit_rate: 12 }, setId: 'set_void' },
   { id: 'exp_void_boots', name: 'Bottes du Neant', type: 'armor', slot: 'boots', rarity: 'legendary', binding: 'lqr', stats: { spd_flat: 22, atk_flat: 30, def_flat: 15 }, setId: 'set_void' },
+  { id: 'exp_void_necklace', name: 'Amulette du Neant', type: 'armor', slot: 'necklace', rarity: 'legendary', binding: 'lqr', stats: { atk_pct: 12, crit_rate: 8, hp_flat: 300 }, setId: 'set_void' },
+  { id: 'exp_void_bracelet', name: 'Bracelet du Neant', type: 'armor', slot: 'bracelet', rarity: 'legendary', binding: 'lqr', stats: { atk_pct: 10, int_pct: 8 }, setId: 'set_void' },
+  { id: 'exp_void_ring', name: 'Anneau du Neant', type: 'armor', slot: 'ring', rarity: 'legendary', binding: 'lqr', stats: { crit_rate: 10, crit_dmg: 18, atk_flat: 25 }, setId: 'set_void' },
+  { id: 'exp_void_earring', name: 'Boucles du Neant', type: 'armor', slot: 'earring', rarity: 'legendary', binding: 'lqr', stats: { hp_pct: 12, def_flat: 30, atk_pct: 6 }, setId: 'set_void' },
 
   // ── Armure Eclipse (Boss 14-15 endgame) — legendary ──
   { id: 'exp_eclipse_helm', name: 'Couronne Eclipse', type: 'armor', slot: 'helm', rarity: 'legendary', binding: 'lqr', stats: { atk_flat: 50, hp_flat: 800, crit_rate: 8 } },

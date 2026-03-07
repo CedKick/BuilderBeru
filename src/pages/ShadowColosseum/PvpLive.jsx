@@ -25,6 +25,10 @@ import {
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses,
   getActivePassives, WEAPONS, ARTIFACT_SETS, ALL_ARTIFACT_SETS,
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
+  KATANA_Z_ATK_PER_HIT, KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS, KATANA_V_BUFF_CHANCE,
+  SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
+  GULDAN_HEAL_PER_STACK, GULDAN_DEF_PER_HIT, GULDAN_ATK_PER_HIT, GULDAN_SPD_CHANCE, GULDAN_SPD_BOOST, GULDAN_SPD_MAX_STACKS, GULDAN_STUN_CHANCE,
+  initExpPassive, expPassiveBeforeAttack, expPassiveAfterAttack, expPassiveOnDamageTaken, EXPEDITION_PASSIVE_IDS,
 } from './equipmentData';
 import {
   CLASS_SET_TIERS, CLASS_IDEAL_STATS,
@@ -934,6 +938,7 @@ export default function PvpLive() {
       isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support' || HUNTERS[id]?.class === 'tank',
       hunterClass: HUNTERS[id]?.class || 'fighter',
       weaponType: wId && WEAPONS[wId] ? WEAPONS[wId].weaponType : null,
+      weaponPassiveId: weaponPassive || null,
       passiveState: {
         sianStacks: 0,
         ...(weaponPassive === 'sulfuras_fury' ? { sulfurasStacks: 0 } : {}),
@@ -941,6 +946,8 @@ export default function PvpLive() {
         ...(weaponPassive === 'katana_z_fury' ? { katanaZStacks: 0 } : {}),
         ...(weaponPassive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
         ...(weaponPassive === 'guldan_halo' ? { guldanState: { healStacks: 0, defBonus: 0, atkBonus: 0, spdStacks: 0 } } : {}),
+        // Expedition weapon passive state
+        ...(weaponPassive && EXPEDITION_PASSIVE_IDS.includes(weaponPassive) ? initExpPassive(weaponPassive) : {}),
       },
     };
   }, [allPool, coloData, raidData]);
@@ -1552,23 +1559,143 @@ export default function PvpLive() {
     // Set cooldown
     if (skill.cdMax > 0) skill.cd = skill.cdMax;
 
+    // ─── Weapon passives: before-attack ATK buffs ───
+    const origAtk = attacker.atk;
+    const origDef = attacker.def;
+    const ps = attacker.passiveState;
+    if (ps) {
+      // Sulfuras: +33% per stack
+      if (ps.sulfurasStacks !== undefined && ps.sulfurasStacks > 0) {
+        attacker.atk = Math.floor(attacker.atk * (1 + ps.sulfurasStacks / 3));
+      }
+      // Shadow Silence
+      if (ps.shadowSilence !== undefined) {
+        const activeStacks = ps.shadowSilence.filter(s => s > 0).length;
+        if (activeStacks > 0) attacker.atk = Math.floor(attacker.atk * (1 + activeStacks * 1.0));
+      }
+      // Katana Z Fury
+      if (ps.katanaZStacks !== undefined && ps.katanaZStacks > 0) {
+        attacker.atk = Math.floor(attacker.atk * (1 + ps.katanaZStacks * KATANA_Z_ATK_PER_HIT / 100));
+      }
+      // Katana V Chaos
+      if (ps.katanaVState?.nextDmgMult > 1) {
+        attacker.atk = Math.floor(attacker.atk * ps.katanaVState.nextDmgMult);
+      }
+      if (ps.katanaVState?.allStatBuff > 0) {
+        attacker.atk = Math.floor(attacker.atk * (1 + ps.katanaVState.allStatBuff / 100));
+      }
+      // Gul'dan Halo Eternelle
+      if (ps.guldanState) {
+        const gs = ps.guldanState;
+        if (gs.atkBonus > 0) attacker.atk = Math.floor(attacker.atk * (1 + gs.atkBonus));
+        if (gs.defBonus > 0) attacker.def = Math.floor(attacker.def * (1 + gs.defBonus));
+        if (gs.spdStacks > 0) attacker.atk = Math.floor(attacker.atk * (1 + gs.spdStacks * GULDAN_SPD_BOOST * 0.1));
+      }
+      // Expedition Weapon Passives: beforeAttack
+      if (attacker.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(attacker.weaponPassiveId)) {
+        const expBefore = expPassiveBeforeAttack(ps, attacker.weaponPassiveId, attacker, target, false, false);
+        if (expBefore.atkMult > 0) attacker.atk = Math.floor(attacker.atk * (1 + expBefore.atkMult));
+        if (expBefore.defPenPct > 0) target.def = Math.floor(target.def * (1 - expBefore.defPenPct));
+        for (const msg of expBefore.log) setBattleLog(prev => [...prev, { text: `${attacker.name} : ${msg}`, type: 'passive' }]);
+      }
+    }
+
     // Compute attack result
     const defender = target;
     const res = computeAttack(attacker, skill, defender, attacker.tb || {});
 
+    // Restore original stats
+    attacker.atk = origAtk;
+    attacker.def = origDef;
+
     // Apply damage
     let koOccurred = false;
     if (res.damage > 0) {
+      let dmg = res.damage;
       // Shield absorb first
       if (defender.shield > 0) {
-        const absorbed = Math.min(defender.shield, res.damage);
+        const absorbed = Math.min(defender.shield, dmg);
         defender.shield -= absorbed;
-        res.damage -= absorbed;
+        dmg -= absorbed;
       }
-      defender.hp = Math.max(0, defender.hp - res.damage);
+      // Expedition Weapon Passives: onDamageTaken (defender)
+      if (dmg > 0 && defender.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(defender.weaponPassiveId)) {
+        const expDmg = expPassiveOnDamageTaken(defender.passiveState, defender.weaponPassiveId, defender, dmg);
+        dmg = expDmg.reducedDmg;
+        if (expDmg.counterDmg > 0 && attacker.alive) {
+          attacker.hp -= expDmg.counterDmg;
+          if (attacker.hp <= 0) { attacker.hp = 0; attacker.alive = false; }
+        }
+        if (expDmg.absorbed) {
+          dmg = 0;
+          setBattleLog(prev => [...prev, { text: `${defender.name} absorbe le coup fatal !`, type: 'passive' }]);
+        }
+        for (const msg of expDmg.log) setBattleLog(prev => [...prev, { text: `${defender.name} : ${msg}`, type: 'passive' }]);
+      }
+      res.damage = dmg;
+      defender.hp = Math.max(0, defender.hp - dmg);
       if (defender.hp <= 0) {
         defender.alive = false;
         koOccurred = true;
+      }
+    }
+
+    // ─── Weapon passives: post-attack stack building ───
+    if (ps && res.damage > 0) {
+      if (ps.katanaZStacks !== undefined) ps.katanaZStacks++;
+      if (ps.sulfurasStacks !== undefined) {
+        ps.sulfurasStacks = Math.min(SULFURAS_STACK_MAX, ps.sulfurasStacks + SULFURAS_STACK_PER_TURN);
+      }
+      if (ps.shadowSilence !== undefined) {
+        ps.shadowSilence = ps.shadowSilence.map(t => t - 1).filter(t => t > 0);
+        if (ps.shadowSilence.length < 3 && Math.random() < 0.10) {
+          ps.shadowSilence.push(5);
+        }
+      }
+      if (ps.katanaVState) {
+        if (ps.katanaVState.nextDmgMult > 1) ps.katanaVState.nextDmgMult = 1;
+        if (ps.katanaVState.dots < KATANA_V_DOT_MAX_STACKS) ps.katanaVState.dots++;
+        if (ps.katanaVState.dots > 0 && defender.alive) {
+          const dotDmg = Math.max(1, Math.floor((attacker.maxMana || attacker.atk) * KATANA_V_DOT_PCT * ps.katanaVState.dots));
+          defender.hp -= dotDmg;
+          if (defender.hp <= 0) { defender.hp = 0; defender.alive = false; koOccurred = true; }
+        }
+        if (Math.random() < KATANA_V_BUFF_CHANCE) {
+          const roll = Math.random();
+          if (roll < 0.33) ps.katanaVState.allStatBuff += 5;
+          else if (roll < 0.66) ps.katanaVState.shield = true;
+          else ps.katanaVState.nextDmgMult = 3;
+        }
+      }
+      if (ps.guldanState) {
+        const gs = ps.guldanState;
+        gs.healStacks = (gs.healStacks || 0) + 1;
+        const healAmt = Math.floor(res.damage * GULDAN_HEAL_PER_STACK * gs.healStacks);
+        if (healAmt > 0) {
+          attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmt);
+        }
+        gs.defBonus = (gs.defBonus || 0) + GULDAN_DEF_PER_HIT;
+        gs.atkBonus = (gs.atkBonus || 0) + GULDAN_ATK_PER_HIT;
+        if (gs.spdStacks < GULDAN_SPD_MAX_STACKS && Math.random() < GULDAN_SPD_CHANCE) gs.spdStacks++;
+        if (Math.random() < GULDAN_STUN_CHANCE && defender.alive) {
+          // Stun: skip defender next turn (simplified)
+          defender.buffs.push({ type: 'stun', turns: 1 });
+        }
+      }
+      // Expedition Weapon Passives: afterAttack
+      if (attacker.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(attacker.weaponPassiveId)) {
+        const expAfter = expPassiveAfterAttack(ps, attacker.weaponPassiveId, attacker, defender, res.damage, res.isCrit, !defender.alive);
+        if (expAfter.healAmount > 0) {
+          attacker.hp = Math.min(attacker.maxHp, attacker.hp + expAfter.healAmount);
+        }
+        if (expAfter.bonusDmg > 0 && defender.alive) {
+          defender.hp -= expAfter.bonusDmg;
+          if (defender.hp <= 0) { defender.hp = 0; defender.alive = false; koOccurred = true; }
+        }
+        if (expAfter.shield > 0) {
+          attacker.shield = (attacker.shield || 0) + expAfter.shield;
+        }
+        for (const msg of expAfter.log) setBattleLog(prev => [...prev, { text: `${attacker.name} : ${msg}`, type: 'passive' }]);
       }
     }
 

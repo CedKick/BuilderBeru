@@ -7,6 +7,7 @@ module.exports = {
     env: {
       NODE_ENV: 'production',
       PORT: 3004,
+      DATABASE_URL: 'postgresql://builderberu:beru-local-2026-secure@localhost:5432/neondb',
     },
     watch: false,
     max_memory_restart: '500M',

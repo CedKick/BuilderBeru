@@ -37,6 +37,7 @@ import {
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
   GULDAN_HEAL_PER_STACK, GULDAN_DEF_PER_HIT, GULDAN_ATK_PER_HIT, GULDAN_SPD_CHANCE, GULDAN_SPD_BOOST, GULDAN_SPD_MAX_STACKS, GULDAN_STUN_CHANCE,
   trimArtifactInventory,
+  initExpPassive, expPassiveBeforeAttack, expPassiveAfterAttack, expPassiveOnDamageTaken, EXPEDITION_PASSIVE_IDS,
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
@@ -452,6 +453,8 @@ export default function RaidMode() {
         ...(wId2 && WEAPONS[wId2]?.passive === 'katana_z_fury' ? { katanaZStacks: 0 } : {}),
         ...(wId2 && WEAPONS[wId2]?.passive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
         ...(wId2 && WEAPONS[wId2]?.passive === 'guldan_halo' ? { guldanState: { healStacks: 0, defBonus: 0, atkBonus: 0, spdStacks: 0, divinUsed: false } } : {}),
+        // Expedition weapon passive state
+        ...(wId2 && WEAPONS[wId2]?.passive && EXPEDITION_PASSIVE_IDS.includes(WEAPONS[wId2].passive) ? initExpPassive(WEAPONS[wId2].passive) : {}),
         // ULTIME artifact passive state
         eternalRageStacks: 0,     // Rage Eternelle: ATK stacking
         celestialShield: 0,       // Gardien Celeste: shield HP
@@ -466,6 +469,7 @@ export default function RaidMode() {
       },
       talentBonuses: mergedTb,
       hunterPassive,
+      weaponPassiveId: wId2 && WEAPONS[wId2] ? WEAPONS[wId2].passive : null,
       isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support' || HUNTERS[id]?.class === 'tank',
       hunterClass: HUNTERS[id]?.class || 'fighter',
       lastAttackAt: 0, attackInterval: spdToInterval(finalSpd),
@@ -1075,6 +1079,14 @@ export default function RaidMode() {
         if (gs.spdStacks > 0) chibi.atk = Math.floor(chibi.atk * (1 + gs.spdStacks * GULDAN_SPD_BOOST * 0.1));
       }
 
+      // ── Expedition Weapon Passives: beforeAttack ──
+      if (chibi.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(chibi.weaponPassiveId)) {
+        const expBefore = expPassiveBeforeAttack(chibi.passiveState, chibi.weaponPassiveId, chibi, state.boss, false, true);
+        if (expBefore.atkMult > 0) chibi.atk = Math.floor(chibi.atk * (1 + expBefore.atkMult));
+        if (expBefore.defPenPct > 0) state.boss.def = Math.floor(state.boss.def * (1 - expBefore.defPenPct));
+        for (const msg of expBefore.log) logEntries.push({ text: `${chibi.name} : ${msg}`, time: elapsed, type: 'buff' });
+      }
+
       // ── ULTIME Artifact Passives: beforeAttack ──
       // Rage Eternelle (2p): +1% ATK per stack — individual
       if (chibi.passiveState.eternalRageStacks > 0) {
@@ -1406,6 +1418,29 @@ export default function RaidMode() {
               logEntries.push({ text: `${chibi.name} : HALO DIVIN ! ${deadAlly.name} ressuscite a 50% PV !`, time: elapsed, type: 'heal' });
             }
           }
+        }
+
+        // ── Expedition Weapon Passives: afterAttack ──
+        if (chibi.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(chibi.weaponPassiveId)) {
+          const expAfter = expPassiveAfterAttack(chibi.passiveState, chibi.weaponPassiveId, chibi, state.boss, result.damage, result.isCrit, state.boss.hp <= 0);
+          if (expAfter.healAmount > 0) {
+            chibi.hp = Math.min(chibi.maxHp, chibi.hp + expAfter.healAmount);
+            if (healWindowTracker.current[chibi.id] !== undefined) healWindowTracker.current[chibi.id] += expAfter.healAmount;
+            if (healReceivedWindowTracker.current[chibi.id] !== undefined) healReceivedWindowTracker.current[chibi.id] += expAfter.healAmount;
+            const ehLog = detailedLogsRef.current[chibi.id];
+            if (ehLog) { ehLog.totalHealing = (ehLog.totalHealing || 0) + expAfter.healAmount; ehLog.healReceived = (ehLog.healReceived || 0) + expAfter.healAmount; }
+          }
+          if (expAfter.bonusDmg > 0) {
+            state.boss.hp -= expAfter.bonusDmg;
+            dpsTracker.current[chibi.id] = (dpsTracker.current[chibi.id] || 0) + expAfter.bonusDmg;
+            dpsWindowTracker.current[chibi.id] = (dpsWindowTracker.current[chibi.id] || 0) + expAfter.bonusDmg;
+            const ebLog = detailedLogsRef.current[chibi.id];
+            if (ebLog) ebLog.totalDamage = (ebLog.totalDamage || 0) + expAfter.bonusDmg;
+          }
+          if (expAfter.shield > 0) {
+            chibi.shield = (chibi.shield || 0) + expAfter.shield;
+          }
+          for (const msg of expAfter.log) logEntries.push({ text: `${chibi.name} : ${msg}`, time: elapsed, type: 'buff' });
         }
 
         // ── ULTIME Artifact Passives: afterAttack ──
@@ -1747,6 +1782,23 @@ export default function RaidMode() {
             target.passiveState.vitalEmergencyCD = vSurge.emergencyCD || 10;
             logEntries.push({ text: `${target.name} : Siphon Vital mode urgence ! Lifesteal 100% pendant ${target.passiveState.vitalEmergencyActive} attaques !`, time: elapsed, type: 'buff' });
           }
+          // ── Expedition Weapon Passives: onDamageTaken ──
+          if (target.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(target.weaponPassiveId)) {
+            const expDmg = expPassiveOnDamageTaken(target.passiveState, target.weaponPassiveId, target, actualDmg);
+            actualDmg = expDmg.reducedDmg;
+            if (expDmg.counterDmg > 0) {
+              state.boss.hp -= expDmg.counterDmg;
+              dpsTracker.current[target.id] = (dpsTracker.current[target.id] || 0) + expDmg.counterDmg;
+              dpsWindowTracker.current[target.id] = (dpsWindowTracker.current[target.id] || 0) + expDmg.counterDmg;
+              const ecLog = detailedLogsRef.current[target.id];
+              if (ecLog) ecLog.totalDamage = (ecLog.totalDamage || 0) + expDmg.counterDmg;
+            }
+            if (expDmg.absorbed) {
+              // Lethal blow was absorbed — keep target alive
+            }
+            for (const msg of expDmg.log) logEntries.push({ text: `${target.name} : ${msg}`, time: elapsed, type: 'buff' });
+          }
+
           target.hp -= actualDmg;
           if (actualDmg > 0 && dmgTakenWindowTracker.current[target.id] !== undefined) dmgTakenWindowTracker.current[target.id] += actualDmg;
           const dtLog = detailedLogsRef.current[target.id];

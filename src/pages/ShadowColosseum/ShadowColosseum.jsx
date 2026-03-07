@@ -51,6 +51,7 @@ import {
   MAX_ARTIFACT_INVENTORY, trimArtifactInventory,
   REROLL_ALKAHEST_COST, REROLL_LOCK_COSTS, REROLL_BASE_COIN_COST, getRerollCoinCost, rerollArtifact,
   ENCHANT_ALKAHEST_COST, enchantArtifactStat, rerollArtifactMainStat, rerollArtifactFull, enchantWeaponStat, ENCHANT_MAIN_STAT_POOL,
+  initExpPassive, expPassiveBeforeAttack, expPassiveAfterAttack, expPassiveOnDamageTaken, EXPEDITION_PASSIVE_IDS,
 } from './equipmentData';
 import {
   isArc2Unlocked, ARC2_STAGES, ARC2_TIER_NAMES, ARC2_STORIES,
@@ -1560,6 +1561,7 @@ export default function ShadowColosseum() {
       shield: 0,
       skills, buffs: initBuffs, alive: true, tb: mergedTb, level,
       hunterPassive, // stored for combat-time conditional checks
+      weaponPassiveId: weaponPassive, // stored for expedition passives
       isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support' || HUNTERS[id]?.class === 'tank',
       hunterClass: HUNTERS[id]?.class || 'fighter',
       artPassives, // artifact set passives for combat
@@ -1570,6 +1572,7 @@ export default function ShadowColosseum() {
         ...(weaponPassive === 'katana_z_fury' ? { katanaZStacks: 0 } : {}),
         ...(weaponPassive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
         ...(weaponPassive === 'guldan_halo' ? { guldanState: { healStacks: 0, defBonus: 0, atkBonus: 0, spdStacks: 0, divinUsed: false } } : {}),
+        ...(EXPEDITION_PASSIVE_IDS.includes(weaponPassive) ? initExpPassive(weaponPassive) : {}),
         // Artifact passive state
         curseStacks: 0,           // Burning Curse: stacking DMG per turn
         curseDmgDealt: 0,         // Burning Curse: base dmg dealt bonus
@@ -3318,7 +3321,18 @@ export default function ShadowColosseum() {
       hunterPassive,
       talentBonuses: mergedTb,
       passives,
-      passiveState: { flammeStacks: 0, martyrHealed: false, echoTurnCounter: 0, echoFreeMana: false, sianStacks: 0 },
+      weaponPassiveId: (() => {
+        const wId = data.weapons[selChibi];
+        return wId && WEAPONS[wId] ? WEAPONS[wId].passive : null;
+      })(),
+      passiveState: {
+        flammeStacks: 0, martyrHealed: false, echoTurnCounter: 0, echoFreeMana: false, sianStacks: 0,
+        ...(() => {
+          const wId = data.weapons[selChibi];
+          const wp = wId && WEAPONS[wId] ? WEAPONS[wId].passive : null;
+          return wp && EXPEDITION_PASSIVE_IDS.includes(wp) ? initExpPassive(wp) : {};
+        })(),
+      },
       immortelUsed: false,
       colossusUsed: false,
       sulfurasStacks: (() => {
@@ -3402,6 +3416,13 @@ export default function ShadowColosseum() {
             }
           });
         } else if (dmgToPlayer > 0) {
+          // Expedition weapon passives (on damage taken — stunned turn)
+          if (battle.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(battle.weaponPassiveId)) {
+            const onDmg = expPassiveOnDamageTaken(ps, battle.weaponPassiveId, player, dmgToPlayer);
+            dmgToPlayer = onDmg.reducedDmg;
+            if (onDmg.counterDmg > 0) enemy.hp = Math.max(0, enemy.hp - onDmg.counterDmg);
+            onDmg.log.forEach(t => log.push({ text: t, type: 'buff', id: Date.now() + Math.random() * 0.01 }));
+          }
           if (player.shield > 0) { const sa = Math.min(dmgToPlayer, player.shield); player.shield -= sa; dmgToPlayer -= sa; }
           player.hp = Math.max(0, player.hp - dmgToPlayer);
         }
@@ -3511,6 +3532,13 @@ export default function ShadowColosseum() {
       if (battle.guldanState.spdStacks > 0) {
         atkMult += battle.guldanState.spdStacks * GULDAN_SPD_BOOST * 0.1; // SPD stacks → DMG boost
       }
+    }
+
+    // Expedition weapon passives (before-attack)
+    if (battle.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(battle.weaponPassiveId)) {
+      const expPre = expPassiveBeforeAttack(ps, battle.weaponPassiveId, player, enemy, false, !!enemy.isBoss);
+      atkMult += expPre.atkMult;
+      expPre.log.forEach(t => log.push({ text: t, type: 'buff', id: Date.now() + Math.random() * 0.01 }));
     }
 
     // Temporarily modify player for this attack
@@ -3653,6 +3681,23 @@ export default function ShadowColosseum() {
       }
     });
 
+    // Expedition weapon passives (post-attack)
+    if (battle.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(battle.weaponPassiveId)) {
+      const pDmg = pRes.damage || 0;
+      const killed = enemy.hp <= 0;
+      const wasCrit = pRes.crit || pRes.isCrit || false;
+      const expPost = expPassiveAfterAttack(ps, battle.weaponPassiveId, player, enemy, pDmg, wasCrit, killed);
+      if (expPost.healAmount > 0) player.hp = Math.min(player.maxHp, player.hp + expPost.healAmount);
+      if (expPost.bonusDmg > 0) enemy.hp = Math.max(0, enemy.hp - expPost.bonusDmg);
+      if (expPost.enemyDebuffs && expPost.enemyDebuffs.length > 0) {
+        expPost.enemyDebuffs.forEach(d => {
+          if (!enemy.buffs) enemy.buffs = [];
+          enemy.buffs.push({ type: d.type, val: Math.floor(enemy[d.type === 'def' ? 'def' : 'atk'] * d.val), turns: d.turns });
+        });
+      }
+      expPost.log.forEach(t => log.push({ text: t, type: 'player', id: Date.now() + Math.random() * 0.01 }));
+    }
+
     // Katana Z: add 1 ATK stack after each hit
     let newKatanaZStacks = battle.katanaZStacks;
     if (newKatanaZStacks !== undefined) {
@@ -3773,6 +3818,14 @@ export default function ShadowColosseum() {
         dmgToPlayer = 0;
         newKatanaVState.shield = false;
         log.push({ text: `Bouclier Divin absorbe le coup !`, type: 'buff', id: Date.now() + 0.9 });
+      }
+
+      // Expedition weapon passives (on damage taken)
+      if (!dodged && dmgToPlayer > 0 && battle.weaponPassiveId && EXPEDITION_PASSIVE_IDS.includes(battle.weaponPassiveId)) {
+        const onDmg = expPassiveOnDamageTaken(ps, battle.weaponPassiveId, player, dmgToPlayer);
+        dmgToPlayer = onDmg.reducedDmg;
+        if (onDmg.counterDmg > 0) enemy.hp = Math.max(0, enemy.hp - onDmg.counterDmg);
+        onDmg.log.forEach(t => log.push({ text: t, type: 'buff', id: Date.now() + Math.random() * 0.01 }));
       }
 
       // Shield absorption

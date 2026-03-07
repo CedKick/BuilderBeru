@@ -327,7 +327,7 @@ export default function MailInbox() {
     // Expedition items → convert to artifact format and add to artifactInventory
     // Currencies/essences stay in raidData (shadow_colosseum_raid)
     if (rewards.expeditionItems || rewards.expeditionCurrencies || rewards.expeditionEssences) {
-      const EXP_SLOT_MAP = { helm: 'casque', chest: 'plastron', gloves: 'gants', boots: 'bottes' };
+      const EXP_SLOT_MAP = { helm: 'casque', chest: 'plastron', gloves: 'gants', boots: 'bottes', necklace: 'collier', bracelet: 'bracelet', ring: 'anneau', earring: 'boucles' };
       const mapRarity = (r) => r === 'legendary' ? 'legendaire' : r === 'epic' ? 'legendaire' : (r === 'uncommon' || r === 'common') ? 'rare' : r;
 
       // Items → weapons go to weaponCollection, armor/set_piece go to artifactInventory
@@ -438,8 +438,23 @@ export default function MailInbox() {
 
       const result = await resp.json();
       if (result.success) {
-        // Apply rewards (async — loads freshest data from cloud/localStorage)
-        const finalData = await applyRewardsToLocalStorage(rewards);
+        // Server applied rewards directly in DB — pull fresh data into localStorage
+        const SAVE_KEY = 'shadow_colosseum_data';
+        const RAID_KEY = 'shadow_colosseum_raid';
+        // Invalidate ETags so loadCloud fetches fresh data
+        localStorage.removeItem('_cs_etag_' + SAVE_KEY);
+        localStorage.removeItem('_cs_etag_' + RAID_KEY);
+        const freshData = await cloudStorage.loadCloud(SAVE_KEY);
+        const freshRaid = await cloudStorage.loadCloud(RAID_KEY);
+        if (freshData) localStorage.setItem(SAVE_KEY, JSON.stringify(freshData));
+        if (freshRaid) localStorage.setItem(RAID_KEY, JSON.stringify(freshRaid));
+        // Coins use their own manager (separate from colosseum data)
+        if (rewards.coins && typeof rewards.coins === 'number') {
+          shadowCoinManager.addCoins(rewards.coins, 'mail-reward');
+        }
+        // Dispatch update so ShadowColosseum picks up new data
+        window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'shadow-data-update' } }));
+        const finalData = freshData || {};
 
         // Update local state
         setMails(prev => prev.map(m =>
