@@ -166,23 +166,25 @@ export class PassiveEngine {
       const s = this.state.get(char.id);
       if (!s) continue;
 
-      // Sacrifice du Martyr 2pc: self ATK -30%, ally ATK +15%
+      // Sacrifice du Martyr 2pc: self ATK -30%, allies ATK +15% (additive)
       if (this.has2pcPassive(char.id, 'martyr_aura')) {
+        const buff = Math.floor(char.atk * 0.15);
         char.atk = Math.floor(char.atk * 0.70);
         for (const ally of characters) {
           if (ally.id !== char.id && ally.username === char.username) {
-            ally.atk = Math.floor(ally.atk * 1.15);
+            ally.atk += buff;
           }
         }
       }
 
-      // Pacte des Ombres 2pc: self ATK -50%, allies ATK +150%
+      // Pacte des Ombres 2pc: self ATK -50%, allies ATK +150% (additive)
       if (this.has2pcPassive(char.id, 'shadow_pact') && !s.shadowPactApplied) {
         s.shadowPactApplied = true;
+        const buff = Math.floor(char.atk * 1.50); // +150% of buffer's ATK
         char.atk = Math.floor(char.atk * 0.50);
         for (const ally of characters) {
           if (ally.id !== char.id && ally.username === char.username) {
-            ally.atk = Math.floor(ally.atk * 2.50); // +150%
+            ally.atk += buff;
           }
         }
       }

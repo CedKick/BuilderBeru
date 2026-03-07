@@ -296,11 +296,8 @@ export class ExpeditionCharacter {
     return Math.max(0, total);
   }
 
-  // Mages use INT (including mana-scaling mages like Megumin), everyone else uses ATK
+  // Everyone uses ATK as offensive stat. Mana-scaling skills (Megumin) boost power via manaScaling.
   getOffensiveStat() {
-    if (this.hunterClass === 'mage') {
-      return this.getEffectiveInt();
-    }
     return this.getEffectiveAtk();
   }
 
