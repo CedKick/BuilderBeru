@@ -1,5 +1,6 @@
 // ── Expedition II: Ragnaros — Bot AI ──
 // Generates inputs identical to real players, processed by GameEngine.handleInput()
+// Handles ALL boss mechanics: soak circles, wrath (pillars), mark spread, fire wave cover
 
 import { GAME } from '../config.js';
 
@@ -8,8 +9,13 @@ const BOT_NAMES = [
   'Greed', 'Jima', 'Tank', 'Esil', 'Fangs',
 ];
 
-// 6 classes for Ragnaros (vs 5 in Manaya)
 const COMP_PRIORITY = ['tank', 'healer', 'warrior', 'archer', 'berserker', 'mage'];
+
+const PILLAR_CENTERS = [
+  { x: 425, y: 540 }, { x: 1575, y: 540 },
+  { x: 425, y: 1460 }, { x: 1575, y: 1460 },
+  { x: 275, y: 975 }, { x: 1725, y: 975 },
+];
 
 let botIdCounter = 0;
 
@@ -44,6 +50,7 @@ export class BotAI {
     this.thinkInterval = 150 + Math.random() * 100;
     this.lastThink = 0;
     this.blocking = false;
+    this.assignedSoak = null; // which soak circle index this bot should go to
   }
 
   think(player, gs, dt) {
@@ -60,13 +67,23 @@ export class BotAI {
     const distToBoss = this._dist(player, boss);
     const angleToBoss = Math.atan2(boss.y - player.y, boss.x - player.x);
 
-    // Dodge AoE telegraphs
+    // ═══ PRIORITY 1: Handle critical mechanics (soak, wrath, mark, fire wave) ═══
+    const mechanicInput = this._handleMechanics(player, gs, boss, distToBoss);
+    if (mechanicInput) {
+      inputs.push(mechanicInput);
+      // Still allow skills while moving to mechanic
+      this._useDefensiveSkills(inputs, player, gs, boss, distToBoss);
+      return inputs;
+    }
+
+    // ═══ PRIORITY 2: Dodge AoE telegraphs ═══
     const dodgeInput = this._checkDodge(player, gs, boss, distToBoss);
     if (dodgeInput) {
       inputs.push(dodgeInput);
       return inputs;
     }
 
+    // ═══ PRIORITY 3: Class-specific combat AI ═══
     switch (this.playerClass) {
       case 'tank': this._thinkTank(inputs, player, gs, boss, distToBoss, angleToBoss); break;
       case 'healer': this._thinkHealer(inputs, player, gs, boss, distToBoss, angleToBoss); break;
@@ -77,6 +94,171 @@ export class BotAI {
     }
 
     return inputs;
+  }
+
+  // ═══════════════════════════════════════════════
+  // MECHANIC HANDLING — keeps bots alive
+  // ═══════════════════════════════════════════════
+
+  _handleMechanics(player, gs, boss, distToBoss) {
+    // 1. WRATH OF RAGNAROS — run to nearest pillar (one-shot if not behind pillar)
+    if (boss.telegraph?.type === 'wrath_of_ragnaros' || boss.activePattern === 'wrath_of_ragnaros') {
+      const pillar = this._nearestPillar(player);
+      const distToPillar = this._dist(player, pillar);
+      if (distToPillar > 60) {
+        return this._moveToward(player, pillar);
+      }
+      return { type: 'move', x: 0, y: 0 }; // stay at pillar
+    }
+
+    // 2. FIRE WAVE — run to pillar for cover (atk × 2.5 without cover)
+    if ((boss.telegraph?.type === 'fire_wave' || boss.activePattern === 'fire_wave') && !boss.patternData?.currentRadius) {
+      const pillar = this._nearestPillarBetween(player, boss);
+      if (pillar) {
+        const distToPillar = this._dist(player, pillar);
+        if (distToPillar > 50) {
+          return this._moveToward(player, pillar);
+        }
+      }
+    }
+
+    // 3. SOAK CIRCLES — one bot per circle, must stand in it
+    if (boss.soakCircles && boss.soakCircles.length > 0) {
+      const unsoaked = boss.soakCircles.filter(c => !c.soaked);
+      if (unsoaked.length > 0) {
+        // Assign this bot to closest unsoaked circle
+        const target = this._closestCircle(player, unsoaked);
+        if (target) {
+          const dist = this._dist(player, target);
+          if (dist > target.radius * 0.6) {
+            return this._moveToward(player, target);
+          }
+          return { type: 'move', x: 0, y: 0 }; // stay in circle
+        }
+      }
+    }
+
+    // 4. MARK — if someone is marked, spread away from them
+    if (boss.mark) {
+      const markedPlayer = gs.getAlivePlayers().find(p => p.id === boss.mark.playerId);
+      if (markedPlayer) {
+        if (markedPlayer.id === player.id) {
+          // I'm marked — move away from others
+          return this._moveAway(player, boss);
+        }
+        const distToMarked = this._dist(player, markedPlayer);
+        if (distToMarked < boss.mark.radius + 40) {
+          // Too close to marked player — spread out
+          return this._moveAway(player, markedPlayer);
+        }
+      }
+    }
+
+    // 5. ROTATING LASER — dodge perpendicular to beam
+    if (boss.activePattern === 'rotating_laser' && boss.patternData) {
+      const pd = boss.patternData;
+      const angle = pd.currentAngle || pd.startAngle;
+      for (let b = 0; b < (pd.beamCount || 1); b++) {
+        const beamAngle = angle + (b * Math.PI / (pd.beamCount || 1));
+        const dx = player.x - pd.x, dy = player.y - pd.y;
+        const perpDist = Math.abs(Math.sin(beamAngle) * dx - Math.cos(beamAngle) * dy);
+        const dotProduct = Math.cos(beamAngle) * dx + Math.sin(beamAngle) * dy;
+        if (perpDist < 80 && dotProduct > 0) {
+          // In laser path — dodge perpendicular
+          const dodgeAngle = beamAngle + Math.PI / 2;
+          return { type: 'move', x: Math.cos(dodgeAngle), y: Math.sin(dodgeAngle) };
+        }
+      }
+    }
+
+    // 6. LAVA TORNADOS — avoid them
+    if (boss.lavaTornados) {
+      for (const t of boss.lavaTornados) {
+        const dist = this._dist(player, t);
+        if (dist < t.radius + 60) {
+          return this._moveAway(player, t);
+        }
+      }
+    }
+
+    // 7. LAVA FISSURES — avoid standing in them
+    if (boss.lavaFissures) {
+      for (const f of boss.lavaFissures) {
+        const dist = this._dist(player, f);
+        if (dist < f.radius + 20) {
+          return this._moveAway(player, f);
+        }
+      }
+    }
+
+    // 8. FIRE PATCHES — avoid
+    if (boss.firePatches) {
+      for (const p of boss.firePatches) {
+        const dist = this._dist(player, p);
+        if (dist < p.radius + 15) {
+          return this._moveAway(player, p);
+        }
+      }
+    }
+
+    // 9. ADD EXPLOSIONS — dodge ticking bombs
+    if (boss.addExplosions) {
+      for (const e of boss.addExplosions) {
+        if (e.detonated) continue;
+        const dist = this._dist(player, e);
+        if (dist < e.radius + 40) {
+          return this._moveAway(player, e);
+        }
+      }
+    }
+
+    return null; // No urgent mechanic
+  }
+
+  _useDefensiveSkills(inputs, player, gs, boss, distToBoss) {
+    // Tank: block while moving
+    if (this.playerClass === 'tank' && !this.blocking && player.mana >= 20) {
+      inputs.push({ type: 'secondary' });
+      this.blocking = true;
+    }
+    // Healer: AoE heal while moving
+    if (this.playerClass === 'healer' && this._cdReady(player, 'skillA') && player.mana >= 55) {
+      const injured = gs.getAlivePlayers().filter(p => p.hp / p.maxHp < 0.6);
+      if (injured.length >= 2) inputs.push({ type: 'skillA' });
+    }
+  }
+
+  _nearestPillar(player) {
+    let best = PILLAR_CENTERS[0], bestDist = Infinity;
+    for (const p of PILLAR_CENTERS) {
+      const d = this._dist(player, p);
+      if (d < bestDist) { bestDist = d; best = p; }
+    }
+    return best;
+  }
+
+  _nearestPillarBetween(player, boss) {
+    // Find pillar that's between player and boss (so pillar blocks the wave)
+    let best = null, bestDist = Infinity;
+    for (const p of PILLAR_CENTERS) {
+      const pillarToBoss = this._dist(p, boss);
+      const playerToPillar = this._dist(player, p);
+      // Pillar should be closer to boss than we are, and close to us
+      if (pillarToBoss < this._dist(player, boss) && playerToPillar < bestDist) {
+        bestDist = playerToPillar;
+        best = p;
+      }
+    }
+    return best || this._nearestPillar(player);
+  }
+
+  _closestCircle(player, circles) {
+    let best = null, bestDist = Infinity;
+    for (const c of circles) {
+      const d = this._dist(player, c);
+      if (d < bestDist) { bestDist = d; best = c; }
+    }
+    return best;
   }
 
   _checkDodge(player, gs, boss, distToBoss) {
@@ -109,12 +291,13 @@ export class BotAI {
           }
         }
       }
-      if (t.type === 'fire_wave' && t.data) {
-        return null; // Can't dodge fire wave, just keep moving
-      }
-      if (t.type === 'wrath_of_ragnaros') {
-        // Run to nearest pillar
-        return null; // Handled by movement
+      if (t.type === 'boss_charge' && t.data) {
+        // Dodge perpendicular to charge path
+        const dx = player.x - t.data.startX, dy = player.y - t.data.startY;
+        const perpDist = Math.abs(Math.sin(t.data.angle) * dx - Math.cos(t.data.angle) * dy);
+        if (perpDist < (t.data.width || 60) + 40) {
+          return { type: 'dash' };
+        }
       }
     }
 
@@ -123,6 +306,15 @@ export class BotAI {
       const d = this._dist(player, boss.patternData);
       if (d < (boss.patternData.radius || 200)) {
         return { type: 'dash' };
+      }
+    }
+
+    // Meteor rain — dodge impact zones
+    if (boss.telegraph?.type === 'meteor_rain' && boss.telegraph.data?.meteors) {
+      for (const m of boss.telegraph.data.meteors) {
+        if (this._dist(player, m) < (m.radius || 55) + 30) {
+          return { type: 'dash' };
+        }
       }
     }
 

@@ -402,12 +402,12 @@ export class Boss {
     this.soakCircles = [];
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
-      const dist = 350 + Math.random() * 200;
+      const dist = 250 + Math.random() * 150; // closer to boss so bots can reach in time
       this.soakCircles.push({
         x: this.x + Math.cos(angle) * dist,
         y: this.y + Math.sin(angle) * dist,
-        radius: 50,
-        endTime: now + 6000,
+        radius: 70, // larger soak zone (was 50)
+        endTime: now + 8000, // 8s to soak (was 6s)
         soaked: false,
       });
     }

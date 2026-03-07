@@ -15,6 +15,7 @@ const CLASS_OVERLAY = {
   dps_cac:   { hpMult: 1.1, atkMult: 1.3, defMult: 1.0, spdMult: 1.1,  mana: 100, aggroMult: 1.0, color: '#ef4444', useRage: true },
   dps_range:  { hpMult: 0.95, atkMult: 1.1,  defMult: 0.9,  spdMult: 1.15, mana: 450, aggroMult: 1.0, color: '#f59e0b' },
   berserker:  { hpMult: 1.15, atkMult: 1.25, defMult: 0.9,  spdMult: 1.1,  mana: 400, aggroMult: 1.1, color: '#dc2626' },
+  mage:       { hpMult: 0.85, atkMult: 1.2,  defMult: 0.7,  spdMult: 1.0,  mana: 800, aggroMult: 0.9, color: '#c084fc' },
 };
 
 // Scale hunter stats (designed for Colosseum turn-based) to raid real-time context

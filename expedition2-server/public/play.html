@@ -1835,7 +1835,9 @@ function updateReadyBtn() {
 // ── WebSocket ──
 function connect() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${proto}//${location.host}/ws?username=${encodeURIComponent(username)}`);
+  // In production, play.html is served under /expedition2/ so WS must go through same prefix
+  const basePath = location.pathname.includes('/expedition2') ? '/expedition2' : '';
+  ws = new WebSocket(`${proto}//${location.host}${basePath}/ws?username=${encodeURIComponent(username)}`);
 
   ws.onopen = () => { connected = true; };
 
@@ -1975,12 +1977,22 @@ document.getElementById('death-restart').addEventListener('click', () => {
 });
 
 // ── Lobby UI Events ──
-// Step 1: Connect
+// Step 1: Connect (auto-connect if ?user= param from iframe)
 document.getElementById('connect-btn').addEventListener('click', doConnect);
 document.getElementById('username-input').addEventListener('keydown', e => { if (e.key === 'Enter') doConnect(); });
 function doConnect() {
   username = document.getElementById('username-input').value.trim() || 'Player';
   connect();
+}
+
+// Auto-connect if ?user= is in the URL (passed by RagnarosPve.jsx iframe)
+{
+  const urlUser = new URLSearchParams(location.search).get('user');
+  if (urlUser && urlUser.trim()) {
+    username = urlUser.trim();
+    document.getElementById('username-input').value = username;
+    connect();
+  }
 }
 
 // Step 2: Create/Join Room

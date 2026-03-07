@@ -276,7 +276,8 @@ export class GameEngine {
           type: 'heal_zone',
           x: hx, y: hy,
           radius: result.radius,
-          healPerTick: Math.floor(result.healAmount / result.ticks),
+          healPerTick: result.healAmount ? Math.floor(result.healAmount / result.ticks) : 0,
+          healPct: result.healPct || 0, // % of target maxHp per tick
           owner: player.id,
           spell: result.spell,
           endTime: now + result.duration,
@@ -292,7 +293,8 @@ export class GameEngine {
           if (!p.alive) continue;
           const ddx = p.x - player.x, ddy = p.y - player.y;
           if (ddx * ddx + ddy * ddy < result.radius * result.radius) {
-            const healed = p.heal(result.healAmount);
+            const healAmt = result.healPct ? Math.floor(p.maxHp * result.healPct) : (result.healAmount || 0);
+            const healed = p.heal(healAmt);
             if (healed > 0) {
               this.trackHeal(player.id, healed);
               if (this.boss) this.boss.addDamageEvent(p.x, p.y - 20, healed, 'heal');
@@ -467,6 +469,18 @@ export class GameEngine {
         break;
       }
 
+      case 'resurrect_start': {
+        // Healer R — channel 6s to resurrect nearby dead allies
+        this.effects.push({
+          type: 'resurrect_channel',
+          playerId: player.id,
+          x: player.x, y: player.y,
+          radius: result.radius,
+          endTime: now + result.duration,
+        });
+        break;
+      }
+
       case 'ice_aoe':
       case 'arrow_rain':
       case 'whirlwind':
@@ -598,27 +612,94 @@ export class GameEngine {
       }
     }
 
-    // Dodge dangerous patterns
+    // ═══ Dodge dangerous patterns ═══
+    // PRIORITY ORDER:
+    //   1. Wrath of Ragnaros (one-shot without pillar)
+    //   2. SOAK CIRCLES (raid-wide damage if failed — must be HIGH priority)
+    //   3. Fire wave (heavy damage without pillar cover)
+    //   4. Everything else (dodge telegraphs, hazards)
+
     let dodging = false;
     const pattern = this.boss.activePattern;
     const telegraph = this.boss.telegraph;
     const dangerType = pattern || telegraph?.type;
+    const PILLARS = [{ x: 425, y: 540 }, { x: 1575, y: 540 }, { x: 425, y: 1460 }, { x: 1575, y: 1460 }, { x: 275, y: 975 }, { x: 1725, y: 975 }];
 
-    if (dangerType === 'hammer_slam' && distToBoss < 280) {
-      bot.setInput(-dx / distToBoss, -dy / distToBoss);
-      dodging = true;
-    } else if (dangerType === 'fire_wave') {
-      const pd = this.boss.patternData;
-      if (pd && pd.currentRadius) {
-        const botDist = Math.sqrt((bot.x - pd.x) ** 2 + (bot.y - pd.y) ** 2);
-        if (Math.abs(botDist - pd.currentRadius) < 80) {
-          const awayX = bot.x - pd.x, awayY = bot.y - pd.y;
+    // ── P1: WRATH OF RAGNAROS — absolute one-shot, run to pillar ──
+    if (dangerType === 'wrath_of_ragnaros') {
+      let nearestWall = null, nearestDist = Infinity;
+      for (const w of PILLARS) {
+        const d = Math.sqrt((bot.x - w.x) ** 2 + (bot.y - w.y) ** 2);
+        if (d < nearestDist) { nearestDist = d; nearestWall = w; }
+      }
+      if (nearestWall && nearestDist > 60) {
+        const wx = nearestWall.x - bot.x, wy = nearestWall.y - bot.y;
+        const wd = Math.sqrt(wx * wx + wy * wy);
+        bot.setInput(wx / wd, wy / wd);
+        dodging = true;
+      }
+    }
+
+    // ── P2: SOAK CIRCLES — MUST soak or entire raid takes huge damage ──
+    if (!dodging && this.boss.soakCircles.length > 0) {
+      const botIdx = parseInt(bot.id.replace('bot_', '')) || 0;
+      const unsoaked = this.boss.soakCircles.filter(c => !c.soaked);
+      if (unsoaked.length > 0) {
+        // Assign each bot to a different circle when possible
+        const assigned = unsoaked[botIdx % unsoaked.length];
+        const sd = Math.sqrt((bot.x - assigned.x) ** 2 + (bot.y - assigned.y) ** 2);
+        if (sd > 20) {
+          const sx = assigned.x - bot.x, sy = assigned.y - bot.y;
+          bot.setInput(sx / sd, sy / sd);
+          dodging = true;
+        }
+      }
+    }
+
+    // ── P3: FIRE WAVE — run to pillar for cover ──
+    if (!dodging && dangerType === 'fire_wave') {
+      let nearestPillar = null, nearestPillarDist = Infinity;
+      for (const w of PILLARS) {
+        const d = Math.sqrt((bot.x - w.x) ** 2 + (bot.y - w.y) ** 2);
+        const pillarToBoss = Math.sqrt((w.x - this.boss.x) ** 2 + (w.y - this.boss.y) ** 2);
+        const score = d + (pillarToBoss > distToBoss ? 500 : 0);
+        if (score < nearestPillarDist) { nearestPillarDist = score; nearestPillar = w; }
+      }
+      if (nearestPillar) {
+        const pd2 = Math.sqrt((bot.x - nearestPillar.x) ** 2 + (bot.y - nearestPillar.y) ** 2);
+        if (pd2 > 50) {
+          const px = nearestPillar.x - bot.x, py = nearestPillar.y - bot.y;
+          bot.setInput(px / pd2, py / pd2);
+          dodging = true;
+        }
+      }
+    }
+
+    // ── P4: Mark — spread away from marked player ──
+    if (!dodging && this.boss.mark) {
+      const marked = playersArray.find(p => p.id === this.boss.mark.playerId && p.alive);
+      if (marked && bot.id !== marked.id) {
+        const md = Math.sqrt((bot.x - marked.x) ** 2 + (bot.y - marked.y) ** 2);
+        if (md < this.boss.mark.radius + 40) {
+          const awayX = bot.x - marked.x, awayY = bot.y - marked.y;
           const ad = Math.sqrt(awayX * awayX + awayY * awayY) || 1;
           bot.setInput(awayX / ad, awayY / ad);
           dodging = true;
         }
+      } else if (marked && bot.id === marked.id) {
+        // I'm marked — move away from team
+        const awayX = bot.x - this.boss.x, awayY = bot.y - this.boss.y;
+        const ad = Math.sqrt(awayX * awayX + awayY * awayY) || 1;
+        bot.setInput(awayX / ad, awayY / ad);
+        dodging = true;
       }
-    } else if (dangerType === 'rotating_laser') {
+    }
+
+    // ── P5: Standard dodges (telegraphs, patterns) ──
+    if (!dodging && dangerType === 'hammer_slam' && distToBoss < 280) {
+      bot.setInput(-dx / distToBoss, -dy / distToBoss);
+      dodging = true;
+    } else if (!dodging && dangerType === 'rotating_laser') {
       const pd = this.boss.patternData;
       if (pd && pd.currentAngle != null) {
         for (let b = 0; b < (pd.beamCount || 1); b++) {
@@ -634,19 +715,7 @@ export class GameEngine {
           }
         }
       }
-    } else if (dangerType === 'wrath_of_ragnaros') {
-      let nearestWall = null, nearestDist = Infinity;
-      for (const w of [{ x: 425, y: 540 }, { x: 1575, y: 540 }, { x: 425, y: 1460 }, { x: 1575, y: 1460 }, { x: 275, y: 975 }, { x: 1725, y: 975 }]) {
-        const d = Math.sqrt((bot.x - w.x) ** 2 + (bot.y - w.y) ** 2);
-        if (d < nearestDist) { nearestDist = d; nearestWall = w; }
-      }
-      if (nearestWall && nearestDist > 60) {
-        const wx = nearestWall.x - bot.x, wy = nearestWall.y - bot.y;
-        const wd = Math.sqrt(wx * wx + wy * wy);
-        bot.setInput(wx / wd, wy / wd);
-        dodging = true;
-      }
-    } else if (dangerType === 'boss_charge') {
+    } else if (!dodging && dangerType === 'boss_charge') {
       const td = this.boss.telegraph?.data || this.boss.patternData;
       if (td && td.angle != null) {
         const bx = bot.x - (td.startX || this.boss.x), by = bot.y - (td.startY || this.boss.y);
@@ -658,7 +727,7 @@ export class GameEngine {
           dodging = true;
         }
       }
-    } else if (dangerType === 'meteor_rain') {
+    } else if (!dodging && dangerType === 'meteor_rain') {
       const td = this.boss.telegraph?.data || this.boss.patternData;
       if (td?.meteors) {
         for (const m of td.meteors) {
@@ -674,7 +743,8 @@ export class GameEngine {
       }
     }
 
-    // Dodge lava tornados
+    // ── P6: Environmental hazards ──
+    // Lava tornados
     if (!dodging && this.boss.lavaTornados) {
       for (const t of this.boss.lavaTornados) {
         const td = Math.sqrt((bot.x - t.x) ** 2 + (bot.y - t.y) ** 2);
@@ -687,8 +757,7 @@ export class GameEngine {
         }
       }
     }
-
-    // Dodge lava fissures
+    // Lava fissures
     if (!dodging && this.boss.lavaFissures) {
       for (const f of this.boss.lavaFissures) {
         const fd = Math.sqrt((bot.x - f.x) ** 2 + (bot.y - f.y) ** 2);
@@ -701,22 +770,7 @@ export class GameEngine {
         }
       }
     }
-
-    // Dodge mark
-    if (!dodging && this.boss.mark) {
-      const marked = playersArray.find(p => p.id === this.boss.mark.playerId && p.alive);
-      if (marked && bot.id !== marked.id) {
-        const md = Math.sqrt((bot.x - marked.x) ** 2 + (bot.y - marked.y) ** 2);
-        if (md < this.boss.mark.radius + 40) {
-          const awayX = bot.x - marked.x, awayY = bot.y - marked.y;
-          const ad = Math.sqrt(awayX * awayX + awayY * awayY) || 1;
-          bot.setInput(awayX / ad, awayY / ad);
-          dodging = true;
-        }
-      }
-    }
-
-    // Dodge add explosions
+    // Add explosions
     if (!dodging && this.boss.addExplosions) {
       for (const exp of this.boss.addExplosions) {
         if (exp.detonated) continue;
@@ -730,18 +784,16 @@ export class GameEngine {
         }
       }
     }
-
-    // Soak circles
-    if (!dodging && this.boss.soakCircles.length > 0 && bot.botRole === 'dps') {
-      const botIdx = parseInt(bot.id.replace('bot_', ''));
-      const unsoaked = this.boss.soakCircles.filter(c => !c.soaked);
-      if (unsoaked.length > 0) {
-        const assigned = unsoaked[botIdx % unsoaked.length];
-        const sd = Math.sqrt((bot.x - assigned.x) ** 2 + (bot.y - assigned.y) ** 2);
-        if (sd > 20) {
-          const sx = assigned.x - bot.x, sy = assigned.y - bot.y;
-          bot.setInput(sx / sd, sy / sd);
+    // Fire patches
+    if (!dodging) {
+      for (const fp of this.boss.firePatches) {
+        const fpd = Math.sqrt((bot.x - fp.x) ** 2 + (bot.y - fp.y) ** 2);
+        if (fpd < fp.radius + 10) {
+          const awayX = bot.x - fp.x, awayY = bot.y - fp.y;
+          const ad = Math.sqrt(awayX * awayX + awayY * awayY) || 1;
+          bot.setInput(awayX / ad, awayY / ad);
           dodging = true;
+          break;
         }
       }
     }
@@ -1017,27 +1069,52 @@ export class GameEngine {
     for (const p of playersArray) {
       p.update(dt, now);
 
-      // Process channel ticks (archer barrage)
+      // Process channel ticks
       if (p.channeling && p.channelData && p.channelData.tickReady) {
         p.channelData.tickReady = false;
-        // Fire a projectile in aim direction
-        const target = this.boss && this.boss.alive ? this.boss : null;
-        if (target) {
-          const cdx = target.x - p.x + (Math.random() - 0.5) * 60;
-          const cdy = target.y - p.y + (Math.random() - 0.5) * 60;
-          const cdist = Math.sqrt(cdx * cdx + cdy * cdy) || 1;
-          const isCrit = Math.random() < p.critRate;
-          const baseDmg = Math.floor(p.getAtk() * p.channelData.dmgMult);
-          const damage = isCrit ? Math.floor(baseDmg * p.critDmg) : baseDmg;
-          this.projectiles.push({
-            x: p.x, y: p.y,
-            vx: (cdx / cdist) * 800, vy: (cdy / cdist) * 800,
-            damage, radius: 10,
-            owner: p.id, spell: 'ultimate',
-            life: (p.channelData.range || 550) / 800,
-            color: isCrit ? '#ffd700' : '#4ade80', crit: isCrit,
-          });
+
+        if (p.channelData.type === 'resurrect') {
+          // Resurrect: revive all dead allies within radius
+          const rezRadius = p.channelData.radius || 200;
+          for (const ally of playersArray) {
+            if (ally.alive || ally.id === p.id) continue;
+            const ddx = ally.x - p.x, ddy = ally.y - p.y;
+            if (ddx * ddx + ddy * ddy < rezRadius * rezRadius) {
+              ally.alive = true;
+              ally.hp = Math.floor(ally.maxHp * 0.5); // Revive at 50% HP
+              if (this.boss) this.boss.addDamageEvent(ally.x, ally.y - 20, Math.floor(ally.maxHp * 0.5), 'resurrect');
+              this.trackHeal(p.id, Math.floor(ally.maxHp * 0.5));
+              // Reset death tracker increment (they're alive again)
+            }
+          }
+        } else {
+          // Archer barrage — fire projectile in aim direction
+          const target = this.boss && this.boss.alive ? this.boss : null;
+          if (target) {
+            const cdx = target.x - p.x + (Math.random() - 0.5) * 60;
+            const cdy = target.y - p.y + (Math.random() - 0.5) * 60;
+            const cdist = Math.sqrt(cdx * cdx + cdy * cdy) || 1;
+            const isCrit = Math.random() < p.critRate;
+            const baseDmg = Math.floor(p.getAtk() * p.channelData.dmgMult);
+            const damage = isCrit ? Math.floor(baseDmg * p.critDmg) : baseDmg;
+            this.projectiles.push({
+              x: p.x, y: p.y,
+              vx: (cdx / cdist) * 800, vy: (cdy / cdist) * 800,
+              damage, radius: 10,
+              owner: p.id, spell: 'ultimate',
+              life: (p.channelData.range || 550) / 800,
+              color: isCrit ? '#ffd700' : '#4ade80', crit: isCrit,
+            });
+          }
         }
+      }
+
+      // Cancel resurrect channel if healer moves
+      if (p.channeling && p.channelData?.type === 'resurrect' && p.moving) {
+        p.channeling = false;
+        p.channelData = null;
+        // Remove the visual effect
+        this.effects = this.effects.filter(e => !(e.type === 'resurrect_channel' && e.playerId === p.id));
       }
     }
 
@@ -1129,7 +1206,8 @@ export class GameEngine {
           if (!p.alive) continue;
           const ddx = p.x - e.x, ddy = p.y - e.y;
           if (ddx * ddx + ddy * ddy < (e.radius || 80) * (e.radius || 80)) {
-            const healed = p.heal(e.healPerTick || 2000);
+            const healAmt = e.healPct ? Math.floor(p.maxHp * e.healPct) : (e.healPerTick || 2000);
+            const healed = p.heal(healAmt);
             if (healed > 0) {
               this.trackHeal(e.owner, healed);
               if (this.boss) this.boss.addDamageEvent(p.x, p.y - 20, healed, 'heal');

@@ -149,7 +149,7 @@ export class RoomManager {
     const room = this._getRoom(client);
     if (!room || room.state !== 'waiting') return;
 
-    const validClasses = ['tank', 'healer', 'dps_cac', 'dps_range', 'berserker'];
+    const validClasses = ['tank', 'healer', 'dps_cac', 'dps_range', 'berserker', 'mage'];
     if (!validClasses.includes(msg.class)) {
       this._send(ws, { type: 'error', message: 'Invalid class' });
       return;

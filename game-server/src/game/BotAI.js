@@ -9,7 +9,7 @@ const BOT_NAMES = [
 ];
 
 // Preferred class composition for bots (based on what the player picks)
-const COMP_PRIORITY = ['tank', 'healer', 'dps_cac', 'dps_range', 'berserker'];
+const COMP_PRIORITY = ['tank', 'healer', 'dps_cac', 'dps_range', 'berserker', 'mage'];
 
 let botIdCounter = 0;
 
@@ -27,7 +27,7 @@ export function pickBotClasses(playerClass, count) {
   // Second: healer
   if (!hasClass('healer') && needed.length < count) needed.push('healer');
   // Fill remaining with DPS variety
-  const dpsPool = ['dps_cac', 'berserker', 'dps_range'].filter(c => c !== playerClass);
+  const dpsPool = ['dps_cac', 'berserker', 'dps_range', 'mage'].filter(c => c !== playerClass);
   while (needed.length < count) {
     needed.push(dpsPool[needed.length % dpsPool.length]);
   }
@@ -108,6 +108,9 @@ export class BotAI {
         break;
       case 'berserker':
         this._thinkBerserker(inputs, player, gs, boss, distToBoss, angleToBoss);
+        break;
+      case 'mage':
+        this._thinkMage(inputs, player, gs, boss, distToBoss, angleToBoss);
         break;
     }
 
@@ -244,6 +247,7 @@ export class BotAI {
       case 'dps_cac': return 2;
       case 'berserker': return 2;
       case 'dps_range': return 3;
+      case 'mage': return 3;
       case 'healer': return 3;
       default: return 2;
     }
@@ -610,6 +614,50 @@ export class BotAI {
     // Basic attack
     if (!this.blocking && distToBoss < 100) {
       inputs.push({ type: 'start_basic', angle: angleToBoss });
+    }
+  }
+
+  // ── MAGE AI ──
+  _thinkMage(inputs, player, gs, boss, distToBoss, angleToBoss) {
+    // Position: mid-range (300-450px)
+    const idealDist = 380;
+    if (distToBoss < idealDist - 60) {
+      inputs.push(this._moveAway(player, boss));
+    } else if (distToBoss > idealDist + 60) {
+      inputs.push(this._moveToward(player, boss));
+    } else {
+      // Kite sideways
+      const strafeAngle = angleToBoss + Math.PI / 2 * (Math.random() > 0.5 ? 1 : -1);
+      inputs.push({ type: 'move', x: Math.cos(strafeAngle), y: Math.sin(strafeAngle) });
+    }
+
+    inputs.push({ type: 'aim', angle: angleToBoss });
+
+    // Cataclysme (ultimate) — channel when safe and have mana
+    if (player.cooldowns.ultimate <= 0 && player.mana >= 200 && !this._nearbyDanger(player, gs)) {
+      inputs.push({ type: 'skill', skill: 'ultimate', angle: angleToBoss });
+      return;
+    }
+
+    // Explosion Arcanique (skillA) — targeted AoE on boss
+    if (player.cooldowns.skillA <= 0 && player.mana >= 80) {
+      inputs.push({ type: 'skill', skill: 'skillA', angle: angleToBoss });
+    }
+
+    // Téléportation (skillB) — escape when in danger
+    if (player.cooldowns.skillB <= 0 && player.mana >= 40 && this._nearbyDanger(player, gs)) {
+      const escAngle = angleToBoss + Math.PI; // teleport away from boss
+      inputs.push({ type: 'skill', skill: 'skillB', angle: escAngle });
+    }
+
+    // Orbe de feu (secondary)
+    if (player.cooldowns.secondary <= 0 && player.mana >= 30) {
+      inputs.push({ type: 'attack_secondary', angle: angleToBoss });
+    }
+
+    // Basic ranged attack
+    if (player.cooldowns.basic <= 0 && distToBoss < 500) {
+      inputs.push({ type: 'attack_basic', angle: angleToBoss });
     }
   }
 

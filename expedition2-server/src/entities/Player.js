@@ -18,7 +18,7 @@ const CLASSES = {
     critRate: 0.25, critDmg: 2.0, color: '#f59e0b', useRage: true,
   },
   tank: {
-    label: 'Tank', hp: 80000, mana: 600, atk: 3000, speed: 190,
+    label: 'Tank', hp: 80000, mana: 600, atk: 5000, speed: 190,
     critRate: 0.15, critDmg: 1.8, color: '#60a5fa',
   },
   healer: {
@@ -36,30 +36,30 @@ const CLASS_SKILLS = {
   archer: {
     basic: {
       name: 'Tir rapide', hitbox: 'projectile',
-      dmgMult: 0.7, projSpeed: 800, projRange: 900, projRadius: 10,
-      cd: 250, manaRegen: 12, animDur: 150,
+      dmgMult: 0.91, projSpeed: 800, projRange: 900, projRadius: 10,
+      cd: 210, manaRegen: 12, animDur: 130,
       color: '#4ade80', critColor: '#ffd700',
     },
     secondary: {
       name: 'Tir charge', type: 'projectile', hitbox: 'projectile',
-      dmgMult: 1.8, projSpeed: 900, projRange: 1000, projRadius: 14,
-      cd: 1200, manaCost: 25, animDur: 200, piercing: true,
+      dmgMult: 2.35, projSpeed: 900, projRange: 1000, projRadius: 14,
+      cd: 1020, manaCost: 25, animDur: 170, piercing: true,
       color: '#ffd700', critColor: '#fff',
     },
     skillA: {
       name: 'Pluie de fleches', type: 'arrow_rain',
-      dmgMult: 2, radius: 180, duration: 2000, tickRate: 300,
-      cd: 8000, manaCost: 70,
+      dmgMult: 2.6, radius: 180, duration: 2000, tickRate: 260,
+      cd: 7000, manaCost: 70,
     },
     skillB: {
       name: 'Piege explosif', type: 'trap',
-      dmgMult: 3, radius: 90, duration: 12000,
-      cd: 10000, manaCost: 50,
+      dmgMult: 3.9, radius: 90, duration: 12000,
+      cd: 8500, manaCost: 50,
     },
     ultimate: {
       name: 'Barrage', type: 'channel',
-      dmgMult: 1.0, hits: 12, interval: 250, range: 550, coneAngle: 35,
-      cd: 40000, manaCost: 160,
+      dmgMult: 1.3, hits: 12, interval: 215, range: 550, coneAngle: 35,
+      cd: 35000, manaCost: 160,
     },
   },
   berserker: {
@@ -93,37 +93,37 @@ const CLASS_SKILLS = {
   warrior: {
     basic: {
       name: 'Combo de lames', hitbox: 'cone',
-      dmgMult: 1.0, range: 90, coneAngle: 60,
-      cd: 350, rageGain: 15, animDur: 250,
+      dmgMult: 1.3, range: 95, coneAngle: 65,
+      cd: 300, rageGain: 18, animDur: 220,
       color: '#f59e0b', critColor: '#ffd700',
     },
     secondary: {
       name: 'Frappe lourde', type: 'cone_attack',
-      dmgMult: 2.2, range: 90, coneAngle: 45,
-      cd: 1000, manaCost: 15, animDur: 300,
+      dmgMult: 3.0, range: 95, coneAngle: 50,
+      cd: 900, manaCost: 15, animDur: 260,
       color: '#f59e0b',
     },
     skillA: {
       name: 'Tempete de lames', type: 'aoe_self',
-      dmgMult: 3.5, radius: 130,
-      cd: 7000, manaCost: 40,
+      dmgMult: 4.5, radius: 150,
+      cd: 6000, manaCost: 40,
     },
     skillB: {
       name: 'Dash Offensif', type: 'dash_attack',
-      dmgMult: 2.0, dashDistance: 220,
-      cd: 5000, manaCost: 25,
+      dmgMult: 2.8, dashDistance: 240,
+      cd: 4500, manaCost: 25,
     },
     ultimate: {
       name: 'Execution', type: 'single_target',
-      dmgMult: 8, range: 110, bonusVsLowHp: 0.5,
-      cd: 40000, manaCost: 80,
+      dmgMult: 12, range: 120, bonusVsLowHp: 0.5,
+      cd: 35000, manaCost: 80,
     },
   },
   tank: {
     basic: {
       name: 'Frappe de bouclier', hitbox: 'cone',
-      dmgMult: 0.6, range: 80, coneAngle: 90,
-      cd: 500, manaRegen: 18, animDur: 350,
+      dmgMult: 1.8, range: 85, coneAngle: 90,
+      cd: 450, manaRegen: 18, animDur: 300,
       color: '#60a5fa', critColor: '#ffd700',
     },
     secondary: {
@@ -154,23 +154,22 @@ const CLASS_SKILLS = {
     },
     secondary: {
       name: 'Cercle de Soin', type: 'heal_zone',
-      healAmount: 3000, radius: 80, duration: 3000, ticks: 4,
+      healPct: 0.10, radius: 100, duration: 4000, ticks: 5,
       cd: 2500, manaCost: 30,
     },
     skillA: {
       name: 'Soin de Zone', type: 'heal_aoe',
-      healAmount: 5000, radius: 280,
-      cd: 8000, manaCost: 55,
+      healPct: 0.10, radius: 300,
+      cd: 6000, manaCost: 55,
     },
     skillB: {
       name: 'Purification', type: 'cleanse',
       radius: 300, cd: 12000, manaCost: 40,
     },
     ultimate: {
-      name: 'Cercle de Glace', type: 'ice_aoe',
-      dmgMult: 2, radius: 200, duration: 3000, tickRate: 500,
-      healPerTick: 3000,
-      cd: 30000, manaCost: 180,
+      name: 'Resurrection', type: 'resurrect',
+      radius: 200, channelDuration: 6000,
+      cd: 45000, manaCost: 200,
     },
   },
 
@@ -525,8 +524,8 @@ export class Player {
           this.mana -= s.manaCost;
           this.cooldowns.secondary = now + s.cd;
           return { type: 'heal_zone', spell: 'secondary',
-            healAmount: s.healAmount, radius: s.radius,
-            duration: s.duration, ticks: s.ticks };
+            healAmount: s.healAmount, healPct: s.healPct,
+            radius: s.radius, duration: s.duration, ticks: s.ticks };
         }
         // Projectile secondary (archer charged shot)
         if (s.hitbox === 'projectile') {
@@ -593,7 +592,7 @@ export class Player {
         }
         if (s.type === 'heal_aoe') {
           return { type: 'heal_aoe', spell: 'skillA',
-            healAmount: s.healAmount, radius: s.radius };
+            healAmount: s.healAmount, healPct: s.healPct, radius: s.radius };
         }
         return null;
       }
@@ -714,6 +713,21 @@ export class Player {
             crit: isCrit, radius: s.radius, duration: s.duration,
             tickRate: s.tickRate, healPerTick: s.healPerTick,
             playerClass: this.playerClass };
+        }
+        if (s.type === 'resurrect') {
+          // Start channeling resurrect — 6s channel, cancel on move
+          this.channeling = true;
+          this.channelData = {
+            type: 'resurrect',
+            hitsLeft: 1, // single "tick" at the end
+            interval: s.channelDuration,
+            nextTick: now + s.channelDuration,
+            endTime: now + s.channelDuration + 200,
+            radius: s.radius,
+            tickReady: false,
+          };
+          return { type: 'resurrect_start', spell: 'ultimate',
+            duration: s.channelDuration, radius: s.radius };
         }
         if (s.type === 'single_target') {
           return { type: 'single_target', spell: 'ultimate',
