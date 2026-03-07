@@ -17,17 +17,37 @@ const EXPORT_FORMATS = [
 ];
 
 /**
- * Distribute snapshots uniformly: each snapshot gets equal screen time.
- * Total duration = 500ms per snapshot (before speed multiplier).
- * This gives a smooth, evenly-paced timelapse regardless of actual drawing time.
+ * Distribute snapshots with ease-out timing + final hold.
+ * - Start fast, slow down toward the end (ease-out curve)
+ * - Last frame holds for 1/3 of total duration so viewer can appreciate the result
+ * Total drawing part = 500ms * snapshots.length, then final hold = half of that.
  */
-const FRAME_DURATION = 500; // ms per snapshot (at 1x speed)
+const BASE_FRAME_MS = 500;
 const distributeSnapshots = (snapshots) => {
     if (!snapshots || snapshots.length === 0) return [];
-    return snapshots.map((snap, i) => ({
-        ...snap,
-        t: (i + 1) * FRAME_DURATION,
-    }));
+    const n = snapshots.length;
+    if (n === 1) return [{ ...snapshots[0], t: 1500 }]; // single frame: 1.5s
+
+    // Ease-out: each frame gets progressively more time
+    // Frame i gets weight = (i/n)^0.6 normalized, so early frames are fast, late ones slow
+    const weights = [];
+    for (let i = 0; i < n; i++) {
+        weights.push(0.4 + 0.6 * Math.pow((i + 1) / n, 0.8));
+    }
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    const drawDuration = n * BASE_FRAME_MS;
+
+    let cursor = 0;
+    const result = snapshots.map((snap, i) => {
+        cursor += (weights[i] / totalWeight) * drawDuration;
+        return { ...snap, t: Math.round(cursor) };
+    });
+
+    // Add final hold: last frame stays for 50% of draw duration
+    const holdTime = Math.round(drawDuration * 0.5);
+    result.push({ ...snapshots[n - 1], t: result[n - 1].t + holdTime, _hold: true });
+
+    return result;
 };
 
 /**
@@ -255,7 +275,10 @@ const TimelapseReplay = ({ snapshots: rawSnapshots, strokeCount, templateSrc, ca
             const imageData = downCtx.getImageData(0, 0, gifW, gifH);
             const palette = quantize(imageData.data, 256);
             const indexed = applyPalette(imageData.data, palette);
-            gif.writeFrame(indexed, gifW, gifH, { palette, delay: Math.round(1000 / fps) });
+            // Last frame holds much longer so viewer can see the final result
+            const isLastFrame = i === totalFrames;
+            const delay = isLastFrame ? 2000 : Math.round(1000 / fps);
+            gif.writeFrame(indexed, gifW, gifH, { palette, delay });
 
             setExportProgress(i / totalFrames);
             if (i % 5 === 0) await new Promise(r => setTimeout(r, 0));
@@ -440,7 +463,7 @@ const TimelapseReplay = ({ snapshots: rawSnapshots, strokeCount, templateSrc, ca
                                 style={{ width: `${progress * 100}%` }} />
                         </div>
                         <div className="flex justify-between text-xs text-gray-400 mt-1">
-                            <span>{Math.round(progress * snapshots.length)}/{snapshots.length}</span>
+                            <span>{Math.min(strokeCount || snapshots.length, Math.round(progress * snapshots.length))}/{strokeCount || snapshots.length}</span>
                             <span>{strokeCount || snapshots.length} traits</span>
                             <span>{formatTime(totalDuration / speed)}</span>
                         </div>
