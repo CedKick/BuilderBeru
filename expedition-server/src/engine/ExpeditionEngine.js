@@ -149,6 +149,22 @@ export class ExpeditionEngine {
           const char = new ExpeditionCharacter(entry.username, hunterId, level, stars, precomputedStats);
           // SC weapon passive from client (sulfuras_fury, katana_v_chaos, etc.)
           if (data.weaponPassive) char.scWeaponPassive = data.weaponPassive;
+
+          // Equipped sets + weapon from client registration (colosseum gear)
+          if (data.equippedSets || data.weaponId) {
+            const existingSets = char.expeditionGear?.sets || {};
+            const clientSets = data.equippedSets || {};
+            // Merge client sets with any existing expedition inventory sets
+            const mergedSets = { ...existingSets };
+            for (const [setId, count] of Object.entries(clientSets)) {
+              mergedSets[setId] = Math.max(mergedSets[setId] || 0, count);
+            }
+            char.expeditionGear = {
+              sets: mergedSets,
+              weaponId: char.expeditionGear?.weaponId || data.weaponId || null,
+            };
+          }
+
           this.characters.push(char);
         } catch (e) {
           console.warn(`[Expedition] Failed to create character ${hunterId} for ${entry.username}:`, e.message);
@@ -863,7 +879,17 @@ export class ExpeditionEngine {
         // Apply gear to all characters of this player
         for (const char of this.characters) {
           if (char.username !== entry.username) continue;
-          char.expeditionGear = gear.expeditionGear;
+          // Merge expedition inventory gear with client-registered sets (colosseum artifacts)
+          const clientSets = char.expeditionGear?.sets || {};
+          const invSets = gear.expeditionGear.sets || {};
+          const mergedSets = { ...clientSets };
+          for (const [setId, count] of Object.entries(invSets)) {
+            mergedSets[setId] = Math.max(mergedSets[setId] || 0, count);
+          }
+          char.expeditionGear = {
+            sets: mergedSets,
+            weaponId: gear.expeditionGear.weaponId || char.expeditionGear?.weaponId || null,
+          };
           char.weaponEffects = gear.weaponEffects;
 
           // Apply flat stats from equipped items

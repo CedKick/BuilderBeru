@@ -306,12 +306,25 @@ export default function Expedition() {
         const fullStats = computeHunterFullStats(hId, coloData, raidData);
         const h = hunterPool[hId];
         const wId = coloData.weapons?.[hId];
-        const weaponPassive = wId && WEAPONS[wId]?.passive ? WEAPONS[wId].passive : null;
+        const weaponDef = wId ? WEAPONS[wId] : null;
+        const weaponPassive = weaponDef?.passive || null; // SC weapon passive (sulfuras_fury, etc.)
+
+        // Equipped artifact sets: count pieces per setId
+        const equippedSets = {};
+        const arts = coloData.artifacts?.[hId];
+        if (arts) {
+          for (const a of Object.values(arts)) {
+            if (a?.set) equippedSets[a.set] = (equippedSets[a.set] || 0) + 1;
+          }
+        }
+
         characterData[hId] = {
           level: fullStats?.level || 1,
           stars: typeof h === 'number' ? h : (h?.stars || 0),
           fullStats, // Pre-computed stats including artifacts/weapons/talents
           weaponPassive, // SC weapon passive identifier (sulfuras_fury, katana_v_chaos, etc.)
+          weaponId: wId || null, // Weapon ID for expedition weapon resolution
+          equippedSets, // { setId: pieceCount } from colosseum artifacts
         };
       }
       await api('/api/expedition/register', 'POST', {
