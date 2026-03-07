@@ -1,179 +1,95 @@
-// src/pages/DrawBeru/DrawBeruLauncher.jsx
-// Point d'entrée DrawBeru avec choix Solo/Multi
-// Par Kaisel pour le Monarque des Ombres
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { drawBeruModels, getModel } from './config/models';
+import { drawBeruModels, getModel, getHunterModels, getAvailableThemes, getHuntersByTheme } from './config/models';
 import {
-  HunterModelSelector,
-  ModeSelector,
   RoomLobby,
   PlayerCursors,
 } from '../../components/drawberu/MultiplayerUI';
 import useMultiplayer from './hooks/useMultiplayer';
 import DrawBeru from './DrawBeru';
+import ChibiBubble from '../../components/ChibiBubble';
 import { DRAWBERU_PROCESS_URL } from '../../utils/api';
 
-// États du launcher
-const LAUNCHER_STATES = {
-  SELECT_HUNTER: 'select_hunter',  // Sélection hunter/modèle
-  SELECT_MODE: 'select_mode',       // Choix solo/multi
-  MULTI_LOBBY: 'multi_lobby',       // Lobby multi
-  PLAYING_SOLO: 'playing_solo',     // En jeu solo
-  PLAYING_MULTI: 'playing_multi',   // En jeu multi
+const STATES = {
+  HOME: 'home',
+  PLAYING_SOLO: 'playing_solo',
+  MULTI_LOBBY: 'multi_lobby',
+  PLAYING_MULTI: 'playing_multi',
 };
 
 const DrawBeruLauncher = () => {
   const [searchParams] = useSearchParams();
+  const [state, setState] = useState(STATES.HOME);
+  const [selectedHunter, setSelectedHunter] = useState(null);
+  const [selectedModel, setSelectedModel] = useState(null);
+  const [selectedTheme, setSelectedTheme] = useState(null);
 
-  // État du launcher
-  const [currentState, setCurrentState] = useState(LAUNCHER_STATES.SELECT_HUNTER);
-
-  // Sélection hunter/modèle
-  const [selectedHunter, setSelectedHunter] = useState(() => {
-    // Récupérer le dernier dessin visité
-    try {
-      const stored = localStorage.getItem('drawberu_last_drawing');
-      if (stored) {
-        const { hunter } = JSON.parse(stored);
-        if (drawBeruModels[hunter]) return hunter;
-      }
-    } catch (e) {}
-    return Object.keys(drawBeruModels)[0];
-  });
-
-  const [selectedModel, setSelectedModel] = useState(() => {
-    try {
-      const stored = localStorage.getItem('drawberu_last_drawing');
-      if (stored) {
-        const { hunter, model } = JSON.parse(stored);
-        if (drawBeruModels[hunter]?.models[model]) return model;
-      }
-    } catch (e) {}
-    return 'default';
-  });
-
-  // Custom image upload
+  // Custom upload
   const [customModelData, setCustomModelData] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState(null); // null | 'uploading' | 'error'
+  const [uploadStatus, setUploadStatus] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Multiplayer hook
+  // Multi
   const multiplayer = useMultiplayer();
 
-  // Vérifier si on a un code de room dans l'URL
   useEffect(() => {
     const roomCode = searchParams.get('room');
-    if (roomCode) {
-      // On va direct au lobby multi pour rejoindre
-      setCurrentState(LAUNCHER_STATES.MULTI_LOBBY);
-    }
+    if (roomCode) setState(STATES.MULTI_LOBBY);
   }, [searchParams]);
 
-  // Écouter quand la partie démarre (pour tous les joueurs)
   useEffect(() => {
-    if (multiplayer.gameStarted && currentState === LAUNCHER_STATES.MULTI_LOBBY) {
-      setCurrentState(LAUNCHER_STATES.PLAYING_MULTI);
+    if (multiplayer.gameStarted && state === STATES.MULTI_LOBBY) {
+      setState(STATES.PLAYING_MULTI);
     }
-  }, [multiplayer.gameStarted, currentState]);
+  }, [multiplayer.gameStarted, state]);
 
-  // Données du modèle sélectionné
-  const currentModelData = getModel(selectedHunter, selectedModel);
-  const hunterName = drawBeruModels[selectedHunter]?.name || selectedHunter;
-  const modelName = currentModelData?.name || selectedModel;
-
-  // ========================================================================
-  // HANDLERS
-  // ========================================================================
-
-  const handleHunterChange = (hunterId) => {
-    setSelectedHunter(hunterId);
-    setSelectedModel('default');
-  };
-
-  const handleModelChange = (modelId) => {
-    setSelectedModel(modelId);
-  };
-
-  const handleContinue = () => {
-    // Passer à la sélection du mode
-    setCurrentState(LAUNCHER_STATES.SELECT_MODE);
-  };
-
-  const handleSelectSolo = () => {
-    // Lancer le mode solo
-    setCurrentState(LAUNCHER_STATES.PLAYING_SOLO);
-  };
-
-  const handleSelectMulti = () => {
-    // Aller au lobby multi
-    setCurrentState(LAUNCHER_STATES.MULTI_LOBBY);
-  };
-
-  const handleBack = () => {
-    // Retour en arrière selon l'état
-    switch (currentState) {
-      case LAUNCHER_STATES.SELECT_MODE:
-        setCurrentState(LAUNCHER_STATES.SELECT_HUNTER);
-        break;
-      case LAUNCHER_STATES.MULTI_LOBBY:
-        if (multiplayer.room) {
-          multiplayer.leaveRoom();
-        } else {
-          setCurrentState(LAUNCHER_STATES.SELECT_MODE);
-        }
-        break;
-      case LAUNCHER_STATES.PLAYING_SOLO:
-      case LAUNCHER_STATES.PLAYING_MULTI:
-        // Retour au launcher
-        if (multiplayer.room) {
-          multiplayer.leaveRoom();
-        }
-        setCurrentState(LAUNCHER_STATES.SELECT_HUNTER);
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleCreateRoom = async (playerName) => {
-    await multiplayer.createRoom(playerName, selectedHunter, selectedModel);
-  };
-
-  const handleJoinRoom = async (roomCode, playerName) => {
-    const response = await multiplayer.joinRoom(roomCode, playerName);
-    // Si on rejoint une room avec un hunter/model différent, on adapte
-    if (response.room) {
-      setSelectedHunter(response.room.hunter);
-      setSelectedModel(response.room.model);
-    }
-  };
-
-  const handleStartGame = async () => {
+  // ========== SAVED COLORINGS ==========
+  const savedColorings = useMemo(() => {
     try {
-      await multiplayer.startGame();
-      // L'état sera changé via le useEffect qui écoute multiplayer.gameStarted
-    } catch (error) {
-      console.error('Failed to start game:', error);
-    }
-  };
+      const data = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+      const colorings = data.user?.accounts?.default?.colorings || {};
+      const results = [];
+      for (const [hunterId, models] of Object.entries(colorings)) {
+        for (const [modelId, coloring] of Object.entries(models)) {
+          if (coloring.preview) {
+            results.push({
+              hunterId,
+              modelId,
+              preview: coloring.preview,
+              updatedAt: coloring.updatedAt || coloring.createdAt || 0,
+              hunterName: drawBeruModels[hunterId]?.name || hunterId,
+              modelName: getModel(hunterId, modelId)?.name || modelId,
+            });
+          }
+        }
+      }
+      return results.sort((a, b) => b.updatedAt - a.updatedAt);
+    } catch { return []; }
+  }, [state]); // recalc when coming back from drawing
 
-  const handleLeaveGame = () => {
-    if (multiplayer.room) {
-      multiplayer.leaveRoom();
-    }
+  // ========== THEMES & HUNTERS ==========
+  const themes = getAvailableThemes();
+  const hunters = getHuntersByTheme(selectedTheme);
+
+  // ========== HANDLERS ==========
+  const startSolo = (hunterId, modelId) => {
+    setSelectedHunter(hunterId);
+    setSelectedModel(modelId);
     setCustomModelData(null);
-    setCurrentState(LAUNCHER_STATES.SELECT_HUNTER);
+    setState(STATES.PLAYING_SOLO);
   };
 
-  const handleCustomImageUpload = async (e) => {
+  const handleLeave = () => {
+    if (multiplayer.room) multiplayer.leaveRoom();
+    setCustomModelData(null);
+    setState(STATES.HOME);
+  };
+
+  const handleCustomUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > 10 * 1024 * 1024) {
       setUploadError('Image trop lourde (max 10MB)');
       return;
     }
@@ -184,20 +100,15 @@ const DrawBeruLauncher = () => {
     try {
       const formData = new FormData();
       formData.append('image', file);
-
       const res = await fetch(`${DRAWBERU_PROCESS_URL}/process?n_colors=8`, {
         method: 'POST',
         body: formData,
       });
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `Erreur ${res.status}`);
       }
-
       const data = await res.json();
-
-      // Build custom model data compatible with DrawBeru
       const model = {
         id: 'custom',
         name: file.name.replace(/\.[^.]+$/, ''),
@@ -206,39 +117,44 @@ const DrawBeruLauncher = () => {
         canvasSize: data.canvas_size,
         palette: data.palette,
       };
-
       setCustomModelData(model);
       setUploadStatus(null);
-      setCurrentState(LAUNCHER_STATES.PLAYING_SOLO);
-
+      setState(STATES.PLAYING_SOLO);
     } catch (err) {
-      console.error('DrawBeru process error:', err);
       setUploadError(err.message || 'Erreur lors du traitement');
       setUploadStatus(null);
     }
-
-    // Reset file input
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // ========================================================================
-  // RENDER
-  // ========================================================================
+  const deleteColoring = (hunterId, modelId) => {
+    try {
+      const data = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+      if (data.user?.accounts?.default?.colorings?.[hunterId]?.[modelId]) {
+        delete data.user.accounts.default.colorings[hunterId][modelId];
+        if (Object.keys(data.user.accounts.default.colorings[hunterId]).length === 0) {
+          delete data.user.accounts.default.colorings[hunterId];
+        }
+        localStorage.setItem('builderberu_users', JSON.stringify(data));
+        setState(prev => prev); // force re-render
+      }
+    } catch {}
+  };
 
-  // En jeu solo
-  if (currentState === LAUNCHER_STATES.PLAYING_SOLO) {
+  // ========== RENDER STATES ==========
+
+  if (state === STATES.PLAYING_SOLO) {
     return (
       <DrawBeru
         initialHunter={customModelData ? 'custom' : selectedHunter}
         initialModel={customModelData ? 'custom' : selectedModel}
-        onBack={handleLeaveGame}
+        onBack={handleLeave}
         customModelData={customModelData}
       />
     );
   }
 
-  // En jeu multi
-  if (currentState === LAUNCHER_STATES.PLAYING_MULTI) {
+  if (state === STATES.PLAYING_MULTI) {
     return (
       <>
         <DrawBeru
@@ -246,16 +162,16 @@ const DrawBeruLauncher = () => {
           initialModel={selectedModel}
           multiplayerMode={true}
           multiplayer={multiplayer}
-          onBack={handleLeaveGame}
+          onBack={handleLeave}
         />
-        {/* Curseurs des autres joueurs */}
         <PlayerCursors cursors={multiplayer.otherCursors} />
       </>
     );
   }
 
-  // Lobby multi
-  if (currentState === LAUNCHER_STATES.MULTI_LOBBY) {
+  if (state === STATES.MULTI_LOBBY) {
+    const hunterName = drawBeruModels[selectedHunter]?.name || selectedHunter;
+    const modelData = getModel(selectedHunter, selectedModel);
     return (
       <RoomLobby
         room={multiplayer.room}
@@ -269,148 +185,201 @@ const DrawBeruLauncher = () => {
         selectedHunter={selectedHunter}
         selectedModel={selectedModel}
         hunterName={hunterName}
-        modelName={modelName}
-        onCreateRoom={handleCreateRoom}
-        onJoinRoom={handleJoinRoom}
-        onLeaveRoom={() => {
-          multiplayer.leaveRoom();
-          setCurrentState(LAUNCHER_STATES.SELECT_MODE);
+        modelName={modelData?.name || selectedModel}
+        onCreateRoom={(name) => multiplayer.createRoom(name, selectedHunter, selectedModel)}
+        onJoinRoom={async (code, name) => {
+          const r = await multiplayer.joinRoom(code, name);
+          if (r.room) { setSelectedHunter(r.room.hunter); setSelectedModel(r.room.model); }
         }}
+        onLeaveRoom={() => { multiplayer.leaveRoom(); setState(STATES.HOME); }}
         onUpdateSettings={multiplayer.updateSettings}
-        onStartGame={handleStartGame}
-        onBack={() => {
-          if (multiplayer.room) {
-            multiplayer.leaveRoom();
-          }
-          setCurrentState(LAUNCHER_STATES.SELECT_MODE);
-        }}
+        onStartGame={() => multiplayer.startGame()}
+        onBack={() => { if (multiplayer.room) multiplayer.leaveRoom(); setState(STATES.HOME); }}
       />
     );
   }
 
-  // Sélection du mode
-  if (currentState === LAUNCHER_STATES.SELECT_MODE) {
-    return (
-      <div className="min-h-screen bg-[#0a0118] p-4">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-6">
-            <button
-              onClick={handleBack}
-              className="text-purple-300 hover:text-white transition-colors"
-            >
-              ← Retour
-            </button>
-            <div className="flex items-center gap-3 flex-grow">
-              <img loading="lazy"
-                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
-                alt="DrawBeru"
-                className="w-10 h-10"
-              />
-              <h1 className="text-2xl font-bold text-white">DrawBeru</h1>
-            </div>
-          </div>
-
-          {/* Info sélection */}
-          <div className="bg-purple-900/30 rounded-xl border border-purple-500/30 p-4 mb-6 text-center">
-            <div className="text-purple-300 text-sm">Tu vas colorier</div>
-            <div className="text-white text-xl font-bold">
-              {hunterName} - {modelName}
-            </div>
-          </div>
-
-          {/* Mode Selector */}
-          <ModeSelector
-            onSelectSolo={handleSelectSolo}
-            onSelectMulti={handleSelectMulti}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // Sélection Hunter/Modèle (état par défaut)
+  // ========== HOME ==========
   return (
-    <div className="min-h-screen bg-[#0a0118] p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <img loading="lazy"
-            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
-            alt="DrawBeru"
-            className="w-12 h-12"
-          />
-          <div>
-            <h1 className="text-3xl font-bold text-white">DrawBeru</h1>
-            <p className="text-purple-300 text-sm">Colorie tes Hunters préférés !</p>
+    <div className="min-h-screen bg-[#0a0118] overflow-y-auto">
+      {/* Hero */}
+      <div className="relative bg-gradient-to-b from-purple-900/40 to-transparent pt-8 pb-10 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center gap-4 mb-2">
+            <img loading="lazy"
+              src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
+              alt="DrawBeru" className="w-12 h-12"
+            />
+            <div>
+              <h1 className="text-3xl font-bold text-white">DrawBeru</h1>
+              <p className="text-purple-300 text-sm">Choisis un modele, colorie-le, partage ton chef-d'oeuvre !</p>
+            </div>
           </div>
-        </div>
 
-        {/* Hunter & Model Selection */}
-        <HunterModelSelector
-          selectedHunter={selectedHunter}
-          selectedModel={selectedModel}
-          onHunterChange={handleHunterChange}
-          onModelChange={handleModelChange}
-        />
+          {/* Quick actions */}
+          <div className="flex flex-wrap gap-3 mt-6">
+            {/* Upload custom */}
+            <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp"
+              onChange={handleCustomUpload} className="hidden" id="custom-upload" />
+            <label htmlFor="custom-upload"
+              className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm cursor-pointer transition-all ${
+                uploadStatus === 'uploading'
+                  ? 'bg-yellow-600/60 text-yellow-100 cursor-wait'
+                  : 'bg-gradient-to-r from-pink-600 to-orange-500 hover:from-pink-500 hover:to-orange-400 text-white shadow-lg shadow-pink-600/20'
+              }`}>
+              {uploadStatus === 'uploading' ? (
+                <><span className="animate-spin">&#9203;</span> Traitement...</>
+              ) : (
+                <><span className="text-lg">&#128228;</span> Upload ton image</>
+              )}
+            </label>
 
-        {/* Custom Image Upload */}
-        <div className="mt-6 bg-purple-900/20 rounded-xl border border-dashed border-purple-500/40 p-5">
-          <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
-            <span>📤</span>
-            <span>Ou upload ta propre image</span>
-          </h3>
-          <p className="text-purple-300/70 text-sm mb-3">
-            Charge une image couleur, on g\u00e9n\u00e8re le coloriage automatiquement
-          </p>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={handleCustomImageUpload}
-            className="hidden"
-            id="custom-image-upload"
-          />
-
-          <label
-            htmlFor="custom-image-upload"
-            className={`block w-full text-center py-3 rounded-lg font-medium cursor-pointer transition-all ${
-              uploadStatus === 'uploading'
-                ? 'bg-yellow-600/50 text-yellow-200 cursor-wait'
-                : 'bg-purple-600/40 hover:bg-purple-600/60 text-purple-200 hover:text-white'
-            }`}
-          >
-            {uploadStatus === 'uploading' ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="animate-spin">⏳</span>
-                Traitement en cours... (5-10s)
-              </span>
-            ) : (
-              '📁 Choisir une image (PNG, JPG, WEBP)'
-            )}
-          </label>
+            {/* Multi */}
+            <button
+              onClick={() => {
+                if (!selectedHunter) {
+                  const first = Object.keys(drawBeruModels)[0];
+                  setSelectedHunter(first);
+                  setSelectedModel('default');
+                }
+                setState(STATES.MULTI_LOBBY);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm bg-purple-600/40 hover:bg-purple-600/60 text-purple-200 hover:text-white border border-purple-500/30 transition-all"
+            >
+              <span className="text-lg">&#128101;</span> Mode Multi
+            </button>
+          </div>
 
           {uploadError && (
-            <p className="text-red-400 text-sm mt-2">❌ {uploadError}</p>
+            <p className="text-red-400 text-sm mt-2">&cross; {uploadError}</p>
           )}
         </div>
+      </div>
 
-        {/* Continue Button */}
-        <div className="mt-8">
-          <button
-            onClick={handleContinue}
-            disabled={!currentModelData}
-            className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
-              currentModelData
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'
-                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            Continuer →
-          </button>
+      <div className="max-w-5xl mx-auto px-4 pb-12">
+        {/* Saved Colorings */}
+        {savedColorings.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
+              <span className="text-xl">&#127912;</span> Mes coloriages
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {savedColorings.map(({ hunterId, modelId, preview, hunterName, modelName, updatedAt }) => (
+                <div key={`${hunterId}-${modelId}`}
+                  className="group relative rounded-xl overflow-hidden border-2 border-purple-500/20 hover:border-purple-400 transition-all bg-[#120822]">
+                  {/* Preview */}
+                  <button onClick={() => startSolo(hunterId, modelId)}
+                    className="w-full aspect-square">
+                    <img src={preview} alt={`${hunterName} ${modelName}`}
+                      className="w-full h-full object-cover" loading="lazy" />
+                  </button>
+                  {/* Info */}
+                  <div className="p-2">
+                    <div className="text-white text-xs font-medium truncate">{hunterName}</div>
+                    <div className="text-purple-400 text-[10px] truncate">{modelName}</div>
+                  </div>
+                  {/* Continue overlay */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                    <span className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg">
+                      Continuer &#9654;
+                    </span>
+                  </div>
+                  {/* Delete */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('Supprimer ce coloriage ?')) deleteColoring(hunterId, modelId);
+                    }}
+                    className="absolute top-1 right-1 w-6 h-6 bg-red-600/80 hover:bg-red-500 rounded-full text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    title="Supprimer"
+                  >&#10005;</button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Theme filters */}
+        <section className="mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-white font-bold text-lg">Nouveau coloriage</h2>
+            <span className="text-purple-400 text-sm">({hunters.length} modeles)</span>
+          </div>
+
+          <div className="flex gap-2 flex-wrap mb-5">
+            <button
+              onClick={() => setSelectedTheme(null)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                selectedTheme === null
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white/5 text-purple-300 hover:bg-white/10'
+              }`}
+            >Tous</button>
+            {themes.map(t => (
+              <button key={t.id}
+                onClick={() => setSelectedTheme(t.id)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  selectedTheme === t.id
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white/5 text-purple-300 hover:bg-white/10'
+                }`}
+              >{t.name}</button>
+            ))}
+          </div>
+        </section>
+
+        {/* Character grid — click = start drawing immediately */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+          {hunters.map(([hunterId, hunterData]) => {
+            const firstModel = Object.values(hunterData.models)[0];
+            const modelCount = Object.keys(hunterData.models).length;
+            // Check if there's a saved coloring for this hunter
+            const hasSaved = savedColorings.some(s => s.hunterId === hunterId);
+
+            return (
+              <button
+                key={hunterId}
+                onClick={() => startSolo(hunterId, 'default')}
+                className="group relative aspect-square rounded-xl overflow-hidden border-2 border-purple-500/20 hover:border-purple-400 transition-all hover:scale-[1.03]"
+              >
+                <img src={firstModel?.reference} alt={hunterData.name}
+                  className="w-full h-full object-cover" loading="lazy" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
+                {/* Name */}
+                <div className="absolute bottom-0 left-0 right-0 p-1.5 text-center">
+                  <span className="text-white text-xs font-medium truncate block drop-shadow">
+                    {hunterData.name}
+                  </span>
+                </div>
+
+                {/* Model count badge */}
+                {modelCount > 1 && (
+                  <div className="absolute top-1.5 left-1.5 bg-purple-600/90 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                    {modelCount}
+                  </div>
+                )}
+
+                {/* Saved indicator */}
+                {hasSaved && (
+                  <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-green-500/90 rounded-full flex items-center justify-center">
+                    <span className="text-white text-[10px]">&#10003;</span>
+                  </div>
+                )}
+
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="bg-white/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                    Colorier &#9654;
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      <ChibiBubble />
     </div>
   );
 };

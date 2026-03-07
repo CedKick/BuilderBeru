@@ -8,6 +8,9 @@ import { BRUSH_TYPES } from './constants/brushTypes';
 import { CHIBI_PAINTERS, CHIBI_INTERACTIONS, CHIBI_AFFINITIES, MAX_ACTIVE_CHIBIS } from './constants/chibiData';
 import useZoomPan from './hooks/useZoomPan';
 import useCheatCode from './hooks/useCheatCode';
+import useStrokeRecorder from './hooks/useStrokeRecorder';
+import TimelapseReplay from './TimelapseReplay';
+import DrawBeruTutorial, { DrawBeruTutorialPropose } from './DrawBeruTutorial';
 
 // ⚡ HOOK MOBILE SIMPLIFIÉ (au lieu d'importer un fichier externe)
 const useIsMobile = () => {
@@ -94,6 +97,7 @@ const DrawBeruFixed = ({
     const layersRef = useRef([]);
     const referenceCanvasRef = useRef(null);
     const overlayCanvasRef = useRef(null);
+    const demoRef = useRef(null);
 
     // P0 PERF: Cached template image (avoid reloading in renderLayers)
     const templateImgRef = useRef(null);
@@ -147,6 +151,15 @@ const DrawBeruFixed = ({
     // P3: Shortcuts help overlay & save indicator
     const [showShortcuts, setShowShortcuts] = useState(false);
     const [saveIndicator, setSaveIndicator] = useState(null); // 'saving' | 'saved' | 'error' | null
+
+    // Timelapse stroke recorder
+    const strokeRecorder = useStrokeRecorder();
+    const [showTimelapse, setShowTimelapse] = useState(false);
+
+    // Tutorial — auto-show on first visit
+    const [showTutorial, setShowTutorial] = useState(() => {
+        try { return !localStorage.getItem('drawberu_tutorial_seen'); } catch { return false; }
+    });
 
     // 📱 MOBILE TOOLBAR SCROLL - Gestion du scroll et tap vs long-press
     const mobileToolbarRef = useRef(null);
@@ -496,6 +509,11 @@ const DrawBeruFixed = ({
                 opacity: existingColoring.layers[i]?.opacity ?? layer.opacity,
                 locked: existingColoring.layers[i]?.locked ?? layer.locked
             })));
+
+            // Restore timelapse strokes if available
+            if (existingColoring.strokes) {
+                strokeRecorder.loadStrokes(existingColoring.strokes);
+            }
 
             setImagesLoaded(true);
         } else {
@@ -2490,7 +2508,9 @@ const DrawBeruFixed = ({
         const ctx = layerCanvas.getContext('2d', { alpha: true });
         const rawPoint = getCanvasCoordinates(e, canvasRef.current);
 
-        if (rawPoint.x < 0 || rawPoint.x > layerCanvas.width || rawPoint.y < 0 || rawPoint.y > layerCanvas.height) return;
+        // Clamp to canvas bounds (keep drawing along edge when cursor goes outside)
+        rawPoint.x = Math.max(0, Math.min(layerCanvas.width, rawPoint.x));
+        rawPoint.y = Math.max(0, Math.min(layerCanvas.height, rawPoint.y));
 
         // ✨ PRECISION: Appliquer la stabilisation et initialiser le buffer
         stabilizationBufferRef.current = [rawPoint];
@@ -2639,6 +2659,11 @@ const DrawBeruFixed = ({
         currentVelocityRef.current = 0;
 
         setIsDrawing(true);
+        strokeRecorder.beginStroke(activeLayer, currentTool, brushType, brushSize, selectedColor);
+        // Capture pointer so we keep receiving events when cursor leaves canvas
+        if (e.target?.setPointerCapture && e.pointerId !== undefined) {
+            try { e.target.setPointerCapture(e.pointerId); } catch {}
+        }
         if (!isMobile) {
             draw(e);
         }
@@ -2647,7 +2672,10 @@ const DrawBeruFixed = ({
     const stopDrawing = () => {
         if (isDrawing) {
             setIsDrawing(false);
+            strokeRecorder.endStroke();
             saveToHistory();
+            // Capture snapshot for pixel-perfect timelapse replay
+            strokeRecorder.captureSnapshot(canvasRef.current);
 
             // 🌐 MULTIPLAYER: Envoyer le stroke complet au serveur
             if (multiplayerMode && multiplayer && currentStrokePointsRef.current.length > 0) {
@@ -2694,7 +2722,9 @@ const DrawBeruFixed = ({
         const ctx = layerCanvas.getContext('2d', { alpha: true });
         let rawPoint = getCanvasCoordinates(e, canvasRef.current);
 
-        if (rawPoint.x < 0 || rawPoint.x > layerCanvas.width || rawPoint.y < 0 || rawPoint.y > layerCanvas.height) return;
+        // Clamp to canvas bounds (keep drawing along edge when cursor goes outside)
+        rawPoint.x = Math.max(0, Math.min(layerCanvas.width, rawPoint.x));
+        rawPoint.y = Math.max(0, Math.min(layerCanvas.height, rawPoint.y));
 
         // Calculer la vitesse basée sur le déplacement
         if (lastDrawPositionRef.current && deltaTime > 0) {
@@ -2812,6 +2842,9 @@ const DrawBeruFixed = ({
             multiplayer.sendCursorMove(x, y, true);
             multiplayer.sendStroking([x, y], colorToUse, brushSizeToUse, activeLayer);
         }
+
+        // Timelapse: record this point
+        strokeRecorder.recordPoint(x, y, pressure, colorToUse);
 
         // ✨ PRECISION: Sauvegarder le dernier point pour l'interpolation
         lastPointRef.current = currentPoint;
@@ -3002,6 +3035,7 @@ const DrawBeruFixed = ({
                 hunter: selectedHunter,
                 model: selectedModel,
                 canvasSize: currentModelData.canvasSize,
+                strokes: strokeRecorder.getStrokes(),
                 version: '1.0'
             };
 
@@ -3265,6 +3299,18 @@ const DrawBeruFixed = ({
         setHistoryIndex(-1);
         setColoringProgress(0);
         setProgressDetails(null);
+        strokeRecorder.clearStrokes();
+    };
+
+    // Expose internals for tutorial demo
+    demoRef.current = {
+        layersRef,
+        canvasRef,
+        referenceCanvasRef,
+        refImageDataCacheRef,
+        renderLayers,
+        saveToHistory,
+        canvasSize: currentModelData?.canvasSize,
     };
 
     // Canvas event handlers
@@ -3837,7 +3883,7 @@ const DrawBeruFixed = ({
                             </div>
 
                             {/* LAYERS */}
-                            <div className="mb-4">
+                            <div className="mb-4" data-tutorial="layers">
                                 <h3 className="text-white text-sm font-semibold mb-2">📚 Calques</h3>
                                 <div className="space-y-2">
                                     {layers.map((layer) => (
@@ -3897,6 +3943,15 @@ const DrawBeruFixed = ({
                                     className="w-full bg-green-600 text-white py-2 rounded-lg text-sm"
                                 >
                                     💾 Sauvegarder
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowTimelapse(true);
+                                        setMobileMenuOpen(false);
+                                    }}
+                                    className="w-full bg-orange-600 text-white py-2 rounded-lg text-sm"
+                                >
+                                    🎬 Timelapse
                                 </button>
                                 <button
                                     onClick={() => {
@@ -4431,6 +4486,24 @@ const DrawBeruFixed = ({
                 </div>
             )}
 
+            {showTimelapse && (
+                <TimelapseReplay
+                    snapshots={strokeRecorder.getSnapshots()}
+                    strokeCount={strokeRecorder.getStrokeCount()}
+                    templateSrc={currentModelData?.template}
+                    canvasSize={currentModelData?.canvasSize || { width: 800, height: 600 }}
+                    onClose={() => setShowTimelapse(false)}
+                />
+            )}
+
+            {showTutorial && (
+                <DrawBeruTutorial onClose={() => setShowTutorial(false)} demoRef={demoRef} />
+            )}
+
+            {!showTutorial && !gameMode && (
+                <DrawBeruTutorialPropose onStart={() => setShowTutorial(true)} />
+            )}
+
             {/* 🎨 AUTO-PIPETTE NOTIFICATION DESKTOP */}
             {autoPipetteMode && !cheatModeActive && !autoDrawBeruActive && (
                 <div className="fixed top-4 right-4 z-[10000]">
@@ -4915,6 +4988,22 @@ const DrawBeruFixed = ({
                             </button>
 
                             <button
+                                onClick={() => setShowTimelapse(true)}
+                                className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg transition-colors"
+                                title="Timelapse replay de ton dessin"
+                            >
+                                🎬 Timelapse
+                            </button>
+
+                            <button
+                                onClick={() => setShowTutorial(true)}
+                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg transition-colors"
+                                title="Tutoriel Igris"
+                            >
+                                🐺
+                            </button>
+
+                            <button
                                 onClick={downloadColoredPNG}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                                 title="Télécharger l'image colorée complète"
@@ -5117,6 +5206,7 @@ const DrawBeruFixed = ({
                                         : 'bg-purple-800/50 hover:bg-purple-700/50'
                                     }`}
                                     title={autoPipetteMode ? "Auto-Pipette ACTIVÉ - Colorie avec les couleurs du modèle" : "Auto-Pipette - Cliquez pour activer"}
+                                    data-tutorial="auto-pipette"
                                 >
                                     <span className="text-xl">🎯</span>
                                     {autoPipetteMode && (
@@ -5233,7 +5323,7 @@ const DrawBeruFixed = ({
                                 </div>
 
                                 {/* Palette de couleurs */}
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5" data-tutorial="palette">
                                     {Object.entries(currentModelData.palette).slice(0, 6).map(([id, color]) => (
                                         <button
                                             key={id}
@@ -5259,7 +5349,7 @@ const DrawBeruFixed = ({
                                 {(currentTool === 'brush' || currentTool === 'eraser') && (
                                     <>
                                         <div className="w-px h-10 bg-purple-500/30"></div>
-                                        <div className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 min-w-[280px] max-w-[350px]">
+                                        <div className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 min-w-[280px] max-w-[350px]" data-tutorial="brush-size">
                                             <div className="flex items-center gap-2">
                                                 <div
                                                     className="w-6 h-6 rounded bg-purple-600/50 shrink-0"
@@ -5597,12 +5687,22 @@ const DrawBeruFixed = ({
                                                 });
                                             }
                                         }}
-                                        onPointerUp={stopDrawing}
-                                        onPointerLeave={() => {
+                                        onPointerUp={(e) => {
                                             stopDrawing();
+                                            if (e.target?.releasePointerCapture && e.pointerId !== undefined) {
+                                                try { e.target.releasePointerCapture(e.pointerId); } catch {}
+                                            }
+                                        }}
+                                        onPointerLeave={() => {
+                                            // Don't stop drawing — pointer capture keeps events flowing
                                             setCursorPosition(prev => ({ ...prev, visible: false }));
                                         }}
-                                        onPointerCancel={stopDrawing}
+                                        onPointerCancel={(e) => {
+                                            stopDrawing();
+                                            if (e.target?.releasePointerCapture && e.pointerId !== undefined) {
+                                                try { e.target.releasePointerCapture(e.pointerId); } catch {}
+                                            }
+                                        }}
                                     />
 
                                     {/* Overlay canvas for model reference with opacity */}
@@ -5702,6 +5802,7 @@ const DrawBeruFixed = ({
                         <div
                             className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4"
                             style={{ display: showReference ? 'block' : 'none' }}
+                            data-tutorial="reference"
                         >
                             <h3 className="text-white font-semibold mb-4">
                                 👁️ Modèle {currentModelData.name}
