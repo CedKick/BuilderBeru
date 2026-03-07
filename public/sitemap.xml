@@ -1,151 +1,169 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
-  <!-- 🏠 HOMEPAGE - MULTILINGUAL -->
+
+  <!-- HOMEPAGE -->
   <url>
     <loc>https://builderberu.com/</loc>
-    <lastmod>2025-01-30</lastmod>
+    <lastmod>2026-03-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/" />
     <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/" />
-    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja" />
-    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://builderberu.com/" />
   </url>
 
-  <!-- 🏠 HOMEPAGE - VERSIONS TRADUITES -->
-  <url>
-    <loc>https://builderberu.com/ko</loc>
-    <lastmod>2025-01-30</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/" />
-    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja" />
-    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://builderberu.com/" />
-  </url>
-
-  <url>
-    <loc>https://builderberu.com/ja</loc>
-    <lastmod>2025-01-30</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/" />
-    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja" />
-    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://builderberu.com/" />
-  </url>
-
-  <url>
-    <loc>https://builderberu.com/zh</loc>
-    <lastmod>2025-01-30</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/" />
-    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja" />
-    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://builderberu.com/" />
-  </url>
-
-  <!-- 🔧 BUILD OPTIMIZER - MULTILINGUE -->
+  <!-- BUILD OPTIMIZER -->
   <url>
     <loc>https://builderberu.com/build</loc>
-    <lastmod>2025-01-30</lastmod>
+    <lastmod>2026-03-07</lastmod>
     <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- DRAWBERU - Coloring Tool -->
+  <url>
+    <loc>https://builderberu.com/drawberu</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/build" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/build" />
-    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko/build" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja/build" />
-    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh/build" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://builderberu.com/build" />
   </url>
 
+  <!-- THEORYCRAFT -->
   <url>
-    <loc>https://builderberu.com/ko/build</loc>
-    <lastmod>2025-01-30</lastmod>
-    <changefreq>daily</changefreq>
+    <loc>https://builderberu.com/theorycraft</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- DAMAGE CALCULATOR -->
+  <url>
+    <loc>https://builderberu.com/damage-calculator</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- SHADOW COLOSSEUM -->
+  <url>
+    <loc>https://builderberu.com/shadow-colosseum</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- CODEX -->
+  <url>
+    <loc>https://builderberu.com/codex</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
+  <!-- CRAFT SIMULATOR -->
   <url>
-    <loc>https://builderberu.com/ja/build</loc>
-    <lastmod>2025-01-30</lastmod>
-    <changefreq>daily</changefreq>
+    <loc>https://builderberu.com/craft-simulator</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <url>
-    <loc>https://builderberu.com/zh/build</loc>
-    <lastmod>2025-01-30</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- 🔥 HALL OF FLAME -->
+  <!-- HALL OF FLAME -->
   <url>
     <loc>https://builderberu.com/hall-of-flame</loc>
-    <lastmod>2025-01-30</lastmod>
+    <lastmod>2026-03-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/hall-of-flame" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/hall-of-flame" />
-    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko/hall-of-flame" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja/hall-of-flame" />
-    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh/hall-of-flame" />
   </url>
 
+  <!-- LORESTORY -->
   <url>
-    <loc>https://builderberu.com/ko/hall-of-flame</loc>
-    <lastmod>2025-01-30</lastmod>
+    <loc>https://builderberu.com/lorestory</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- EXPEDITION -->
+  <url>
+    <loc>https://builderberu.com/expedition</loc>
+    <lastmod>2026-03-07</lastmod>
     <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- POD SCORE -->
+  <url>
+    <loc>https://builderberu.com/pod</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
+  <!-- BDG SCORE -->
   <url>
-    <loc>https://builderberu.com/ja/hall-of-flame</loc>
-    <lastmod>2025-01-30</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://builderberu.com/bdg</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
+  <!-- TRAINING DUMMY -->
   <url>
-    <loc>https://builderberu.com/zh/hall-of-flame</loc>
-    <lastmod>2025-01-30</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://builderberu.com/training-dummy</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- 📖 GUIDE EDITOR -->
+  <!-- CHIBI WORLD -->
   <url>
-    <loc>https://builderberu.com/guide-editor</loc>
-    <lastmod>2025-01-30</lastmod>
+    <loc>https://builderberu.com/chibi-world</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+  </url>
+
+  <!-- BERUVIAN WORLD -->
+  <url>
+    <loc>https://builderberu.com/beruvian-world</loc>
+    <lastmod>2026-03-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
-  <!-- 🌍 BERUVIAN WORLD -->
+  <!-- GUIDE EDITOR -->
   <url>
-    <loc>https://builderberu.com/beruvian-world</loc>
-    <lastmod>2025-01-30</lastmod>
+    <loc>https://builderberu.com/guide-editor</loc>
+    <lastmod>2026-03-07</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.6</priority>
   </url>
 
-  <!-- 📝 POD -->
+  <!-- FACTION HUB -->
   <url>
-    <loc>https://builderberu.com/pod</loc>
-    <lastmod>2025-01-30</lastmod>
+    <loc>https://builderberu.com/faction</loc>
+    <lastmod>2026-03-07</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.55</priority>
+  </url>
+
+  <!-- PVP / RAID SUB-PAGES -->
+  <url>
+    <loc>https://builderberu.com/shadow-colosseum/raid</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://builderberu.com/shadow-colosseum/pvp</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
 
 </urlset>

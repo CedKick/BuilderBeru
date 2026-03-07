@@ -24,6 +24,18 @@ const DrawBeruLauncher = () => {
   const [selectedModel, setSelectedModel] = useState(null);
   const [selectedTheme, setSelectedTheme] = useState(null);
 
+  // SEO for DrawBeru page
+  useEffect(() => {
+    document.title = 'DrawBeru - Free Anime Coloring Tool | Solo Leveling Arise';
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.content = 'DrawBeru: free online anime coloring tool with auto-pipette magic brush. Color Solo Leveling Arise characters, export timelapse, share your art. No signup needed.';
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.content = 'DrawBeru - Free Anime Coloring Tool';
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.content = 'Color anime characters with a magic auto-pipette brush. Free, no signup, timelapse export.';
+    return () => { document.title = 'BuilderBeru - Solo Leveling Arise Calculator'; };
+  }, []);
+
   // Custom upload
   const [customModelData, setCustomModelData] = useState(null);
   const [uploadStatus, setUploadStatus] = useState(null);
