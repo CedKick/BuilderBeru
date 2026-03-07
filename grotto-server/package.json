@@ -1,0 +1,13 @@
+{
+  "name": "grotto-server",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "La Grotte - PvE open-world dungeon for Shadow Colosseum",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
