@@ -147,16 +147,16 @@ export class AIController {
   }
 
   // ═══════════════════════════════════════════════════════
-  // BACKLINE HEAL (support): Stay far back, heal lowest ally
+  // BACKLINE HEAL (support): Stay close behind DPS, heal/buff priority, attack when idle
   // ═══════════════════════════════════════════════════════
   static decideBacklineHeal(char, allies, enemies, boss) {
     const nearestEnemy = AIController.findClosestEnemy(char, enemies, boss);
 
-    // Stay far back — behind all allies
+    // Stay behind frontline DPS but not too far — midline position
     if (nearestEnemy) {
-      const safeX = AIController.getBacklinePosition(allies);
-      if (char.x > safeX + 50) {
-        return { type: 'move', targetX: safeX };
+      const midX = AIController.getMidlinePosition(allies);
+      if (Math.abs(char.x - midX) > 60) {
+        return { type: 'move', targetX: midX };
       }
     }
 
@@ -184,7 +184,18 @@ export class AIController {
       if (healSkill) return { type: 'skill', skill: healSkill, target: injuredAlly, isHeal: true };
     }
 
-    // PRIORITY 4: Contribute damage — ONLY auto-attacks (free, no mana spent on DPS)
+    // PRIORITY 4: Buff ATK on a DPS ally (if mana comfortable and no one needs healing)
+    if (canAffordBuff) {
+      const atkBuff = AIController.findSkillWithBuff(char, 'buffAtk');
+      if (atkBuff) {
+        const dpsAlly = allies.find(a => a.alive && a.id !== char.id
+          && (a.role === 'frontline_dps' || a.role === 'backline_dps')
+          && !a.buffs.some(b => b.type === 'atk'));
+        if (dpsAlly) return { type: 'skill', skill: atkBuff, target: dpsAlly };
+      }
+    }
+
+    // PRIORITY 5: Contribute damage — auto-attacks (free, no mana spent on DPS)
     const target = boss?.alive ? boss : AIController.findLowestHpEnemy(enemies);
     if (target && char.attackTimer <= 0) {
       const dist = Math.abs(char.x - target.x);
@@ -384,6 +395,19 @@ export class AIController {
       if (a.alive && a.x < minX) minX = a.x;
     }
     return Math.max(50, minX - 80);
+  }
+
+  // Midline: average X of frontline DPS — healers stay just behind them
+  static getMidlinePosition(allies) {
+    let sumX = 0, count = 0;
+    for (const a of allies) {
+      if (a.alive && a.role !== 'backline_heal') {
+        sumX += a.x;
+        count++;
+      }
+    }
+    if (count === 0) return 200;
+    return Math.max(80, (sumX / count) - 40); // ~40px behind average ally
   }
 
   // ═══════════════════════════════════════════════════════

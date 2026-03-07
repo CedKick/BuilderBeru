@@ -263,7 +263,8 @@ export class ExpeditionBoss {
 
   getEffectiveAtk() {
     const shred = this.getDebuffValue('atk_shred');
-    const reduction = Math.min(shred, 40); // cap at -40% ATK
+    const confusion = this.getDebuffValue('confusion');
+    const reduction = Math.min(shred + confusion, 50); // cap total ATK reduction at -50%
     return Math.floor(this.atk * (1 - reduction / 100));
   }
 

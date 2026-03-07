@@ -55,7 +55,7 @@ export const COMBAT = {
   ARC_INNER_RADIUS: 100,    // Tanks (closest ring to boss)
   ARC_MIDDLE_RADIUS: 180,   // Fighters/Assassins
   ARC_OUTER_DPS_RADIUS: 260,// Mages
-  ARC_OUTER_HEAL_RADIUS: 340,// Healers (furthest ring)
+  ARC_OUTER_HEAL_RADIUS: 220,// Healers (between melee DPS and ranged DPS)
   ARC_SPREAD_ANGLE: 120,    // Total arc degrees (60° each side)
 
   // Vertical lanes (Y) — visual depth separation by role
@@ -64,7 +64,7 @@ export const COMBAT = {
     frontline:      40,     // Tanks at front (closest to camera, lower on screen)
     frontline_dps:  15,     // Fighters/Assassins right behind tanks
     backline_dps:  -30,     // Mages in the back
-    backline_heal: -65,     // Healers at the very back (highest on screen)
+    backline_heal: -10,     // Healers close behind frontline (supports the team)
   },
   LANE_Y_JITTER: 20,        // +/- random Y per character within lane
 

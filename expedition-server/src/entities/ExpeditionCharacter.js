@@ -296,9 +296,9 @@ export class ExpeditionCharacter {
     return Math.max(0, total);
   }
 
-  // Mages use INT, everyone else uses ATK (except mana-scaling mages like Megumin)
+  // Mages use INT (including mana-scaling mages like Megumin), everyone else uses ATK
   getOffensiveStat() {
-    if (this.hunterClass === 'mage' && !this.usesManaScaling) {
+    if (this.hunterClass === 'mage') {
       return this.getEffectiveInt();
     }
     return this.getEffectiveAtk();

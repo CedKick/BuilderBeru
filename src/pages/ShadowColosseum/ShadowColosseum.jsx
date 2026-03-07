@@ -9639,7 +9639,7 @@ export default function ShadowColosseum() {
                                 <div className={`text-tiny-responsive font-bold truncate ${selected > 0 ? (setDef.color || 'text-cyan-300') : 'text-gray-400'}`}>
                                   {setDef.name}
                                 </div>
-                                <div className="text-tiny-responsive text-gray-600">{avail} dispo</div>
+                                <div className="text-tiny-responsive text-gray-600">{avail} dispo {(() => { const cat = SET_CATEGORIES[getSetCategory(setId)]; return cat ? <span className={`${cat.color} opacity-60`}>· {cat.label}</span> : null; })()}</div>
                               </div>
                               {selected > 0 && (
                                 <span className={`text-tiny-responsive font-black px-1.5 py-0.5 rounded-full ${setDef.bg || 'bg-cyan-500/20'} ${setDef.color || 'text-cyan-300'}`}>
@@ -9649,7 +9649,10 @@ export default function ShadowColosseum() {
                             </button>
                             {/* Tooltip on hover */}
                             <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-1 w-52 p-2 rounded-lg border border-gray-600/50 bg-gray-900/95 backdrop-blur-sm shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-150">
-                              <div className={`text-small-responsive font-bold mb-1 ${setDef.color || 'text-cyan-300'}`}>{setDef.icon} {setDef.name}</div>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className={`text-small-responsive font-bold ${setDef.color || 'text-cyan-300'}`}>{setDef.icon} {setDef.name}</span>
+                                {(() => { const cat = SET_CATEGORIES[getSetCategory(setId)]; return cat ? <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${cat.bg} ${cat.color} ${cat.border} border`}>{cat.label}</span> : null; })()}
+                              </div>
                               {setDef.desc && <div className="text-tiny-responsive text-gray-500 mb-1.5 italic">{setDef.desc}</div>}
                               <div className="space-y-1">
                                 <div className="flex gap-1.5">

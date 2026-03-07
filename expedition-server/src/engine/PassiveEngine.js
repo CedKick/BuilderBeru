@@ -498,9 +498,11 @@ export class PassiveEngine {
       }
     }
 
-    // ── TACOS ETERNEL: per-hit confusion debuff ──
+    // ── TACOS ETERNEL: -30% ATK debuff (once per target, not cumulative) ──
     if (this.hasWeapon(char.id, 'tacos_eternel')) {
-      if (target.addDebuff) target.addDebuff('confusion', 30, 2, char.id);
+      if (target.addDebuff && !target.debuffs?.some(d => d.type === 'confusion')) {
+        target.addDebuff('confusion', 30, 999, char.id);  // permanent, single application
+      }
     }
 
     // ── AME-NO-NUHOKO: +5% random stat to random teammate per hit ──

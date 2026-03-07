@@ -200,6 +200,12 @@ export class CombatEngine2D {
       atk = Math.floor(atk * Math.max(0.05, 1 - atkCrush / 100));
     }
 
+    // Apply confusion debuff (Tacos Éternel: -30% ATK on enemy)
+    const confusion = char.getDebuffValue ? char.getDebuffValue('confusion') : 0;
+    if (confusion > 0) {
+      atk = Math.floor(atk * Math.max(0.05, 1 - confusion / 100));
+    }
+
     // Calculate armor penetration from weapon effects + set bonuses
     let armorPen = this.getArmorPen(char) + (char._defPen || 0);
 
@@ -308,6 +314,9 @@ export class CombatEngine2D {
 
     // Reset idle mana regen counter (skill was cast)
     char._ticksSinceSkill = 0;
+
+    // Snapshot mana ratio BEFORE consuming (for mana-scaling skills like Megumin)
+    const manaRatioBeforeCast = char.maxMana > 0 ? char.mana / char.maxMana : 0;
 
     // Consume mana (unless free cast from passive)
     if (skill.manaCost && !castResult.freeCast) {
@@ -419,6 +428,12 @@ export class CombatEngine2D {
       const atkMult = this.passives.getAtkMultiplier(char.id);
       const atk = Math.floor(char.getOffensiveStat() * atkMult);
       let skillPower = skill.power;
+
+      // Mana scaling: power scales with mana ratio (e.g. Megumin's Detonation/EXPLOSION)
+      // manaScaling: 7 → at 100% mana = power × (1 + 7×1.0) = ×8, at 50% = ×4.5, at 0% = ×1
+      if (skill.manaScaling && manaRatioBeforeCast > 0) {
+        skillPower = Math.floor(skillPower * (1 + skill.manaScaling * manaRatioBeforeCast));
+      }
 
       // Nova Arcanique 4th spell = double damage
       if (castResult.doubleDamage) skillPower *= 2;
