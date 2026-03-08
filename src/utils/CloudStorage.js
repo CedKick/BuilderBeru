@@ -196,6 +196,27 @@ class CloudStorageManager {
     }
   }
 
+  /** Force save — bypasses anti-corruption size checks.
+   *  Use ONLY for intentional mass deletions (inventory cleanup, etc.) where data legitimately shrinks.
+   *  Updates cloudSize tracking so subsequent syncs don't trigger auto-restore. */
+  forceSave(key, data) {
+    const json = JSON.stringify(data);
+    // Update cloud size to match new data — prevents anti-corruption from restoring old data
+    this._cloudSizes[key] = json.length;
+    this._pendingData.set(key, data);
+    try { localStorage.setItem(key, json); } catch {}
+    // Invalidate sync hash so syncKey pushes to cloud
+    delete this._lastSyncHash[key];
+    try { localStorage.removeItem(HASH_PREFIX + key); } catch {}
+  }
+
+  /** Force save + immediate sync — bypasses all anti-corruption and throttles.
+   *  Use for intentional bulk operations (inventory cleanup). */
+  async forceSaveAndSync(key, data) {
+    this.forceSave(key, data);
+    return this.syncKey(key);
+  }
+
   /** Save + sync to cloud. Uses smart throttle: if synced <15s ago, schedules instead of forcing.
    *  localStorage is ALWAYS saved instantly. Cloud sync is the only thing throttled.
    *  beforeunload catches any pending syncs on tab close — zero data loss. */
