@@ -1,1287 +1,634 @@
-import { SERVER, EXPEDITION, CAMPFIRE, MARCH, REST_CAMP, SCALING } from '../config.js';
-import { CombatEngine2D } from './CombatEngine2D.js';
-import { AIController } from './AIController.js';
-import { LootEngine } from './LootEngine.js';
-import { generateEncounterSequence } from './WaveGenerator.js';
-import { ExpeditionCharacter } from '../entities/ExpeditionCharacter.js';
-import { Mob } from '../entities/Mob.js';
-import { ExpeditionBoss } from '../entities/ExpeditionBoss.js';
-import { MOB_TEMPLATES } from '../data/mobTemplates.js';
-import { getBossDefinition } from '../data/bossDefinitions.js';
-import * as db from '../db/queries.js';
-import { getItemById } from '../data/expeditionItems.js';
-import { EXPEDITION_WEAPONS } from '../data/expeditionWeapons.js';
+// ─── ExpeditionEngine (v2) ────────────────────────────────
+// Main orchestrator for the expedition lifecycle.
+// Phases: idle -> registration -> march -> combat -> campfire -> march -> ... -> finished/wiped
+//
+// Uses real-time 2D Manaya combat engine (60 TPS).
+// 5 players x 6 hunters = 30 entities on the field.
+// Map scrolls right between encounters, camera locks during combat.
 
-// ── ExpeditionEngine ──
-// Central state machine that orchestrates the entire expedition lifecycle.
-// States: registration -> active -> [march -> combat -> loot_roll -> campfire] -> finished | wiped
+import { EXPEDITION, CAMPFIRE, MARCH } from '../config.js';
+import { CombatInstance } from './CombatInstance.js';
+import { MobWaveCombat } from './MobWaveCombat.js';
+import { HunterSwitch } from './HunterSwitch.js';
+import { Hunter } from '../entities/Hunter.js';
+import { HUNTERS } from '../data/hunterData.js';
+import { getBossDefinition } from '../data/bossDefinitions.js';
+import { LootEngine } from './LootEngine.js';
 
 export class ExpeditionEngine {
-  constructor(broadcast) {
-    this.broadcast = broadcast || (() => {});  // WebSocket broadcast function
-
-    // DB state
+  constructor() {
+    // Expedition state
+    this.state = 'idle'; // idle | registration | march | mob_wave | combat | campfire | loot | finished | wiped
     this.expeditionId = null;
 
-    // State machine
-    this.status = 'idle';  // idle | registration | march | combat | loot_roll | campfire | finished | wiped
+    // Players & hunters
+    this.players = new Map();     // playerId -> { username, hunterEntries }
+    this.hunters = [];            // All 30 Hunter entities on the field
+    this.hunterSwitch = new HunterSwitch();
 
-    // Characters (all players' hunters)
-    this.characters = [];
+    // Combat
+    this.currentCombat = null;    // Active CombatInstance
+    this.currentMobWave = null;   // Active MobWaveCombat
+    this.currentBossIndex = 0;    // 0-4 (5 bosses)
+    this.bossResults = [];        // Results per boss fight
+    this._mobWaveDone = false;    // Whether mob wave before current boss is done
 
-    // SR selections: Map<username, itemId[]> — each player has up to 5 SR picks (can repeat for extra rolls)
-    this.srSelections = new Map();
+    // March/campfire timers
+    this._phaseTimer = 0;
+    this._phaseInterval = null;
 
-    // Encounter system
-    this.encounters = [];
-    this.currentEncounterIndex = 0;
+    // Scroll position (for map progression)
+    this.scrollX = 0;
 
-    // Current combat entities
-    this.currentMobs = [];
-    this.currentBoss = null;
+    // Event feed (broadcast to spectators)
+    this.feedLog = [];        // [{ text, type, timestamp }] — last 60 entries
+    this.lootResults = [];    // Loot from last boss kill (for display)
+    this._banterTimer = 0;    // Timer for periodic banter during march/campfire
 
-    // Engines
-    this.combatEngine = new CombatEngine2D();
-
-    // Timers
-    this.elapsedSeconds = 0;
-    this.phaseTimer = 0;
-
-    // Loot
-    this.lootLog = [];
-    this.pendingLootResults = null;
-
-    // Campfire
-    this.rezUsedThisCombat = new Set();
-    this.pendingRezQueue = [];
-    this.rezTimer = 999;
-
-    // Rest at camp (anti-wipe reserve)
-    this.restingCharacters = new Set();  // char IDs sitting out next fight
-
-    // Stats
-    this.bossesKilled = 0;
-    this.totalDeaths = 0;
-
-    // Per-encounter stats history (for spectators & recap)
-    this.encounterHistory = [];  // { encounterIndex, type, bossName, bossIndex, combatTime, totalDmg, totalHeals, totalDeaths, charStats }
-    this.totalCombatTime = 0;
-    this.currentEncounterStartTime = 0;
-
-    // Essences collected per player: Map<username, { guerre, arcanique, gardienne }>
-    this.playerEssences = new Map();
-
-    // Currencies collected per player: Map<username, { alkahest, marteau_rouge, contribution }>
-    this.playerCurrencies = new Map();
-
-    // Tick management
-    this.tickInterval = null;
-    this.tickCount = 0;
-    this.lastSnapshotTime = 0;
+    // Callbacks
+    this.onStateChange = null;
+    this.onBroadcast = null;
   }
 
-  // ═══════════════════════════════════════════════════════
-  // LIFECYCLE
-  // ═══════════════════════════════════════════════════════
+  // --- Registration ---
 
-  getStatus() {
-    return {
-      status: this.status,
-      expeditionId: this.expeditionId,
-      elapsedSeconds: Math.floor(this.elapsedSeconds),
-      currentEncounter: this.currentEncounterIndex,
-      totalEncounters: this.encounters.length,
-      bossesKilled: this.bossesKilled,
-      aliveCount: this.characters.filter(c => c.alive).length,
-      totalCharacters: this.characters.length,
-    };
+  registerPlayer(playerId, username, hunterEntries) {
+    if (this.state !== 'idle' && this.state !== 'registration') return { error: 'Not in registration phase' };
+    if (this.players.size >= EXPEDITION.MAX_PLAYERS) return { error: 'Expedition full' };
+    if (hunterEntries.length !== EXPEDITION.HUNTERS_PER_PLAYER) return { error: `Need exactly ${EXPEDITION.HUNTERS_PER_PLAYER} hunters` };
+
+    this.players.set(playerId, {
+      username,
+      hunterEntries,
+    });
+
+    if (this.state === 'idle') {
+      this.state = 'registration';
+      this._emitStateChange();
+    }
+
+    console.log(`[Expedition] ${username} registered with ${hunterEntries.length} hunters`);
+    return { ok: true, playerCount: this.players.size };
   }
 
-  // Start the expedition: initialize characters from entries, generate encounters, begin
-  // Reset engine to idle state (for admin reset)
-  reset() {
-    this.stop();
-    this.expeditionId = null;
-    this.status = 'idle';
-    this.characters = [];
-    this.srSelections = new Map();
-    this.encounters = [];
-    this.currentEncounterIndex = 0;
-    this.currentMobs = [];
-    this.currentBoss = null;
-    this.combatEngine = new CombatEngine2D();
-    this.elapsedSeconds = 0;
-    this.phaseTimer = 0;
-    this.lootLog = [];
-    this.pendingLootResults = null;
-    this.rezUsedThisCombat = new Set();
-    this.bossesKilled = 0;
-    this.totalDeaths = 0;
-    this.encounterHistory = [];
-    this.totalCombatTime = 0;
-    this.currentEncounterStartTime = 0;
-    this.playerEssences = new Map();
-    this.playerCurrencies = new Map();
-    this.tickCount = 0;
-    this.lastSnapshotTime = 0;
-    console.log('[Expedition] Engine reset to idle');
-  }
+  // --- Start Expedition ---
 
-  async start(expeditionId, entries) {
-    this.expeditionId = expeditionId;
+  startExpedition() {
+    if (this.state !== 'registration') return { error: 'Not in registration phase' };
+    if (this.players.size < EXPEDITION.MIN_PLAYERS_TO_START) return { error: 'Not enough players' };
 
-    // Build characters from registered entries
-    this.characters = [];
-    for (const entry of entries) {
-      const charIds = typeof entry.character_ids === 'string'
-        ? JSON.parse(entry.character_ids)
-        : entry.character_ids;
-      const charData = typeof entry.character_data === 'string'
-        ? JSON.parse(entry.character_data)
-        : entry.character_data;
+    console.log(`\n[Expedition] ================================================`);
+    console.log(`[Expedition] Starting with ${this.players.size} players`);
 
-      for (const hunterId of charIds) {
-        const data = charData[hunterId] || {};
-        const level = data.level || 1;
-        const stars = data.stars || 0;
-        const precomputedStats = data.fullStats || null;
-        try {
-          const char = new ExpeditionCharacter(entry.username, hunterId, level, stars, precomputedStats);
-          // SC weapon passive from client (sulfuras_fury, katana_v_chaos, etc.)
-          if (data.weaponPassive) char.scWeaponPassive = data.weaponPassive;
+    // Create Hunter entities from inscription data
+    this.hunters = [];
+    for (const [playerId, data] of this.players) {
+      const hunterIds = [];
+      for (let i = 0; i < data.hunterEntries.length; i++) {
+        const entry = data.hunterEntries[i];
+        const hunterDef = HUNTERS[entry.hunterId];
+        const id = `${data.username}_${entry.hunterId}`;
 
-          // Equipped sets + weapon from client registration (colosseum gear)
-          if (data.equippedSets || data.weaponId) {
-            const existingSets = char.expeditionGear?.sets || {};
-            const clientSets = data.equippedSets || {};
-            // Merge client sets with any existing expedition inventory sets
-            const mergedSets = { ...existingSets };
-            for (const [setId, count] of Object.entries(clientSets)) {
-              mergedSets[setId] = Math.max(mergedSets[setId] || 0, count);
-            }
-            char.expeditionGear = {
-              sets: mergedSets,
-              weaponId: char.expeditionGear?.weaponId || data.weaponId || null,
-            };
-          }
-
-          this.characters.push(char);
-        } catch (e) {
-          console.warn(`[Expedition] Failed to create character ${hunterId} for ${entry.username}:`, e.message);
-        }
-      }
-
-      // Store SR selections (array of up to 5 picks, can repeat for bonus rolls)
-      const srItems = typeof entry.sr_items === 'string' ? JSON.parse(entry.sr_items) : (entry.sr_items || []);
-      if (Array.isArray(srItems) && srItems.length > 0) {
-        this.srSelections.set(entry.username, srItems);
-      }
-    }
-
-    if (this.characters.length === 0) {
-      console.error('[Expedition] No valid characters, cannot start');
-      return;
-    }
-
-    // Load expedition gear from player inventories and apply to characters
-    await this.loadPlayerGear(entries);
-
-    // Generate encounter sequence (15 bosses for V2)
-    this.encounters = generateEncounterSequence(EXPEDITION.TOTAL_BOSSES);
-    this.currentEncounterIndex = 0;
-
-    // Assign initial formation (no boss yet → linear fallback)
-    AIController.assignFormation(this.characters, null);
-
-    // Update DB
-    await db.updateExpeditionStatus(expeditionId, 'active', { startedAt: new Date() });
-
-    console.log(`[Expedition] Started! ${this.characters.length} characters, ${this.encounters.length} encounters`);
-
-    // Transition to first march
-    this.transitionTo('march');
-
-    // Start tick loop
-    this.startTickLoop();
-  }
-
-  startTickLoop() {
-    if (this.tickInterval) return;
-    this.tickInterval = setInterval(() => this.tick(), SERVER.TICK_MS);
-  }
-
-  stop() {
-    if (this.tickInterval) {
-      clearInterval(this.tickInterval);
-      this.tickInterval = null;
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // MAIN TICK (called at 4 TPS)
-  // ═══════════════════════════════════════════════════════
-  tick() {
-    try {
-      const dt = SERVER.TICK_MS / 1000;  // 0.25 seconds
-      this.elapsedSeconds += dt;
-      this.tickCount++;
-
-      // Check 24h max duration
-      if (this.elapsedSeconds >= EXPEDITION.MAX_DURATION_HOURS * 3600) {
-        this.transitionTo('finished');
-        return;
-      }
-
-      switch (this.status) {
-        case 'march':    this.tickMarch(dt); break;
-        case 'combat':   this.tickCombat(dt); break;
-        case 'loot_roll': this.tickLootRoll(dt); break;
-        case 'campfire': this.tickCampfire(dt); break;
-        case 'finished':
-        case 'wiped':
-          this.stop();
-          break;
-      }
-
-      // Broadcast to spectators every BROADCAST_RATE ticks
-      if (this.tickCount % (SERVER.TICK_RATE / SERVER.BROADCAST_RATE) === 0) {
-        this.broadcastState();
-      }
-
-      // Periodic state snapshot to DB
-      if (this.elapsedSeconds - this.lastSnapshotTime >= EXPEDITION.STATE_SAVE_INTERVAL_SEC) {
-        this.lastSnapshotTime = this.elapsedSeconds;
-        this.saveState().catch(err => console.error('[Expedition] Snapshot save error:', err.message));
-      }
-    } catch (err) {
-      console.error('[Expedition] TICK ERROR (non-fatal):', err.message, err.stack);
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // STATE: MARCH (cosmetic: characters advance right)
-  // ═══════════════════════════════════════════════════════
-  tickMarch(dt) {
-    this.phaseTimer -= dt;
-
-    // Slide all characters to the right
-    for (const char of this.characters) {
-      if (char.alive) {
-        char.x += MARCH.SCROLL_SPEED * dt;
-      }
-    }
-
-    if (this.phaseTimer <= 0) {
-      this.transitionTo('combat');
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // STATE: COMBAT
-  // ═══════════════════════════════════════════════════════
-  tickCombat(dt) {
-    this.totalCombatTime += dt;
-
-    // Boss enrage OS after 20 minutes if boss still above 95% HP
-    const encounterTime = this.elapsedSeconds - this.currentEncounterStartTime;
-    const bossHpPct = this.currentBoss?.alive ? this.currentBoss.hp / this.currentBoss.maxHp : 0;
-    if (encounterTime >= 1200 && this.currentBoss?.alive && bossHpPct > 0.95) {
-      // Kill all alive characters — boss one-shots everyone
-      const alive = this.characters.filter(c => c.alive && !this.restingCharacters.has(c.id));
-      for (const c of alive) {
-        c.hp = 0;
-        c.alive = false;
-      }
-      this.broadcast({ type: 'events_batch', events: [{ type: 'system', message: `${this.currentBoss.name} enrage — one-shot all hunters!` }] });
-      this.onCombatWipe();
-      return;
-    }
-
-    // Exclude resting characters from combat
-    const combatChars = this.characters.filter(c => !this.restingCharacters.has(c.id));
-    const result = this.combatEngine.tick(combatChars, this.currentMobs, this.currentBoss, dt);
-
-    // Broadcast combat events
-    if (result.events.length > 0) {
-      this.broadcast({ type: 'events_batch', events: result.events });
-    }
-
-    if (result.status === 'victory') {
-      this.onCombatVictory();
-    } else if (result.status === 'wipe') {
-      this.onCombatWipe();
-    }
-  }
-
-  onCombatVictory() {
-    const encounter = this.encounters[this.currentEncounterIndex];
-    console.log(`[Expedition] Victory! Encounter ${this.currentEncounterIndex + 1}/${this.encounters.length} (${encounter.type})`);
-
-    // ── Compute per-encounter stats ──
-    const encounterCombatTime = this.elapsedSeconds - this.currentEncounterStartTime;
-    const encounterCharStats = {};
-    let encounterTotalDmg = 0, encounterTotalHeals = 0, encounterTotalDeaths = 0;
-    for (const char of this.characters) {
-      if (this.restingCharacters.has(char.id)) continue;
-      const baseline = char._encounterBaseline || { dmg: 0, heals: 0, kills: 0, deaths: 0 };
-      const dmg = char.stats.damageDealt - baseline.dmg;
-      const heals = (char.stats.healingDone || 0) - baseline.heals;
-      const kills = char.stats.kills - baseline.kills;
-      const deaths = char.stats.deaths - baseline.deaths;
-      encounterTotalDmg += dmg;
-      encounterTotalHeals += heals;
-      encounterTotalDeaths += deaths;
-      if (dmg > 0 || heals > 0 || deaths > 0) {
-        encounterCharStats[char.id] = {
-          name: char.name, hunterId: char.hunterId, element: char.element, username: char.username,
-          dmg, heals, kills, deaths,
-        };
-      }
-    }
-    const encounterEntry = {
-      encounterIndex: this.currentEncounterIndex,
-      type: encounter.type,
-      bossName: encounter.bossName || null,
-      bossIndex: encounter.bossIndex ?? null,
-      combatTime: Math.floor(encounterCombatTime),
-      totalDmg: encounterTotalDmg,
-      totalHeals: encounterTotalHeals,
-      totalDeaths: encounterTotalDeaths,
-      charStats: encounterCharStats,
-    };
-    this.encounterHistory.push(encounterEntry);
-
-    const isBoss = encounter.type === 'boss';
-    if (isBoss) {
-      this.bossesKilled++;
-      this.broadcast({
-        type: 'boss_killed',
-        bossName: encounter.bossName,
-        bossIndex: encounter.bossIndex,
-        combatTime: encounterEntry.combatTime,
-        totalDmg: encounterEntry.totalDmg,
-        totalHeals: encounterEntry.totalHeals,
-        totalDeaths: encounterEntry.totalDeaths,
-        charStats: encounterEntry.charStats,
-      });
-    }
-
-    // Roll essence drops (from killed mobs + boss)
-    const mobKills = this.currentMobs.filter(m => !m.alive).map(m => ({
-      templateKey: m.templateKey,
-      elite: m.elite || false,
-    }));
-    const essences = LootEngine.rollEssenceDrops(mobKills, isBoss);
-    const totalEssences = essences.guerre + essences.arcanique + essences.gardienne;
-
-    // Distribute essences equally among alive players
-    if (totalEssences > 0) {
-      const alivePlayers = this.getAlivePlayers();
-      if (alivePlayers.length > 0) {
-        for (const player of alivePlayers) {
-          if (!this.playerEssences.has(player.username)) {
-            this.playerEssences.set(player.username, { guerre: 0, arcanique: 0, gardienne: 0 });
-          }
-          const pEss = this.playerEssences.get(player.username);
-          // Each player gets the full essence drop (not split — rewarding group content)
-          pEss.guerre += essences.guerre;
-          pEss.arcanique += essences.arcanique;
-          pEss.gardienne += essences.gardienne;
-        }
-        this.broadcast({
-          type: 'essence_drop',
-          essences,
-          perPlayer: true,
-          playerCount: alivePlayers.length,
-        });
-      }
-    }
-
-    // Roll shared trash mob currencies (per mob killed, everyone gets the same)
-    if (!isBoss) {
-      const mobKillCount = this.currentMobs.filter(m => !m.alive).length;
-      const tierMatch = (encounter.lootTableId || '').match(/tier(\d)/);
-      const tier = tierMatch ? parseInt(tierMatch[1]) : 1;
-      const currencies = LootEngine.rollTrashDrops(mobKillCount, tier);
-      const totalCurrencies = currencies.alkahest + currencies.marteau_rouge + currencies.contribution;
-
-      if (totalCurrencies > 0) {
-        const alivePlayers = this.getAlivePlayers();
-        for (const player of alivePlayers) {
-          if (!this.playerCurrencies.has(player.username)) {
-            this.playerCurrencies.set(player.username, { alkahest: 0, marteau_rouge: 0, contribution: 0 });
-          }
-          const pc = this.playerCurrencies.get(player.username);
-          pc.alkahest += currencies.alkahest;
-          pc.marteau_rouge += currencies.marteau_rouge;
-          pc.contribution += currencies.contribution;
-        }
-
-        this.broadcast({
-          type: 'currency_drop',
-          currencies,
-          mobsKilled: mobKillCount,
-          tier,
+        const hunter = new Hunter({
+          id,
+          username: data.username,
+          hunterId: entry.hunterId,
+          hunterName: hunterDef?.name || entry.hunterId,
+          inscriptionStats: entry.fullStats,
+          ownerPlayerId: playerId,
+          slotIndex: i,
         });
 
-        // Deposit currencies immediately to all alive players
-        this.depositCurrencies(currencies, alivePlayers).catch(err =>
-          console.error('[Expedition] Currency deposit error:', err.message)
-        );
+        this.hunters.push(hunter);
+        hunterIds.push(id);
       }
+
+      // Register hunter switch slots
+      this.hunterSwitch.registerPlayer(playerId, hunterIds);
     }
 
-    // Roll loot — use generateBossLoot for boss encounters, rollDrops for mob waves
-    // Extra rolls scale with player count (>30 hunters = more loot)
-    const extraRolls = this.getExtraLootRolls();
-    const drops = isBoss
-      ? LootEngine.generateBossLoot(encounter.bossIndex + 1, extraRolls)  // bossIndex is 0-based, generateBossLoot expects 1-15
-      : LootEngine.rollDrops(encounter.lootTableId);
-    if (drops.length > 0) {
-      const alivePlayers = this.getAlivePlayers();
-      this.pendingLootResults = LootEngine.distributeLoot(drops, this.srSelections, alivePlayers, false);
-      this.transitionTo('loot_roll');
-    } else {
-      // No loot, go to campfire
-      this.currentEncounterIndex++;
-      this.transitionTo('campfire');
-    }
+    console.log(`[Expedition] ${this.hunters.length} hunters created`);
+    this._logHunterSummary();
+
+    // Start with march to first boss
+    this.currentBossIndex = 0;
+    this._startMarch();
+    return { ok: true, hunterCount: this.hunters.length };
   }
 
-  onCombatWipe() {
-    // Check if resting characters can save the raid
-    const restingAlive = this.characters.filter(c =>
-      this.restingCharacters.has(c.id) && c.alive
-    );
-    const restingHasHealer = restingAlive.some(c => c.role === 'backline_heal');
+  // --- Start Bot Expedition (testing) ---
 
-    if (restingAlive.length > 0 && restingHasHealer) {
-      console.log(`[Expedition] WIPE RECOVERY! ${restingAlive.length} resting characters (with healer) can save the raid!`);
-
-      this.broadcast({
-        type: 'wipe_recovery',
-        restingCount: restingAlive.length,
-        message: 'Les reserves arrivent! Les guerriers au repos se precipitent pour sauver le raid!',
-      });
-
-      // Apply rest bonuses to resting characters
-      for (const char of restingAlive) {
-        char.maxHp = Math.floor(char.maxHp * (1 + REST_CAMP.REST_BONUS_HP));
-        char.hp = char.maxHp; // Full HP
-        char.atk = Math.floor(char.atk * (1 + REST_CAMP.REST_BONUS_ATK));
-        char.def = Math.floor(char.def * (1 + REST_CAMP.REST_BONUS_DEF));
-        char.mana = char.maxMana; // Full mana
-      }
-
-      // Rez all dead combatants at reduced HP
-      for (const char of this.characters) {
-        if (!char.alive && !this.restingCharacters.has(char.id)) {
-          char.resurrect(REST_CAMP.WIPE_RECOVERY_REZ_HP * 100);
-          this.broadcast({
-            type: 'rez',
-            healer: restingAlive[0].id,
-            healerName: 'Les Reserves',
-            target: char.id,
-            targetName: char.name,
-          });
-        }
-      }
-
-      // Clear resting — everyone is back in action
-      this.restingCharacters.clear();
-
-      // Go to campfire to recover before retrying
-      this.transitionTo('campfire');
-      return;
+  startBotExpedition(playerData) {
+    // playerData: [{ username, hunters: [{ hunterId, fullStats, stars, level, weaponPassive }] }]
+    for (let i = 0; i < playerData.length; i++) {
+      const p = playerData[i];
+      const playerId = `bot_${p.username}`;
+      this.registerPlayer(playerId, p.username, p.hunters.map((h) => ({
+        hunterId: h.hunterId,
+        fullStats: h.fullStats,
+        stars: h.stars || 0,
+        level: h.level || 140,
+        weaponPassive: h.weaponPassive || null,
+      })));
     }
-
-    console.log(`[Expedition] WIPE! All characters are dead.`);
-
-    // Roll loot with wipe penalty
-    const encounter = this.encounters[this.currentEncounterIndex];
-    const isBossWipe = encounter.type === 'boss';
-    const wipeExtraRolls = this.getExtraLootRolls();
-    const drops = isBossWipe
-      ? LootEngine.generateBossLoot(encounter.bossIndex + 1, wipeExtraRolls)
-      : LootEngine.rollDrops(encounter.lootTableId);
-    if (drops.length > 0) {
-      const allPlayers = this.getAllPlayers();
-      this.pendingLootResults = LootEngine.distributeLoot(drops, this.srSelections, allPlayers, true);
-      // Still do loot roll even on wipe (some items may be stolen)
-      this.transitionTo('loot_roll');
-    } else {
-      this.transitionTo('wiped');
-    }
+    return this.startExpedition();
   }
 
-  // ═══════════════════════════════════════════════════════
-  // STATE: LOOT ROLL (animated pause)
-  // ═══════════════════════════════════════════════════════
-  tickLootRoll(dt) {
-    this.phaseTimer -= dt;
+  // --- Phase: March ---
 
-    if (this.phaseTimer <= 0) {
-      // Save loot to DB
-      if (this.pendingLootResults) {
-        this.saveLootResults(this.pendingLootResults).catch(err =>
-          console.error('[Expedition] Loot save error:', err.message)
-        );
-        this.lootLog.push(...this.pendingLootResults);
-        this.pendingLootResults = null;
-      }
+  _startMarch() {
+    this.state = 'march';
+    this._phaseTimer = 0;
+    this._emitStateChange();
 
-      // Check if this was a wipe (excluding resting chars)
-      const allCombatantsDead = this.characters.every(c => !c.alive || this.restingCharacters.has(c.id));
-      if (allCombatantsDead) {
-        // After wipe loot is distributed, check if resting chars can recover
-        const restingAlive = this.characters.filter(c => this.restingCharacters.has(c.id) && c.alive);
-        if (restingAlive.length > 0) {
-          // Wipe recovery — resting chars jump in
-          this.transitionTo('campfire');
+    const nextAction = this._mobWaveDone ? 'boss' : 'mob_wave';
+    console.log(`[Expedition] --- MARCHING (next: ${nextAction}) ---`);
+    this._addFeed('L\'equipe se met en marche...', 'phase');
+    this._banterTimer = 0;
+
+    this._phaseInterval = setInterval(() => {
+      this._phaseTimer += 0.1;
+      this.scrollX += MARCH.SCROLL_SPEED * 0.1;
+      this._tickBanter(0.1);
+
+      if (this._phaseTimer >= MARCH.DURATION_SEC) {
+        clearInterval(this._phaseInterval);
+        this._phaseInterval = null;
+
+        if (!this._mobWaveDone) {
+          this._startMobWave();
         } else {
-          this.transitionTo('wiped');
+          this._startCombat();
         }
-        return;
+      }
+    }, 100);
+  }
+
+  // --- Phase: Mob Wave ---
+
+  _startMobWave() {
+    this.state = 'mob_wave';
+    this._emitStateChange();
+
+    const aliveHunters = this.hunters.filter(h => h.alive);
+    console.log(`[Expedition] --- MOB WAVE (section ${this.currentBossIndex}) ---`);
+    this._addFeed('Vague de monstres ! Preparez-vous au combat !', 'combat');
+
+    // Reset hunter state for wave encounter
+    for (const h of aliveHunters) {
+      h.resetForEncounter();
+    }
+
+    this.currentMobWave = new MobWaveCombat(
+      aliveHunters,
+      this.currentBossIndex,
+      aliveHunters.length,
+      (result) => this._onMobWaveEnd(result)
+    );
+
+    this.currentMobWave.start();
+  }
+
+  _onMobWaveEnd(result) {
+    console.log(`[Expedition] Mob wave ${result.victory ? 'CLEARED' : 'WIPE'} (${result.time?.toFixed(1)}s)`);
+    this._addFeed(result.victory ? 'Vague de mobs eliminee !' : 'L\'equipe a succombe face aux monstres...', result.victory ? 'victory' : 'wipe');
+
+    // Sync hunter state from wave combat
+    if (this.currentMobWave) {
+      const waveHunters = this.currentMobWave.state.hunters;
+      for (const wh of waveHunters) {
+        const mainH = this.hunters.find(h => h.id === wh.id);
+        if (!mainH) continue;
+        mainH.hp = wh.hp;
+        mainH.mana = wh.mana;
+        mainH.alive = wh.alive;
+      }
+    }
+
+    this.currentMobWave = null;
+    this._mobWaveDone = true;
+
+    if (!result.victory) {
+      // Wipe on mob wave = expedition over
+      this._finishExpedition(false);
+      return;
+    }
+
+    // Short march to the boss
+    this._startMarch();
+  }
+
+  // --- Phase: Combat ---
+
+  _startCombat() {
+    this.state = 'combat';
+    this._emitStateChange();
+
+    const aliveHunters = this.hunters.filter(h => h.alive);
+    const bossDef = getBossDefinition(this.currentBossIndex);
+    console.log(`[Expedition] --- COMBAT: Boss ${this.currentBossIndex + 1}/${EXPEDITION.TOTAL_BOSSES} ---`);
+    console.log(`[Expedition] Active hunters: ${aliveHunters.length}`);
+    this._addFeed(`BOSS : ${bossDef?.name || 'Boss ' + (this.currentBossIndex + 1)} — ${aliveHunters.length} chasseurs en vie !`, 'combat');
+
+    // Reset hunter state for new encounter
+    for (const h of aliveHunters) {
+      h.resetForEncounter();
+    }
+
+    // Create combat instance
+    this.currentCombat = new CombatInstance(
+      aliveHunters,
+      this.currentBossIndex,
+      aliveHunters.length,
+      (result) => this._onCombatEnd(result)
+    );
+
+    this.currentCombat.start();
+  }
+
+  _onCombatEnd(result) {
+    this.bossResults.push(result);
+    const bossDef = getBossDefinition(this.currentBossIndex);
+    const bossName = bossDef?.name || `Boss ${this.currentBossIndex + 1}`;
+
+    if (result.victory) {
+      console.log(`[Expedition] Boss ${this.currentBossIndex + 1}/${EXPEDITION.TOTAL_BOSSES} DEFEATED!`);
+      this._addFeed(`VICTOIRE ! ${bossName} vaincu en ${result.time?.toFixed(0)}s !`, 'victory');
+
+      // Sync hunter HP/mana/stats back from combat
+      this._syncHuntersFromCombat();
+
+      // Roll loot
+      this._rollLoot(this.currentBossIndex, false);
+
+      this.currentBossIndex++;
+
+      if (this.currentBossIndex >= EXPEDITION.TOTAL_BOSSES) {
+        this._finishExpedition(true);
       } else {
-        this.currentEncounterIndex++;
-        if (this.currentEncounterIndex >= this.encounters.length) {
-          this.transitionTo('finished');
-        } else {
-          this.transitionTo('campfire');
+        this._startCampfire();
+      }
+    } else {
+      console.log(`[Expedition] WIPE at Boss ${this.currentBossIndex + 1}/${EXPEDITION.TOTAL_BOSSES}`);
+      this._addFeed(`DEFAITE ! L'equipe est tombee face a ${bossName}...`, 'wipe');
+
+      // Roll wipe loot (partial, with steal chance)
+      this._rollLoot(this.currentBossIndex, true);
+
+      this._finishExpedition(false);
+    }
+
+    this.currentCombat = null;
+  }
+
+  // --- Phase: Campfire ---
+
+  _startCampfire() {
+    this.state = 'campfire';
+    this._phaseTimer = 0;
+    this._mobWaveDone = false; // Reset for next boss section
+    this._emitStateChange();
+
+    console.log(`[Expedition] --- CAMPFIRE (${CAMPFIRE.DURATION_SEC}s) ---`);
+    this._addFeed('Feu de camp ! L\'equipe se repose et se soigne.', 'phase');
+    this._banterTimer = 0;
+
+    // Heal & restore
+    for (const h of this.hunters) {
+      if (!h.alive) {
+        h.resurrect(CAMPFIRE.REZ_HP_PERCENT / 100);
+        console.log(`  [Camp] ${h.hunterName} resurrected at ${CAMPFIRE.REZ_HP_PERCENT}% HP`);
+      } else {
+        const hpRestore = Math.floor(h.maxHp * CAMPFIRE.HP_REGEN_PERCENT / 100);
+        h.heal(hpRestore);
+        h.mana = Math.min(h.maxMana, h.mana + Math.floor(h.maxMana * CAMPFIRE.MANA_REGEN_PERCENT / 100));
+      }
+    }
+
+    const alive = this.hunters.filter(h => h.alive).length;
+    console.log(`  [Camp] ${alive}/${this.hunters.length} hunters alive`);
+
+    this._phaseInterval = setInterval(() => {
+      this._phaseTimer += 0.5;
+      this._tickBanter(0.5);
+      if (this._phaseTimer >= CAMPFIRE.DURATION_SEC) {
+        clearInterval(this._phaseInterval);
+        this._phaseInterval = null;
+        this._startMarch();
+      }
+    }, 500);
+  }
+
+  // --- Finish ---
+
+  _finishExpedition(victory) {
+    this.state = victory ? 'finished' : 'wiped';
+    this._emitStateChange();
+
+    console.log(`\n[Expedition] ================================================`);
+    console.log(`[Expedition] ${victory ? 'EXPEDITION COMPLETE!' : 'EXPEDITION FAILED!'}`);
+    console.log(`[Expedition] Bosses cleared: ${this.bossResults.filter(r => r.victory).length}/${EXPEDITION.TOTAL_BOSSES}`);
+
+    for (const r of this.bossResults) {
+      const bossDef = getBossDefinition(r.bossIndex);
+      console.log(`  Boss ${r.bossIndex + 1}: ${bossDef?.name || '?'} -- ${r.victory ? 'WIN' : 'WIPE'} (${r.time?.toFixed(1)}s)`);
+    }
+
+    // Aggregate hunter stats
+    const hunterTotals = {};
+    for (const r of this.bossResults) {
+      if (!r.stats) continue;
+      for (const s of r.stats) {
+        if (!hunterTotals[s.id]) {
+          hunterTotals[s.id] = { ...s, totalDamage: 0, totalHealing: 0, totalDeaths: 0 };
         }
-      }
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // STATE: CAMPFIRE (rest, regen, rez)
-  // ═══════════════════════════════════════════════════════
-  tickCampfire(dt) {
-    this.phaseTimer -= dt;
-
-    // One-time campfire effects (on first tick only)
-    if (this.phaseTimer >= CAMPFIRE.DURATION_SEC - dt * 1.5) {
-      this.applyCampfireEffects();
-    }
-
-    // Process staggered rez queue (one rez every ~7s, first at ~5s)
-    if (this.pendingRezQueue && this.pendingRezQueue.length > 0) {
-      this.rezTimer -= dt;
-      if (this.rezTimer <= 0) {
-        const rez = this.pendingRezQueue.shift();
-        rez.target.resurrect(CAMPFIRE.REZ_HP_PERCENT);
-        this.rezUsedThisCombat.add(rez.healer.id);
-
-        this.broadcast({
-          type: 'rez',
-          healer: rez.healer.id,
-          healerName: rez.healer.name,
-          target: rez.target.id,
-          targetName: rez.target.name,
-        });
-
-        console.log(`[Campfire] ${rez.healer.name} rezzed ${rez.target.name} (${CAMPFIRE.REZ_HP_PERCENT}% HP)`);
-
-        // Next rez in 7 seconds
-        this.rezTimer = 7;
+        hunterTotals[s.id].totalDamage += s.damageDealt;
+        hunterTotals[s.id].totalHealing += s.healingDone;
+        hunterTotals[s.id].totalDeaths += s.deaths;
       }
     }
 
-    if (this.phaseTimer <= 0) {
-      // Force-rez any remaining in queue (safety net)
-      if (this.pendingRezQueue) {
-        for (const rez of this.pendingRezQueue) {
-          rez.target.resurrect(CAMPFIRE.REZ_HP_PERCENT);
-          this.broadcast({
-            type: 'rez',
-            healer: rez.healer.id,
-            healerName: rez.healer.name,
-            target: rez.target.id,
-            targetName: rez.target.name,
-          });
-        }
-        this.pendingRezQueue = [];
+    const sorted = Object.values(hunterTotals).sort((a, b) => b.totalDamage - a.totalDamage);
+    console.log(`\n[Expedition] Top Hunters:`);
+    for (const s of sorted.slice(0, 15)) {
+      console.log(`  ${s.class.padEnd(10)} ${(s.hunterName || '').padEnd(18)} (${(s.username || '').padEnd(8)}) | DMG: ${(s.totalDamage / 1e6).toFixed(1)}M | Heal: ${(s.totalHealing / 1e6).toFixed(1)}M | Deaths: ${s.totalDeaths}`);
+    }
+  }
+
+  // --- Sync hunters from combat back to main state ---
+
+  _syncHuntersFromCombat() {
+    if (!this.currentCombat) return;
+    const combatHunters = this.currentCombat.state.hunters;
+
+    for (const ch of combatHunters) {
+      const mainH = this.hunters.find(h => h.id === ch.id);
+      if (!mainH) continue;
+      mainH.hp = ch.hp;
+      mainH.mana = ch.mana;
+      mainH.alive = ch.alive;
+      mainH.stats.damageDealt += ch.stats.damageDealt;
+      mainH.stats.damageTaken += ch.stats.damageTaken;
+      mainH.stats.healingDone += ch.stats.healingDone;
+      mainH.stats.deaths += ch.stats.deaths;
+    }
+  }
+
+  // --- Player input ---
+
+  handlePlayerInput(playerId, input) {
+    if (this.state !== 'combat' && this.state !== 'mob_wave') return;
+    if (!this.currentCombat && !this.currentMobWave) return;
+
+    // Handle hunter switch (keys 1-6)
+    if (input.type === 'switch_hunter') {
+      const result = this.hunterSwitch.switchTo(playerId, input.slotIndex);
+      if (result) {
+        this.currentCombat.setHunterControl(result.prevHunterId, false);
+        this.currentCombat.setHunterControl(result.newHunterId, true);
       }
-
-      // Reset combat flags for next encounter
-      for (const char of this.characters) {
-        char.diedThisCombat = false;
-      }
-      this.rezUsedThisCombat.clear();
-      this.transitionTo('march');
-    }
-  }
-
-  applyCampfireEffects() {
-    // HP regen for alive characters
-    for (const char of this.characters) {
-      if (char.alive) {
-        const hpRegen = Math.floor(char.maxHp * CAMPFIRE.HP_REGEN_PERCENT / 100);
-        char.heal(hpRegen);
-        const manaRegen = Math.floor(char.maxMana * CAMPFIRE.MANA_REGEN_PERCENT / 100);
-        char.regenMana(manaRegen);
-      }
-    }
-
-    // Queue healer resurrections (staggered over campfire duration)
-    const aliveHealers = this.characters.filter(c =>
-      c.alive && c.role === 'backline_heal' && !this.rezUsedThisCombat.has(c.id)
-    );
-    const deadChars = this.characters.filter(c => !c.alive);
-
-    // Sort dead by DPS contribution (most useful first)
-    deadChars.sort((a, b) => b.stats.damageDealt - a.stats.damageDealt);
-
-    this.pendingRezQueue = [];
-    for (const healer of aliveHealers) {
-      if (deadChars.length === 0) break;
-      const target = deadChars.shift();
-      this.pendingRezQueue.push({ healer, target });
-    }
-
-    // First rez after 5 seconds
-    this.rezTimer = this.pendingRezQueue.length > 0 ? 5 : 999;
-
-    // ── Rest-at-camp decisions ──
-    // Some characters may decide to sit out the next fight
-    this.restingCharacters.clear();
-    const aliveChars = this.characters.filter(c => c.alive);
-    const maxResting = Math.floor(aliveChars.length * REST_CAMP.MAX_RESTING_RATIO);
-    // Need at least 3 chars in combat
-    const minCombatants = Math.max(3, aliveChars.length - maxResting);
-
-    for (const char of aliveChars) {
-      if (this.restingCharacters.size >= maxResting) break;
-      if (aliveChars.length - this.restingCharacters.size <= minCombatants) break;
-
-      let restChance = REST_CAMP.BASE_REST_CHANCE;
-      if (char.hp / char.maxHp < 0.3) restChance = REST_CAMP.LOW_HP_REST_CHANCE;
-      if (char.diedThisCombat) restChance = REST_CAMP.DIED_RECENTLY_REST_CHANCE;
-
-      if (Math.random() < restChance) {
-        this.restingCharacters.add(char.id);
-        console.log(`[Campfire] ${char.name} (${char.username}) decides to rest at camp`);
-
-        this.broadcast({
-          type: 'rest_decision',
-          charId: char.id,
-          charName: char.name,
-          username: char.username,
-          reason: char.diedThisCombat ? 'died' : (char.hp / char.maxHp < 0.3 ? 'low_hp' : 'cautious'),
-        });
-      }
-    }
-
-    // Broadcast dead count so spectator knows who to show as ghosts
-    const deadCount = this.characters.filter(c => !c.alive).length;
-    this.broadcast({
-      type: 'campfire_effects',
-      aliveCount: aliveChars.length,
-      deadCount,
-      pendingRez: this.pendingRezQueue.length,
-      restingCount: this.restingCharacters.size,
-    });
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // STATE TRANSITIONS
-  // ═══════════════════════════════════════════════════════
-  transitionTo(newStatus) {
-    const prevStatus = this.status;
-    this.status = newStatus;
-
-    console.log(`[Expedition] ${prevStatus} -> ${newStatus}`);
-
-    switch (newStatus) {
-      case 'march':
-        this.phaseTimer = MARCH.DURATION_SEC;
-        const nextEnc = this.encounters[this.currentEncounterIndex];
-        this.broadcast({
-          type: 'march_start',
-          duration: MARCH.DURATION_SEC,
-          nextEncounter: nextEnc ? `${nextEnc.type === 'boss' ? 'Boss: ' + nextEnc.bossName : 'Vague de mobs'}` : 'Fin',
-        });
-        break;
-
-      case 'combat':
-        this.setupCombat();
-        break;
-
-      case 'loot_roll':
-        this.phaseTimer = this.pendingLootResults
-          ? Math.min(30, this.pendingLootResults.length * 5)
-          : 5;
-        if (this.pendingLootResults) {
-          this.broadcast({ type: 'loot_roll_start', results: this.pendingLootResults });
-        }
-        break;
-
-      case 'campfire':
-        this.phaseTimer = CAMPFIRE.DURATION_SEC;
-        this.broadcast({ type: 'campfire_start', duration: CAMPFIRE.DURATION_SEC });
-        break;
-
-      case 'finished':
-        this.broadcast({
-          type: 'expedition_finished',
-          reason: this.currentEncounterIndex >= this.encounters.length ? 'all_cleared' : 'time_expired',
-          bossesKilled: this.bossesKilled,
-          totalDeaths: this.totalDeaths,
-          elapsedTime: Math.floor(this.elapsedSeconds),
-        });
-        this.finalizeExpedition('finished');
-        break;
-
-      case 'wiped':
-        this.broadcast({
-          type: 'expedition_finished',
-          reason: 'wipe',
-          bossesKilled: this.bossesKilled,
-          totalDeaths: this.totalDeaths,
-          elapsedTime: Math.floor(this.elapsedSeconds),
-        });
-        this.finalizeExpedition('wiped');
-        break;
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // DYNAMIC DIFFICULTY SCALING (>30 hunters)
-  // ═══════════════════════════════════════════════════════
-  getPlayerScale() {
-    const count = this.characters.length;
-    if (count <= SCALING.BASE_HUNTERS) return 1.0;
-    return count / SCALING.BASE_HUNTERS;  // 60 hunters = 2.0, 100 = 3.33
-  }
-
-  getScaledBossDef(baseDef) {
-    const scale = this.getPlayerScale();
-    if (scale <= 1.0) return baseDef;
-    const excess = scale - 1;  // 0 at 30, 1.0 at 60, 2.33 at 100
-    return {
-      ...baseDef,
-      hp:  Math.floor(baseDef.hp  * (1 + excess * SCALING.HP_FACTOR)),
-      atk: Math.floor(baseDef.atk * (1 + excess * SCALING.ATK_FACTOR)),
-      def: Math.floor(baseDef.def * (1 + excess * SCALING.DEF_FACTOR)),
-    };
-  }
-
-  getMobDifficultyScale() {
-    const scale = this.getPlayerScale();
-    if (scale <= 1.0) return 1.0;
-    return 1 + (scale - 1) * SCALING.MOB_HP_FACTOR;  // 60h = 1.6, 100h = 2.4
-  }
-
-  getExtraLootRolls() {
-    const count = this.characters.length;
-    if (count <= SCALING.BASE_HUNTERS) return 0;
-    return Math.floor((count - SCALING.BASE_HUNTERS) / SCALING.LOOT_EXTRA_ROLLS_PER);
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // COMBAT SETUP
-  // ═══════════════════════════════════════════════════════
-  setupCombat() {
-    const encounter = this.encounters[this.currentEncounterIndex];
-    if (!encounter) {
-      this.transitionTo('finished');
       return;
     }
 
-    this.currentMobs = [];
-    this.currentBoss = null;
-
-    // Dynamic difficulty scaling based on hunter count
-    const mobScale = this.getMobDifficultyScale();
-    const playerScale = this.getPlayerScale();
-
-    if (encounter.type === 'mob_wave') {
-      // Spawn mobs from composition (scaled difficulty if >30 hunters)
-      for (const group of encounter.composition) {
-        const template = MOB_TEMPLATES[group.template];
-        if (!template) continue;
-        for (let i = 0; i < group.count; i++) {
-          this.currentMobs.push(new Mob(template, encounter.difficulty * mobScale, group.template));
-        }
-      }
-      this.broadcast({
-        type: 'combat_start',
-        encounterType: 'mob_wave',
-        mobCount: this.currentMobs.length,
-        encounterIndex: this.currentEncounterIndex,
-      });
-    } else if (encounter.type === 'boss') {
-      const baseDef = getBossDefinition(encounter.bossIndex);
-      if (baseDef) {
-        const scaledDef = this.getScaledBossDef(baseDef);
-        this.currentBoss = new ExpeditionBoss(scaledDef);
-        if (playerScale > 1) {
-          console.log(`[Expedition] Boss ${baseDef.name} scaled ×${playerScale.toFixed(2)}: HP ${baseDef.hp} → ${scaledDef.hp}, ATK ${baseDef.atk} → ${scaledDef.atk}`);
-        }
-        this.broadcast({
-          type: 'combat_start',
-          encounterType: 'boss',
-          bossName: scaledDef.name,
-          bossHp: scaledDef.hp,
-          encounterIndex: this.currentEncounterIndex,
-        });
-      }
-    }
-
-    // Reset ALL characters to base stats before applying combat bonuses
-    // This prevents infinite stacking of set bonuses, synergies, and buffs across fights
-    const combatCharacters = this.characters.filter(c => c.alive && !this.restingCharacters.has(c.id));
-    for (const char of combatCharacters) {
-      char.resetForCombat();
-    }
-
-    // Initialize passive engine for this combat (set bonuses, weapon passives)
-    // Now applies cleanly to reset base stats (no stacking)
-    this.combatEngine.initCombat(combatCharacters);
-
-    // Reset formation for combat (arc around boss if present)
-    AIController.assignFormation(combatCharacters, this.currentBoss);
-
-    // Record encounter start for per-boss stats
-    this.currentEncounterStartTime = this.elapsedSeconds;
-    for (const char of combatCharacters) {
-      char._encounterBaseline = {
-        dmg: char.stats.damageDealt,
-        heals: char.stats.healingDone || 0,
-        kills: char.stats.kills,
-        deaths: char.stats.deaths,
-      };
-    }
-
-    // Move resting characters offscreen (far left, safe)
-    for (const char of this.characters) {
-      if (this.restingCharacters.has(char.id)) {
-        char.x = -200;
-        char.y = 0;
-      }
+    // Route input to active hunter
+    const routed = this.hunterSwitch.routeInput(playerId, input);
+    if (routed) {
+      this.currentCombat.queueInput(routed.hunterId, routed.input);
     }
   }
 
-  // ═══════════════════════════════════════════════════════
-  // GEAR LOADING — Fetch inventory from DB, auto-equip, apply stats
-  // ═══════════════════════════════════════════════════════
+  // --- Helpers ---
 
-  async loadPlayerGear(entries) {
-    const seenPlayers = new Set();
-    for (const entry of entries) {
-      if (seenPlayers.has(entry.username)) continue;
-      seenPlayers.add(entry.username);
+  _emitStateChange() {
+    if (this.onStateChange) this.onStateChange(this.state);
+    console.log(`[Expedition] State -> ${this.state}`);
+  }
 
-      try {
-        const inventory = await db.getPlayerInventory(entry.username);
-        const gear = this.computeGear(inventory);
+  _logHunterSummary() {
+    const byClass = {};
+    for (const h of this.hunters) {
+      byClass[h.class] = (byClass[h.class] || 0) + 1;
+    }
+    console.log(`[Expedition] Classes: ${JSON.stringify(byClass)}`);
 
-        // Apply gear to all characters of this player
-        for (const char of this.characters) {
-          if (char.username !== entry.username) continue;
-          // Merge expedition inventory gear with client-registered sets (colosseum artifacts)
-          const clientSets = char.expeditionGear?.sets || {};
-          const invSets = gear.expeditionGear.sets || {};
-          const mergedSets = { ...clientSets };
-          for (const [setId, count] of Object.entries(invSets)) {
-            mergedSets[setId] = Math.max(mergedSets[setId] || 0, count);
-          }
-          char.expeditionGear = {
-            sets: mergedSets,
-            weaponId: gear.expeditionGear.weaponId || char.expeditionGear?.weaponId || null,
-          };
-          char.weaponEffects = gear.weaponEffects;
-
-          // Apply flat stats from equipped items
-          if (gear.bonusStats.atk_flat) char.atk += gear.bonusStats.atk_flat;
-          if (gear.bonusStats.def_flat) char.def += gear.bonusStats.def_flat;
-          if (gear.bonusStats.hp_flat) {
-            char.maxHp += gear.bonusStats.hp_flat;
-            char.hp = char.maxHp;
-          }
-          if (gear.bonusStats.spd_flat) char.spd += gear.bonusStats.spd_flat;
-          if (gear.bonusStats.crit_rate) char.crit += gear.bonusStats.crit_rate;
-          if (gear.bonusStats.res_flat) char.res += gear.bonusStats.res_flat;
-
-          // Apply passive stat modifiers from weapon effects
-          for (const eff of gear.weaponEffects) {
-            if (eff.type === 'lifesteal') char._lifesteal = (char._lifesteal || 0) + eff.value;
-            if (eff.type === 'heal_bonus') char._healBonus = (char._healBonus || 0) + eff.value;
-            if (eff.type === 'mana_regen') char._manaRegenBonus = (char._manaRegenBonus || 0) + eff.value;
-          }
-        }
-
-        const setCount = Object.keys(gear.expeditionGear.sets).length;
-        if (setCount > 0 || gear.expeditionGear.weaponId) {
-          console.log(`[Expedition] ${entry.username} gear: ${setCount} sets, weapon=${gear.expeditionGear.weaponId || 'none'}, +${gear.bonusStats.atk_flat || 0} ATK`);
-        }
-      } catch (err) {
-        console.warn(`[Expedition] Failed to load gear for ${entry.username}:`, err.message);
-      }
+    const byAtk = [...this.hunters].sort((a, b) => b.atk - a.atk);
+    console.log(`[Expedition] Top ATK:`);
+    for (const h of byAtk.slice(0, 5)) {
+      console.log(`  ${h.hunterName} (${h.username}) -- ATK: ${h.atk} | HP: ${h.maxHp} | Class: ${h.class}`);
     }
   }
 
-  computeGear(inventory) {
-    if (!inventory || !inventory.length) {
-      return { expeditionGear: { sets: {}, weaponId: null }, bonusStats: {}, weaponEffects: [] };
-    }
+  // --- State for broadcast ---
 
-    // Count set pieces
-    const sets = {};
-    for (const item of inventory) {
-      if (item.setId) {
-        sets[item.setId] = (sets[item.setId] || 0) + 1;
-      }
-    }
+  getExpeditionState() {
+    // Active combat (boss or mob wave)
+    const activeCombat = this.currentCombat || this.currentMobWave;
 
-    // Find mythique weapon (from expeditionWeapons.js)
-    let mythiqueWeaponId = null;
-    for (const item of inventory) {
-      // Check if item has explicit weaponId (mythique)
-      if (item.weaponId && EXPEDITION_WEAPONS[item.weaponId]) {
-        mythiqueWeaponId = item.weaponId;
-        break;
-      }
-      // Check by itemId pattern: exp_weapon_<weaponId>
-      if (item.type === 'weapon' && item.itemId?.startsWith('exp_weapon_')) {
-        const wpnId = item.itemId.replace('exp_weapon_', '');
-        if (EXPEDITION_WEAPONS[wpnId]) {
-          mythiqueWeaponId = wpnId;
-          break;
-        }
-      }
-    }
-
-    // Auto-equip best items per slot (by rarity then stat sum)
-    const rarityOrder = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythique: 5 };
-    const slots = ['helm', 'chest', 'gloves', 'boots', 'weapon'];
-    const equipped = {};
-
-    for (const slot of slots) {
-      const candidates = inventory.filter(i => i.slot === slot && i.stats);
-      candidates.sort((a, b) => {
-        const rd = (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0);
-        if (rd !== 0) return rd;
-        const sumStats = (s) => Object.values(s || {}).reduce((acc, v) => acc + v, 0);
-        return sumStats(b.stats) - sumStats(a.stats);
-      });
-      if (candidates.length > 0) equipped[slot] = candidates[0];
-    }
-
-    // Sum flat stats from all equipped items
-    const bonusStats = {};
-    for (const item of Object.values(equipped)) {
-      if (item.stats) {
-        for (const [stat, val] of Object.entries(item.stats)) {
-          bonusStats[stat] = (bonusStats[stat] || 0) + val;
-        }
-      }
-    }
-
-    // Get weapon effects from equipped regular weapon
-    let weaponEffects = [];
-    if (equipped.weapon) {
-      const itemDef = getItemById(equipped.weapon.itemId);
-      if (itemDef?.effects) weaponEffects = itemDef.effects;
-    }
+    // Send hunter list during non-combat phases for visual rendering
+    const hunterList = (this.state === 'march' || this.state === 'campfire' || this.state === 'finished')
+      ? this.hunters.map(h => ({
+          id: h.id,
+          hunterId: h.hunterId,
+          hunterName: h.hunterName,
+          username: h.username,
+          class: h.class,
+          element: h.element,
+          alive: h.alive,
+          hp: h.hp,
+          maxHp: h.maxHp,
+        }))
+      : null;
 
     return {
-      expeditionGear: { sets, weaponId: mythiqueWeaponId },
-      bonusStats,
-      weaponEffects,
-    };
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // HELPERS
-  // ═══════════════════════════════════════════════════════
-
-  getAlivePlayers() {
-    const seen = new Set();
-    const players = [];
-    for (const c of this.characters) {
-      if (c.alive && !seen.has(c.username)) {
-        seen.add(c.username);
-        players.push({ username: c.username });
-      }
-    }
-    return players;
-  }
-
-  getAllPlayers() {
-    const seen = new Set();
-    const players = [];
-    for (const c of this.characters) {
-      if (!seen.has(c.username)) {
-        seen.add(c.username);
-        players.push({ username: c.username });
-      }
-    }
-    return players;
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // BROADCAST (compact state for spectators)
-  // ═══════════════════════════════════════════════════════
-  broadcastState() {
-    this.broadcast({
-      type: 'expedition_state',
-      status: this.status,
-      elapsedTime: Math.floor(this.elapsedSeconds),
-      maxDuration: EXPEDITION.MAX_DURATION_HOURS * 3600,
-      encounterIndex: this.currentEncounterIndex,
-      totalEncounters: this.encounters.length,
-      bossesKilled: this.bossesKilled,
-      phaseTimer: Math.max(0, Math.floor(this.phaseTimer)),
-      characters: this.characters.map(c => ({
-        id: c.id, name: c.name, hunterId: c.hunterId, hp: c.hp, maxHp: c.maxHp,
-        mana: Math.floor(c.mana), maxMana: c.maxMana,
-        x: Math.floor(c.x), y: Math.floor(c.y || 0), alive: c.alive, role: c.role,
-        element: c.element, username: c.username,
-        resting: this.restingCharacters.has(c.id),
+      phase: this.state,
+      bossIndex: this.currentBossIndex,
+      totalBosses: EXPEDITION.TOTAL_BOSSES,
+      scrollX: this.scrollX,
+      marchProgress: this.state === 'march' ? this._phaseTimer / MARCH.DURATION_SEC : 0,
+      campfireProgress: this.state === 'campfire' ? this._phaseTimer / CAMPFIRE.DURATION_SEC : 0,
+      playerCount: this.players.size,
+      hunterCount: this.hunters.length,
+      aliveCount: this.hunters.filter(h => h.alive).length,
+      hunters: hunterList,
+      bossResults: this.bossResults.map(r => ({
+        bossIndex: r.bossIndex,
+        victory: r.victory,
+        time: r.time,
+        bossHpPercent: r.bossHpPercent,
       })),
-      mobs: this.currentMobs.filter(m => m.alive).map(m => ({
-        id: m.id, name: m.name, hp: m.hp, maxHp: m.maxHp,
-        x: Math.floor(m.x), y: Math.floor(m.y || 0), alive: m.alive,
-        elite: m.elite, caster: m.caster, templateKey: m.templateKey,
-      })),
-      boss: this.currentBoss?.alive ? {
-        id: this.currentBoss.id, name: this.currentBoss.name,
-        index: this.currentBoss.index,
-        hp: this.currentBoss.hp, maxHp: this.currentBoss.maxHp,
-        x: Math.floor(this.currentBoss.x), y: Math.floor(this.currentBoss.y || 0),
-        enraged: this.currentBoss.enraged,
-        patternPhase: this.currentBoss.patternPhase,
-        currentPattern: this.currentBoss.currentPattern?.name || null,
-      } : null,
-      aliveCount: this.characters.filter(c => c.alive).length,
-      totalCount: this.characters.length,
-      totalCombatTime: Math.floor(this.totalCombatTime),
-      encounterHistory: this.encounterHistory.filter(e => e.type === 'boss').map(e => ({
-        bossName: e.bossName, bossIndex: e.bossIndex, combatTime: e.combatTime,
-        totalDmg: e.totalDmg, totalHeals: e.totalHeals, totalDeaths: e.totalDeaths,
-        charStats: e.charStats,
-      })),
-    });
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // PERSISTENCE
-  // ═══════════════════════════════════════════════════════
-
-  async saveState() {
-    if (!this.expeditionId) return;
-
-    const snapshot = {
-      status: this.status,
-      elapsedSeconds: this.elapsedSeconds,
-      currentEncounterIndex: this.currentEncounterIndex,
-      bossesKilled: this.bossesKilled,
-      totalDeaths: this.totalDeaths,
-      phaseTimer: this.phaseTimer,
-      encounters: this.encounters,
-      characters: this.characters.map(c => c.serialize()),
-      srSelections: Array.from(this.srSelections.entries()),
-      playerEssences: Array.from(this.playerEssences.entries()),
-      playerCurrencies: Array.from(this.playerCurrencies.entries()),
-      encounterHistory: this.encounterHistory,
-      totalCombatTime: this.totalCombatTime,
-      currentEncounterStartTime: this.currentEncounterStartTime,
-    };
-
-    await db.saveExpeditionSnapshot(this.expeditionId, snapshot);
-
-    // Also save character states
-    await db.saveCharacterStates(this.expeditionId, this.characters);
-
-    await db.updateExpeditionStatus(this.expeditionId, this.status, {
-      currentWave: this.currentEncounterIndex,
-      maxBossReached: this.bossesKilled,
-      totalDeaths: this.totalDeaths,
-    });
-  }
-
-  // Restore from DB snapshot (crash recovery)
-  async restore(expeditionId, snapshot) {
-    this.expeditionId = expeditionId;
-    this.status = snapshot.status;
-    this.elapsedSeconds = snapshot.elapsedSeconds;
-    this.currentEncounterIndex = snapshot.currentEncounterIndex;
-    this.bossesKilled = snapshot.bossesKilled || 0;
-    this.totalDeaths = snapshot.totalDeaths || 0;
-    this.phaseTimer = snapshot.phaseTimer || 0;
-    this.encounters = snapshot.encounters || [];
-
-    // Restore characters
-    this.characters = (snapshot.characters || []).map(data => {
-      try {
-        return ExpeditionCharacter.deserialize(data);
-      } catch (e) {
-        console.warn(`[Expedition] Failed to restore character:`, e.message);
-        return null;
-      }
-    }).filter(Boolean);
-
-    // Restore SR selections, essences, and currencies
-    this.srSelections = new Map(snapshot.srSelections || []);
-    this.playerEssences = new Map(snapshot.playerEssences || []);
-    this.playerCurrencies = new Map(snapshot.playerCurrencies || []);
-    this.encounterHistory = snapshot.encounterHistory || [];
-    this.totalCombatTime = snapshot.totalCombatTime || 0;
-
-    console.log(`[Expedition] Restored! Status: ${this.status}, ${this.characters.length} characters, encounter ${this.currentEncounterIndex}/${this.encounters.length}`);
-
-    // If was in combat, restart that encounter
-    if (this.status === 'combat') {
-      this.setupCombat();
-      // Restore encounter start time AFTER setupCombat (which resets it)
-      if (snapshot.currentEncounterStartTime != null) {
-        this.currentEncounterStartTime = snapshot.currentEncounterStartTime;
-      }
-    }
-
-    // Resume tick loop
-    this.startTickLoop();
-  }
-
-  async finalizeExpedition(finalStatus) {
-    this.stop();
-    if (this.expeditionId) {
-      await this.saveState();
-      await db.updateExpeditionStatus(this.expeditionId, finalStatus, { endedAt: new Date() });
-
-      // Send loot summary mails to all players
-      try {
-        await this.sendLootMails(finalStatus);
-      } catch (err) {
-        console.error('[Expedition] Failed to send loot mails:', err.message);
-      }
-    }
-    console.log(`[Expedition] Finalized: ${finalStatus}`);
-  }
-
-  async sendLootMails(finalStatus) {
-    // Get all loot grouped by player
-    const lootByPlayer = await db.getExpeditionLootByPlayer(this.expeditionId);
-
-    // Get all unique player usernames (from characters)
-    const allPlayers = [...new Set(this.characters.map(c => c.username))];
-
-    for (const username of allPlayers) {
-      const items = lootByPlayer[username] || [];
-      const currencies = this.playerCurrencies.get(username) || { alkahest: 0, marteau_rouge: 0, contribution: 0 };
-      const essences = this.playerEssences.get(username) || { guerre: 0, arcanique: 0, gardienne: 0 };
-
-      const mailId = await db.sendExpeditionMail(
-        username, this.expeditionId, finalStatus,
-        items, currencies, essences, this.bossesKilled
-      );
-      console.log(`[Expedition] Mail sent to ${username}: id=${mailId} (${items.length} items)`);
-    }
-
-    console.log(`[Expedition] Loot mails sent to ${allPlayers.length} players`);
-  }
-
-  async saveLootResults(results) {
-    if (!this.expeditionId) return;
-
-    // 1. Save to expedition_loot DB (audit trail)
-    for (const r of results) {
-      const lootId = await db.saveLootDrop(
-        this.expeditionId, this.currentEncounterIndex,
-        r.itemId, r.itemName, r.rarity, r.binding,
-        r.winnerUsername, r.winnerRoll, r.stolen, r.srWinner
-      );
-      if (r.rolls.length > 0) {
-        await db.saveLootRolls(lootId, r.rolls);
-      }
-    }
-
-    // 2. Deposit non-stolen loot to player inventories via Vercel API
-    const byUser = new Map();
-    for (const r of results) {
-      if (r.stolen || !r.winnerUsername) continue;
-      if (!byUser.has(r.winnerUsername)) byUser.set(r.winnerUsername, []);
-      byUser.get(r.winnerUsername).push({
-        itemId: r.itemId,
+      combat: activeCombat ? activeCombat.getSnapshot() : null,
+      events: activeCombat ? activeCombat.getEvents() : [],
+      feedLog: this.feedLog.slice(0, 30),
+      lootResults: this.lootResults.map(r => ({
         itemName: r.itemName,
         rarity: r.rarity,
-        binding: r.binding,
         type: r.type,
-        slot: r.slot || null,
-        stats: r.stats || {},
-        setId: r.setId || null,
-        weaponId: r.weaponId || null,
-        uniqueId: r.uniqueId || null,
-        encounterIndex: this.currentEncounterIndex,
-      });
+        winnerUsername: r.winnerUsername,
+        winnerRoll: r.winnerRoll,
+        stolen: r.stolen,
+        srWinner: r.srWinner,
+      })),
+    };
+  }
+
+  // --- Feed Log ---
+
+  _addFeed(text, type = 'info') {
+    this.feedLog.unshift({ text, type, t: Date.now() });
+    if (this.feedLog.length > 60) this.feedLog.pop();
+  }
+
+  // --- Loot Phase ---
+
+  _rollLoot(bossIndex, isWipe = false) {
+    const bossId = bossIndex + 1; // LootEngine uses 1-based
+    const aliveHunters = this.hunters.filter(h => h.alive);
+    const extraRolls = Math.max(0, Math.floor((aliveHunters.length - 30) / 10));
+
+    // Roll boss drops
+    const drops = LootEngine.generateBossLoot(bossId, extraRolls);
+    if (drops.length === 0) {
+      this._addFeed('Aucun butin...', 'loot');
+      return;
     }
 
-    if (byUser.size > 0) {
-      const deposits = Array.from(byUser.entries()).map(([username, items]) => ({ username, items }));
-      try {
-        const response = await fetch('http://localhost:3005/api/storage/deposit-expedition', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Server-Secret': process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key',
-          },
-          body: JSON.stringify({ deposits }),
-        });
-        const result = await response.json();
-        console.log(`[Expedition] Loot deposited:`, result.results);
+    // Build SR selections (empty for bots — no SR system yet)
+    const srSelections = new Map();
 
-        // Broadcast deposit results (replacements, rejections) to spectators
-        for (const r of (result.results || [])) {
-          if (r.itemsReplaced > 0 || r.itemsRejected > 0) {
-            const details = r.details || [];
-            for (const d of details) {
-              if (d.action === 'replaced') {
-                this.broadcast({
-                  type: 'inventory_replace',
-                  username: r.username,
-                  newItem: d.itemId,
-                  replacedItem: d.replacedItem,
-                  replacedRarity: d.replacedRarity,
-                });
-              } else if (d.action === 'rejected') {
-                this.broadcast({
-                  type: 'inventory_full',
-                  username: r.username,
-                  itemId: d.itemId,
-                  reason: d.reason,
-                });
-              }
-            }
+    // Distribute loot among alive players (by username)
+    const playerList = [];
+    const seen = new Set();
+    for (const h of aliveHunters) {
+      if (!seen.has(h.username)) {
+        seen.add(h.username);
+        playerList.push({ username: h.username });
+      }
+    }
+
+    const results = LootEngine.distributeLoot(drops, srSelections, playerList, isWipe);
+    this.lootResults = results;
+
+    // Feed messages for each drop
+    const bossDef = getBossDefinition(bossIndex);
+    this._addFeed(`--- BUTIN: ${bossDef?.name || 'Boss ' + bossId} ---`, 'loot_header');
+
+    for (const r of results) {
+      if (r.stolen) {
+        this._addFeed(r.narrative?.text || `[${r.itemName}] vole par les monstres!`, 'loot_stolen');
+      } else if (r.winnerUsername) {
+        // Show the winner reaction
+        const reaction = r.narrative?.winnerReaction || `${r.winnerUsername} obtient [${r.itemName}] (${r.winnerRoll}/100)`;
+        this._addFeed(reaction, r.narrative?.type === 'epic_moment' ? 'loot_epic' : 'loot_win');
+
+        // Show jealousy/loser reactions
+        if (r.narrative?.reactions) {
+          for (const rx of r.narrative.reactions.slice(1)) {
+            if (rx.text) this._addFeed(rx.text, 'loot_reaction');
           }
         }
-      } catch (err) {
-        console.error('[Expedition] Failed to deposit loot:', err.message);
-        // Non-fatal: loot is already saved in expedition_loot DB
       }
+    }
+
+    // Summary
+    const rarities = {};
+    for (const r of results) {
+      if (!r.stolen) rarities[r.rarity] = (rarities[r.rarity] || 0) + 1;
+    }
+    const summary = Object.entries(rarities).map(([r, c]) => `${c}x ${r}`).join(', ');
+    this._addFeed(`Total: ${results.filter(r => !r.stolen).length} items (${summary})`, 'loot_summary');
+
+    console.log(`[Expedition] Loot: ${results.length} drops, ${results.filter(r => r.stolen).length} stolen`);
+  }
+
+  // --- Banter / Chamailleries ---
+
+  _tickBanter(dt) {
+    this._banterTimer += dt;
+    if (this._banterTimer < 3.0) return; // Every 3 seconds
+    this._banterTimer = 0;
+
+    if (Math.random() > 0.6) return; // 40% chance to say something
+
+    const alive = this.hunters.filter(h => h.alive);
+    const dead = this.hunters.filter(h => !h.alive);
+    if (alive.length === 0) return;
+
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+    const h1 = pick(alive);
+    const h2 = alive.length > 1 ? pick(alive.filter(h => h.id !== h1.id)) : null;
+
+    const banters = [];
+
+    // March-specific banter
+    if (this.state === 'march') {
+      banters.push(
+        `${h1.hunterName} ouvre la marche, l'air determine.`,
+        `${h1.hunterName} scrute l'horizon avec mefiance...`,
+        `${h1.hunterName} verifie son equipement en marchant.`,
+        `"On arrive bientot?" — ${h1.hunterName}`,
+        `${h1.hunterName} fait craquer ses doigts, pret au combat.`,
+      );
+      if (h2) {
+        banters.push(
+          `${h1.hunterName} et ${h2.hunterName} marchent cote a cote en silence.`,
+          `${h1.hunterName} lance un regard de defi a ${h2.hunterName}.`,
+          `"Tu crois qu'on peut le battre?" — ${h1.hunterName} a ${h2.hunterName}`,
+          `${h2.hunterName} donne une tape amicale a ${h1.hunterName}. "On va tout defoncer!"`,
+          `${h1.hunterName} : "T'inquiete, je te couvre." ${h2.hunterName} : "C'est plutot moi qui te couvre."`,
+        );
+      }
+      if (dead.length > 0) {
+        const d = pick(dead);
+        banters.push(
+          `L'absence de ${d.hunterName} pese sur le groupe...`,
+          `"${d.hunterName} nous manque..." — ${h1.hunterName}`,
+        );
+      }
+    }
+
+    // Campfire-specific banter
+    if (this.state === 'campfire') {
+      banters.push(
+        `${h1.hunterName} se rechauffe pres du feu, pensif.`,
+        `${h1.hunterName} affute son arme silencieusement.`,
+        `${h1.hunterName} mange une ration en contemplant les flammes.`,
+        `"Ce boss etait costaud..." — ${h1.hunterName}`,
+        `${h1.hunterName} soigne ses blessures au coin du feu.`,
+        `${h1.hunterName} ferme les yeux un instant, recuperant ses forces.`,
+      );
+      if (h2) {
+        banters.push(
+          `${h1.hunterName} partage sa ration avec ${h2.hunterName}.`,
+          `${h2.hunterName} raconte une blague. ${h1.hunterName} esquisse un sourire.`,
+          `"Bien joue la-bas!" — ${h1.hunterName} a ${h2.hunterName}`,
+          `${h1.hunterName} et ${h2.hunterName} discutent strategie pour le prochain combat.`,
+          `${h2.hunterName} : "J'ai fait plus de degats que toi." ${h1.hunterName} : "Dans tes reves."`,
+          `${h1.hunterName} montre ses cicatrices de combat. ${h2.hunterName} leve les yeux au ciel.`,
+        );
+      }
+      if (dead.length > 0) {
+        const d = pick(dead);
+        banters.push(
+          `${d.hunterName} se releve lentement, encore etourdi.`,
+          `"Merci pour la rez..." — ${d.hunterName}, a moitie conscient.`,
+          `${h1.hunterName} aide ${d.hunterName} a se remettre sur pied.`,
+        );
+      }
+    }
+
+    if (banters.length > 0) {
+      this._addFeed(pick(banters), 'banter');
     }
   }
 
-  // Deposit shared currencies to all alive players via Vercel API
-  async depositCurrencies(currencies, alivePlayers) {
-    const usernames = alivePlayers.map(p => p.username);
-    if (usernames.length === 0) return;
+  // --- Cleanup ---
 
-    try {
-      const response = await fetch('http://localhost:3005/api/storage/deposit-expedition', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Server-Secret': process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key',
-        },
-        body: JSON.stringify({
-          currencyDeposits: usernames.map(username => ({ username, currencies })),
-        }),
-      });
-      const result = await response.json();
-      console.log(`[Expedition] Currencies deposited to ${usernames.length} players:`, currencies);
-    } catch (err) {
-      console.error('[Expedition] Failed to deposit currencies:', err.message);
-    }
+  destroy() {
+    if (this.currentCombat) this.currentCombat.stop();
+    if (this.currentMobWave) this.currentMobWave.stop();
+    if (this._phaseInterval) clearInterval(this._phaseInterval);
+    this.currentCombat = null;
+    this.currentMobWave = null;
+    this._phaseInterval = null;
   }
 }

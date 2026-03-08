@@ -1,9 +1,15 @@
+// ─── Expedition v2 Configuration ──────────────────────────
+// Real-time 2D combat (Manaya engine) + expedition phase system
+
 // ─── Server ───────────────────────────────────────────────
 export const SERVER = {
   PORT: parseInt(process.env.PORT) || 3004,
-  TICK_RATE: 4,           // 4 TPS (250ms per tick)
-  TICK_MS: 250,
-  BROADCAST_RATE: 2,      // Spectator updates 2x/sec (every 2 ticks)
+  TICK_RATE: 60,              // 60 TPS real-time combat (same as Manaya)
+  get TICK_MS() { return 1000 / this.TICK_RATE; },
+  BROADCAST_RATE: 20,         // Client state updates per second
+  get BROADCAST_INTERVAL() { return Math.round(this.TICK_RATE / this.BROADCAST_RATE); },
+  SPECTATOR_RATE: 10,         // Spectator updates per second (lower bandwidth)
+  HEARTBEAT_INTERVAL: 30000,  // 30s ping/pong
   WS_PATH: '/ws',
   CORS_ORIGINS: [
     'https://builderberu.com',
@@ -14,141 +20,138 @@ export const SERVER = {
 
 // ─── Expedition Rules ─────────────────────────────────────
 export const EXPEDITION = {
-  MAX_CHARACTERS: 100,      // Total hunters across all players (up to ~16 players × 6)
-  HUNTERS_PER_PLAYER: 6,
-  MAX_DURATION_HOURS: 12,       // 19h -> 7h next day = 12h max
-  LAUNCH_HOUR: 19,              // 19h Paris
-  LAUNCH_MINUTE: 0,
-  END_HOUR: 7,                  // 7h next day (hard stop)
-  END_MINUTE: 0,
-  REGISTRATION_OPEN_HOUR: 12,   // Opens at 12h00
-  REGISTRATION_OPEN_MINUTE: 0,
+  MAX_PLAYERS: 5,               // 5 players per expedition
+  HUNTERS_PER_PLAYER: 6,        // Each player controls 6 hunters
+  MAX_HUNTERS: 30,              // 5 × 6 = 30 hunters total on field
+  TOTAL_BOSSES: 5,              // 5 bosses in sequence
   MIN_PLAYERS_TO_START: 1,      // Dev=1, Prod=3
-  TOTAL_BOSSES: 15,             // V2: 15 bosses across 3 zones
   STATE_SAVE_INTERVAL_SEC: 60,  // Snapshot to DB every 60s
   TIMEZONE: 'Europe/Paris',
+  // Registration/launch schedule
+  REGISTRATION_OPEN_HOUR: 12,
+  REGISTRATION_OPEN_MINUTE: 0,
+  LAUNCH_HOUR: 19,
+  LAUNCH_MINUTE: 0,
+  END_HOUR: 7,
+  END_MINUTE: 0,
+  MAX_DURATION_HOURS: 12,
 };
 
-// ─── 2D Combat ────────────────────────────────────────────
-export const COMBAT = {
-  WORLD_WIDTH: 3200,
-  GROUND_Y: 500,
+// ─── Arena (per-encounter combat area) ───────────────────
+export const ARENA = {
+  WIDTH: 1600,
+  HEIGHT: 1200,
+  WALL_THICKNESS: 20,
+};
 
-  // Damage formula (identical to Manaya raid)
-  DEF_CONSTANT: 100,        // dmgMult = 100 / (100 + DEF)
+// ─── Player/Hunter Physics ───────────────────────────────
+export const PLAYER = {
+  RADIUS: 18,
+  BASE_SPEED: 35,               // px/s base movement (realistic pace like Manaya)
+  DODGE_SPEED: 120,             // px/s during dodge
+  DODGE_DURATION: 0.6,          // seconds
+  DODGE_COOLDOWN: 6.0,          // seconds
+  DODGE_IFRAMES: 1.0,           // 1s invincibility
+  MANA_REGEN_RATE: 1.5,         // passive mana/s
+  MANA_ON_HIT: 8,               // mana per basic attack hit
+};
+
+// ─── Boss Config ─────────────────────────────────────────
+export const BOSS = {
+  RADIUS: 75,
+  ENRAGE_TIMER: 600,            // 10 min per boss (shorter than Manaya's 15)
+  ENRAGE_HP_PERCENT: 5,         // Permanent enrage below 5%
+  ENRAGE_SPEED_MULT: 2.0,
+  ENRAGE_DMG_MULT: 2.0,
+  // Boss HP scales with active hunter count
+  // 30 hunters = 100%, fewer = proportionally less
+  HUNTER_SCALE_BASE: 30,
+};
+
+// ─── Aggro ───────────────────────────────────────────────
+export const AGGRO = {
+  TANK_MULTIPLIER: 3.0,
+  DAMAGE_TO_AGGRO: 1.0,
+  HEAL_TO_AGGRO: 0.5,
+  BLOCK_AGGRO_PER_SEC: 50,
+  TAUNT_AGGRO: 5000,
+  DECAY_RATE: 0,
+};
+
+// ─── Combat ──────────────────────────────────────────────
+export const COMBAT = {
+  DEF_FORMULA_CONSTANT: 100,    // dmg × (100 / (100 + DEF))
   CRIT_MULTIPLIER: 1.5,
+  CRIT_RES_FACTOR: 0.5,         // crit% - (res × 0.5)
   VARIANCE_MIN: 0.95,
   VARIANCE_MAX: 1.05,
-
-  // Ranges (pixels)
-  MELEE_RANGE: 80,
-  RANGED_RANGE: 400,
-  HEALER_RANGE: 500,
-
-  // Formation (legacy linear — kept as fallback)
-  FORMATION_SPACING: 55,
-  FRONTLINE_BASE_X: 600,    // Where frontliners start (fallback if no boss)
-  BACKLINE_OFFSET: -300,    // Backline is 300px behind frontline
-
-  // Arc formation around boss
-  ARC_CENTER_OFFSET: 250,   // Arc pivot = boss.x - this
-  ARC_INNER_RADIUS: 100,    // Tanks (closest ring to boss)
-  ARC_MIDDLE_RADIUS: 180,   // Fighters/Assassins
-  ARC_OUTER_DPS_RADIUS: 260,// Mages
-  ARC_OUTER_HEAL_RADIUS: 220,// Healers (between melee DPS and ranged DPS)
-  ARC_SPREAD_ANGLE: 120,    // Total arc degrees (60° each side)
-
-  // Vertical lanes (Y) — visual depth separation by role
-  // Positive Y = closer to camera (lower on screen), Negative = further back (higher)
-  LANE_Y: {
-    frontline:      40,     // Tanks at front (closest to camera, lower on screen)
-    frontline_dps:  15,     // Fighters/Assassins right behind tanks
-    backline_dps:  -30,     // Mages in the back
-    backline_heal: -10,     // Healers close behind frontline (supports the team)
-  },
-  LANE_Y_JITTER: 20,        // +/- random Y per character within lane
-
-  // Auto-attack intervals (seconds)
-  MELEE_ATTACK_INTERVAL: 1.0,
-  RANGED_ATTACK_INTERVAL: 1.5,
-  HEAL_INTERVAL: 2.0,
-
-  // Boss
-  BOSS_AUTO_ATTACK_INTERVAL: 2.0,
-  BOSS_PATTERN_COOLDOWN: 4.0,
-  BOSS_TELEGRAPH_DEFAULT: 2.0,
-
-  // Mob
-  MOB_ATTACK_INTERVAL: 2.5,
-  MOB_MOVE_SPEED: 60,       // px/sec
+  POISON_TICK_INTERVAL: 2.0,
+  POISON_BASE_DAMAGE: 15,
+  POISON_DURATION: 20,
 };
 
-// ─── Campfire ─────────────────────────────────────────────
+// ─── Hunter Summon (unused in expedition — hunters fight directly) ──
+export const HUNTER = {
+  SUMMON_RANGE: 600,
+  SUMMON_COOLDOWN: 30,
+};
+
+// ─── Adds/Mobs ──────────────────────────────────────────
+export const ADDS = {
+  MAX_ADDS: 12,                 // More adds than Manaya (30 hunters can handle it)
+  SPAWN_OFFSET: 200,
+};
+
+// ─── Campfire ────────────────────────────────────────────
 export const CAMPFIRE = {
-  DURATION_SEC: 25,
-  HP_REGEN_PERCENT: 30,       // 20 -> 30% HP regen at campfire
-  MANA_REGEN_PERCENT: 80,     // 50 -> 80% mana regen at campfire
-  HEALER_REZ_PER_COMBAT: 1,
-  REZ_HP_PERCENT: 30,
+  DURATION_SEC: 30,             // 30s rest between bosses
+  HP_REGEN_PERCENT: 50,         // 50% HP regen (generous — we want them to survive)
+  MANA_REGEN_PERCENT: 100,      // Full mana reset
+  REZ_HP_PERCENT: 50,           // Resurrected hunters come back at 50% HP
 };
 
-// ─── Rest at Camp (anti-wipe reserve) ─────────────────────
-export const REST_CAMP = {
-  // Chance for a char to decide to rest (checked at campfire, per char)
-  BASE_REST_CHANCE: 0.03,       // 3% base chance
-  LOW_HP_REST_CHANCE: 0.15,     // 15% if HP < 30%
-  DIED_RECENTLY_REST_CHANCE: 0.12, // 12% if died this combat
-  MAX_RESTING_RATIO: 0.2,      // Max 20% of alive chars can rest at once
-  // Stat bonuses while resting (applied when they rejoin after wipe recovery)
-  REST_BONUS_HP: 0.15,         // +15% max HP
-  REST_BONUS_ATK: 0.10,        // +10% ATK
-  REST_BONUS_DEF: 0.15,        // +15% DEF
-  // Wipe recovery: resting chars with healer can save the raid
-  WIPE_RECOVERY_REZ_HP: 0.40,  // Rezzed chars get 40% HP
-};
-
-// ─── March ────────────────────────────────────────────────
+// ─── March ───────────────────────────────────────────────
 export const MARCH = {
-  DURATION_SEC: 15,
-  SCROLL_SPEED: 80,          // px/sec
+  DURATION_SEC: 10,             // 10s march between encounters
+  SCROLL_SPEED: 100,            // px/sec rightward movement
 };
 
-// ─── Loot ─────────────────────────────────────────────────
+// ─── Loot ────────────────────────────────────────────────
 export const LOOT = {
-  QUANTITY_MULTIPLIER: 5,   // Roll loot table N times per boss kill (5x more drops)
+  QUANTITY_MULTIPLIER: 5,
   WIPE_STEAL_CHANCE_MIN: 0.10,
   WIPE_STEAL_CHANCE_MAX: 0.40,
   ROLL_MAX: 100,
-  SR_PICKS_MAX: 5,  // Each player can SR up to 5 items (can repeat for extra rolls)
-  INVENTORY_MAX: 1500,  // Max items in expeditionInventory per player
-  EQUIP_TYPES: ['armor', 'weapon', 'set_piece'],  // Types considered "artifacts" (have stats, can auto-replace)
+  SR_PICKS_MAX: 5,
+  INVENTORY_MAX: 1500,
+  EQUIP_TYPES: ['armor', 'weapon', 'set_piece'],
 };
 
-// ─── Dynamic Difficulty Scaling (>30 hunters) ────────────
-// When more than BASE_HUNTERS join, boss & mob stats scale up proportionally.
-// Formula: stat × (1 + (hunterCount/BASE - 1) × factor)
-// At 30 hunters: 1.0×  |  At 60: ~1.3× HP  |  At 100: ~1.7× HP
-export const SCALING = {
-  BASE_HUNTERS: 30,         // No scaling at or below this count
-  HP_FACTOR: 1.0,           // Full linear scale for HP (proportional to player count)
-  ATK_FACTOR: 0.3,          // Partial scale for boss ATK (+30% per doubling)
-  DEF_FACTOR: 0.15,         // Slight scale for boss DEF
-  SPD_FACTOR: 0,            // No speed scaling
-  LOOT_EXTRA_ROLLS_PER: 10, // Every 10 extra hunters beyond 30 = +1 loot roll
-  MOB_HP_FACTOR: 0.6,       // Mob HP scales at 60% rate (mobs shouldn't be walls)
-};
-
-// ─── Stat Scaling: hunter base stats → expedition stats ───
+// ─── Stat Scaling: inscription stats → combat stats ──────
+// Player inscription data has real stats (ATK 10000+, HP 20000+)
+// These are already expedition-scaled — we use them as-is
+// Boss HP/ATK must match this power level
 export const STAT_SCALE = {
-  hp: 8,
-  atk: 1.5,
-  def: 2.0,
+  hp: 1.0,     // Use inscription HP directly
+  atk: 1.0,    // Use inscription ATK directly
+  def: 1.0,
   spd: 1.0,
   crit: 1.0,
   res: 1.0,
 };
 
-// ─── Role mapping: hunter class → AI role ─────────────────
+// ─── Dynamic Difficulty Scaling (based on active hunters) ─
+export const SCALING = {
+  BASE_HUNTERS: 30,
+  HP_FACTOR: 1.0,
+  ATK_FACTOR: 0.3,
+  DEF_FACTOR: 0.15,
+  SPD_FACTOR: 0,
+  LOOT_EXTRA_ROLLS_PER: 10,
+  MOB_HP_FACTOR: 0.6,
+};
+
+// ─── Role mapping: hunter class → combat role ────────────
 export const ROLE_MAP = {
   tank:     'frontline',
   fighter:  'frontline_dps',
@@ -157,18 +160,30 @@ export const ROLE_MAP = {
   support:  'backline_heal',
 };
 
-// ─── Admin Gate (temporary: restrict access during testing) ──
-export const ADMIN = {
-  ENABLED: false,              // Open to all (prod)
-  ALLOWED_USERS: ['kly'],      // Usernames allowed during admin gate
-  SECRET_KEY: 'kly',           // URL param ?key=kly to access spectator/API
+// ─── Hunter class → Manaya combat class ──────────────────
+// Maps expedition hunter classes to the 6 Manaya playable classes
+// This determines which skills/combos they use in real-time combat
+export const CLASS_MAP = {
+  tank:     'tank',
+  fighter:  'berserker',    // Fighters → berserker (melee DPS, charged attacks)
+  assassin: 'dps_cac',      // Assassins → warrior (combo melee, rage)
+  mage:     'mage',          // Mages → mage (ranged, projectiles, Zollstraak)
+  support:  'healer',        // Supports → healer (heal zone, cleanse, rez)
 };
 
-// ─── Rarity colors (for display) ─────────────────────────
+// ─── Admin Gate ──────────────────────────────────────────
+export const ADMIN = {
+  ENABLED: false,
+  ALLOWED_USERS: ['kly'],
+  SECRET_KEY: 'kly',
+};
+
+// ─── Rarity colors ──────────────────────────────────────
 export const RARITY = {
   common:    { color: '#9ca3af', label: 'Commun' },
   uncommon:  { color: '#22c55e', label: 'Peu commun' },
   rare:      { color: '#3b82f6', label: 'Rare' },
   epic:      { color: '#a855f7', label: 'Epique' },
   legendary: { color: '#eab308', label: 'Legendaire' },
+  mythique:  { color: '#ef4444', label: 'Mythique' },
 };

@@ -2,271 +2,152 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { SERVER, ADMIN, EXPEDITION } from './config.js';
+import { WebSocketServer } from 'ws';
+import { SERVER } from './config.js';
 import { ExpeditionEngine } from './engine/ExpeditionEngine.js';
-import { ExpeditionWSServer } from './network/WebSocketServer.js';
-import { HttpApi } from './network/HttpApi.js';
-import { runMigrations } from './db/migrations.js';
-import * as db from './db/queries.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ── Expedition Engine ──
-let expeditionEngine = null;
-let httpApi = null;
+// ─── Real player inscription data (from DB) ──────────────
+// 4 players with their actual expedition inscription stats
+const PLAYER_DATA = [
+  {
+    username: 'Kly',
+    hunters: [
+      { hunterId: 'h_frieren', fullStats: { hp: 27631, atk: 6377, def: 1052, spd: 941.9, crit: 378.8, res: 298.3, mana: 47898 }, stars: 272, level: 140, weaponPassive: null },
+      { hunterId: 'h_chae_in', fullStats: { hp: 30675, atk: 13525.4, def: 1274, spd: 1037.8, crit: 408.8, res: 304.3, mana: 6733 }, stars: 286, level: 140, weaponPassive: 'katana_z_fury' },
+      { hunterId: 'h_meri', fullStats: { hp: 34597.3, atk: 5082, def: 2369, spd: 836.2, crit: 172.6, res: 416.2, mana: 31951 }, stars: 257, level: 140, weaponPassive: null },
+      { hunterId: 'h_megumin', fullStats: { hp: 14189, atk: 3004, def: 664, spd: 649, crit: 313.2, res: 267.6, mana: 9449 }, stars: 154, level: 140, weaponPassive: 'katana_v_chaos' },
+      { hunterId: 'h_lee_bora', fullStats: { hp: 17816, atk: 4899.9, def: 823, spd: 650.4, crit: 183.5, res: 246, mana: 24616 }, stars: 70, level: 140, weaponPassive: 'guldan_halo' },
+      { hunterId: 'h_mayuri', fullStats: { hp: 20567.1, atk: 4415, def: 1058, spd: 610.3, crit: 124.5, res: 281.1, mana: 26869 }, stars: 73, level: 140, weaponPassive: null },
+    ],
+  },
+  {
+    username: 'Bobby',
+    hunters: [
+      { hunterId: 'h_meri', fullStats: { hp: 37324, atk: 9693.5, def: 1908.5, spd: 788, crit: 412, res: 500.5, mana: 8926 }, stars: 264, level: 140, weaponPassive: null },
+      { hunterId: 'h_sian', fullStats: { hp: 15189, atk: 14267.5, def: 1098.5, spd: 1075, crit: 621.7, res: 238.7, mana: 3303 }, stars: 255, level: 140, weaponPassive: null },
+      { hunterId: 'h_ilhwan', fullStats: { hp: 17315, atk: 15351.5, def: 1053.5, spd: 1048, crit: 679, res: 223.6, mana: 3295 }, stars: 254, level: 140, weaponPassive: null },
+      { hunterId: 'h_son', fullStats: { hp: 20320, atk: 10252.5, def: 1704.5, spd: 449, crit: 422.3, res: 397.3, mana: 2357 }, stars: 131, level: 140, weaponPassive: null },
+      { hunterId: 'h_isla', fullStats: { hp: 10126, atk: 7855.5, def: 997.5, spd: 525, crit: 251.6, res: 323.6, mana: 4928 }, stars: 149, level: 140, weaponPassive: null },
+      { hunterId: 'h_megumin', fullStats: { hp: 4376, atk: 10288.5, def: 503.5, spd: 630, crit: 528, res: 353.8, mana: 11530 }, stars: 175, level: 140, weaponPassive: 'katana_v_chaos' },
+    ],
+  },
+  {
+    username: 'damon',
+    hunters: [
+      { hunterId: 'h_frieren', fullStats: { hp: 20433, atk: 10025, def: 1217, spd: 987, crit: 561.7, res: 505.2, mana: 8009 }, stars: 214, level: 140, weaponPassive: 'katana_z_fury' },
+      { hunterId: 'h_meri', fullStats: { hp: 43501.6, atk: 5307, def: 2188, spd: 917.6, crit: 351.1, res: 564.7, mana: 14804 }, stars: 222, level: 140, weaponPassive: null },
+      { hunterId: 'h_ilhwan', fullStats: { hp: 24210.3, atk: 12087.7, def: 1447, spd: 1244.2, crit: 630.3, res: 330.9, mana: 5743 }, stars: 218, level: 140, weaponPassive: null },
+      { hunterId: 'h_isla', fullStats: { hp: 43937.8, atk: 4893, def: 1790, spd: 680.9, crit: 273.6, res: 443.7, mana: 6114 }, stars: 93, level: 140, weaponPassive: null },
+      { hunterId: 'h_gojo', fullStats: { hp: 15692, atk: 6578, def: 1364, spd: 832.1, crit: 532.7, res: 391, mana: 21972 }, stars: 125, level: 140, weaponPassive: 'katana_v_chaos' },
+      { hunterId: 'h_megumin', fullStats: { hp: 11816.7, atk: 9677.5, def: 969.7, spd: 817.5, crit: 504.6, res: 454.9, mana: 7710 }, stars: 160, level: 140, weaponPassive: 'sulfuras_fury' },
+    ],
+  },
+  {
+    username: 'shy',
+    hunters: [
+      { hunterId: 'h_sian', fullStats: { hp: 11878, atk: 12948.6, def: 670, spd: 1085.6, crit: 456.8, res: 258.7, mana: 3402 }, stars: 305, level: 140, weaponPassive: 'shadow_silence' },
+      { hunterId: 'h_ilhwan', fullStats: { hp: 15864, atk: 12944.6, def: 666, spd: 1082.4, crit: 516.6, res: 232, mana: 3169 }, stars: 297, level: 140, weaponPassive: 'katana_z_fury' },
+      { hunterId: 'h_son', fullStats: { hp: 17888, atk: 7891.2, def: 2191, spd: 357, crit: 134.2, res: 373.7, mana: 3992 }, stars: 132, level: 140, weaponPassive: 'katana_v_chaos' },
+      { hunterId: 'h_isla', fullStats: { hp: 8117, atk: 8140.4, def: 931, spd: 618.4, crit: 86.9, res: 259.8, mana: 2847 }, stars: 91, level: 140, weaponPassive: 'guldan_halo' },
+      { hunterId: 'h_megumin', fullStats: { hp: 7963, atk: 11299.4, def: 463, spd: 623, crit: 412.8, res: 291.4, mana: 6071 }, stars: 213, level: 140, weaponPassive: 'sulfuras_fury' },
+      { hunterId: 'h_daijin', fullStats: { hp: 8258, atk: 10367.9, def: 533, spd: 696.5, crit: 384.9, res: 132.4, mana: 3216 }, stars: 106, level: 140, weaponPassive: null },
+    ],
+  },
+];
 
-// ── HTTP Server ──
-const server = http.createServer(async (req, res) => {
+// ─── Boot ─────────────────────────────────────────────────
+
+const engine = new ExpeditionEngine();
+
+// Auto-start bot expedition with real player data
+console.log('\n[Expedition v2] Booting with real player data...');
+const result = engine.startBotExpedition(PLAYER_DATA);
+console.log('[Expedition v2] Start result:', result);
+
+// ─── HTTP Server (status endpoint) ────────────────────────
+
+const server = http.createServer((req, res) => {
   const origin = req.headers.origin;
   if (SERVER.CORS_ORIGINS.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
 
-  if (req.method === 'OPTIONS') {
-    res.writeHead(200);
-    res.end();
-    return;
-  }
-
-  const urlPath = req.url.split('?')[0];
-
-  // Health check
-  if (urlPath === '/' || urlPath === '/health') {
+  if (req.url === '/api/expedition/status') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      status: 'ok',
-      game: 'Expedition I',
-      version: '0.1.0',
-      uptime: Math.floor(process.uptime()),
-      spectators: wsServer ? wsServer.getSpectatorCount() : 0,
-      expedition: expeditionEngine ? expeditionEngine.getStatus() : null,
-    }));
+    res.end(JSON.stringify(engine.getExpeditionState()));
     return;
   }
 
-  // Serve spectator client (admin-gated)
-  if (urlPath === '/spectator' || urlPath === '/spectator.html') {
-    // Admin gate check
-    const urlParams = new URL(req.url, 'http://localhost').searchParams;
-    if (ADMIN.ENABLED && !ADMIN.ALLOWED_USERS.includes(urlParams.get('key'))) {
-      res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end('<html><body style="background:#0a0a15;color:#888;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif"><h2>Access restricted</h2></body></html>');
-      return;
-    }
-
+  // Serve spectator page
+  if (req.url === '/' || req.url === '/spectator' || req.url === '/spectator.html') {
     const htmlPath = path.join(__dirname, '..', 'public', 'spectator.html');
-    fs.readFile(htmlPath, 'utf8', (err, html) => {
-      if (err) {
-        res.writeHead(500);
-        res.end('Error loading spectator client');
-        return;
-      }
+    try {
+      const html = fs.readFileSync(htmlPath, 'utf8');
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(html);
-    });
-    return;
-  }
-
-  // API routes
-  if (urlPath.startsWith('/api/expedition/')) {
-    if (httpApi) {
-      const handled = await httpApi.handle(req, res);
-      if (handled !== null) return;
+    } catch {
+      res.writeHead(500);
+      res.end('Spectator page not found');
     }
-  }
-
-  // Static files from public/
-  const MIME_TYPES = {
-    '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
-    '.gif': 'image/gif', '.svg': 'image/svg+xml', '.webp': 'image/webp',
-    '.ico': 'image/x-icon', '.css': 'text/css', '.js': 'application/javascript',
-  };
-  const ext = path.extname(urlPath).toLowerCase();
-  if (MIME_TYPES[ext]) {
-    const filePath = path.join(__dirname, '..', 'public', path.basename(urlPath));
-    fs.readFile(filePath, (err, data) => {
-      if (err) { res.writeHead(404); res.end('Not found'); return; }
-      res.writeHead(200, { 'Content-Type': MIME_TYPES[ext], 'Cache-Control': 'public, max-age=86400' });
-      res.end(data);
-    });
     return;
   }
 
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Not found' }));
+  res.writeHead(404);
+  res.end('Not found');
 });
 
-// ── WebSocket Server ──
-let wsServer = null;
+// ─── WebSocket for spectator ──────────────────────────────
 
-// ── Boot sequence ──
-async function boot() {
-  try {
-    // 1. Run DB migrations
-    if (process.env.DATABASE_URL) {
-      console.log('[Boot] Connecting to database...');
-      await runMigrations();
-    } else {
-      console.log('[Boot] No DATABASE_URL — running without database (dev mode)');
-    }
+const wss = new WebSocketServer({ server, path: '/ws' });
+const spectators = new Set();
 
-    // 2. Start HTTP server
-    server.listen(SERVER.PORT, () => {
-      console.log('═══════════════════════════════════════════');
-      console.log('  ⚔️  Expedition I Server v0.1.0');
-      console.log(`  🌐 HTTP:      http://localhost:${SERVER.PORT}`);
-      console.log(`  🔌 WS:        ws://localhost:${SERVER.PORT}${SERVER.WS_PATH}`);
-      console.log(`  👁️  Spectator: http://localhost:${SERVER.PORT}/spectator`);
-      console.log('═══════════════════════════════════════════');
-    });
+wss.on('connection', (ws) => {
+  spectators.add(ws);
+  console.log(`[WS] Spectator connected (${spectators.size} total)`);
 
-    // 3. Create WebSocket server
-    wsServer = new ExpeditionWSServer(server);
+  // Send current state immediately
+  const state = engine.getExpeditionState();
+  ws.send(JSON.stringify({ type: 'expedition_state', data: state }));
 
-    // 4. Create Expedition Engine (wired to WS broadcast)
-    expeditionEngine = new ExpeditionEngine((msg) => wsServer.broadcast(msg));
+  ws.on('close', () => {
+    spectators.delete(ws);
+    console.log(`[WS] Spectator disconnected (${spectators.size} total)`);
+  });
+});
 
-    // 5. Create HTTP API
-    httpApi = new HttpApi(expeditionEngine);
-
-    // 6. Check for existing active expedition to resume
-    if (process.env.DATABASE_URL) {
-      const existing = await db.getCurrentExpedition();
-      if (existing && existing.state_snapshot && existing.status !== 'registration') {
-        console.log(`[Boot] Found active expedition #${existing.id} (${existing.status}), resuming...`);
-        const snapshot = typeof existing.state_snapshot === 'string'
-          ? JSON.parse(existing.state_snapshot)
-          : existing.state_snapshot;
-        await expeditionEngine.restore(existing.id, snapshot);
-      } else if (existing) {
-        console.log(`[Boot] Expedition #${existing.id} in registration phase, waiting...`);
-      } else {
-        console.log('[Boot] No active expedition. Create one via POST /api/expedition/create');
-      }
-    }
-
-    // 7. Start daily scheduler (auto-registration at 12h05, auto-launch at 19h Paris)
-    startDailyScheduler();
-
-    console.log('[Boot] Ready!');
-  } catch (err) {
-    console.error('[Boot] Fatal error:', err);
-    process.exit(1);
+// Broadcast combat state to spectators at 10 Hz
+setInterval(() => {
+  if (spectators.size === 0) return;
+  const state = engine.getExpeditionState();
+  const msg = JSON.stringify({ type: 'expedition_state', data: state });
+  for (const ws of spectators) {
+    if (ws.readyState === 1) ws.send(msg);
   }
-}
+}, 100);
 
-// ── Daily scheduler: auto-registration at 12h05 + auto-launch at 19h Paris ──
-let autoRegistrationFired = false;
-let autoLaunchFired = false;
+// ─── Start server ─────────────────────────────────────────
 
-function startDailyScheduler() {
-  setInterval(async () => {
-    try {
-      if (!expeditionEngine) return;
+server.listen(SERVER.PORT, () => {
+  console.log(`[Expedition v2] Server running on port ${SERVER.PORT}`);
+  console.log(`[Expedition v2] WS spectator: ws://localhost:${SERVER.PORT}/ws`);
+  console.log(`[Expedition v2] Status: http://localhost:${SERVER.PORT}/api/expedition/status`);
+});
 
-      const now = new Date();
-      const parisNow = new Date(now.toLocaleString('en-US', { timeZone: EXPEDITION.TIMEZONE }));
-      const hour = parisNow.getHours();
-      const minute = parisNow.getMinutes();
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\n[Expedition v2] Shutting down...');
+  engine.destroy();
+  server.close();
+  process.exit(0);
+});
 
-      // Reset flags daily (at midnight)
-      if (hour === 0 && minute < 2) {
-        autoRegistrationFired = false;
-        autoLaunchFired = false;
-      }
-
-      // ── Auto-registration at 12h05 Paris ──
-      // Opens a new expedition for registration if the previous one is done
-      if (hour === EXPEDITION.REGISTRATION_OPEN_HOUR && minute >= EXPEDITION.REGISTRATION_OPEN_MINUTE && minute < EXPEDITION.REGISTRATION_OPEN_MINUTE + 2 && !autoRegistrationFired) {
-        autoRegistrationFired = true;
-
-        const existing = await db.getCurrentExpedition();
-
-        // Only create new if no expedition or previous one is finished/wiped
-        if (!existing || existing.status === 'finished' || existing.status === 'wiped') {
-          // Reset engine if it was in finished/wiped state
-          if (expeditionEngine.status !== 'idle') {
-            expeditionEngine.reset();
-          }
-
-          // Mark old expedition as done if needed
-          if (existing && (existing.status === 'finished' || existing.status === 'wiped')) {
-            // Already finalized, just ensure it's closed
-          }
-
-          // Create fresh expedition for today
-          const newExp = await db.createExpedition('Expedition I', new Date());
-          await db.updateExpeditionStatus(newExp.id, 'registration');
-          console.log(`[AutoReg] 12h05 Paris — Nouvelle expedition #${newExp.id} ouverte aux inscriptions!`);
-        } else if (existing.status === 'registration') {
-          console.log(`[AutoReg] Expedition #${existing.id} deja en inscription, OK`);
-        } else {
-          console.log(`[AutoReg] Expedition #${existing.id} still active (${existing.status}), skipping`);
-        }
-      }
-
-      // ── Auto-launch at configured hour:minute Paris ──
-      const launchMin = EXPEDITION.LAUNCH_MINUTE || 0;
-      if (hour === EXPEDITION.LAUNCH_HOUR && minute >= launchMin && minute < launchMin + 2 && !autoLaunchFired) {
-        autoLaunchFired = true;
-
-        // Engine must be idle (waiting for a start command)
-        if (expeditionEngine.status !== 'idle') {
-          console.log(`[AutoLaunch] Engine not idle (${expeditionEngine.status}), skipping`);
-          return;
-        }
-
-        const expedition = await db.getCurrentExpedition();
-        if (!expedition || expedition.status !== 'registration') {
-          console.log('[AutoLaunch] No expedition in registration at 19h, skipping');
-          return;
-        }
-
-        const entries = await db.getEntries(expedition.id);
-        if (entries.length < EXPEDITION.MIN_PLAYERS_TO_START) {
-          console.log(`[AutoLaunch] Not enough players (${entries.length}/${EXPEDITION.MIN_PLAYERS_TO_START}), skipping`);
-          return;
-        }
-
-        console.log(`[AutoLaunch] 19h Paris — Starting expedition #${expedition.id} with ${entries.length} players!`);
-        await expeditionEngine.start(expedition.id, entries);
-        console.log('[AutoLaunch] Expedition started!');
-      }
-    } catch (err) {
-      console.error('[Scheduler] Error:', err.message);
-    }
-  }, 30_000); // Check every 30 seconds
-
-  // Log schedule
-  const now = new Date();
-  const parisNow = new Date(now.toLocaleString('en-US', { timeZone: EXPEDITION.TIMEZONE }));
-  const lMin = EXPEDITION.LAUNCH_MINUTE || 0;
-  console.log(`[Scheduler] Active — inscriptions a ${EXPEDITION.REGISTRATION_OPEN_HOUR}h${String(EXPEDITION.REGISTRATION_OPEN_MINUTE).padStart(2,'0')}, lancement a ${EXPEDITION.LAUNCH_HOUR}h${lMin ? String(lMin).padStart(2,'0') : ''} (Paris)`);
-  console.log(`[Scheduler] Heure Paris actuelle: ${parisNow.getHours()}h${String(parisNow.getMinutes()).padStart(2,'0')}`);
-}
-
-boot();
-
-// ── Graceful Shutdown ──
-function shutdown() {
-  console.log('[Expedition] Shutting down...');
-  const cleanup = async () => {
-    try {
-      if (expeditionEngine && expeditionEngine.expeditionId) {
-        await expeditionEngine.saveState();
-      }
-    } catch (e) {
-      console.error('[Shutdown] Save error:', e.message);
-    }
-    if (wsServer) wsServer.shutdown();
-    server.close(() => process.exit(0));
-    // Force exit after 5s
-    setTimeout(() => process.exit(1), 5000);
-  };
-  cleanup();
-}
-
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+process.on('SIGTERM', () => {
+  engine.destroy();
+  server.close();
+  process.exit(0);
+});
