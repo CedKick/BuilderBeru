@@ -192,6 +192,7 @@ export default function Expedition() {
   // UI
   const [showSpectator, setShowSpectator] = useState(false);
   const [showCodexOverlay, setShowCodexOverlay] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
   const isAdminReset = new URLSearchParams(window.location.search).has('reset');
   const [loading, setLoading] = useState(false);
@@ -275,7 +276,7 @@ export default function Expedition() {
     try {
       setLoading(true);
       setError('');
-      await api('/api/expedition/create', 'POST', { name: 'Expedition I' });
+      await api('/api/expedition/create', 'POST', { name: 'Expédition II' });
       setSuccess('Expedition creee !');
       await fetchStatus();
     } catch (e) {
@@ -600,11 +601,17 @@ export default function Expedition() {
         <div className="flex items-center gap-3">
           <Swords className="w-8 h-8 text-purple-400" />
           <div>
-            <h1 className="text-2xl font-bold text-purple-300">Expedition I</h1>
-            <p className="text-gray-500 text-sm">PvE Auto-Battler - Phase de test</p>
+            <h1 className="text-2xl font-bold text-purple-300">Expédition II</h1>
+            <p className="text-gray-500 text-sm">PvE Auto-Battler — 5 Boss, 24 Hunters</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowRules(v => !v)}
+            className={`${showRules ? 'bg-purple-600 text-white' : 'bg-[#1a1a2e] text-purple-300 hover:bg-purple-900/50'} px-3 py-2 rounded-lg flex items-center gap-1.5 text-sm font-medium border border-purple-500/30 transition-colors`}
+          >
+            <BookOpen className="w-4 h-4" /> Regles
+          </button>
           {status !== 'finished' && status !== 'wiped' && (
             <button
               onClick={openPreviousRecap}
@@ -633,6 +640,68 @@ export default function Expedition() {
           )}
         </div>
       </div>
+
+      {/* ── Rules Panel ── */}
+      {showRules && (
+        <div className="mb-6 bg-[#1a1a2e] border border-purple-500/30 rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-purple-300 flex items-center gap-2">
+              <BookOpen className="w-5 h-5" /> Comment jouer
+            </h2>
+            <button onClick={() => setShowRules(false)} className="text-gray-500 hover:text-gray-300">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="space-y-3 text-sm text-gray-300">
+            <div className="bg-purple-900/20 border border-purple-500/20 rounded-lg p-3">
+              <h3 className="text-purple-300 font-semibold mb-1">Concept</h3>
+              <p>4 joueurs, 6 hunters chacun (24 au total) affrontent 5 boss en temps reel. Vos hunters non-controles sont geres par l'IA automatiquement.</p>
+            </div>
+
+            <div className="bg-blue-900/20 border border-blue-500/20 rounded-lg p-3">
+              <h3 className="text-blue-300 font-semibold mb-2">Controles (1 hunter a la fois)</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">Z Q S D</kbd> Deplacer</div>
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">Clic G</kbd> Attaque de base</div>
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">Clic D</kbd> Skill secondaire (block/charge)</div>
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">A</kbd> Skill A</div>
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">E</kbd> Skill B</div>
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">R</kbd> Ultimate</div>
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">Espace</kbd> Esquive / Dodge</div>
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">1 2 3</kbd> Skills de hunter</div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-900/20 border border-yellow-500/20 rounded-lg p-3">
+              <h3 className="text-yellow-300 font-semibold mb-2">Changement de hunter</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">F1-F6</kbd> Switch direct au hunter 1-6</div>
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">Tab</kbd> Hunter suivant</div>
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">Shift+Tab</kbd> Hunter precedent</div>
+                <div><kbd className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-200">Echap</kbd> Lacher le controle (full IA)</div>
+              </div>
+            </div>
+
+            <div className="bg-green-900/20 border border-green-500/20 rounded-lg p-3">
+              <h3 className="text-green-300 font-semibold mb-1">Deroulement</h3>
+              <ol className="list-decimal list-inside space-y-0.5 text-xs">
+                <li><b>Inscription</b> — Choisis tes 6 hunters + Soft Reserve (jusqu'a 18h59)</li>
+                <li><b>Marche</b> — L'equipe avance vers le prochain boss</li>
+                <li><b>Combat</b> — Boss fight en temps reel (controle 1 hunter, IA gere les autres)</li>
+                <li><b>Loot</b> — Butin distribue (SR prioritaire, roll aleatoire)</li>
+                <li><b>Feu de camp</b> — Soin, regen, banter entre hunters</li>
+                <li>Repete x5 boss — victoire ou wipe total</li>
+              </ol>
+            </div>
+
+            <div className="bg-red-900/20 border border-red-500/20 rounded-lg p-3">
+              <h3 className="text-red-300 font-semibold mb-1">Soft Reserve (SR)</h3>
+              <p className="text-xs">Choisis jusqu'a 5 items que tu veux en priorite. Si un item SR drop et que tu es le seul a l'avoir SR, tu le recois automatiquement. Si plusieurs joueurs SR le meme item, un roll decide.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Codex Button (during active expedition on dashboard) */}
       {isActive && bossLootData.length > 0 && (
