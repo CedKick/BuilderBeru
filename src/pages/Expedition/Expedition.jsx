@@ -602,7 +602,7 @@ export default function Expedition() {
           <Swords className="w-8 h-8 text-purple-400" />
           <div>
             <h1 className="text-2xl font-bold text-purple-300">Expédition II</h1>
-            <p className="text-gray-500 text-sm">PvE Auto-Battler — 5 Boss, 24 Hunters</p>
+            <p className="text-gray-500 text-sm">PvE Auto-Battler — 5 Boss, 30 Hunters</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
