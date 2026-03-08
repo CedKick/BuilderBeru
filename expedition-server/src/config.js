@@ -155,7 +155,7 @@ export const SCALING = {
 export const ROLE_MAP = {
   tank:     'frontline',
   fighter:  'frontline_dps',
-  assassin: 'frontline_dps',
+  assassin: 'backline_dps',
   mage:     'backline_dps',
   support:  'backline_heal',
 };
