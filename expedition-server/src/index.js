@@ -63,6 +63,12 @@ const PLAYER_DATA = [
 const engine = new ExpeditionEngine();
 const httpApi = new HttpApi(engine);
 
+// ─── DB migration: add auto_register column if missing ───
+import { query } from './db/pool.js';
+query(`ALTER TABLE expedition_entries ADD COLUMN IF NOT EXISTS auto_register BOOLEAN DEFAULT FALSE`)
+  .then(() => console.log('[Expedition v2] DB migration: auto_register column OK'))
+  .catch(err => console.warn('[Expedition v2] DB migration skipped:', err.message));
+
 // ─── Registration mode: create expedition in DB + auto-launch at 19h ───
 
 async function ensureExpeditionExists() {
@@ -74,7 +80,29 @@ async function ensureExpeditionExists() {
   const exp = await db.createExpedition('Expédition II', new Date());
   await db.updateExpeditionStatus(exp.id, 'registration');
   console.log(`[Expedition v2] Created new expedition #${exp.id} in registration mode`);
+
+  // Auto-register: copy entries from previous expedition that had auto_register=true
+  await copyAutoRegistrations(exp.id);
+
   return exp;
+}
+
+async function copyAutoRegistrations(newExpeditionId) {
+  try {
+    const prev = await db.getPreviousExpedition();
+    if (!prev) return;
+    const autoEntries = await db.getAutoRegisterEntries(prev.id);
+    if (autoEntries.length === 0) return;
+    for (const e of autoEntries) {
+      await db.registerPlayer(
+        newExpeditionId, e.username, e.device_id,
+        e.character_ids, e.character_data, e.sr_items, true
+      );
+    }
+    console.log(`[Expedition v2] Auto-registered ${autoEntries.length} players from expedition #${prev.id}`);
+  } catch (err) {
+    console.error('[Expedition v2] Auto-register copy failed:', err.message);
+  }
 }
 
 ensureExpeditionExists().catch(err => console.error('[Expedition v2] DB init error:', err));

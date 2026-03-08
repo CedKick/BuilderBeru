@@ -114,7 +114,7 @@ export class HttpApi {
     const body = await this.readBody(req);
     if (!body) return this.badRequest(res, 'Invalid JSON body');
 
-    const { username, deviceId, characterIds, characterData, srItems } = body;
+    const { username, deviceId, characterIds, characterData, srItems, autoRegister } = body;
 
     if (!username || !characterIds || !Array.isArray(characterIds) || characterIds.length === 0) {
       return this.badRequest(res, 'Missing username or characterIds');
@@ -187,7 +187,7 @@ export class HttpApi {
 
     const entry = await db.registerPlayer(
       expedition.id, username, deviceId || null,
-      characterIds, characterData || {}, validatedSrItems
+      characterIds, characterData || {}, validatedSrItems, !!autoRegister
     );
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -235,6 +235,7 @@ export class HttpApi {
         username: e.username,
         characterIds: e.character_ids,
         srItems: e.sr_items || [],
+        autoRegister: e.auto_register || false,
         joinedAt: e.joined_at,
       })),
     }));
@@ -517,13 +518,24 @@ export class HttpApi {
 
     // Mark current expedition as wiped in DB
     const expedition = await db.getCurrentExpedition();
+    let autoEntries = [];
     if (expedition) {
+      // Grab auto-register entries BEFORE marking as wiped
+      autoEntries = await db.getAutoRegisterEntries(expedition.id);
       await db.updateExpeditionStatus(expedition.id, 'wiped', { endedAt: new Date() });
     }
 
     // Create a fresh expedition
     const newExp = await db.createExpedition('Expédition II', new Date());
     await db.updateExpeditionStatus(newExp.id, 'registration');
+
+    // Auto-register players from previous session
+    for (const e of autoEntries) {
+      try {
+        await db.registerPlayer(newExp.id, e.username, e.device_id, e.character_ids, e.character_data, e.sr_items, true);
+      } catch {}
+    }
+    if (autoEntries.length > 0) console.log(`[API] Auto-registered ${autoEntries.length} players in new expedition`);
 
     console.log('[API] Expedition reset, new expedition:', newExp.id);
 

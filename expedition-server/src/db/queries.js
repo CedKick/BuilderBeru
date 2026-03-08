@@ -78,19 +78,28 @@ export async function saveExpeditionSnapshot(id, snapshot) {
 // ENTRIES (Player Registration)
 // ═══════════════════════════════════════════════════════════
 
-export async function registerPlayer(expeditionId, username, deviceId, characterIds, characterData, srItems) {
+export async function registerPlayer(expeditionId, username, deviceId, characterIds, characterData, srItems, autoRegister = false) {
   const result = await query(
-    `INSERT INTO expedition_entries (expedition_id, username, device_id, character_ids, character_data, sr_items)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO expedition_entries (expedition_id, username, device_id, character_ids, character_data, sr_items, auto_register)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      ON CONFLICT (expedition_id, username) DO UPDATE SET
        character_ids = EXCLUDED.character_ids,
        character_data = EXCLUDED.character_data,
        sr_items = EXCLUDED.sr_items,
+       auto_register = EXCLUDED.auto_register,
        joined_at = NOW()
      RETURNING *`,
-    [expeditionId, username, deviceId, JSON.stringify(characterIds), JSON.stringify(characterData), JSON.stringify(srItems || [])]
+    [expeditionId, username, deviceId, JSON.stringify(characterIds), JSON.stringify(characterData), JSON.stringify(srItems || []), autoRegister]
   );
   return result.rows[0];
+}
+
+export async function getAutoRegisterEntries(expeditionId) {
+  const result = await query(
+    `SELECT * FROM expedition_entries WHERE expedition_id = $1 AND auto_register = true`,
+    [expeditionId]
+  );
+  return result.rows;
 }
 
 export async function unregisterPlayer(expeditionId, username) {

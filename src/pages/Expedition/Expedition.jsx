@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Swords, Users, Play, Plus, Eye, Clock, Shield, Skull, Trophy, ChevronRight, ChevronDown, ChevronUp, Flame, X, RotateCcw, BookOpen, Star, Gem, Award, Package, ScrollText, Sparkles, Lock } from 'lucide-react';
 
 // ── Import real hunter data from Shadow Colosseum ──
@@ -174,6 +175,7 @@ export default function Expedition() {
   });
   const [selectedHunters, setSelectedHunters] = useState([]);
   const [selectedSRs, setSelectedSRs] = useState([]);
+  const [autoRegister, setAutoRegister] = useState(() => localStorage.getItem('expedition_auto_register') === 'true');
 
   // Countdown & launch times
   const [launchTime, setLaunchTime] = useState(null);
@@ -333,8 +335,10 @@ export default function Expedition() {
         characterIds: selectedHunters,
         characterData,
         srItems: selectedSRs.length > 0 ? selectedSRs : [],
+        autoRegister,
       });
       localStorage.setItem('expedition_username', username.trim());
+      localStorage.setItem('expedition_auto_register', autoRegister ? 'true' : 'false');
       setSuccess(`${username} inscrit avec ${selectedHunters.length} hunter(s)${selectedSRs.length > 0 ? ` et ${selectedSRs.length} SR` : ''} !`);
       setSelectedHunters([]);
       setSelectedSRs([]);
@@ -596,6 +600,9 @@ export default function Expedition() {
 
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-gray-100 px-4 py-6 max-w-4xl mx-auto">
+      {/* Back to Colosseum */}
+      <Link to="/shadow-colosseum" className="text-sm text-gray-500 hover:text-purple-400 transition-colors mb-2 inline-block">&larr; Retour au Colisee</Link>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
@@ -1118,6 +1125,17 @@ export default function Expedition() {
               />
             )}
           </div>
+
+          {/* Auto-register toggle */}
+          <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={autoRegister}
+              onChange={e => setAutoRegister(e.target.checked)}
+              className="w-4 h-4 rounded accent-green-500"
+            />
+            <span className="text-sm text-gray-400">Auto-inscription pour les prochaines sessions (meme equipe, meme SR)</span>
+          </label>
 
           {/* Register Button */}
           <button
