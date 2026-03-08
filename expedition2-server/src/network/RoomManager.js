@@ -12,6 +12,9 @@ export class RoomManager {
   constructor(wsServer) {
     this.wsServer = wsServer;
     this.rooms = new Map(); // code -> Room
+
+    // Auto-cleanup zombie rooms every 30s
+    this._cleanupInterval = setInterval(() => this._cleanupZombieRooms(), 30000);
   }
 
   setWsServer(wsServer) {
@@ -32,6 +35,7 @@ export class RoomManager {
       players: new Map(),
       engine: null,
       countdownTimer: null,
+      createdAt: Date.now(),
     };
 
     room.players.set(client.id, {
@@ -496,6 +500,24 @@ export class RoomManager {
       if (!slot.isBot) return false;
     }
     return true;
+  }
+
+  // Destroy rooms that have only bots or are stale (waiting >5min, playing >30min)
+  _cleanupZombieRooms() {
+    const now = Date.now();
+    for (const [code, room] of this.rooms) {
+      const age = now - (room.createdAt || 0);
+      const onlyBots = this._allBots(room);
+      const staleWaiting = room.state === 'waiting' && age > 5 * 60 * 1000;   // 5 min
+      const staleGame = room.state === 'playing' && age > 30 * 60 * 1000;     // 30 min
+
+      if (onlyBots || staleWaiting || staleGame) {
+        if (room.engine) room.engine.stop();
+        if (room.countdownTimer) clearInterval(room.countdownTimer);
+        this.rooms.delete(code);
+        console.log(`[Room] ${code} auto-cleaned (bots=${onlyBots}, state=${room.state}, age=${Math.floor(age/1000)}s)`);
+      }
+    }
   }
 
   _getRoom(client) {

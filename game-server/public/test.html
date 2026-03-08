@@ -414,6 +414,7 @@
             </div>
             <button onclick="refreshRoomList()" id="btnBrowse" disabled style="width:100%;margin-top:4px;background:#2563eb;padding:6px;font-size:11px">Salles disponibles</button>
             <div id="roomList" style="margin-top:4px;max-height:100px;overflow-y:auto"></div>
+            <button onclick="startSpectatorMode()" id="btnSpectate" disabled style="width:100%;margin-top:6px;background:#7c3aed;padding:8px;font-size:12px;font-weight:bold;border-radius:6px;color:white;border:1px solid #a78bfa;cursor:pointer">👁️ Spectateur — 5 Bots Auto-Run</button>
           </div>
         </div>
 
@@ -704,6 +705,22 @@
     let bersBuffGlowLoaded = false;
     bersBuffGlowImg.onload = () => { bersBuffGlowLoaded = true; };
 
+    // Mage (Frieren) sprites
+    const mageIdleImg = new Image();
+    mageIdleImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772905666/FrierenDown_gxlnxb.png';
+    let mageIdleLoaded = false;
+    mageIdleImg.onload = () => { mageIdleLoaded = true; };
+
+    const mageAtkImg = new Image();
+    mageAtkImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772905668/FrierenAtk_v9u7rl.png';
+    let mageAtkLoaded = false;
+    mageAtkImg.onload = () => { mageAtkLoaded = true; };
+
+    const mageWalkImg = new Image();
+    mageWalkImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772905666/FrierenWalking_kusmqz.png';
+    let mageWalkLoaded = false;
+    mageWalkImg.onload = () => { mageWalkLoaded = true; };
+
     // ── Add (Tentacle) Sprite ──
     const addImg = new Image();
     addImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771729827/tentaculeManaya_dkn8yg.png';
@@ -738,6 +755,76 @@
           size: size * (0.5 + Math.random() * 0.5), color, alpha: 1, life: 0.5 + Math.random() * 0.5, age: 0,
         });
       }
+    }
+
+    // ── Skill Burst Effects (heal_aoe / cleanse visual circles) ──
+    let skillBursts = [];
+    function addSkillBurst(x, y, radius, color, label) {
+      skillBursts.push({ x, y, radius, color, label, age: 0, maxAge: 0.8 });
+    }
+    function drawSkillBursts(dt) {
+      for (let i = skillBursts.length - 1; i >= 0; i--) {
+        const b = skillBursts[i];
+        b.age += dt;
+        if (b.age >= b.maxAge) { skillBursts.splice(i, 1); continue; }
+        const progress = b.age / b.maxAge;
+        const currentR = b.radius * Math.min(1, progress * 2);
+        const alpha = 1 - progress;
+        ctx.save();
+        // Expanding circle
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, currentR, 0, Math.PI * 2);
+        ctx.strokeStyle = b.color;
+        ctx.lineWidth = 3 * (1 - progress);
+        ctx.globalAlpha = alpha * 0.8;
+        ctx.stroke();
+        // Fill
+        ctx.fillStyle = b.color;
+        ctx.globalAlpha = alpha * 0.15;
+        ctx.fill();
+        // Label
+        if (b.label && progress < 0.5) {
+          ctx.globalAlpha = Math.min(1, (0.5 - progress) * 3);
+          ctx.fillStyle = b.color;
+          ctx.font = 'bold 14px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(b.label, b.x, b.y - b.radius - 10);
+        }
+        ctx.restore();
+      }
+    }
+
+    // ── Spectator Overlay ──
+    function drawSpectatorOverlay() {
+      const w = spectatorHistory.filter(r => r.victory).length;
+      const l = spectatorHistory.length - w;
+      const pct = spectatorHistory.length > 0 ? Math.round(w / spectatorHistory.length * 100) : 0;
+
+      // Top-left: Run counter
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(10, 10, 220, 70);
+      ctx.strokeStyle = '#7c3aed';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(10, 10, 220, 70);
+
+      ctx.fillStyle = '#c084fc';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('SPECTATEUR', 20, 32);
+
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText('Run ' + spectatorRun + ' / ' + spectatorTotalRuns, 20, 52);
+
+      ctx.fillStyle = '#10b981';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(w + 'W', 20, 72);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillText(l + 'L', 55, 72);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillText('(' + pct + '% winrate)', 85, 72);
+      ctx.restore();
     }
 
     // ── Floating Damage Numbers (Enhanced) ──
@@ -1116,8 +1203,8 @@
       // Synced from game-server classStats.js + playerStatsAdapter.js
       const cls = document.getElementById('classSelect')?.value || 'dps_range';
       const CLASS_BASE = {
-        tank:      { hp: 25000, atk: 350, def: 300, spd: 160, crit: 10, res: 50, mana: 400 },
-        healer:    { hp: 18000, atk: 200, def: 120, spd: 180, crit: 12, res: 60, mana: 800 },
+        tank:      { hp: 25000, atk: 3500, def: 300, spd: 160, crit: 10, res: 50, mana: 400 },
+        healer:    { hp: 18000, atk: 400, def: 120, spd: 180, crit: 12, res: 60, mana: 800 },
         dps_cac:   { hp: 22000, atk: 5100, def: 150, spd: 200, crit: 32, res: 20, mana: 100 },
         dps_range: { hp: 14000, atk: 600, def: 80,  spd: 190, crit: 22, res: 15, mana: 500 },
         berserker: { hp: 23000, atk: 2460, def: 140, spd: 210, crit: 28, res: 18, mana: 400 },
@@ -1638,6 +1725,7 @@
         document.getElementById('btnCreate').disabled = false;
         document.getElementById('btnJoin').disabled = false;
         document.getElementById('btnBrowse').disabled = false;
+        document.getElementById('btnSpectate').disabled = false;
         // Update hint: connected but need to create/join room
         document.getElementById('readyHint').innerHTML = '🚪 Cree ou rejoins une salle pour commencer';
         document.getElementById('readyHint').style.display = 'block';
@@ -1670,6 +1758,16 @@
     }
     function disconnect() { if (ws) ws.close(); }
     function send(msg) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg)); }
+
+    // ── Spectator Mode ──
+    let isSpectator = false;
+    let spectatorRun = 0;
+    let spectatorTotalRuns = 0;
+    let spectatorHistory = [];
+
+    function startSpectatorMode() {
+      send({ type: 'create_spectator_room', difficulty: 'NIGHTMARE', runs: 50 });
+    }
 
     // ── Room Actions ──
     function createRoom() { send({ type: 'create_room' }); }
@@ -1777,6 +1875,48 @@
         case 'player_left': log('Player left', 'info'); roomInfo = msg.room; updateRoomDisplay(); break;
         case 'class_selected': case 'difficulty_changed': case 'ready_changed': case 'hunters_selected': case 'bots_updated':
           roomInfo = msg.room; updateRoomDisplay(); break;
+
+        // ── Spectator Mode ──
+        case 'spectator_room_created':
+        case 'spectator_joined':
+          isSpectator = true;
+          spectatorTotalRuns = msg.totalRuns || 0;
+          spectatorHistory = msg.runHistory || [];
+          roomInfo = msg.room;
+          log('Spectateur: ' + msg.code + ' (' + msg.difficulty + ', ' + msg.totalRuns + ' runs)', 'info');
+          onJoinedRoom();
+          updateRoomDisplay();
+          break;
+        case 'spectator_run_start':
+          spectatorRun = msg.run;
+          log('Run ' + msg.run + '/' + msg.totalRuns + ' START', 'event');
+          gameStartTime = Date.now();
+          document.getElementById('lobby').style.display = 'none';
+          document.getElementById('bossHud').style.display = 'block';
+          document.getElementById('dpsPanel').style.display = 'block';
+          document.getElementById('partyHud').style.display = 'flex';
+          if (isSpectator) {
+            document.getElementById('hunterBar').style.display = 'none';
+            document.getElementById('skillBar').style.display = 'none';
+            document.getElementById('playerHud').style.display = 'none';
+          }
+          document.getElementById('versionTag').textContent = 'SPECTATEUR Run ' + msg.run + '/' + msg.totalRuns;
+          battleMusic.currentTime = 0;
+          battleMusic.volume = soundMuted ? 0 : 0.2;
+          battleMusic.play().catch(() => {});
+          break;
+        case 'spectator_run_end':
+          spectatorHistory = msg.runHistory || [];
+          spectatorRun = msg.currentRun;
+          const wins = spectatorHistory.filter(r => r.victory).length;
+          const losses = spectatorHistory.length - wins;
+          log('Run ' + msg.currentRun + ': ' + (msg.runStats.victory ? 'VICTOIRE' : 'DEFAITE') + ' | Score: ' + wins + 'W/' + losses + 'L', msg.runStats.victory ? 'heal' : 'error');
+          break;
+        case 'spectator_complete':
+          spectatorHistory = msg.runHistory || [];
+          const totalW = spectatorHistory.filter(r => r.victory).length;
+          log('TERMINE! ' + totalW + ' victoires / ' + spectatorHistory.length + ' runs', 'event');
+          break;
         case 'countdown_start':
         case 'countdown_tick': {
           const overlay = document.getElementById('countdownOverlay');
@@ -1863,12 +2003,19 @@
           }
           if (msg.target === myId) log('Poison x' + (msg.stacks || 1) + ': -' + msg.amount, 'error');
           break;
+        case 'resurrect_channel':
+          log('🔄 Incantation de Résurrection... (' + msg.duration + 's)', 'heal');
+          break;
         case 'resurrect':
-          log(msg.source === myId ? 'Vous avez ressuscit\u00e9 ' + (msg.target === myId ? 'vous-m\u00eame?!' : 'un alli\u00e9') :
-              (msg.target === myId ? 'Vous avez \u00e9t\u00e9 ressuscit\u00e9 !' : 'Un alli\u00e9 a \u00e9t\u00e9 ressuscit\u00e9'), 'heal');
+          log(msg.source === myId ? 'Vous avez ressuscité ' + (msg.target === myId ? 'vous-même?!' : 'un allié') :
+              (msg.target === myId ? 'Vous avez été ressuscité !' : 'Un allié a été ressuscité'), 'heal');
           if (msg.target === myId) {
             // Rez flash effect
             screenShake.intensity = 5;
+          }
+          if (gameState) {
+            const rp = (gameState.players || []).find(p => p.id === msg.target);
+            if (rp) { spawnParticles(rp.x, rp.y, '#ffd700', 15, 150, 5); addSkillBurst(rp.x, rp.y, 60, '#ffd700', '✝ Résurrection'); }
           }
           break;
         case 'boss_message': log(msg.text, 'event'); break;
@@ -1897,6 +2044,18 @@
           if (msg.target === myId) log('Marque retirée: ' + msg.debuff, 'info');
           break;
         case 'cleanse': log('Cleanse!', 'heal'); break;
+        case 'heal_burst':
+          addSkillBurst(msg.x, msg.y, msg.radius, '#10b981', '✚ Soin de Zone');
+          spawnParticles(msg.x, msg.y, '#10b981', 12, 150, 4);
+          break;
+        case 'cleanse_burst':
+          addSkillBurst(msg.x, msg.y, msg.radius, '#a78bfa', '✨ Purification');
+          spawnParticles(msg.x, msg.y, '#a78bfa', 10, 130, 4);
+          break;
+        case 'aoe_self_burst':
+          addSkillBurst(msg.x, msg.y, msg.radius, '#60a5fa', '');
+          spawnParticles(msg.x, msg.y, '#60a5fa', 8, 120, 3);
+          break;
         case 'add_spawn': log(msg.name + ' appeared!', 'error'); break;
         case 'add_killed': log('Add killed!', 'damage'); break;
         case 'simulation_changed': break; // legacy
@@ -2137,18 +2296,26 @@
             lootSection.style.display = 'none';
           }
 
-          // Countdown timer (room resets in 10s)
-          let countdown = 10;
-          timerEl.textContent = 'Retour au lobby dans ' + countdown + 's...';
-          const countdownInterval = setInterval(() => {
-            countdown--;
-            if (countdown <= 0) {
-              clearInterval(countdownInterval);
-              timerEl.textContent = 'Retour au lobby...';
-            } else {
-              timerEl.textContent = 'Retour au lobby dans ' + countdown + 's...';
-            }
-          }, 1000);
+          // Countdown timer
+          if (isSpectator) {
+            const sw = spectatorHistory.filter(r => r.victory).length;
+            const sl = spectatorHistory.length - sw;
+            timerEl.textContent = 'Run ' + spectatorRun + '/' + spectatorTotalRuns + ' | ' + sw + 'W/' + sl + 'L — Prochain run dans 5s...';
+            // Auto-hide overlay after 4s for spectator
+            setTimeout(() => { overlay.style.display = 'none'; }, 4000);
+          } else {
+            let countdown = 10;
+            timerEl.textContent = 'Retour au lobby dans ' + countdown + 's...';
+            const countdownInterval = setInterval(() => {
+              countdown--;
+              if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                timerEl.textContent = 'Retour au lobby...';
+              } else {
+                timerEl.textContent = 'Retour au lobby dans ' + countdown + 's...';
+              }
+            }, 1000);
+          }
 
           overlay.style.display = 'block';
           break;
@@ -2667,8 +2834,12 @@
 
       // Aggro meters
       drawAggroMeters();
+      // Skill burst effects (heal/cleanse circles)
+      drawSkillBursts(frameDt);
       // Floating damage numbers
       drawFloatingNumbers(frameDt);
+      // Spectator overlay
+      if (isSpectator) drawSpectatorOverlay();
 
       // Simulation indicator
       if (gameState.simulation) {
@@ -3230,6 +3401,14 @@
         } else {
           spriteImg = bersIdleLoaded ? bersIdleImg : null;
         }
+      } else if (p.class === 'mage') {
+        if (isAttacking && mageAtkLoaded) {
+          spriteImg = mageAtkImg;
+        } else if (p.moving && mageWalkLoaded) {
+          spriteImg = mageWalkImg;
+        } else {
+          spriteImg = mageIdleLoaded ? mageIdleImg : null;
+        }
       } else {
         spriteImg = isAttacking && playerAtkLoaded ? playerAtkImg : (playerIdleLoaded ? playerIdleImg : null);
       }
@@ -3445,6 +3624,27 @@
       const icon = classIcon[p.class] || '';
       const mainH = p.mainHunter ? HUNTER_LIST[p.mainHunter]?.name : null;
       ctx.fillText(icon + ' ' + (mainH || p.username || (isMe ? 'YOU' : p.id.substring(0, 5))), p.x, p.y + 38);
+
+      // ── Cast bar (resurrect channel) ──
+      if (p.casting && p.casting.duration > 0 && p.casting.type === 'resurrect') {
+        const barW = 50, barH = 6, barY = p.y - 42;
+        const pct = Math.min(1, p.casting.timer / p.casting.duration);
+        // Background
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(p.x - barW/2 - 1, barY - 1, barW + 2, barH + 2);
+        // Fill
+        ctx.fillStyle = '#ffd700';
+        ctx.fillRect(p.x - barW/2, barY, barW * pct, barH);
+        // Border
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(p.x - barW/2, barY, barW, barH);
+        // Label
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('✝ Résurrection ' + Math.ceil(p.casting.duration - p.casting.timer) + 's', p.x, barY - 3);
+      }
 
       // ── Buff/Debuff icons under sprite ──
       if (p.buffs && p.buffs.length > 0) {

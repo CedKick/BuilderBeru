@@ -110,11 +110,23 @@ export class RoomManager {
     }
 
     room.players.delete(client.id);
+    if (room.spectators) room.spectators.delete(ws);
     client.roomCode = null;
 
     // If game is running and player leaves, mark them as disconnected
     if (room.gameLoop) {
       room.gameLoop.handlePlayerDisconnect(client.id);
+    }
+
+    // Spectator rooms: destroy when no spectators left
+    if (room.isSpectatorRoom) {
+      const hasSpectators = room.spectators && room.spectators.size > 0;
+      if (!hasSpectators) {
+        if (room.gameLoop) room.gameLoop.stop();
+        this.rooms.delete(room.code);
+        console.log(`[Spectator] Room ${room.code} destroyed (no spectators)`);
+        return;
+      }
     }
 
     if (room.players.size === 0) {
@@ -544,6 +556,208 @@ export class RoomManager {
       });
     }
     this._send(ws, { type: 'room_list', rooms });
+  }
+
+  // ── Spectator Mode: Bot-only auto-run rooms ──
+
+  createSpectatorRoom(ws, client, msg) {
+    if (client.roomCode) {
+      this._send(ws, { type: 'error', message: 'Already in a room' });
+      return;
+    }
+
+    const code = this._generateCode();
+    const difficulty = msg.difficulty || 'NIGHTMARE';
+    const totalRuns = Math.min(100, Math.max(1, parseInt(msg.runs) || 10));
+
+    const room = {
+      code,
+      host: client.id,
+      difficulty,
+      simulation: false,
+      state: 'waiting',
+      players: new Map(),
+      spectators: new Set(), // WS refs of spectators
+      gameLoop: null,
+      countdownTimer: null,
+      // Spectator auto-run fields
+      isSpectatorRoom: true,
+      totalRuns,
+      currentRun: 0,
+      runHistory: [], // { run, victory, time, stats[] }
+    };
+
+    // Add 5 bots: tank, healer, + 3 DPS
+    const botClasses = ['tank', 'healer', 'berserker', 'dps_range', 'mage'];
+    const usedNames = new Set();
+    for (let i = 0; i < 5; i++) {
+      const botId = generateBotId();
+      const botName = pickBotName(usedNames);
+      usedNames.add(botName);
+      room.players.set(botId, {
+        id: botId,
+        username: botName,
+        class: botClasses[i],
+        ready: true,
+        isBot: true,
+      });
+    }
+
+    this.rooms.set(code, room);
+
+    // Spectator joins the room (receives broadcasts but has no player)
+    client.roomCode = code;
+    room.spectators.add(ws);
+
+    this._send(ws, {
+      type: 'spectator_room_created',
+      code,
+      room: this._serializeRoom(room),
+      totalRuns,
+      difficulty,
+    });
+
+    console.log(`[Spectator] Room ${code} created: ${totalRuns} runs, ${difficulty}`);
+
+    // Auto-start first run after 2s
+    setTimeout(() => this._startSpectatorRun(room), 2000);
+  }
+
+  spectateRoom(ws, client, msg) {
+    const code = (msg.code || '').toUpperCase();
+    const room = this.rooms.get(code);
+    if (!room) {
+      this._send(ws, { type: 'error', message: 'Room not found' });
+      return;
+    }
+
+    client.roomCode = code;
+    if (!room.spectators) room.spectators = new Set();
+    room.spectators.add(ws);
+
+    this._send(ws, {
+      type: 'spectator_joined',
+      code,
+      room: this._serializeRoom(room),
+      isSpectatorRoom: room.isSpectatorRoom || false,
+      currentRun: room.currentRun || 0,
+      totalRuns: room.totalRuns || 0,
+      runHistory: room.runHistory || [],
+    });
+
+    console.log(`[Spectator] ${client.username} spectating ${code}`);
+  }
+
+  _startSpectatorRun(room) {
+    if (!this.rooms.has(room.code)) return;
+    if (room.currentRun >= room.totalRuns) {
+      // All runs complete
+      this.wsServer.broadcast(room.code, {
+        type: 'spectator_complete',
+        runHistory: room.runHistory,
+      });
+      console.log(`[Spectator] Room ${room.code} completed all ${room.totalRuns} runs`);
+      // Keep room alive for 60s so spectator can review
+      setTimeout(() => {
+        if (this.rooms.has(room.code)) {
+          this.rooms.delete(room.code);
+          console.log(`[Spectator] Room ${room.code} cleaned up`);
+        }
+      }, 60000);
+      return;
+    }
+
+    room.currentRun++;
+    room.state = 'playing';
+
+    const players = [...room.players.values()].map(p => ({
+      id: p.id,
+      username: p.username,
+      class: p.class,
+      isBot: true,
+      colosseumData: null,
+    }));
+
+    room.gameLoop = new GameLoop(room.code, players, room.difficulty, this.wsServer, false);
+    room.gameLoop.onEnd = (result) => this._onSpectatorGameEnd(room, result);
+    room.gameLoop.start();
+
+    this.wsServer.broadcast(room.code, {
+      type: 'spectator_run_start',
+      run: room.currentRun,
+      totalRuns: room.totalRuns,
+      difficulty: room.difficulty,
+    });
+
+    console.log(`[Spectator] Room ${room.code} run ${room.currentRun}/${room.totalRuns} started`);
+  }
+
+  _onSpectatorGameEnd(room, result) {
+    room.state = 'finished';
+    room.gameLoop = null;
+
+    // Log run stats
+    const runStats = {
+      run: room.currentRun,
+      victory: result.victory,
+      reason: result.reason || 'unknown',
+      time: result.time || 0,
+      bossHpPercent: result.bossHpPercent,
+      stats: (result.stats || []).map(s => ({
+        username: s.username,
+        class: s.class,
+        damageDealt: s.damageDealt,
+        healingDone: s.healingDone,
+        damageTaken: s.damageTaken,
+        deaths: s.deaths,
+      })),
+    };
+    room.runHistory.push(runStats);
+
+    // Broadcast game end + run summary
+    this.wsServer.broadcast(room.code, {
+      type: 'game_end',
+      result,
+    });
+
+    this.wsServer.broadcast(room.code, {
+      type: 'spectator_run_end',
+      runStats,
+      currentRun: room.currentRun,
+      totalRuns: room.totalRuns,
+      runHistory: room.runHistory,
+    });
+
+    const wins = room.runHistory.filter(r => r.victory).length;
+    const losses = room.currentRun - wins;
+    const winrate = room.currentRun > 0 ? Math.round(wins / room.currentRun * 100) : 0;
+    console.log(`\n[Spectator] ═══ Run ${room.currentRun}/${room.totalRuns} — ${result.victory ? 'WIN ✓' : 'LOSS ✗'} (${wins}W/${losses}L — ${winrate}%) ═══`);
+    console.log(`[Spectator] Reason: ${result.reason || 'unknown'} | Time: ${result.time ? result.time.toFixed(1) + 's' : 'N/A'} | Boss HP: ${result.bossHpPercent !== undefined ? result.bossHpPercent.toFixed(1) + '%' : 'dead'}`);
+    for (const s of runStats.stats) {
+      const dps = result.time > 0 ? Math.round(s.damageDealt / result.time) : 0;
+      console.log(`  ${s.class.padEnd(10)} ${s.username.padEnd(8)} | DMG: ${Math.round(s.damageDealt).toLocaleString().padStart(9)} (${dps} DPS) | Heal: ${Math.round(s.healingDone).toLocaleString().padStart(7)} | Taken: ${Math.round(s.damageTaken).toLocaleString().padStart(7)} | Deaths: ${s.deaths}`);
+    }
+
+    // Auto-start next run after 5s
+    setTimeout(() => {
+      // Reset player IDs for new game loop
+      const botClasses = [...room.players.values()].map(p => p.class);
+      room.players.clear();
+      const usedNames = new Set();
+      for (let i = 0; i < botClasses.length; i++) {
+        const botId = generateBotId();
+        const botName = pickBotName(usedNames);
+        usedNames.add(botName);
+        room.players.set(botId, {
+          id: botId,
+          username: botName,
+          class: botClasses[i],
+          ready: true,
+          isBot: true,
+        });
+      }
+      this._startSpectatorRun(room);
+    }, 5000);
   }
 
   // Stats for monitoring

@@ -641,43 +641,197 @@ export class ExpeditionBoss {
         gameState.addEvent({ type: 'boss_message', text: `${this.name} draine l'essence vitale !` });
         break;
       }
+
+      case 'soak_circles': {
+        // Spawn circles that must be stood in by hunters. If unsoaked, raid takes % HP damage.
+        const circleCount = pattern.circleCount || 3;
+        const circleRadius = pattern.circleRadius || 80;
+        const soakDur = pattern.soakDuration || 6;
+        const failPct = pattern.failDamagePercent || 20;
+        // Place circles at random positions spread across arena
+        for (let i = 0; i < circleCount; i++) {
+          const sx = ARENA.WIDTH * 0.2 + Math.random() * ARENA.WIDTH * 0.6;
+          const sy = ARENA.HEIGHT * 0.2 + Math.random() * ARENA.HEIGHT * 0.6;
+          gameState.addAoeZone({
+            x: sx, y: sy, radius: circleRadius,
+            type: 'soak_circle', ttl: soakDur, active: true,
+            _soakRequired: true, _failDmgPct: failPct,
+            _bossId: this.id, color: '#fbbf24',
+          });
+        }
+        gameState.addEvent({ type: 'boss_message', text: `${this.name} ouvre des fissures ! Tenez-vous dedans !` });
+        break;
+      }
+
+      case 'heal_cast': {
+        // Boss channels a heal. Team must deal X damage during channel to interrupt.
+        const healPct = pattern.healPercent || 8;
+        const channelDur = pattern.channelDuration || 5;
+        const dmgToInterrupt = pattern.damageToInterrupt || 5_000_000;
+        // Track boss HP at start — if team deals enough, interrupt
+        const startHp = this.hp;
+        gameState.addAoeZone({
+          x: this.x, y: this.y, radius: 300,
+          type: 'boss_heal_cast', ttl: channelDur, active: true,
+          _healPct: healPct, _dmgToInterrupt: dmgToInterrupt, _startHp: startHp,
+          _bossId: this.id, _bossRef: this,
+          color: '#22c55e',
+        });
+        gameState.addEvent({ type: 'boss_message', text: `${this.name} canalise une guérison ! Infligez ${Math.round(dmgToInterrupt / 1_000_000)}M dégâts pour l'interrompre !` });
+        break;
+      }
+
+      case 'rotating_laser': {
+        // Laser beam that rotates around the boss. Must be dodged continuously.
+        const range = pattern.range || 800;
+        const lineW = pattern.lineWidth || 60;
+        const duration = pattern.duration || 5.0;
+        const rotSpeed = pattern.rotationSpeed || 1.0; // radians/sec
+        const dmgPerTick = rawDamage * 0.2;
+        gameState.addAoeZone({
+          x: this.x, y: this.y, radius: range,
+          type: 'rotating_laser', angle: this.rotation, lineWidth: lineW,
+          ttl: duration, active: true,
+          damagePerTick: dmgPerTick, tickInterval: 0.15,
+          _rotSpeed: rotSpeed, _bossRef: this,
+          color: pattern.laserColor || '#ef4444',
+        });
+        gameState.addEvent({ type: 'boss_message', text: `${this.name} lance un laser rotatif !` });
+        break;
+      }
+
+      case 'ultimate_wipe': {
+        // Massive raid damage. Hunters must use defensive cooldowns to survive.
+        // Deals huge damage to everyone (true damage if configured).
+        const survivalThreshold = pattern.requiresSurvival || 10;
+        for (const h of hunters) {
+          if (h.dodging) continue;
+          // Each hunter takes damage equal to (maxHp - survivalThreshold% buffer)
+          // Effectively kills anyone without defensive cooldowns active
+          const wipeDmg = Math.floor(h.maxHp * 0.85);
+          const actual = pattern.isTrueDamage ? h.takeTrueDamage(wipeDmg) : h.takeDamage(wipeDmg);
+          if (actual > 0) gameState.addEvent({ type: 'damage', source: this.id, target: h.id, amount: actual, skill: pattern.name });
+        }
+        gameState.addEvent({ type: 'boss_message', text: `💀 ${pattern.name}` });
+        break;
+      }
     }
 
     // Spawn adds if defined
     if (pattern.spawnsAdds) {
       const { type, count } = pattern.spawnsAdds;
+      const bossRef = this;
       for (let i = 0; i < count; i++) {
         const angle = (Math.PI * 2 / count) * i;
-        const add = {
-          id: `add_${Date.now()}_${i}`,
-          type, x: this.x + Math.cos(angle) * 200, y: this.y + Math.sin(angle) * 200,
-          hp: Math.round(this.maxHp * 0.01), maxHp: Math.round(this.maxHp * 0.01),
-          atk: Math.round(this.atk * 0.3), radius: 20, alive: true,
-          update(dt, gs) {
-            // Simple add AI: walk toward nearest hunter and attack
-            const target = gs.getAliveHunters().reduce((best, h) => {
-              const d = Math.hypot(h.x - this.x, h.y - this.y);
-              return !best || d < best.d ? { h, d } : best;
-            }, null);
-            if (target && target.d > 40) {
-              const a = Math.atan2(target.h.y - this.y, target.h.x - this.x);
-              this.x += Math.cos(a) * 30 * dt;
-              this.y += Math.sin(a) * 30 * dt;
-            } else if (target && target.d <= 40) {
-              this._atkTimer = (this._atkTimer || 0) + dt;
-              if (this._atkTimer >= 2.0) {
-                this._atkTimer = 0;
-                target.h.takeDamage(this.atk, this);
+        const spawnX = this.x + Math.cos(angle) * 200;
+        const spawnY = this.y + Math.sin(angle) * 200;
+
+        // Fire elemental adds: explode if not killed in time + drain mana
+        if (type === 'fire_elemental') {
+          const add = {
+            id: `add_${Date.now()}_${i}`,
+            type, x: spawnX, y: spawnY,
+            hp: Math.round(this.maxHp * 0.008), maxHp: Math.round(this.maxHp * 0.008),
+            atk: Math.round(this.atk * 0.25), radius: 22, alive: true,
+            spriteId: 'fire_elemental',
+            color: '#f97316',
+            _fuseTimer: 12.0,    // Explodes after 12 seconds if not killed
+            _manaDrainCd: 0,     // Mana drain cooldown tracker
+            _manaDrainInterval: 3.0, // Drain mana every 3s
+            _manaDrainAmount: 50,    // Amount drained per tick
+            update(dt, gs) {
+              // Fuse countdown — explodes dealing massive AoE if not killed
+              this._fuseTimer -= dt;
+              if (this._fuseTimer <= 0) {
+                // EXPLOSION — deals 25% max HP true damage to all hunters within 200px
+                const explodeRadius = 200;
+                for (const h of gs.getAliveHunters()) {
+                  const d = Math.hypot(h.x - this.x, h.y - this.y);
+                  if (d <= explodeRadius + h.radius) {
+                    const explosionDmg = Math.floor(h.maxHp * 0.25);
+                    h.takeTrueDamage(explosionDmg);
+                    gs.addEvent({ type: 'damage', source: this.id, target: h.id, amount: explosionDmg, skill: 'Explosion Élémentaire' });
+                  }
+                }
+                gs.addEvent({ type: 'boss_message', text: '💥 Un élémentaire de feu explose !' });
+                gs.addAoeZone({ x: this.x, y: this.y, radius: explodeRadius, type: 'boss_ring', ttl: 0.5, color: '#f97316' });
+                this.alive = false;
+                this.hp = 0;
+                return;
               }
-            }
-          },
-          takeDamage(amount) {
-            this.hp -= amount;
-            if (this.hp <= 0) { this.hp = 0; this.alive = false; }
-            return amount;
-          },
-        };
-        gameState.addAdd(add);
+
+              // Walk toward nearest hunter
+              const target = gs.getAliveHunters().reduce((best, h) => {
+                const d = Math.hypot(h.x - this.x, h.y - this.y);
+                return !best || d < best.d ? { h, d } : best;
+              }, null);
+              if (target && target.d > 40) {
+                const a = Math.atan2(target.h.y - this.y, target.h.x - this.x);
+                this.x += Math.cos(a) * 35 * dt;
+                this.y += Math.sin(a) * 35 * dt;
+              } else if (target && target.d <= 40) {
+                // Melee attack
+                this._atkTimer = (this._atkTimer || 0) + dt;
+                if (this._atkTimer >= 2.0) {
+                  this._atkTimer = 0;
+                  target.h.takeDamage(this.atk, this);
+                }
+              }
+
+              // Mana drain — periodically drains nearby hunters' mana
+              this._manaDrainCd -= dt;
+              if (this._manaDrainCd <= 0) {
+                this._manaDrainCd = this._manaDrainInterval;
+                for (const h of gs.getAliveHunters()) {
+                  const d = Math.hypot(h.x - this.x, h.y - this.y);
+                  if (d <= 150 && h.mana !== undefined) {
+                    h.mana = Math.max(0, h.mana - this._manaDrainAmount);
+                    gs.addEvent({ type: 'debuff', source: this.id, target: h.id, debuff: 'mana_drain', skill: 'Drain de Mana' });
+                  }
+                }
+              }
+            },
+            takeDamage(amount) {
+              this.hp -= amount;
+              if (this.hp <= 0) { this.hp = 0; this.alive = false; }
+              return amount;
+            },
+          };
+          gameState.addAdd(add);
+        } else {
+          // Default add types (minion, elite, etc.)
+          const add = {
+            id: `add_${Date.now()}_${i}`,
+            type, x: spawnX, y: spawnY,
+            hp: Math.round(this.maxHp * (type === 'elite' ? 0.02 : 0.01)),
+            maxHp: Math.round(this.maxHp * (type === 'elite' ? 0.02 : 0.01)),
+            atk: Math.round(this.atk * (type === 'elite' ? 0.5 : 0.3)),
+            radius: type === 'elite' ? 25 : 20, alive: true,
+            update(dt, gs) {
+              const target = gs.getAliveHunters().reduce((best, h) => {
+                const d = Math.hypot(h.x - this.x, h.y - this.y);
+                return !best || d < best.d ? { h, d } : best;
+              }, null);
+              if (target && target.d > 40) {
+                const a = Math.atan2(target.h.y - this.y, target.h.x - this.x);
+                this.x += Math.cos(a) * 30 * dt;
+                this.y += Math.sin(a) * 30 * dt;
+              } else if (target && target.d <= 40) {
+                this._atkTimer = (this._atkTimer || 0) + dt;
+                if (this._atkTimer >= 2.0) {
+                  this._atkTimer = 0;
+                  target.h.takeDamage(this.atk, this);
+                }
+              }
+            },
+            takeDamage(amount) {
+              this.hp -= amount;
+              if (this.hp <= 0) { this.hp = 0; this.alive = false; }
+              return amount;
+            },
+          };
+          gameState.addAdd(add);
+        }
       }
     }
 

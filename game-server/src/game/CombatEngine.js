@@ -320,9 +320,17 @@ export class CombatEngine {
       return;
     }
 
-    if (skill.manaCost > 0 && !player.useMana(skill.manaCost)) return;
+    // Channeled resurrect: defer mana/CD to channel completion
+    const isChanneledRez = skill.type === 'resurrect' && skill.channelDuration > 0;
 
-    player.cooldowns[skillKey] = skill.cooldown;
+    if (!isChanneledRez) {
+      if (skill.manaCost > 0 && !player.useMana(skill.manaCost)) return;
+      player.cooldowns[skillKey] = skill.cooldown;
+    } else {
+      // Just check mana is enough, don't consume yet
+      if (skill.manaCost > 0 && player.mana < skill.manaCost) return;
+    }
+
     player.aimAngle = angle;
 
     switch (skill.type) {
@@ -491,14 +499,29 @@ export class CombatEngine {
     // Defense reduction
     damage *= COMBAT.DEF_FORMULA_CONSTANT / (COMBAT.DEF_FORMULA_CONSTANT + (defender.def || 0));
 
-    // Crit check
+    // Crit check (apply crit_up buffs)
     let crit = false;
+    let critBonus = 0;
+    for (const b of (attacker.buffs || [])) {
+      if (b.type === 'crit_up') critBonus += b.value;
+    }
     const critChance = Math.min(100, Math.max(0,
-      attacker.crit - (defender.res || 0) * COMBAT.CRIT_RES_FACTOR
+      attacker.crit + critBonus - (defender.res || 0) * COMBAT.CRIT_RES_FACTOR
     ));
     if (Math.random() * 100 < critChance) {
       crit = true;
       damage *= COMBAT.CRIT_MULTIPLIER;
+    }
+
+    // Backstab bonus: +80% damage when attacking from behind the boss
+    if (defender.rotation !== undefined && attacker.x !== undefined) {
+      const angleToAttacker = Math.atan2(attacker.y - defender.y, attacker.x - defender.x);
+      let angleDiff = angleToAttacker - defender.rotation;
+      while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+      while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+      if (Math.abs(angleDiff) > Math.PI * 0.6) { // ~108° behind = backstab
+        damage *= 1.8;
+      }
     }
 
     // Manaya Set 6pc: +15% all damage
@@ -594,7 +617,9 @@ export class CombatEngine {
 
             // Mana/Rage on hit (basic attacks restore resource)
             if (skill.isBasic) {
-              const gain = player.useRage ? (skill.rageGain || 10) : PLAYER.MANA_ON_HIT;
+              const baseGain = player.useRage ? (skill.rageGain || 10) : PLAYER.MANA_ON_HIT;
+              const extraGain = skill.manaOnHit || 0;
+              const gain = baseGain + extraGain;
               if (gain > 0) player.mana = Math.min(player.maxMana, player.mana + gain);
             }
 
@@ -719,10 +744,20 @@ export class CombatEngine {
   }
 
   _healAoe(player, skill) {
+    // Emit visual burst event for the AoE heal circle
+    this.gs.addEvent({
+      type: 'heal_burst',
+      x: player.x,
+      y: player.y,
+      radius: skill.range,
+      source: player.id,
+    });
+
     for (const ally of this.gs.getAlivePlayers()) {
       const dist = Math.hypot(ally.x - player.x, ally.y - player.y);
       if (dist <= skill.range) {
-        const healed = ally.heal(skill.healPower);
+        const healAmt = skill.healPct ? Math.floor(ally.maxHp * skill.healPct) : (skill.healPower || 0);
+        const healed = ally.heal(healAmt);
         player.stats.healingDone += healed;
         this.gs.addAggro(player.id, healed * AGGRO.HEAL_TO_AGGRO * player.aggroMult);
 
@@ -732,6 +767,12 @@ export class CombatEngine {
           target: ally.id,
           amount: healed,
         });
+
+        // Soin de Zone buff: +25% ATK for 10s
+        if (skill.atkBuff) {
+          ally.addBuff({ type: 'atk_up', value: skill.atkBuff, dur: skill.atkBuffDur || 10, source: 'heal_aoe' });
+          this.gs.addEvent({ type: 'buff', source: player.id, target: ally.id, buffType: 'atk_up', duration: skill.atkBuffDur || 10 });
+        }
       }
     }
   }
@@ -752,7 +793,8 @@ export class CombatEngine {
       active: true,
       source: player.id,
       owner: player.id,
-      healPower: skill.healPower || 800,
+      healPower: skill.healPower || 0,
+      healPct: skill.healPct || 0,
       healTicks: skill.healTicks || 4,
       _healTimer: 0,
       _healInterval: (skill.zoneDuration || 2.0) / (skill.healTicks || 4),
@@ -767,6 +809,15 @@ export class CombatEngine {
   }
 
   _cleanse(player, skill) {
+    // Emit visual burst event for the cleanse circle
+    this.gs.addEvent({
+      type: 'cleanse_burst',
+      x: player.x,
+      y: player.y,
+      radius: skill.range,
+      source: player.id,
+    });
+
     for (const ally of this.gs.getAlivePlayers()) {
       const dist = Math.hypot(ally.x - player.x, ally.y - player.y);
       if (dist <= skill.range) {
@@ -776,6 +827,14 @@ export class CombatEngine {
           source: player.id,
           target: ally.id,
         });
+
+        // Purification buffs: +10% crit and +10% speed for 10s
+        if (skill.critBuff) {
+          ally.addBuff({ type: 'crit_up', value: skill.critBuff, dur: skill.buffDur || 10, source: 'cleanse' });
+        }
+        if (skill.spdBuff) {
+          ally.addBuff({ type: 'speed_up', value: skill.spdBuff, dur: skill.buffDur || 10, source: 'cleanse' });
+        }
       }
     }
 
@@ -795,7 +854,7 @@ export class CombatEngine {
     const deadPlayers = this.gs.players.filter(p => !p.alive);
     if (deadPlayers.length === 0) return;
 
-    // Resurrect nearest dead player
+    // Find nearest dead player in range
     let nearest = null;
     let nearestDist = Infinity;
     for (const dead of deadPlayers) {
@@ -805,15 +864,41 @@ export class CombatEngine {
         nearest = dead;
       }
     }
+    if (!nearest) return;
 
-    if (nearest) {
-      nearest.resurrect(skill.healPercent);
-      this.gs.addEvent({
+    // Channeled resurrect: 4s cast, player can't move/attack
+    if (skill.channelDuration > 0) {
+      player.casting = {
+        skill: skill.name,
         type: 'resurrect',
+        timer: 0,
+        duration: skill.channelDuration,
+        targetId: nearest.id,
+        healPercent: skill.healPercent,
+        manaCost: skill.manaCost,
+        cooldown: skill.cooldown,
+        range: skill.range,
+        hitsRemaining: 0,
+        hitTimer: 0,
+        hitInterval: 999,
+        angle: Math.atan2(nearest.y - player.y, nearest.x - player.x),
+      };
+      this.gs.addEvent({
+        type: 'resurrect_channel',
         source: player.id,
         target: nearest.id,
+        duration: skill.channelDuration,
       });
+      return;
     }
+
+    // Instant resurrect (fallback)
+    nearest.resurrect(skill.healPercent);
+    this.gs.addEvent({
+      type: 'resurrect',
+      source: player.id,
+      target: nearest.id,
+    });
   }
 
   _aoeSelf(player, skill) {
@@ -821,9 +906,25 @@ export class CombatEngine {
     const boss = this.gs.boss;
     if (!boss.alive) return;
 
+    // Visual burst for AoE self skills
+    this.gs.addEvent({
+      type: 'aoe_self_burst',
+      x: player.x,
+      y: player.y,
+      radius: skill.range,
+      source: player.id,
+    });
+
     const dist = Math.hypot(boss.x - player.x, boss.y - player.y);
     if (dist <= skill.range + boss.radius) {
-      const { damage, crit } = this.calculateDamage(player, skill.power, boss);
+      // Proximity bonus: up to +50% more damage when very close
+      let effectivePower = skill.power;
+      if (skill.proximityBonus) {
+        const proxFactor = 1 + 0.5 * Math.max(0, 1 - dist / skill.range);
+        effectivePower = Math.floor(skill.power * proxFactor);
+      }
+
+      const { damage, crit } = this.calculateDamage(player, effectivePower, boss);
       const actual = boss.takeDamage(damage);
       player.stats.damageDealt += actual;
       this.gs.addAggro(player.id, actual * AGGRO.DAMAGE_TO_AGGRO * player.aggroMult);
@@ -836,6 +937,18 @@ export class CombatEngine {
         crit,
         skill: skill.name,
       });
+    }
+
+    // Also damage adds in range
+    for (const add of (this.gs.adds || [])) {
+      if (!add.alive) continue;
+      const addDist = Math.hypot(add.x - player.x, add.y - player.y);
+      if (addDist <= skill.range + (add.radius || 20)) {
+        const { damage, crit } = this.calculateDamage(player, skill.power, add);
+        const actual = add.takeDamage(damage);
+        player.stats.damageDealt += actual;
+        this.gs.addEvent({ type: 'damage', source: player.id, target: add.id, amount: actual, crit, skill: skill.name });
+      }
     }
   }
 
@@ -1044,8 +1157,26 @@ export class CombatEngine {
       }
     }
 
-    // Channel finished
-    if (c.timer >= c.duration || c.hitsRemaining <= 0) {
+    // Channel finished (resurrect only checks timer, not hitsRemaining)
+    const channelDone = c.type === 'resurrect'
+      ? c.timer >= c.duration
+      : (c.timer >= c.duration || c.hitsRemaining <= 0);
+    if (channelDone) {
+      // Resurrect channel: consume mana + apply CD + actually resurrect on completion
+      if (c.type === 'resurrect' && c.targetId) {
+        const target = this.gs.players.find(p => p.id === c.targetId);
+        if (target && !target.alive) {
+          // Now consume mana and apply cooldown
+          player.useMana(c.manaCost || 0);
+          player.cooldowns.ultimate = c.cooldown || 10;
+          target.resurrect(c.healPercent);
+          this.gs.addEvent({
+            type: 'resurrect',
+            source: player.id,
+            target: target.id,
+          });
+        }
+      }
       player.casting = null;
     }
   }

@@ -140,7 +140,8 @@ export class GameLoop {
     // 6. Update timer
     gs.timer -= dt;
     if (gs.timer <= 0 && !this.simulation) {
-      this._endGame({ victory: false, reason: 'timeout' });
+      const bossHpPct = gs.boss.maxHp > 0 ? (gs.boss.hp / gs.boss.maxHp) * 100 : 0;
+      this._endGame({ victory: false, reason: 'timeout', time: BOSS.ENRAGE_TIMER, bossHpPercent: bossHpPct, stats: this._buildEndStats() });
       return;
     }
 
@@ -295,6 +296,8 @@ export class GameLoop {
       this._endGame({
         victory: false,
         reason: 'party_wipe',
+        time: BOSS.ENRAGE_TIMER - gs.timer,
+        bossHpPercent,
         stats: this._buildEndStats(),
         loot,
       });
@@ -460,7 +463,7 @@ export class GameLoop {
         invulnerable: p.invulnerable,
         aimAngle: p.aimAngle,
         buffs: p.buffs.map(b => ({ type: b.type, stacks: b.stacks, dur: +b.dur.toFixed(1) })),
-        casting: p.casting ? { skill: p.casting.skill, timer: +p.casting.timer.toFixed(1), type: p.casting.type } : null,
+        casting: p.casting ? { skill: p.casting.skill, timer: +p.casting.timer.toFixed(1), duration: +(p.casting.duration || 0).toFixed(1), type: p.casting.type } : null,
         charging: p.charging ? {
           skill: p.charging.skill,
           progress: Math.min(1, (Date.now() - p.charging.startTime) / 1000 / (p.charging.maxChargeTime || 4)),

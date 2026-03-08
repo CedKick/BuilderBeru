@@ -369,7 +369,8 @@ export const BOSS_DEFINITIONS = [
   },
 
   // ─── BOSS 4: Manaya ──────────────────────────────────────
-  // Full mechanics from Manaya raid (donut, death ball, triple debuff, etc.)
+  // Full mechanics from Manaya raid. Pink/corruption theme.
+  // 6 phases, donut, death ball, poison, dive, triple debuff rotation, DPS check shield.
   {
     id: 'manaya',
     name: 'Manaya',
@@ -380,21 +381,192 @@ export const BOSS_DEFINITIONS = [
     spd: 60,
     radius: 75,
     color: '#ec4899',
+    sprite: 'manaya',
     enrageTimer: 600,
     phases: [
-      { hpPercent: 100, label: 'Phase 1' },
-      { hpPercent: 90, label: 'Phase 2' },
-      { hpPercent: 75, label: 'Phase 3' },
-      { hpPercent: 50, label: 'Phase 4' },
-      { hpPercent: 30, label: 'Phase 5' },
+      { hpPercent: 100, label: 'Phase 1 - Éveil' },
+      { hpPercent: 90, label: 'Phase 2 - Corruption' },
+      { hpPercent: 75, label: 'Phase 3 - Rage Froide' },
+      { hpPercent: 50, label: 'Phase 4 - Accélération' },
+      { hpPercent: 30, label: 'Phase 5 - Furie' },
       { hpPercent: 20, label: 'Phase 6 - Dernier Souffle' },
     ],
-    useManayaPatterns: true,
+    patterns: [
+      // ═══ PHASE 1+ (100-90%) : Core melee attacks ═══
+
+      // Frontal cone — fast, frequent. Main tank-threat ability.
+      {
+        id: 'souffle_frontal', name: 'Souffle Frontal', type: 'cone_telegraph',
+        power: 2.0, coneAngle: 90, range: 220,
+        telegraphTime: 0.8, castTime: 0.3, recoveryTime: 0.5, cooldown: 4,
+        phases: [0, 1, 2, 3, 4, 5], weight: 3,
+      },
+      // Rear sweep — punishes melee DPS standing behind boss
+      {
+        id: 'balayage_queue', name: 'Balayage de Queue', type: 'cone_telegraph',
+        power: 2.5, coneAngle: 110, range: 200,
+        telegraphTime: 0.6, castTime: 0.2, recoveryTime: 0.4, cooldown: 6,
+        phases: [0, 1, 2, 3, 4, 5], weight: 2,
+      },
+      // Wide sustained breath — multi-tick implied by lingering AoE
+      {
+        id: 'souffle_corrompu', name: 'Souffle Corrompu', type: 'cone_telegraph',
+        power: 2.0, coneAngle: 130, range: 280,
+        telegraphTime: 1.2, castTime: 0.5, recoveryTime: 0.8, cooldown: 8,
+        phases: [0, 1, 2, 3, 4, 5], weight: 2,
+        appliesDebuff: { type: 'poison', damage: 800, duration: 8, tickInterval: 2 },
+      },
+      // Targeted AoE on 2 hunters
+      {
+        id: 'griffe_multi', name: 'Griffes Multiples', type: 'targeted_aoe_multi',
+        power: 1.8, aoeRadius: 90, targetCount: 2,
+        telegraphTime: 1.0, castTime: 0.3, recoveryTime: 0.6, cooldown: 6,
+        phases: [0, 1, 2, 3, 4, 5], weight: 2,
+      },
+
+      // ═══ PHASE 2+ (90-75%) : Donut + Poison ═══
+
+      // Donut — stay inside or die. True damage ring.
+      {
+        id: 'anneau_destructeur', name: 'Anneau Destructeur', type: 'donut',
+        power: 999, innerSafe: 130, outerRadius: 400,
+        telegraphTime: 1.5, castTime: 0.3, recoveryTime: 0.8, cooldown: 14,
+        phases: [1, 2, 3, 4, 5], weight: 3, isTrueDamage: true,
+      },
+      // Poison circle — persistent ground AoE on random hunter position
+      {
+        id: 'cercle_poison', name: 'Cercle Empoisonné', type: 'persistent_aoe',
+        power: 0.8, aoeRadius: 120, duration: 12, tickInterval: 1.0,
+        telegraphTime: 0.8, castTime: 0.3, recoveryTime: 0.5, cooldown: 10,
+        phases: [1, 2, 3, 4, 5], weight: 2,
+      },
+      // Spawn minor adds
+      {
+        id: 'appel_serviteurs', name: 'Appel de Serviteurs', type: 'aoe_full',
+        power: 0.5, telegraphTime: 2.0, castTime: 0.8, recoveryTime: 1.5,
+        cooldown: 25, phases: [1, 2, 3, 4, 5], weight: 1,
+        spawnsAdds: { type: 'minion', count: 3 },
+      },
+
+      // ═══ PHASE 3+ (75-50%) : Death Ball + Dive + Waves + Triple Laser ═══
+
+      // Death ball — massive AoE explosion (dodge or die)
+      {
+        id: 'sphere_mort', name: 'Sphère de la Mort', type: 'aoe_ring',
+        power: 5.0, innerRadius: 0, outerRadius: 450,
+        telegraphTime: 2.5, castTime: 0.5, recoveryTime: 1.5, cooldown: 20,
+        phases: [2, 3, 4, 5], weight: 2, isTrueDamage: true,
+        visualColor: 'pink',
+      },
+      // Menacing wave — expanding ring, dodge through
+      {
+        id: 'vague_menacante', name: 'Vague Menaçante', type: 'fire_wave',
+        power: 2.0, maxRadius: 500, duration: 2.0,
+        telegraphTime: 1.5, castTime: 0.5, recoveryTime: 1.0, cooldown: 14,
+        phases: [2, 3, 4, 5], weight: 2, waveColor: '#ec4899',
+      },
+      // Dive — targeted AoE on 4 hunters (boss dives at them)
+      {
+        id: 'plongeon', name: 'Plongeon Corrompu', type: 'targeted_aoe_multi',
+        power: 3.0, aoeRadius: 130, targetCount: 4,
+        telegraphTime: 1.2, castTime: 0.4, recoveryTime: 1.0, cooldown: 12,
+        phases: [2, 3, 4, 5], weight: 2,
+      },
+      // Triple laser sweep
+      {
+        id: 'triple_laser', name: 'Triple Laser', type: 'laser',
+        power: 1.5, range: 900, lineWidth: 55, duration: 3.0,
+        telegraphTime: 1.5, castTime: 0.3, recoveryTime: 0.8, cooldown: 12,
+        phases: [2, 3, 4, 5], weight: 2, laserColor: '#ec4899',
+      },
+      // Leap slam — heavy frontal + shockwave
+      {
+        id: 'impact_sismique', name: 'Impact Sismique', type: 'aoe_ring',
+        power: 3.0, innerRadius: 0, outerRadius: 300,
+        telegraphTime: 1.0, castTime: 0.3, recoveryTime: 0.8, cooldown: 10,
+        phases: [2, 3, 4, 5], weight: 2,
+      },
+
+      // ═══ PHASE 4+ (50-30%) : Laser + Double Circle + Shield ═══
+
+      // Single sustained laser
+      {
+        id: 'laser_simple', name: 'Rayon Corrompu', type: 'laser',
+        power: 1.2, range: 800, lineWidth: 65, duration: 2.5,
+        telegraphTime: 1.2, castTime: 0.3, recoveryTime: 0.8, cooldown: 8,
+        phases: [3, 4, 5], weight: 2, laserColor: '#f472b6',
+      },
+      // Double circle — two AoE rings expanding simultaneously
+      {
+        id: 'double_cercle', name: 'Double Cercle', type: 'targeted_aoe_multi',
+        power: 3.5, aoeRadius: 160, targetCount: 5,
+        telegraphTime: 1.8, castTime: 0.4, recoveryTime: 1.0, cooldown: 14,
+        phases: [3, 4, 5], weight: 2,
+      },
+      // Shield DPS check — boss shields, team must break it
+      {
+        id: 'bouclier_corrompu', name: 'Bouclier Corrompu', type: 'dps_check',
+        dpsThreshold: 4_500_000, healPercent: 6, failPower: 2.0,
+        staggerDuration: 5, staggerDefMult: 0.5,
+        telegraphTime: 2.5, castTime: 1.0, recoveryTime: 2.0,
+        cooldown: 40, phases: [3, 4, 5], weight: 1,
+      },
+
+      // ═══ PHASE 5+ (30-20%) : Rage Buff + Shadow Marks ═══
+
+      // Rage buff — boss buffs itself, healers must cleanse
+      {
+        id: 'buff_rage', name: 'Fureur de Manaya', type: 'aoe_full',
+        power: 1.5, telegraphTime: 1.0, castTime: 0.5, recoveryTime: 1.0,
+        cooldown: 18, phases: [4, 5], weight: 2,
+        spawnsAdds: { type: 'elite', count: 1 },
+      },
+      // Shadow marks — marked hunters explode, spread mechanic
+      {
+        id: 'marques_corruption', name: 'Marques de Corruption', type: 'shadow_mark',
+        power: 3.0, targetCount: 4, explodeRadius: 140, markDuration: 3,
+        telegraphTime: 1.5, castTime: 0.3, recoveryTime: 1.0,
+        cooldown: 22, phases: [4, 5], weight: 2,
+      },
+
+      // ═══ PHASE 6 (20%) : Trinité des Marques + Desperation ═══
+
+      // Triple debuff rotation — percent HP attack + poison + slow
+      {
+        id: 'trinite_marques', name: 'Trinité des Marques', type: 'percent_hp_attack',
+        targetHpPercent: 15, outerRadius: 500, innerSafe: 0,
+        telegraphTime: 2.5, castTime: 0.6, recoveryTime: 2.0,
+        cooldown: 25, phases: [5], weight: 3,
+      },
+      // Mass debuff — slow + poison on everyone
+      {
+        id: 'corruption_totale', name: 'Corruption Totale', type: 'targeted_debuff',
+        power: 1.0, targetCount: 8, debuffType: 'speed_down', debuffValue: 0.6, debuffDuration: 5,
+        telegraphTime: 1.5, castTime: 0.3, recoveryTime: 0.8, cooldown: 20,
+        phases: [5], weight: 2,
+      },
+      // Soul drain — channels and heals, team must burn
+      {
+        id: 'drain_ame', name: 'Drain d\'Âme', type: 'soul_drain',
+        drainPercent: 3, duration: 4, tickInterval: 0.5, healMultiplier: 2,
+        telegraphTime: 2.0, castTime: 0.5, recoveryTime: 1.5,
+        cooldown: 30, phases: [5], weight: 1,
+      },
+      // Final add wave
+      {
+        id: 'appel_final', name: 'Appel du Néant', type: 'aoe_full',
+        power: 2.0, telegraphTime: 3.0, castTime: 0.8, recoveryTime: 1.5,
+        cooldown: 35, phases: [5], weight: 1,
+        spawnsAdds: { type: 'elite', count: 3 },
+      },
+    ],
     autoAttack: { power: 1.5, range: 100, interval: 1.5, hitbox: 'cone', coneAngle: 60 },
   },
 
   // ─── BOSS 5: Ragnaros ────────────────────────────────────
-  // Final boss. Massive HP, fire themed, "BY FIRE BE PURGED!"
+  // Final boss. Massive HP, fire themed. Inspired by expedition2-server Ragnaros.
+  // Mechanics: shield, soak circles, heal cast, rotating laser, marks, fissures, tornados.
+  // Map: volcanic arena with lava and pillars.
   {
     id: 'ragnaros',
     name: 'Ragnaros',
@@ -405,56 +577,173 @@ export const BOSS_DEFINITIONS = [
     spd: 50,
     radius: 100,
     color: '#f97316',
+    sprite: 'ragnaros',
     enrageTimer: 720,
+    mapBg: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772967337/Paysage5emeBoss_jleab4.jpg',
     phases: [
-      { hpPercent: 100, label: 'Phase 1 - Emergence' },
+      { hpPercent: 100, label: 'Phase 1 - Émergence' },
       { hpPercent: 80, label: 'Phase 2 - Lave' },
       { hpPercent: 60, label: 'Phase 3 - Fournaise' },
-      { hpPercent: 40, label: 'Phase 4 - Eruption' },
+      { hpPercent: 40, label: 'Phase 4 - Éruption' },
       { hpPercent: 20, label: 'Phase 5 - Apocalypse' },
     ],
     patterns: [
+      // ═══ PHASE 1+ : Core attacks (all phases) ═══
+
+      // Frontal cone slam — heavy, frequent
       {
         id: 'magma_slam', name: 'Fracas de Magma', type: 'cone_telegraph',
         power: 3.0, coneAngle: 100, range: 300,
         telegraphTime: 1.0, castTime: 0.4, recoveryTime: 0.8, cooldown: 4,
         phases: [0, 1, 2, 3, 4], weight: 3,
       },
+      // Line attack — lava wave across arena
       {
         id: 'lava_wave', name: 'Vague de Lave', type: 'line_telegraph',
         power: 4.0, lineWidth: 120, range: 1000,
         telegraphTime: 1.5, castTime: 0.3, recoveryTime: 1.0, cooldown: 8,
         phases: [0, 1, 2, 3, 4], weight: 2,
       },
+      // Targeted AoE on random hunters — fireballs
+      {
+        id: 'multi_fireball', name: 'Salve de Feu', type: 'targeted_aoe_multi',
+        power: 2.5, aoeRadius: 100, targetCount: 3,
+        telegraphTime: 1.5, castTime: 0.4, recoveryTime: 0.8, cooldown: 7,
+        phases: [0, 1, 2, 3, 4], weight: 2,
+      },
+
+      // ═══ PHASE 2+ (80%) : Meteor + Persistent fire + Adds ═══
+
+      // Meteor shower — AoE circles on 6 hunters
       {
         id: 'meteor_shower', name: 'Pluie de Météores', type: 'targeted_aoe_multi',
         power: 3.5, aoeRadius: 120, targetCount: 6,
-        telegraphTime: 1.8, castTime: 0.5, recoveryTime: 0.5, cooldown: 10,
+        telegraphTime: 1.8, castTime: 0.5, recoveryTime: 0.5, cooldown: 12,
         phases: [1, 2, 3, 4], weight: 2,
       },
+      // Persistent lava pool on ground
       {
-        id: 'lava_floor', name: 'Sol de Lave', type: 'persistent_aoe',
-        power: 1.5, aoeRadius: 200, duration: 10, tickInterval: 1.0,
-        telegraphTime: 2.0, cooldown: 15, phases: [2, 3, 4], weight: 2,
+        id: 'lava_pool', name: 'Mare de Lave', type: 'persistent_aoe',
+        power: 1.5, aoeRadius: 180, duration: 12, tickInterval: 1.0,
+        telegraphTime: 1.5, castTime: 0.3, recoveryTime: 0.8, cooldown: 14,
+        phases: [1, 2, 3, 4], weight: 2,
       },
+      // Expanding fire wave — dodge through
+      {
+        id: 'fire_wave', name: 'Vague de Feu', type: 'fire_wave',
+        power: 2.0, maxRadius: 550, duration: 2.5,
+        telegraphTime: 2.0, castTime: 0.5, recoveryTime: 1.0, cooldown: 16,
+        phases: [1, 2, 3, 4], weight: 2, waveColor: '#f97316',
+      },
+      // Spawn fire elemental adds — explode if not killed, drain mana
+      {
+        id: 'serviteurs_feu', name: 'Serviteurs de Feu', type: 'aoe_full',
+        power: 0.8, telegraphTime: 2.0, castTime: 0.8, recoveryTime: 1.5,
+        cooldown: 22, phases: [1, 2, 3, 4], weight: 1,
+        spawnsAdds: { type: 'fire_elemental', count: 3 },
+      },
+
+      // ═══ PHASE 3+ (60%) : Shield + Mark + Soak + Heal Cast ═══
+
+      // Shield DPS check — higher threshold than Manaya
+      {
+        id: 'carapace_magma', name: 'Carapace de Magma', type: 'dps_check',
+        dpsThreshold: 5_000_000, healPercent: 7, failPower: 2.5,
+        staggerDuration: 6, staggerDefMult: 0.4,
+        telegraphTime: 2.5, castTime: 1.0, recoveryTime: 2.0,
+        cooldown: 35, phases: [2, 3, 4], weight: 2,
+      },
+      // Player mark — marked hunter explodes, spread mechanic
+      {
+        id: 'marque_feu', name: 'Marque de Feu', type: 'shadow_mark',
+        power: 3.5, targetCount: 3, explodeRadius: 150, markDuration: 4,
+        telegraphTime: 1.5, castTime: 0.3, recoveryTime: 1.0,
+        cooldown: 20, phases: [2, 3, 4], weight: 2,
+      },
+      // Soak circles — hunters must stand in them or raid takes damage
+      {
+        id: 'fissures_soak', name: 'Fissures de Lave', type: 'soak_circles',
+        power: 2.0, circleCount: 3, circleRadius: 80, soakDuration: 6,
+        failDamagePercent: 20,
+        telegraphTime: 2.0, castTime: 0.5, recoveryTime: 1.0, cooldown: 25,
+        phases: [2, 3, 4], weight: 1,
+      },
+      // Heal cast — boss channels a heal, must be interrupted by damage
+      {
+        id: 'flamme_guerison', name: 'Flamme Guérisseuse', type: 'heal_cast',
+        healPercent: 8, channelDuration: 5, damageToInterrupt: 5_000_000,
+        telegraphTime: 1.5, castTime: 0.5, recoveryTime: 1.5, cooldown: 40,
+        phases: [2, 3, 4], weight: 1,
+      },
+      // Fire laser beam
+      {
+        id: 'rayon_magma', name: 'Rayon de Magma', type: 'laser',
+        power: 1.5, range: 900, lineWidth: 70, duration: 2.5,
+        telegraphTime: 1.5, castTime: 0.3, recoveryTime: 1.0, cooldown: 10,
+        phases: [2, 3, 4], weight: 2, laserColor: '#f97316',
+      },
+
+      // ═══ PHASE 4+ (40%) : Donut + Rotating Laser + Elite Adds ═══
+
+      // Fire donut — true damage, stay inside or die
       {
         id: 'fire_donut', name: 'Anneau de Feu', type: 'donut',
         power: 6.0, innerSafe: 180, outerRadius: 650,
         telegraphTime: 2.0, castTime: 0.5, recoveryTime: 1.5, cooldown: 25,
         phases: [3, 4], weight: 1, isTrueDamage: true,
       },
+      // Rotating laser — sweeps around boss
       {
-        id: 'eruption_supreme', name: 'Eruption Suprême', type: 'aoe_full',
-        power: 5.0, telegraphTime: 3.5, castTime: 1.0, recoveryTime: 2.0,
-        cooldown: 30, phases: [4], weight: 1,
-        spawnsAdds: { type: 'elite', count: 2 },
+        id: 'laser_rotatif', name: 'Laser Rotatif', type: 'rotating_laser',
+        power: 1.5, range: 800, lineWidth: 60, duration: 5.0, rotationSpeed: 1.2,
+        telegraphTime: 2.0, castTime: 0.3, recoveryTime: 1.0, cooldown: 22,
+        phases: [3, 4], weight: 1, laserColor: '#ef4444',
       },
+      // Heavy percent HP attack — sets to 20%
+      {
+        id: 'souffle_purificateur', name: 'Souffle Purificateur', type: 'percent_hp_attack',
+        targetHpPercent: 20, outerRadius: 500, innerSafe: 0,
+        telegraphTime: 2.5, castTime: 0.6, recoveryTime: 2.0, cooldown: 30,
+        phases: [3, 4], weight: 1,
+      },
+      // Elite fire elemental spawn — bigger, tougher, longer fuse
+      {
+        id: 'eruption_supreme', name: 'Éruption Suprême', type: 'aoe_full',
+        power: 3.0, telegraphTime: 3.0, castTime: 1.0, recoveryTime: 2.0,
+        cooldown: 30, phases: [3, 4], weight: 1,
+        spawnsAdds: { type: 'fire_elemental', count: 4 },
+      },
+
+      // ═══ PHASE 5 (20%) : Ultimate Mechanics ═══
+
+      // "BY FIRE BE PURGED!" — massive raid damage, must survive with cooldowns
       {
         id: 'by_fire_be_purged', name: 'PAR LE FEU, SOYEZ PURIFIÉS !',
         type: 'ultimate_wipe', power: 999999,
         telegraphTime: 5.0, castTime: 1.0, recoveryTime: 3.0,
         cooldown: 60, phases: [4], weight: 0.5,
         isTrueDamage: true, requiresSurvival: 10,
+      },
+      // Double donut — safe zone is a narrow ring between two lethal zones
+      {
+        id: 'double_anneau', name: 'Double Anneau de Feu', type: 'donut',
+        power: 999, innerSafe: 220, outerRadius: 700,
+        telegraphTime: 2.0, castTime: 0.5, recoveryTime: 1.0, cooldown: 22,
+        phases: [4], weight: 2, isTrueDamage: true,
+      },
+      // Soul drain — fire version, heals boss massively
+      {
+        id: 'drain_flamme', name: 'Drain de Flammes', type: 'soul_drain',
+        drainPercent: 4, duration: 5, tickInterval: 0.5, healMultiplier: 3,
+        telegraphTime: 2.0, castTime: 0.5, recoveryTime: 1.5,
+        cooldown: 35, phases: [4], weight: 1,
+      },
+      // Mass debuff — burn + slow on everyone
+      {
+        id: 'purification_totale', name: 'Purification Totale', type: 'targeted_debuff',
+        power: 1.5, targetCount: 10, debuffType: 'speed_down', debuffValue: 0.5, debuffDuration: 6,
+        telegraphTime: 1.5, castTime: 0.3, recoveryTime: 0.8, cooldown: 18,
+        phases: [4], weight: 2,
       },
     ],
     autoAttack: { power: 2.0, range: 120, interval: 2.0, hitbox: 'cone', coneAngle: 70 },

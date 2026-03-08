@@ -65,15 +65,19 @@ export class BotAI {
   think(player, gs, dt) {
     if (!player || !player.alive) return [];
 
+    // If currently channeling (e.g. resurrect), do NOT generate any inputs
+    // Movement would cancel the channel
+    if (player.casting) return [];
+
     const boss = gs.boss;
     if (!boss || !boss.alive) return [];
 
     const distToBoss = this._dist(player, boss);
     const angleToBoss = Math.atan2(boss.y - player.y, boss.x - player.x);
 
-    // ── 0. MAJOR MECHANIC OVERRIDE — OS avoidance (faster check, ~80ms) ──
+    // ── 0. MAJOR MECHANIC OVERRIDE — OS avoidance (faster check, ~50ms) ──
     this._mechanicTimer = (this._mechanicTimer || 0) + dt * 1000;
-    if (this._mechanicTimer >= 80) {
+    if (this._mechanicTimer >= 50) {
       this._mechanicTimer = 0;
       const override = this._checkMajorMechanic(player, gs, boss, distToBoss, angleToBoss);
       if (override) return override;
@@ -129,12 +133,38 @@ export class BotAI {
       return this._handleTrinité(player, gs, boss, triCenter, angleToBoss);
     }
 
-    // ── Anneau Destructeur (Donut) — run far away (>560px safe from all phases) ──
-    if (castName === 'Anneau Destructeur' || this._hasZoneType(gs, 'donut_telegraph') || this._hasZoneType(gs, 'donut_safe')) {
-      if (distToBoss < 560) {
-        return [this._moveAway(player, boss)];
+    // ── Anneau Destructeur (Donut) — two phases ──
+    // Phase 1: inner ring ~130-350px → safe if >355px (just outside ring, don't run TOO far)
+    // Phase 2: outer ring 370-550 + laser <160 → safe zone 160-370px → aim for 260px
+    // CRITICAL: Phase 1 safe distance must NOT exceed 370 or phase 2 outer ring kills you
+    {
+      const outerDonut = gs.aoeZones.find(z => (z.type === 'donut_telegraph' || z.type === 'donut_explosion') && (z.innerRadius || 0) > 300);
+      const inPhase2 = !!outerDonut;
+      const inPhase1 = !inPhase2 && (castName === 'Anneau Destructeur' || this._hasZoneType(gs, 'donut_safe') || this._hasZoneType(gs, 'donut_telegraph'));
+
+      if (inPhase2) {
+        // Safe zone: 160-370px → aim for ~260px (sprint back from phase 1 position)
+        if (distToBoss < 170) {
+          return [this._moveAway(player, boss)];
+        } else if (distToBoss > 350) {
+          // Emergency dodge toward boss if available (i-frames + big distance gain)
+          if (!player.dodging && player.dodgeCooldown <= 0) {
+            return [{ type: 'dodge', angle: angleToBoss }];
+          }
+          return [this._moveToward(player, boss)]; // RUSH back inside
+        } else if (distToBoss > 300) {
+          return [this._moveToward(player, boss)]; // Still moving in to be safe
+        }
+        return [{ type: 'stop' }];
       }
-      return [{ type: 'stop' }];
+      if (inPhase1) {
+        // Safe at >355px but do NOT go beyond 365px (phase 2 outer starts at 370)
+        if (distToBoss < 360) {
+          return [this._moveAway(player, boss)];
+        }
+        // Already safe — stop and WAIT (don't run further!)
+        return [{ type: 'stop' }];
+      }
     }
 
     // ── Sphère de Mort — run far away (>310px) ──
@@ -145,9 +175,21 @@ export class BotAI {
       return [{ type: 'stop' }];
     }
 
-    // ── Double Impact — run far away (>560px safe from both phases) ──
-    if (castName === 'Double Impact') {
-      if (distToBoss < 560) {
+    // ── Double Impact — two phases ──
+    // Phase 1: inner circle <180px → run away (>200px)
+    // Phase 2: outer ring 180-550px → run BACK to boss (<170px)
+    if (castName === 'Double Impact' || gs.aoeZones.some(z => z.id?.startsWith('dbl_'))) {
+      const innerExploded = gs.aoeZones.some(z => z.id?.startsWith('dbl_inner_exp'));
+      const outerActive = gs.aoeZones.some(z => z.id?.startsWith('dbl_outer_') && (z.type === 'donut_telegraph' || z.type === 'donut_explosion'));
+      if (innerExploded && outerActive) {
+        // Phase 2: get close to boss (<170px to be safe from outer ring)
+        if (distToBoss > 160) {
+          return [this._moveToward(player, boss)];
+        }
+        return [{ type: 'stop' }];
+      }
+      // Phase 1: run away from inner circle
+      if (distToBoss < 200) {
         return [this._moveAway(player, boss)];
       }
       return [{ type: 'stop' }];
@@ -398,11 +440,11 @@ export class BotAI {
 
   // ── HEALER AI ──
   _thinkHealer(inputs, player, gs, boss, distToBoss, angleToBoss) {
-    // Position: stay at medium range (250-400px from boss)
-    const idealDist = 320;
-    if (distToBoss < idealDist - 60) {
+    // Position: stay far back (380-460px from boss) — survive mechanics first
+    const idealDist = 420;
+    if (distToBoss < idealDist - 50) {
       inputs.push(this._moveAway(player, boss));
-    } else if (distToBoss > idealDist + 80) {
+    } else if (distToBoss > idealDist + 60) {
       inputs.push(this._moveToward(player, boss));
     } else {
       // Strafe around boss
@@ -410,42 +452,43 @@ export class BotAI {
       inputs.push({ type: 'move', x: Math.cos(strafeAngle), y: Math.sin(strafeAngle) });
     }
 
-    // Find injured allies
+    // Find allies and assess situation
     const allies = gs.getAlivePlayers().filter(p => p.id !== player.id);
     const injured = allies.filter(p => p.hp / p.maxHp < 0.7).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
+    const criticalAlly = injured.find(p => p.hp / p.maxHp < 0.35);
 
-    // ── PRIORITY 1: Dispel boss rage buff (prevents ×3 damage at 3 stacks) ──
+    // ── PRIORITY 1: Dispel boss rage buff (prevents x3 damage at 3 stacks) ──
     if (player.cooldowns.skillB <= 0 && player.mana >= 40 && boss.rageBuff >= 1) {
       inputs.push({ type: 'skill', skill: 'skillB', angle: angleToBoss });
-      return; // Dispel is top priority
+      return;
     }
 
-    // ── PRIORITY 2: Resurrect dead ally ──
+    // ── PRIORITY 2: Resurrect dead ally (channeled 4s — must stop moving first) ──
     if (player.cooldowns.ultimate <= 0 && player.mana >= 100) {
       const deadAlly = gs.players.find(p => p.id !== player.id && !p.alive && p.connected !== false);
       if (deadAlly) {
         const distToDead = this._dist(player, deadAlly);
         const angleToDeadAlly = Math.atan2(deadAlly.y - player.y, deadAlly.x - player.x);
-        if (distToDead > 300) {
-          // Override movement to walk toward dead ally
-          inputs.length = 0; // Clear movement we added above
+        if (distToDead > 250) {
+          inputs.length = 0;
           inputs.push(this._moveToward(player, deadAlly));
         } else {
+          inputs.length = 0;
+          inputs.push({ type: 'stop' });
           inputs.push({ type: 'skill', skill: 'ultimate', angle: angleToDeadAlly });
         }
-        return; // Resurrect is second priority
+        return;
       }
     }
 
     // ── PRIORITY 3: Emergency heal on critical ally (<35% HP) ──
-    const criticalAlly = injured.find(p => p.hp / p.maxHp < 0.35);
     if (criticalAlly && player.cooldowns.secondary <= 0 && player.mana >= 40) {
       const angleToTarget = Math.atan2(criticalAlly.y - player.y, criticalAlly.x - player.x);
       inputs.push({ type: 'attack_secondary', angle: angleToTarget });
     }
 
-    // ── AoE Heal (skillA) — when multiple allies injured ──
-    if (player.cooldowns.skillA <= 0 && injured.length >= 2 && player.mana >= 60) {
+    // ── AoE Heal (skillA) — when 2+ allies injured OR 1 ally critical ──
+    if (player.cooldowns.skillA <= 0 && player.mana >= 60 && (injured.length >= 2 || criticalAlly)) {
       inputs.push({ type: 'skill', skill: 'skillA', angle: angleToBoss });
     }
 
@@ -456,7 +499,7 @@ export class BotAI {
       inputs.push({ type: 'attack_secondary', angle: angleToTarget });
     }
 
-    // ── Purification (skillB) — cleanse player debuffs ──
+    // ── Purification (skillB) — cleanse player debuffs + gives crit/speed buff ──
     if (player.cooldowns.skillB <= 0 && player.mana >= 40) {
       const debuffedAlly = allies.find(p => p.buffs.some(b =>
         b.type === 'poison' || b.type === 'speed_down' || b.type === 'weak' ||
@@ -467,8 +510,8 @@ export class BotAI {
       }
     }
 
-    // ── Basic attack when nothing to heal ──
-    if (injured.length === 0 && player.cooldowns.basic <= 0) {
+    // ── ALWAYS auto-attack for DPS + mana regen (manaOnHit: 25) ──
+    if (player.cooldowns.basic <= 0 && distToBoss < 550) {
       inputs.push({ type: 'attack_basic', angle: angleToBoss });
     }
   }
@@ -521,11 +564,11 @@ export class BotAI {
 
   // ── ARCHER (dps_range) AI ──
   _thinkArcher(inputs, player, gs, boss, distToBoss, angleToBoss) {
-    // Position: long range (350-500px)
-    const idealDist = 420;
-    if (distToBoss < idealDist - 80) {
+    // Position: very far back (440-520px) — safe from most mechanics
+    const idealDist = 480;
+    if (distToBoss < idealDist - 50) {
       inputs.push(this._moveAway(player, boss));
-    } else if (distToBoss > idealDist + 80) {
+    } else if (distToBoss > idealDist + 50) {
       inputs.push(this._moveToward(player, boss));
     } else {
       // Kite sideways
@@ -551,13 +594,13 @@ export class BotAI {
       inputs.push({ type: 'skill', skill: 'skillB', angle: angleToBoss });
     }
 
-    // Charged shot (secondary)
+    // Charged shot (secondary) — spam it hard for DPS
     if (player.cooldowns.secondary <= 0 && player.mana >= 25) {
       inputs.push({ type: 'attack_secondary', angle: angleToBoss });
     }
 
-    // Basic ranged attack
-    if (player.cooldowns.basic <= 0 && distToBoss < 550) {
+    // Basic ranged attack — always fire when in range
+    if (player.cooldowns.basic <= 0) {
       inputs.push({ type: 'attack_basic', angle: angleToBoss });
     }
   }
@@ -588,22 +631,22 @@ export class BotAI {
     }
 
     // Charged Attack (skillB) — hold and release
+    // "Glitch": can spam auto-attack AND ultimate while charging E
     if (player.cooldowns.skillB <= 0 && distToBoss < 100) {
       if (!player.charging) {
         inputs.push({ type: 'charge_start', skill: 'skillB', angle: angleToBoss });
       } else {
-        // Release after ~2s charge (level 2-3)
         const chargeTime = player.charging ? (Date.now() - player.charging.startTime) / 1000 : 0;
         if (chargeTime >= 2.0 || this._nearbyDanger(player, gs)) {
           inputs.push({ type: 'charge_release', angle: angleToBoss });
         }
       }
-      return;
+      // NO return — fall through to auto-attack while charging
     }
 
-    // Block (secondary) — when boss casts at us
+    // Block (secondary) — when boss casts at us and NOT charging
     const isTarget = this._isBossTarget(player, gs);
-    if (isTarget && boss.casting && !this.blocking && player.mana >= 20) {
+    if (!player.charging && isTarget && boss.casting && !this.blocking && player.mana >= 20) {
       inputs.push({ type: 'attack_secondary', angle: angleToBoss });
       this.blocking = true;
     } else if (this.blocking && (!boss.casting || !isTarget)) {
@@ -611,52 +654,59 @@ export class BotAI {
       this.blocking = false;
     }
 
-    // Basic attack
+    // Basic attack — spam even while charging E (the "glitch")
     if (!this.blocking && distToBoss < 100) {
       inputs.push({ type: 'start_basic', angle: angleToBoss });
     }
+
+    // Ultimate while charging too — max DPS combo
+    if (player.charging && player.cooldowns.ultimate <= 0 && player.mana >= 90 && distToBoss < 150) {
+      inputs.push({ type: 'skill', skill: 'ultimate', angle: angleToBoss });
+    }
   }
 
-  // ── MAGE AI ──
+  // ── MAGE AI (Frieren) ──
   _thinkMage(inputs, player, gs, boss, distToBoss, angleToBoss) {
-    // Position: mid-range (300-450px)
-    const idealDist = 380;
-    if (distToBoss < idealDist - 60) {
+    // Position: mid-range for projectiles, but close in for Onde Arcanique bursts
+    // Default: 300-400px for ranged poke, dive to ~150px when Onde is off CD and safe
+    const wantsOnde = player.cooldowns.ultimate <= 0 && player.mana >= 60 && !this._nearbyDanger(player, gs);
+    const idealDist = wantsOnde ? 140 : 350;
+
+    if (distToBoss < idealDist - 50) {
       inputs.push(this._moveAway(player, boss));
     } else if (distToBoss > idealDist + 60) {
       inputs.push(this._moveToward(player, boss));
     } else {
-      // Kite sideways
+      // Strafe around boss
       const strafeAngle = angleToBoss + Math.PI / 2 * (Math.random() > 0.5 ? 1 : -1);
       inputs.push({ type: 'move', x: Math.cos(strafeAngle), y: Math.sin(strafeAngle) });
     }
 
     inputs.push({ type: 'aim', angle: angleToBoss });
 
-    // Cataclysme (ultimate) — channel when safe and have mana
-    if (player.cooldowns.ultimate <= 0 && player.mana >= 200 && !this._nearbyDanger(player, gs)) {
+    // Onde Arcanique (ultimate) — spammable AoE self, proximity bonus, 1s CD, 60 mana
+    if (player.cooldowns.ultimate <= 0 && player.mana >= 60 && distToBoss < 220) {
       inputs.push({ type: 'skill', skill: 'ultimate', angle: angleToBoss });
-      return;
     }
 
-    // Explosion Arcanique (skillA) — targeted AoE on boss
-    if (player.cooldowns.skillA <= 0 && player.mana >= 80) {
+    // Zollstraak (skillA) — long range piercing laser, 5s CD, 60 mana
+    if (player.cooldowns.skillA <= 0 && player.mana >= 60) {
       inputs.push({ type: 'skill', skill: 'skillA', angle: angleToBoss });
     }
 
     // Téléportation (skillB) — escape when in danger
-    if (player.cooldowns.skillB <= 0 && player.mana >= 40 && this._nearbyDanger(player, gs)) {
+    if (player.cooldowns.skillB <= 0 && player.mana >= 30 && this._nearbyDanger(player, gs)) {
       const escAngle = angleToBoss + Math.PI; // teleport away from boss
       inputs.push({ type: 'skill', skill: 'skillB', angle: escAngle });
     }
 
-    // Orbe de feu (secondary)
-    if (player.cooldowns.secondary <= 0 && player.mana >= 30) {
+    // Orbe de feu (secondary) — piercing projectile
+    if (player.cooldowns.secondary <= 0 && player.mana >= 35) {
       inputs.push({ type: 'attack_secondary', angle: angleToBoss });
     }
 
-    // Basic ranged attack
-    if (player.cooldowns.basic <= 0 && distToBoss < 500) {
+    // Basic ranged attack (Trait arcanique) — free, no mana
+    if (player.cooldowns.basic <= 0 && distToBoss < 550) {
       inputs.push({ type: 'attack_basic', angle: angleToBoss });
     }
   }

@@ -13,6 +13,11 @@ export class PhysicsEngine {
       player.x += player.dodgeDir.x * PLAYER.DODGE_SPEED * dt;
       player.y += player.dodgeDir.y * PLAYER.DODGE_SPEED * dt;
     } else if (player.casting) {
+      // Moving during resurrect channel cancels it — no cooldown penalty
+      if (player.casting.type === 'resurrect' && (player.moveDir.x !== 0 || player.moveDir.y !== 0)) {
+        player.cooldowns.ultimate = 0; // Refund cooldown
+        player.casting = null;
+      }
       // Can't move while channeling
     } else {
       // Normal movement
@@ -247,7 +252,9 @@ export class PhysicsEngine {
           for (const player of gs.getAlivePlayers()) {
             const dist = Math.hypot(player.x - zone.x, player.y - zone.y);
             if (dist < zone.radius + player.radius) {
-              const healPerTick = Math.round(zone.healPower / zone.healTicks);
+              const healPerTick = zone.healPct
+                ? Math.floor(player.maxHp * zone.healPct)
+                : Math.round(zone.healPower / zone.healTicks);
               const healed = player.heal(healPerTick);
               if (healed > 0 && owner) {
                 owner.stats.healingDone += healed;

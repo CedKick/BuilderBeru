@@ -92,6 +92,12 @@ export class WebSocketServer {
       case 'add_bots':
         this.roomManager.addBots(ws, client, msg);
         break;
+      case 'create_spectator_room':
+        this.roomManager.createSpectatorRoom(ws, client, msg);
+        break;
+      case 'spectate_room':
+        this.roomManager.spectateRoom(ws, client, msg);
+        break;
 
       // ── Hunter Selection ──
       case 'select_hunters':

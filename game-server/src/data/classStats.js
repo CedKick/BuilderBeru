@@ -7,7 +7,7 @@ export const CLASS_STATS = {
     label: 'Tank',
     hp: 25000,
     mana: 400,
-    atk: 350,
+    atk: 4200,        // x10 then +20% (350 × 12)
     def: 300,
     spd: 160,
     crit: 10,
@@ -19,7 +19,7 @@ export const CLASS_STATS = {
     label: 'Healer',
     hp: 18000,
     mana: 800,
-    atk: 200,
+    atk: 400,         // x2 DPS buff
     def: 120,
     spd: 180,
     crit: 12,
@@ -31,7 +31,7 @@ export const CLASS_STATS = {
     label: 'Warrior',
     hp: 22000,
     mana: 100,        // Rage: max 100, starts at 0, builds from basic attacks
-    atk: 5100,        // x6 DPS buff (850 × 6)
+    atk: 6120,        // +20% (5100 × 1.2)
     def: 150,
     spd: 200,
     crit: 32,
@@ -44,7 +44,7 @@ export const CLASS_STATS = {
     label: 'Archer',
     hp: 14000,
     mana: 500,
-    atk: 600,
+    atk: 720,         // +20% (600 × 1.2)
     def: 80,
     spd: 190,
     crit: 22,
@@ -68,7 +68,7 @@ export const CLASS_STATS = {
     label: 'Mage',
     hp: 13000,
     mana: 1000,
-    atk: 650,
+    atk: 780,         // +20% (650 × 1.2)
     def: 60,
     spd: 175,
     crit: 25,
@@ -85,7 +85,7 @@ export const CLASS_SKILLS = {
   tank: {
     basic: {
       name: 'Frappe de bouclier',
-      power: 120,
+      power: 1200,         // x10 DPS buff (120 × 10)
       range: 70,
       hitbox: 'cone',
       coneAngle: 90,
@@ -134,99 +134,106 @@ export const CLASS_SKILLS = {
   healer: {
     basic: {
       name: 'Trait de lumière',
-      power: 60,
+      power: 1200,         // x10 DPS buff (120 × 10)
       range: 450,
       hitbox: 'projectile',
       projSpeed: 550,
       projRadius: 8,
-      cooldown: 0.5,
+      cooldown: 0.45,
       manaCost: 0,
       isBasic: true,
+      manaOnHit: 25,       // Extra mana regen per hit (on top of base 8)
     },
     secondary: {
       name: 'Cercle de Soin',
       type: 'heal_zone',
-      healPower: 800,
+      healPct: 0.10,       // 10% HP per tick (replaces flat healPower)
       range: 200,
-      zoneRadius: 80,
-      zoneDuration: 2.0,
-      healTicks: 4,
-      cooldown: 2.5,
+      zoneRadius: 100,     // larger zone
+      zoneDuration: 4.0,   // longer duration
+      healTicks: 5,        // 5 ticks = 50% HP total
+      cooldown: 10.0,      // 10s cooldown to prevent spam
       manaCost: 30,
     },
     skillA: {
       name: 'Soin de Zone',
       type: 'heal_aoe',
-      healPower: 1200,
-      range: 280,
-      cooldown: 8,
+      healPct: 0.10,       // 10% HP instant to all in range
+      range: 300,
+      cooldown: 6,
       manaCost: 55,
+      atkBuff: 0.25,       // +25% ATK to healed allies
+      atkBuffDur: 10,      // 10 seconds
     },
     skillB: {
       name: 'Purification',
       type: 'cleanse',
       range: 350,
-      cooldown: 12,
+      cooldown: 10,
       manaCost: 40,
       removesDebuffs: true,
       dispelsBossRage: true,
+      critBuff: 10,        // +10% crit rate to cleansed allies
+      spdBuff: 0.10,       // +10% speed to cleansed allies
+      buffDur: 10,         // 10 seconds
     },
     ultimate: {
       name: 'Résurrection Divine',
       type: 'resurrect',
-      cooldown: 75,
-      manaCost: 180,
+      cooldown: 10,        // fast rez for bot survival
+      manaCost: 100,
       healPercent: 0.6,
       range: 350,
+      channelDuration: 4.0, // 4s channel - must stand still to cast
     },
   },
 
   dps_cac: {
     basic: {
       name: 'Combo de lames',
-      power: 160,
+      power: 210,          // +30% (160 × 1.3)
       range: 80,
       hitbox: 'cone',
       coneAngle: 60,
-      cooldown: 0.35,
+      cooldown: 0.3,        // faster
       manaCost: 0,
       isBasic: true,
-      rageGain: 15,     // +15 rage per basic hit
+      rageGain: 18,        // +20% rage gen (15 → 18)
     },
     secondary: {
       name: 'Frappe lourde',
-      power: 380,
+      power: 500,          // +30% (380 × 1.3)
       range: 90,
       hitbox: 'cone',
       coneAngle: 45,
-      cooldown: 1.0,
-      manaCost: 15,     // 15 rage
+      cooldown: 0.85,       // -15%
+      manaCost: 15,
     },
     skillA: {
       name: 'Tempête de lames',
-      power: 550,
+      power: 720,          // +30% (550 × 1.3)
       type: 'aoe_self',
       range: 130,
-      cooldown: 7,
-      manaCost: 40,     // 40 rage
+      cooldown: 6,          // -15%
+      manaCost: 40,
     },
     skillB: {
       name: 'Dash Offensif',
       type: 'dash_attack',
-      power: 300,
+      power: 400,          // +33% (300 × 1.33)
       dashDistance: 220,
       hitbox: 'line',
       lineWidth: 50,
-      cooldown: 5,
-      manaCost: 25,     // 25 rage
+      cooldown: 4,          // -20%
+      manaCost: 25,
     },
     ultimate: {
       name: 'Exécution',
-      power: 1200,
+      power: 1600,         // +33% (1200 × 1.33)
       type: 'single_target',
       range: 110,
-      cooldown: 40,
-      manaCost: 80,     // 80 rage
+      cooldown: 35,         // -12%
+      manaCost: 80,
       bonusVsLowHp: 0.5,
     },
   },
@@ -234,55 +241,55 @@ export const CLASS_SKILLS = {
   dps_range: {
     basic: {
       name: 'Tir rapide',
-      power: 130,
+      power: 170,          // +30% (130 × 1.3)
       range: 550,
       hitbox: 'projectile',
       projSpeed: 650,
       projRadius: 7,
-      cooldown: 0.4,
+      cooldown: 0.34,       // -15% (0.4 × 0.85)
       manaCost: 0,
       isBasic: true,
     },
     secondary: {
       name: 'Tir chargé',
-      power: 320,
+      power: 416,          // +30% (320 × 1.3)
       range: 650,
       hitbox: 'projectile',
       projSpeed: 850,
       projRadius: 12,
-      cooldown: 1.2,
+      cooldown: 1.0,        // -15% (1.2 × 0.85)
       manaCost: 25,
       piercing: true,
     },
     skillA: {
       name: 'Pluie de flèches',
       type: 'aoe_targeted',
-      power: 280,
+      power: 364,          // +30% (280 × 1.3)
       range: 550,
       aoeRadius: 130,
-      cooldown: 8,
+      cooldown: 7,          // -15% (8 × 0.85)
       manaCost: 70,
       delay: 0.8,
     },
     skillB: {
       name: 'Piège explosif',
       type: 'trap',
-      power: 450,
+      power: 585,          // +30% (450 × 1.3)
       range: 400,
       trapRadius: 90,
-      cooldown: 10,
+      cooldown: 8.5,        // -15% (10 × 0.85)
       manaCost: 50,
       duration: 12,
     },
     ultimate: {
       name: 'Barrage',
       type: 'channel',
-      power: 160,
+      power: 208,          // +30% (160 × 1.3)
       hits: 12,
-      interval: 0.25,
+      interval: 0.21,       // -15% (0.25 × 0.85)
       range: 550,
       coneAngle: 35,
-      cooldown: 40,
+      cooldown: 34,         // -15% (40 × 0.85)
       manaCost: 160,
     },
   },
@@ -290,56 +297,55 @@ export const CLASS_SKILLS = {
   mage: {
     basic: {
       name: 'Trait arcanique',
-      power: 140,
-      range: 500,
+      power: 160,
+      range: 550,
       hitbox: 'projectile',
-      projSpeed: 600,
-      projRadius: 10,
-      cooldown: 0.45,
+      projSpeed: 700,
+      projRadius: 12,
+      cooldown: 0.35,
       manaCost: 0,
       isBasic: true,
     },
     secondary: {
       name: 'Orbe de feu',
-      power: 350,
-      range: 500,
+      power: 400,
+      range: 600,
       hitbox: 'projectile',
-      projSpeed: 500,
+      projSpeed: 600,
       projRadius: 18,
       cooldown: 1.0,
-      manaCost: 30,
+      manaCost: 35,
       piercing: true,
     },
     skillA: {
-      name: 'Explosion Arcanique',
-      type: 'aoe_targeted',
-      power: 500,
-      range: 450,
-      aoeRadius: 140,
-      cooldown: 8,
-      manaCost: 80,
-      delay: 0.6,
+      name: 'Zollstraak',
+      power: 800,
+      range: 700,
+      hitbox: 'projectile',
+      projSpeed: 1200,       // Very fast blue laser
+      projRadius: 14,
+      cooldown: 5,
+      manaCost: 60,
+      piercing: true,        // Goes through boss
     },
     skillB: {
       name: 'Téléportation',
       type: 'dash_attack',
-      power: 200,
-      dashDistance: 250,
+      power: 250,
+      dashDistance: 280,
       hitbox: 'line',
       lineWidth: 60,
       cooldown: 6,
-      manaCost: 40,
+      manaCost: 30,
     },
     ultimate: {
-      name: 'Cataclysme',
-      type: 'channel',
-      power: 200,
-      hits: 10,
-      interval: 0.3,
-      range: 400,
-      coneAngle: 360,
-      cooldown: 45,
-      manaCost: 200,
+      name: 'Onde Arcanique',
+      type: 'aoe_self',
+      power: 350,
+      range: 200,            // AoE radius around mage
+      cooldown: 1.0,         // Spammable every 1s
+      manaCost: 60,          // Heavy mana cost per use
+      proximityBonus: true,  // More damage up close
     },
   },
 
