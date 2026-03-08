@@ -204,11 +204,56 @@ class CloudStorageManager {
   }
 
   /** Force save + immediate sync to cloud (no debounce, no throttle).
+   *  Sends forceOverwrite to server — skips server-side merge/union (CHECK 2 + CHECK 3).
    *  Use for intentional bulk operations (inventory cleanup). */
   async forceSaveAndSync(key, data) {
     this.forceSave(key, data);
-    // Immediate sync — bypasses debounce/throttle
-    return this.syncKey(key);
+    try {
+      this._setSyncStatus(key, 'syncing');
+      const trimmed = _trimData(key, data);
+      const jsonStr = JSON.stringify(trimmed);
+      const deviceId = getDeviceId();
+
+      let body;
+      if (jsonStr.length > 5000) {
+        const compressed = await _gzipBase64(jsonStr);
+        if (compressed && compressed.length < jsonStr.length * 0.9) {
+          body = JSON.stringify({ deviceId, key, compressed: 'gzip', payload: compressed, forceOverwrite: true, clientVersion: CLIENT_VERSION });
+        }
+      }
+      if (!body) {
+        body = JSON.stringify({ deviceId, key, data: trimmed, forceOverwrite: true, clientVersion: CLIENT_VERSION });
+      }
+
+      const resp = await fetch(`${API_BASE}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
+        body,
+      });
+
+      if (!resp.ok) {
+        console.warn('[CloudStorage] Force sync failed:', resp.status);
+        this._setSyncStatus(key, 'error');
+        return false;
+      }
+
+      const json = await resp.json();
+      this._cloudSizes[key] = json.size || jsonStr.length;
+      if (json.serverTimestamp) this._cloudTimestamps[key] = json.serverTimestamp;
+      this._pendingData.delete(key);
+      const dataHash = _computeHash(jsonStr);
+      this._lastSyncHash[key] = dataHash;
+      try { localStorage.setItem(HASH_PREFIX + key, dataHash); } catch {}
+      try { localStorage.removeItem(ETAG_PREFIX + key); localStorage.removeItem(ETAG_PREFIX + '_all'); } catch {}
+      _lastSyncTime[key] = Date.now();
+      this._setSyncStatus(key, 'synced');
+      console.log(`[CloudStorage] Force sync OK for "${key}" (${jsonStr.length}B)`);
+      return true;
+    } catch (err) {
+      console.warn('[CloudStorage] Force sync error:', err.message);
+      this._setSyncStatus(key, 'error');
+      return false;
+    }
   }
 
   /** Save + sync to cloud. Uses smart throttle: if synced <15s ago, schedules instead of forcing.

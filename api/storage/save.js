@@ -274,7 +274,7 @@ export default async function handler(req, res) {
   try {
     await ensureTable();
 
-    const { deviceId: bodyDeviceId, key, data: rawData, compressed, payload, clientTimestamp, clientVersion } = req.body;
+    const { deviceId: bodyDeviceId, key, data: rawData, compressed, payload, clientTimestamp, clientVersion, forceOverwrite } = req.body;
 
     // Decompress gzipped payload if client sent compressed data
     let data = rawData;
@@ -424,7 +424,8 @@ export default async function handler(req, res) {
       }
 
       // CHECK 2: Concurrent write detection — cloud was updated after client's last sync
-      if (clientTimestamp && cloudUpdatedAt > clientTimestamp && MERGEABLE_KEYS.includes(key)) {
+      // Skip when forceOverwrite (intentional cleanup — incoming data must win, no merge)
+      if (!forceOverwrite && clientTimestamp && cloudUpdatedAt > clientTimestamp && MERGEABLE_KEYS.includes(key)) {
         // Another session wrote since this client last loaded → MERGE instead of overwrite
         const cloudData = typeof existing.rows[0].data === 'string'
           ? JSON.parse(existing.rows[0].data)
@@ -447,7 +448,8 @@ export default async function handler(req, res) {
 
       // CHECK 3: Always protect server-deposited fields (alkahest, rerollCounts, weaponCollection, artifactInventory)
       // These can be written by game-server / admin scripts while client has stale data
-      if (!merged && key === 'shadow_colosseum_data') {
+      // Skip when forceOverwrite (intentional cleanup — client data is authoritative)
+      if (!forceOverwrite && !merged && key === 'shadow_colosseum_data') {
         const cloudData = typeof existing.rows[0].data === 'string'
           ? JSON.parse(existing.rows[0].data)
           : existing.rows[0].data;
@@ -507,12 +509,13 @@ export default async function handler(req, res) {
         }
         finalData = { ...finalData, hammers: mergedH };
 
-        // ArtifactInventory: union by uid (server scripts inject expedition artifacts)
+        // ArtifactInventory: only re-add EXPEDITION artifacts from cloud (server-deposited)
+        // Regular artifacts missing from incoming = intentional deletion (cleanup), do NOT re-add
         const cloudInv = cloudData.artifactInventory || [];
         const incomingInv = finalData.artifactInventory || [];
         if (cloudInv.length > 0) {
           const incomingUids = new Set(incomingInv.map(a => a.uid).filter(Boolean));
-          const missingFromCloud = cloudInv.filter(a => a.uid && !incomingUids.has(a.uid));
+          const missingFromCloud = cloudInv.filter(a => a.uid && !incomingUids.has(a.uid) && a.source === 'expedition');
           if (missingFromCloud.length > 0) {
             // Add cloud-only artifacts (server-injected expedition items)
             const merged = [...incomingInv, ...missingFromCloud];
