@@ -2957,16 +2957,21 @@ export default function ShadowColosseum() {
     if (!cleanupPreview || cleanupPreview.totalDelete === 0) return;
 
     const deleteUids = new Set(cleanupPreview.toDelete.map(a => a.uid));
+    let cleanedData = null;
 
     setData(prev => {
       const newData = {
         ...prev,
         artifactInventory: prev.artifactInventory.filter(art => !deleteUids.has(art.uid))
       };
-      // Force save + sync — bypasses anti-corruption size checks (cleanup legitimately shrinks data)
-      cloudStorage.forceSaveAndSync(SAVE_KEY, newData);
+      // forceSave is synchronous — saves to localStorage + pendingData immediately
+      cloudStorage.forceSave(SAVE_KEY, newData);
+      cleanedData = newData;
       return newData;
     });
+
+    // Async cloud sync OUTSIDE setData — forceSave already secured localStorage
+    if (cleanedData) cloudStorage.forceSaveAndSync(SAVE_KEY, cleanedData);
 
     shadowCoinManager.addCoins(cleanupPreview.totalCoins, 'mass_cleanup');
 

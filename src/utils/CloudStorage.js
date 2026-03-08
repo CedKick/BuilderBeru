@@ -133,8 +133,7 @@ class CloudStorageManager {
     this._readyResolve = null;
     this._pendingData = new Map(); // key → fresh data (backup when localStorage fails)
     this._restoring = false;       // true during initialSync cloud restore (allows writes through interceptor)
-    this._autoRestoreInProgress = new Set(); // keys currently being auto-restored (prevent loops)
-    this._autoRestoredSizes = {};            // key → restored size (block stale writes after restore)
+    this._forceKeys = new Set(); // keys recently force-saved (bypass initialSync restore)
     this._lastSyncHash = {};       // key → hash of last synced data (dirty detection)
     // Restore persisted hashes from localStorage (survive page reload)
     for (const key of CLOUD_KEYS) {
@@ -161,14 +160,6 @@ class CloudStorageManager {
     const json = JSON.stringify(data);
 
     if (CLOUD_KEYS.includes(key)) {
-      // Anti-corruption: NEVER save data much smaller than what's in the cloud.
-      // This permanently blocks stale React state from contaminating _pendingData,
-      // localStorage, and sync schedule — regardless of _autoRestoredSizes timing.
-      const cloudSize = this._cloudSizes[key] || 0;
-      if (cloudSize > 200 && json.length < cloudSize * 0.3) {
-        return;
-      }
-
       // Before initialSync completes, don't write cloud keys at all.
       // (initialSync will restore correct data — writing now contaminates _pendingData)
       if (!this._initialized) {
@@ -196,71 +187,26 @@ class CloudStorageManager {
     }
   }
 
-  /** Force save — bypasses anti-corruption size checks.
-   *  Use ONLY for intentional mass deletions (inventory cleanup, etc.) where data legitimately shrinks.
-   *  Updates cloudSize tracking so subsequent syncs don't trigger auto-restore. */
+  /** Force save — marks key so initialSync won't overwrite on next F5.
+   *  Use for intentional mass deletions (inventory cleanup, etc.) where data legitimately shrinks.
+   *  Updates cloudSize tracking to match new data. */
   forceSave(key, data) {
     const json = JSON.stringify(data);
-    // Update cloud size to match new data — prevents anti-corruption from restoring old data
     this._cloudSizes[key] = json.length;
     this._pendingData.set(key, data);
+    this._forceKeys.add(key); // protect from initialSync restore until cloud confirms
     try { localStorage.setItem(key, json); } catch {}
     // Invalidate sync hash so syncKey pushes to cloud
     delete this._lastSyncHash[key];
     try { localStorage.removeItem(HASH_PREFIX + key); } catch {}
   }
 
-  /** Force save + immediate sync — bypasses ALL anti-corruption (client + server).
-   *  Sends forceOverwrite flag to backend to skip server-side size checks too.
+  /** Force save + immediate sync to cloud (no debounce, no throttle).
    *  Use for intentional bulk operations (inventory cleanup). */
   async forceSaveAndSync(key, data) {
     this.forceSave(key, data);
-    try {
-      this._setSyncStatus(key, 'syncing');
-      const jsonStr = JSON.stringify(data);
-      const deviceId = getDeviceId();
-
-      let body;
-      if (jsonStr.length > 5000) {
-        const compressed = await _gzipBase64(jsonStr);
-        if (compressed && compressed.length < jsonStr.length * 0.9) {
-          body = JSON.stringify({ deviceId, key, compressed: 'gzip', payload: compressed, forceOverwrite: true, clientVersion: CLIENT_VERSION });
-        }
-      }
-      if (!body) {
-        body = JSON.stringify({ deviceId, key, data, forceOverwrite: true, clientVersion: CLIENT_VERSION });
-      }
-
-      const resp = await fetch(`${API_BASE}/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
-        body,
-      });
-
-      if (!resp.ok) {
-        const errJson = await resp.json().catch(() => ({}));
-        console.warn('[CloudStorage] Force sync failed:', resp.status, errJson.error || errJson.reason);
-        this._setSyncStatus(key, 'error');
-        return false;
-      }
-
-      const json = await resp.json();
-      this._cloudSizes[key] = json.size || jsonStr.length;
-      if (json.serverTimestamp) this._cloudTimestamps[key] = json.serverTimestamp;
-      this._pendingData.delete(key);
-      const dataHash = _computeHash(jsonStr);
-      this._lastSyncHash[key] = dataHash;
-      try { localStorage.setItem(HASH_PREFIX + key, dataHash); } catch {}
-      try { localStorage.removeItem(ETAG_PREFIX + key); localStorage.removeItem(ETAG_PREFIX + '_all'); } catch {}
-      _lastSyncTime[key] = Date.now();
-      this._setSyncStatus(key, 'synced');
-      console.log(`[CloudStorage] Force sync OK for "${key}" (${jsonStr.length}B)`);
-      return json.success;
-    } catch (err) {
-      console.warn('[CloudStorage] Force sync error:', err.message);
-      this._setSyncStatus(key, 'error');
-      return false;
-    }
+    // Immediate sync — bypasses debounce/throttle
+    return this.syncKey(key);
   }
 
   /** Save + sync to cloud. Uses smart throttle: if synced <15s ago, schedules instead of forcing.
@@ -455,21 +401,10 @@ class CloudStorageManager {
         try {
           localStorage.setItem(key, cloudJson);
         } catch { /* ignore quota errors during sync */ }
-        // Guard: block stale React writes until component re-reads
-        this._autoRestoredSizes[key] = cloudJson.length;
-      } else {
-        // Normal reload: if local data is suspiciously smaller than cloud,
-        // cloud wins (likely corruption from cache clear)
-        const localSize = localRaw.length;
-        const cloudSize = cloudJson.length;
-        if (cloudSize > 200 && localSize < cloudSize * 0.3) {
-          console.warn(`[CloudStorage] Local data for "${key}" is suspiciously small (${localSize}B vs cloud ${cloudSize}B) — restoring from cloud`);
-          try {
-            localStorage.setItem(key, cloudJson);
-          } catch { /* ignore quota errors */ }
-          // Guard: block stale React writes until component re-reads
-          this._autoRestoredSizes[key] = cloudJson.length;
-        } else if (key === 'shadow_colosseum_data') {
+      } else if (this._forceKeys.has(key)) {
+        // Key was force-saved (e.g. inventory cleanup) — local wins, don't restore from cloud
+        console.log(`[CloudStorage] Skipping cloud restore for "${key}" — recently force-saved`);
+      } else if (key === 'shadow_colosseum_data') {
           // Normal reload: LOCAL wins. Only merge server-deposited fields from cloud
           // (expedition deposits, admin scripts) using MAX strategy — never overwrite local bulk data.
           try {
@@ -531,7 +466,6 @@ class CloudStorageManager {
               console.log(`[CloudStorage] Patched server fields for "${key}": alkahest=${localData.alkahest}, weapons=${Object.keys(localData.weaponCollection || {}).length}, arts=${(localData.artifactInventory || []).length}`);
             }
           } catch { /* ignore parse errors */ }
-        }
       }
     }
 
@@ -559,7 +493,6 @@ class CloudStorageManager {
 
     // Notify React components that cloud data has been restored to localStorage
     try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
-    // Guards stay active until React writes correct-size data (no timeout — prevents sync loops)
   }
 
   /**
@@ -569,40 +502,6 @@ class CloudStorageManager {
   async resync() {
     this._initialized = false;
     await this.initialSync();
-  }
-
-  /**
-   * Auto-restore a key from cloud when local data is detected as corrupted/stale.
-   * Prevents loops with _autoRestoreInProgress guard.
-   */
-  async _autoRestoreFromCloud(key) {
-    if (this._autoRestoreInProgress.has(key)) return;
-    this._autoRestoreInProgress.add(key);
-    try {
-      console.log(`[CloudStorage] Auto-restoring "${key}" from cloud...`);
-      const cloudData = await this.loadCloud(key);
-      if (cloudData) {
-        const cloudJson = JSON.stringify(cloudData);
-        this._restoring = true;
-        try { localStorage.setItem(key, cloudJson); } catch {}
-        this._restoring = false;
-        this._cloudSizes[key] = cloudJson.length;
-        this._lastSyncHash[key] = _computeHash(cloudJson);
-        try { localStorage.setItem(HASH_PREFIX + key, this._lastSyncHash[key]); } catch {}
-        this._pendingData.delete(key);
-        this._setSyncStatus(key, 'synced');
-        // Guard: block stale React writes from overwriting restored data
-        this._autoRestoredSizes[key] = cloudJson.length;
-        console.log(`[CloudStorage] Auto-restored "${key}" from cloud (${cloudJson.length}B)`);
-        // Notify React components to re-read localStorage
-        try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
-        // Guard stays active until React writes correct-size data (no timeout — timeout-based clearing causes loops)
-      }
-    } catch (err) {
-      console.warn(`[CloudStorage] Auto-restore failed for "${key}":`, err.message);
-    } finally {
-      this._autoRestoreInProgress.delete(key);
-    }
   }
 
   /** Initialize the database schema (call once on first deploy) */
@@ -627,20 +526,6 @@ class CloudStorageManager {
       if (rawData === null) {
         this._setSyncStatus(key, 'synced');
         return false;
-      }
-
-      // Anti-corruption check on RAW data (BEFORE trimming).
-      // _trimData can legitimately shrink shadow_colosseum_data by >70% (drop log capping,
-      // orphan rerollCounts cleanup). Comparing trimmed size vs cloud caused false positives
-      // and infinite restore loops.
-      const rawJson = JSON.stringify(rawData);
-      const cloudSize = this._cloudSizes[key] || 0;
-      if (cloudSize > 200 && rawJson.length < cloudSize * 0.3) {
-        console.log(`[CloudStorage] Local "${key}" too small (${rawJson.length}B vs cloud ${cloudSize}B) — auto-restoring from cloud`);
-        this._pendingData.delete(key);
-        this._autoRestoredSizes[key] = cloudSize;
-        this._autoRestoreFromCloud(key);
-        return true;
       }
 
       // Trim bloated fields before sync (drop logs capped to 100, orphan rerollCounts removed)
@@ -692,13 +577,9 @@ class CloudStorageManager {
       }
 
       if (resp.status === 409) {
-        // Server blocked: data corruption or stale timestamp — auto-restore from cloud
         const errJson = await resp.json().catch(() => ({}));
-        console.warn(`[CloudStorage] Server BLOCKED sync for "${key}":`, errJson.reason || errJson.error, '— auto-restoring');
-        this._pendingData.delete(key);
-        // Set guard BEFORE async restore — blocks stale React writes immediately
-        this._autoRestoredSizes[key] = this._cloudSizes[key] || localSize * 3;
-        this._autoRestoreFromCloud(key); // async, no await — runs in background
+        console.warn(`[CloudStorage] Server rejected sync for "${key}":`, errJson.reason || errJson.error);
+        this._setSyncStatus(key, 'error');
         return false;
       }
 
@@ -851,15 +732,6 @@ class CloudStorageManager {
         return;
       }
 
-      // Anti-corruption: NEVER write data much smaller than cloud (permanent guard).
-      // This catches stale writes from any source — React state, debounced closures, etc.
-      if (CLOUD_KEYS.includes(key) && self._initialized && !self._restoring) {
-        const cloudSize = self._cloudSizes[key] || 0;
-        if (cloudSize > 200 && value.length < cloudSize * 0.3) {
-          return;
-        }
-      }
-
       // Store in pendingData for reliable cloud sync (before localStorage attempt)
       if (CLOUD_KEYS.includes(key) && self._initialized) {
         try { self._pendingData.set(key, JSON.parse(value)); } catch {}
@@ -898,14 +770,6 @@ class CloudStorageManager {
 
         // Trim bloated fields before sending
         const data = _trimData(key, rawData);
-
-        // Anti-corruption: don't beacon corrupted data
-        const localSize = JSON.stringify(data).length;
-        const cloudSize = self._cloudSizes[key] || 0;
-        if (cloudSize > 200 && localSize < cloudSize * 0.3) {
-          console.warn(`[CloudStorage] BLOCKED beacon for "${key}": possible corruption`);
-          continue;
-        }
 
         const clientTimestamp = self._cloudTimestamps[key] || null;
         const blob = new Blob([JSON.stringify({ deviceId, key, data, clientTimestamp, clientVersion: CLIENT_VERSION })], { type: 'application/json' });

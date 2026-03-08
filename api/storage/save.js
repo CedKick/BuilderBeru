@@ -21,44 +21,6 @@ const ALLOWED_KEYS = [
 
 const MAX_SIZE = 4 * 1024 * 1024; // 4MB max per key
 
-// Anti-corruption thresholds
-const CORRUPTION_RATIO = 0.3;   // new < 30% of existing → suspicious
-const MIN_SIZE_CHECK = 200;      // only check if existing data > 200 bytes
-
-// Server-side trim — mirrors client _trimData() to avoid false-positive corruption blocks.
-// Client sends trimmed data (drop logs capped, orphan rerollCounts removed),
-// but cloud stores the old bloated version. Without this, the size check
-// permanently rejects legitimate trimmed data.
-const MAX_DROP_LOG = 100;
-function _trimServerData(key, data) {
-  if (key !== 'shadow_colosseum_data' || !data || typeof data !== 'object') return data;
-  const d = { ...data };
-  for (const logKey of ['ragnarokDropLog', 'zephyrDropLog', 'monarchDropLog', 'archDemonDropLog']) {
-    if (Array.isArray(d[logKey]) && d[logKey].length > MAX_DROP_LOG) {
-      d[logKey] = d[logKey].slice(-MAX_DROP_LOG);
-    }
-  }
-  if (d.rerollCounts && typeof d.rerollCounts === 'object') {
-    const liveUids = new Set();
-    if (Array.isArray(d.artifactInventory)) {
-      for (const a of d.artifactInventory) { if (a?.uid) liveUids.add(a.uid); }
-    }
-    if (d.artifacts && typeof d.artifacts === 'object') {
-      for (const slots of Object.values(d.artifacts)) {
-        if (slots && typeof slots === 'object') {
-          for (const a of Object.values(slots)) { if (a?.uid) liveUids.add(a.uid); }
-        }
-      }
-    }
-    const trimmed = {};
-    for (const [uid, count] of Object.entries(d.rerollCounts)) {
-      if (liveUids.has(uid)) trimmed[uid] = count;
-    }
-    d.rerollCounts = trimmed;
-  }
-  return d;
-}
-
 // Keys that support smart merge on conflict
 const MERGEABLE_KEYS = ['shadow_colosseum_data', 'shadow_colosseum_raid'];
 
@@ -312,7 +274,7 @@ export default async function handler(req, res) {
   try {
     await ensureTable();
 
-    const { deviceId: bodyDeviceId, key, data: rawData, compressed, payload, clientTimestamp, clientVersion, forceOverwrite } = req.body;
+    const { deviceId: bodyDeviceId, key, data: rawData, compressed, payload, clientTimestamp, clientVersion } = req.body;
 
     // Decompress gzipped payload if client sent compressed data
     let data = rawData;
@@ -411,31 +373,6 @@ export default async function handler(req, res) {
     if (existing.rows.length > 0) {
       const cloudSize = existing.rows[0].size_bytes || 0;
       const cloudUpdatedAt = new Date(existing.rows[0].updated_at).getTime();
-
-      // CHECK 1: Size — refuse if new data is suspiciously small (empty/corrupt)
-      // Skip for shadow_colosseum_raid: React sends partial data (hunterCollection/raidStats only),
-      // CHECK 4 below will patch in gear fields from cloud.
-      // Skip if forceOverwrite (mass cleanup — legitimate intentional shrink)
-      if (!forceOverwrite && key !== 'shadow_colosseum_raid' && cloudSize > MIN_SIZE_CHECK && sizeBytes < cloudSize * CORRUPTION_RATIO) {
-        // Before rejecting: client sends trimmed data (drop logs capped, orphan rerollCounts removed).
-        // Cloud may store old bloated version. Trim cloud data and re-compare.
-        const trimmedCloud = _trimServerData(key, existing.rows[0].data);
-        const trimmedCloudSize = JSON.stringify(trimmedCloud).length;
-        if (sizeBytes < trimmedCloudSize * CORRUPTION_RATIO) {
-          // Still too small even vs trimmed cloud → real corruption
-          console.warn(
-            `[save] BLOCKED: ${key} for ${deviceId} — new ${sizeBytes}B vs cloud ${cloudSize}B (trimmed ${trimmedCloudSize}B) (${(sizeBytes/cloudSize*100).toFixed(0)}%)`
-          );
-          return res.status(409).json({
-            error: 'Data corruption protection',
-            reason: `New data (${sizeBytes}B) is much smaller than cloud (${cloudSize}B). Save blocked.`,
-            cloudSize,
-            newSize: sizeBytes,
-          });
-        }
-        // Size difference is due to legitimate trimming — allow save
-        console.log(`[save] Allowing trimmed save: ${key} for ${deviceId} — ${sizeBytes}B (cloud ${cloudSize}B → trimmed ${trimmedCloudSize}B)`);
-      }
 
       // CHECK 6: Anti-cheat delta validation — compare RAW incoming vs cloud BEFORE merge
       // Query recent offline farm session to scale thresholds (prevents false positives)

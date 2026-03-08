@@ -32,6 +32,9 @@ import storageRerollHandler from '../api/storage/reroll.js';
 import storageDiagnosticsHandler from '../api/storage/diagnostics.js';
 
 import vacuumHandler from '../api/cron/vacuum.js';
+import backupHandler from '../api/cron/backup.js';
+import backupListHandler from '../api/cron/backup-list.js';
+import backupRestoreHandler from '../api/cron/backup-restore.js';
 
 // Kaisel handlers — some are empty stubs, import only the ones that exist
 const kaiselNoop = (req, res) => res.json({ success: true, message: 'Not implemented yet' });
@@ -103,6 +106,9 @@ app.get('/api/storage/diagnostics', storageDiagnosticsHandler);
 
 // Cron
 app.all('/api/cron/vacuum', vacuumHandler);
+app.all('/api/cron/backup', backupHandler);
+app.get('/api/cron/backup-list', backupListHandler);
+app.post('/api/cron/backup-restore', backupRestoreHandler);
 
 // Kaisel
 app.post('/api/kaisel/collect-news', kaiselCollectNews);
@@ -126,6 +132,17 @@ cron.schedule('0 4 * * *', () => {
     setHeader: () => {},
   };
   vacuumHandler(fakeReq, fakeRes);
+});
+
+// ─── Cron: BACKUP daily at 3 AM UTC (before vacuum) ─────
+cron.schedule('0 3 * * *', () => {
+  console.log('[cron] Running daily BACKUP...');
+  const fakeReq = { method: 'GET', headers: { authorization: `Bearer ${process.env.CRON_SECRET}` }, query: {} };
+  const fakeRes = {
+    status: (code) => ({ json: (data) => console.log(`[cron] BACKUP done (${code}):`, JSON.stringify(data)), end: () => {} }),
+    setHeader: () => {},
+  };
+  backupHandler(fakeReq, fakeRes);
 });
 
 // ─── Start ───────────────────────────────────────────────
