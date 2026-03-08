@@ -470,7 +470,7 @@ export default function Expedition() {
 
   // ── Auto-show spectator when active ──
   useEffect(() => {
-    if (liveStatus && ['march', 'combat', 'loot_roll', 'campfire'].includes(liveStatus.status)) {
+    if (liveStatus && ['march', 'combat', 'mob_wave', 'loot_roll', 'campfire'].includes(liveStatus.status || liveStatus.state)) {
       setShowSpectator(true);
     }
   }, [liveStatus]);
