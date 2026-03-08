@@ -71,6 +71,7 @@ export class HttpApi {
         case '/api/expedition/current':  return await this.getCurrent(req, res);
         case '/api/expedition/register': return await this.register(req, res);
         case '/api/expedition/unregister': return await this.unregister(req, res);
+        case '/api/expedition/auto-register': return await this.toggleAutoRegister(req, res);
         case '/api/expedition/entries':  return await this.getEntries(req, res);
         case '/api/expedition/items':    return this.getItems(req, res);
         case '/api/expedition/boss-loot': return this.getBossLoot(req, res);
@@ -209,6 +210,21 @@ export class HttpApi {
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true }));
+  }
+
+  // POST /api/expedition/auto-register
+  // Body: { username, autoRegister: true/false }
+  async toggleAutoRegister(req, res) {
+    const body = await this.readBody(req);
+    if (!body?.username) return this.badRequest(res, 'Missing username');
+
+    const expedition = await db.getCurrentExpedition();
+    if (!expedition) return this.badRequest(res, 'No active expedition');
+
+    await db.setAutoRegister(expedition.id, body.username, !!body.autoRegister);
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, autoRegister: !!body.autoRegister }));
   }
 
   // GET /api/expedition/entries

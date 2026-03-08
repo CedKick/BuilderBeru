@@ -102,6 +102,13 @@ export async function getAutoRegisterEntries(expeditionId) {
   return result.rows;
 }
 
+export async function setAutoRegister(expeditionId, username, value) {
+  await query(
+    `UPDATE expedition_entries SET auto_register = $3 WHERE expedition_id = $1 AND username = $2`,
+    [expeditionId, username, value]
+  );
+}
+
 export async function unregisterPlayer(expeditionId, username) {
   await query(
     `DELETE FROM expedition_entries WHERE expedition_id = $1 AND username = $2`,

@@ -154,6 +154,39 @@ function computeHunterFullStats(hunterId, coloData, raidData) {
 }
 
 // ── Main Component ──
+function AutoRegisterToggle({ checked, username, isRegistered, api, onChange }) {
+  const [saving, setSaving] = useState(false);
+  const handleToggle = async (e) => {
+    const val = e.target.checked;
+    onChange(val);
+    if (isRegistered && username.trim()) {
+      setSaving(true);
+      try {
+        await api('/api/expedition/auto-register', 'POST', { username: username.trim(), autoRegister: val });
+      } catch (err) {
+        console.error('[Expedition] Auto-register toggle error:', err.message);
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+  return (
+    <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={handleToggle}
+        disabled={saving}
+        className="w-4 h-4 rounded accent-green-500"
+      />
+      <span className="text-sm text-gray-400">
+        Auto-inscription pour les prochaines sessions (meme equipe, meme SR)
+        {saving && <span className="ml-1 text-yellow-400">...</span>}
+      </span>
+    </label>
+  );
+}
+
 export default function Expedition() {
   // Auth (open to all — admin gate disabled)
   const [authenticated, setAuthenticated] = useState(true);
@@ -260,6 +293,15 @@ export default function Expedition() {
       setTotalCharacters(entriesRes.totalCharacters || 0);
       setMaxCharacters(entriesRes.maxCharacters || 30);
       setBossLootData(bossLootRes.bosses || []);
+      // Sync autoRegister from server if user is registered
+      const savedUser = localStorage.getItem('expedition_username');
+      if (savedUser) {
+        const myEntry = (entriesRes.entries || []).find(e => e.username?.toLowerCase() === savedUser.toLowerCase());
+        if (myEntry) {
+          setAutoRegister(!!myEntry.autoRegister);
+          localStorage.setItem('expedition_auto_register', myEntry.autoRegister ? 'true' : 'false');
+        }
+      }
     } catch (e) {
       console.error('[Expedition] Fetch error:', e.message);
     }
@@ -1127,15 +1169,13 @@ export default function Expedition() {
           </div>
 
           {/* Auto-register toggle */}
-          <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={autoRegister}
-              onChange={e => setAutoRegister(e.target.checked)}
-              className="w-4 h-4 rounded accent-green-500"
-            />
-            <span className="text-sm text-gray-400">Auto-inscription pour les prochaines sessions (meme equipe, meme SR)</span>
-          </label>
+          <AutoRegisterToggle
+            checked={autoRegister}
+            username={username}
+            isRegistered={!!entries.find(e => e.username?.toLowerCase() === username.trim().toLowerCase())}
+            api={api}
+            onChange={(val) => { setAutoRegister(val); localStorage.setItem('expedition_auto_register', val ? 'true' : 'false'); }}
+          />
 
           {/* Register Button */}
           <button
