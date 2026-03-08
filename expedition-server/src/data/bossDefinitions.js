@@ -300,13 +300,13 @@ export const BOSS_DEFINITIONS = [
 
       // ═══ PHASE 3+ : Lethal mechanics ═══
 
-      // % HP ATTACK — Devastating shadow nova. If not dodged, sets HP to 15%.
+      // % HP ATTACK — Devastating shadow nova. If not dodged, sets HP to 10%.
       // Dodgeable — must dodge or tank shield. Healers must react fast after.
       {
         id: 'annihilation', name: 'Annihilation d\'Ombre', type: 'percent_hp_attack',
-        targetHpPercent: 15, outerRadius: 450, innerSafe: 0,
-        telegraphTime: 2.5, castTime: 0.6, recoveryTime: 2.0,
-        cooldown: 30, phases: [2, 3], weight: 2,
+        targetHpPercent: 10, outerRadius: 450, innerSafe: 0,
+        telegraphTime: 3.0, castTime: 0.6, recoveryTime: 2.0,
+        cooldown: 35, phases: [2, 3], weight: 1,
       },
       // SOUL DRAIN — Channels for 4s, draining 3% max HP per tick from all hunters.
       // Boss heals 2x what it drains. Must burn boss HP fast during this phase.
@@ -383,6 +383,7 @@ export const BOSS_DEFINITIONS = [
     color: '#ec4899',
     sprite: 'manaya',
     enrageTimer: 600,
+    anchorCenter: true,
     phases: [
       { hpPercent: 100, label: 'Phase 1 - Éveil' },
       { hpPercent: 90, label: 'Phase 2 - Corruption' },
@@ -426,11 +427,13 @@ export const BOSS_DEFINITIONS = [
 
       // ═══ PHASE 2+ (90-75%) : Donut + Poison ═══
 
-      // Donut — stay inside or die. True damage ring.
+      // Double Donut — faithful to real Manaya. 2-phase ring mechanic.
+      // Phase 1: ring 130-350px OS. Safe <120px or >360px.
+      // Phase 2 (1.2s later): outer ring 370-550px OS + laser <160px.
+      // Safe zone phase 2: 160-370px.
       {
-        id: 'anneau_destructeur', name: 'Anneau Destructeur', type: 'donut',
-        power: 999, innerSafe: 130, outerRadius: 400,
-        telegraphTime: 1.5, castTime: 0.3, recoveryTime: 0.8, cooldown: 14,
+        id: 'anneau_destructeur', name: 'Anneau Destructeur', type: 'double_donut',
+        power: 999, telegraphTime: 2.5, castTime: 0.3, recoveryTime: 0.8, cooldown: 14,
         phases: [1, 2, 3, 4, 5], weight: 3, isTrueDamage: true,
       },
       // Poison circle — persistent ground AoE on random hunter position
@@ -450,10 +453,10 @@ export const BOSS_DEFINITIONS = [
 
       // ═══ PHASE 3+ (75-50%) : Death Ball + Dive + Waves + Triple Laser ═══
 
-      // Death ball — massive AoE explosion (dodge or die)
+      // Death ball — exact Manaya Sphère de Mort. Radius 250, dodge or die.
       {
-        id: 'sphere_mort', name: 'Sphère de la Mort', type: 'aoe_ring',
-        power: 5.0, innerRadius: 0, outerRadius: 450,
+        id: 'sphere_mort', name: 'Sphère de Mort', type: 'aoe_ring',
+        power: 5.0, innerRadius: 0, outerRadius: 250,
         telegraphTime: 2.5, castTime: 0.5, recoveryTime: 1.5, cooldown: 20,
         phases: [2, 3, 4, 5], weight: 2, isTrueDamage: true,
         visualColor: 'pink',
@@ -468,8 +471,8 @@ export const BOSS_DEFINITIONS = [
       // Dive — targeted AoE on 4 hunters (boss dives at them)
       {
         id: 'plongeon', name: 'Plongeon Corrompu', type: 'targeted_aoe_multi',
-        power: 3.0, aoeRadius: 130, targetCount: 4,
-        telegraphTime: 1.2, castTime: 0.4, recoveryTime: 1.0, cooldown: 12,
+        power: 2.0, aoeRadius: 110, targetCount: 4,
+        telegraphTime: 1.8, castTime: 0.4, recoveryTime: 1.0, cooldown: 14,
         phases: [2, 3, 4, 5], weight: 2,
       },
       // Triple laser sweep
@@ -482,8 +485,8 @@ export const BOSS_DEFINITIONS = [
       // Leap slam — heavy frontal + shockwave
       {
         id: 'impact_sismique', name: 'Impact Sismique', type: 'aoe_ring',
-        power: 3.0, innerRadius: 0, outerRadius: 300,
-        telegraphTime: 1.0, castTime: 0.3, recoveryTime: 0.8, cooldown: 10,
+        power: 2.0, innerRadius: 0, outerRadius: 280,
+        telegraphTime: 1.5, castTime: 0.3, recoveryTime: 0.8, cooldown: 12,
         phases: [2, 3, 4, 5], weight: 2,
       },
 
@@ -499,8 +502,8 @@ export const BOSS_DEFINITIONS = [
       // Double circle — two AoE rings expanding simultaneously
       {
         id: 'double_cercle', name: 'Double Cercle', type: 'targeted_aoe_multi',
-        power: 3.5, aoeRadius: 160, targetCount: 5,
-        telegraphTime: 1.8, castTime: 0.4, recoveryTime: 1.0, cooldown: 14,
+        power: 2.5, aoeRadius: 130, targetCount: 5,
+        telegraphTime: 2.0, castTime: 0.4, recoveryTime: 1.0, cooldown: 16,
         phases: [3, 4, 5], weight: 2,
       },
       // Shield DPS check — boss shields, team must break it
@@ -524,19 +527,19 @@ export const BOSS_DEFINITIONS = [
       // Shadow marks — marked hunters explode, spread mechanic
       {
         id: 'marques_corruption', name: 'Marques de Corruption', type: 'shadow_mark',
-        power: 3.0, targetCount: 4, explodeRadius: 140, markDuration: 3,
+        power: 2.0, targetCount: 4, explodeRadius: 120, markDuration: 4,
         telegraphTime: 1.5, castTime: 0.3, recoveryTime: 1.0,
         cooldown: 22, phases: [4, 5], weight: 2,
       },
 
       // ═══ PHASE 6 (20%) : Trinité des Marques + Desperation ═══
 
-      // Triple debuff rotation — percent HP attack + poison + slow
+      // Triple debuff rotation — percent HP attack + poison + slow (rare, devastating)
       {
         id: 'trinite_marques', name: 'Trinité des Marques', type: 'percent_hp_attack',
-        targetHpPercent: 15, outerRadius: 500, innerSafe: 0,
-        telegraphTime: 2.5, castTime: 0.6, recoveryTime: 2.0,
-        cooldown: 25, phases: [5], weight: 3,
+        targetHpPercent: 10, outerRadius: 500, innerSafe: 0,
+        telegraphTime: 3.0, castTime: 0.6, recoveryTime: 2.0,
+        cooldown: 40, phases: [5], weight: 1,
       },
       // Mass debuff — slow + poison on everyone
       {
@@ -579,6 +582,7 @@ export const BOSS_DEFINITIONS = [
     color: '#f97316',
     sprite: 'ragnaros',
     enrageTimer: 720,
+    anchorCenter: true,
     mapBg: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772967337/Paysage5emeBoss_jleab4.jpg',
     phases: [
       { hpPercent: 100, label: 'Phase 1 - Émergence' },
@@ -685,11 +689,11 @@ export const BOSS_DEFINITIONS = [
 
       // ═══ PHASE 4+ (40%) : Donut + Rotating Laser + Elite Adds ═══
 
-      // Fire donut — true damage, stay inside or die
+      // Fire donut — true damage, stay inside or take massive damage
       {
         id: 'fire_donut', name: 'Anneau de Feu', type: 'donut',
-        power: 6.0, innerSafe: 180, outerRadius: 650,
-        telegraphTime: 2.0, castTime: 0.5, recoveryTime: 1.5, cooldown: 25,
+        power: 5.0, innerSafe: 200, outerRadius: 600,
+        telegraphTime: 2.5, castTime: 0.5, recoveryTime: 1.5, cooldown: 28,
         phases: [3, 4], weight: 1, isTrueDamage: true,
       },
       // Rotating laser — sweeps around boss
@@ -699,12 +703,12 @@ export const BOSS_DEFINITIONS = [
         telegraphTime: 2.0, castTime: 0.3, recoveryTime: 1.0, cooldown: 22,
         phases: [3, 4], weight: 1, laserColor: '#ef4444',
       },
-      // Heavy percent HP attack — sets to 20%
+      // Heavy percent HP attack — sets to 10%, rare
       {
         id: 'souffle_purificateur', name: 'Souffle Purificateur', type: 'percent_hp_attack',
-        targetHpPercent: 20, outerRadius: 500, innerSafe: 0,
-        telegraphTime: 2.5, castTime: 0.6, recoveryTime: 2.0, cooldown: 30,
-        phases: [3, 4], weight: 1,
+        targetHpPercent: 10, outerRadius: 500, innerSafe: 0,
+        telegraphTime: 3.0, castTime: 0.6, recoveryTime: 2.0, cooldown: 45,
+        phases: [3, 4], weight: 0.5,
       },
       // Elite fire elemental spawn — bigger, tougher, longer fuse
       {
@@ -721,15 +725,15 @@ export const BOSS_DEFINITIONS = [
         id: 'by_fire_be_purged', name: 'PAR LE FEU, SOYEZ PURIFIÉS !',
         type: 'ultimate_wipe', power: 999999,
         telegraphTime: 5.0, castTime: 1.0, recoveryTime: 3.0,
-        cooldown: 60, phases: [4], weight: 0.5,
+        cooldown: 90, phases: [4], weight: 0.3,
         isTrueDamage: true, requiresSurvival: 10,
       },
       // Double donut — safe zone is a narrow ring between two lethal zones
       {
         id: 'double_anneau', name: 'Double Anneau de Feu', type: 'donut',
-        power: 999, innerSafe: 220, outerRadius: 700,
-        telegraphTime: 2.0, castTime: 0.5, recoveryTime: 1.0, cooldown: 22,
-        phases: [4], weight: 2, isTrueDamage: true,
+        power: 5.0, innerSafe: 250, outerRadius: 650,
+        telegraphTime: 3.0, castTime: 0.5, recoveryTime: 1.0, cooldown: 28,
+        phases: [4], weight: 1, isTrueDamage: true,
       },
       // Soul drain — fire version, heals boss massively
       {

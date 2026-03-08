@@ -166,7 +166,8 @@ export class PhysicsEngine {
   }
 
   _calcProjectileDamage(attacker, proj, defender) {
-    let damage = attacker.atk * (proj.power / 100);
+    const offStat = attacker.getOffensiveStat ? attacker.getOffensiveStat() : attacker.atk;
+    let damage = offStat * (proj.power / 100);
     damage *= 100 / (100 + (defender.def || 0));
 
     let crit = false;

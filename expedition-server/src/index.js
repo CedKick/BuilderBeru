@@ -5,11 +5,11 @@ import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
 import { SERVER } from './config.js';
 import { ExpeditionEngine } from './engine/ExpeditionEngine.js';
+import { HttpApi } from './network/HttpApi.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ─── Real player inscription data (from DB) ──────────────
-// 4 players with their actual expedition inscription stats
+// ─── Real player inscription data (bot testing) ──────────
 const PLAYER_DATA = [
   {
     username: 'Kly',
@@ -60,28 +60,23 @@ const PLAYER_DATA = [
 // ─── Boot ─────────────────────────────────────────────────
 
 const engine = new ExpeditionEngine();
+const httpApi = new HttpApi(engine);
 
 // Auto-start bot expedition with real player data
 console.log('\n[Expedition v2] Booting with real player data...');
 const result = engine.startBotExpedition(PLAYER_DATA);
 console.log('[Expedition v2] Start result:', result);
 
-// ─── HTTP Server (status endpoint) ────────────────────────
+// ─── HTTP Server ─────────────────────────────────────────
 
-const server = http.createServer((req, res) => {
-  const origin = req.headers.origin;
-  if (SERVER.CORS_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
+const server = http.createServer(async (req, res) => {
+  // Try HttpApi first (handles all /api/expedition/* routes)
+  const apiResult = await httpApi.handle(req, res);
+  if (apiResult !== null && apiResult !== undefined) return;
+  // httpApi.handle returns null for unhandled routes
 
-  if (req.url === '/api/expedition/status') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(engine.getExpeditionState()));
-    return;
-  }
+  // If res was already ended by httpApi, don't continue
+  if (res.writableEnded) return;
 
   // Serve spectator page
   if (req.url === '/' || req.url === '/spectator' || req.url === '/spectator.html') {
@@ -97,6 +92,36 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Admin: skip to boss N (0-indexed)
+  const skipMatch = req.url.match(/^\/api\/expedition\/skip-to-boss\/(\d+)$/);
+  if (skipMatch) {
+    const origin = req.headers.origin;
+    if (SERVER.CORS_ORIGINS.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    const targetBoss = parseInt(skipMatch[1], 10);
+    const ok = engine.skipToBoss(targetBoss);
+    if (!ok) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Boss index must be 0-4' }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, skippedTo: targetBoss }));
+    return;
+  }
+
+  // Legacy status endpoint (used by spectator.html)
+  if (req.url === '/api/expedition/status') {
+    const origin = req.headers.origin;
+    if (SERVER.CORS_ORIGINS.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(engine.getExpeditionState()));
+    return;
+  }
+
   res.writeHead(404);
   res.end('Not found');
 });
@@ -106,6 +131,9 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocketServer({ server, path: '/ws' });
 const spectators = new Set();
 
+// Track which WS connections are controlling a player
+const wsPlayers = new Map(); // ws -> playerId
+
 wss.on('connection', (ws) => {
   spectators.add(ws);
   console.log(`[WS] Spectator connected (${spectators.size} total)`);
@@ -114,7 +142,76 @@ wss.on('connection', (ws) => {
   const state = engine.getExpeditionState();
   ws.send(JSON.stringify({ type: 'expedition_state', data: state }));
 
+  ws.on('message', (raw) => {
+    try {
+      const msg = JSON.parse(raw);
+
+      // ── Take control of a hunter ──
+      if (msg.type === 'take_control') {
+        const hunterId = msg.hunterId;
+        const playerId = engine.hunterSwitch.getOwnerPlayerId(hunterId);
+        if (!playerId) return;
+
+        wsPlayers.set(ws, playerId);
+
+        const hunterIds = engine.hunterSwitch.getHunterIds(playerId);
+        const slotIndex = hunterIds.indexOf(hunterId);
+        if (slotIndex >= 0) {
+          engine.handlePlayerInput(playerId, { type: 'switch_hunter', slotIndex });
+        }
+
+        ws.send(JSON.stringify({ type: 'control_ack', hunterId, playerId }));
+        console.log(`[WS] Player took control of ${hunterId}`);
+        return;
+      }
+
+      // ── Release control ──
+      if (msg.type === 'release_control') {
+        const playerId = wsPlayers.get(ws);
+        if (playerId) {
+          const activeId = engine.hunterSwitch.getActiveHunterId(playerId);
+          if (activeId && engine.currentCombat) {
+            engine.currentCombat.setHunterControl(activeId, false);
+          }
+          wsPlayers.delete(ws);
+          ws.send(JSON.stringify({ type: 'control_released' }));
+          console.log(`[WS] Player released control`);
+        }
+        return;
+      }
+
+      // ── Switch hunter (keys 1-6) ──
+      if (msg.type === 'switch_hunter') {
+        const playerId = wsPlayers.get(ws);
+        if (playerId) {
+          engine.handlePlayerInput(playerId, { type: 'switch_hunter', slotIndex: msg.slotIndex });
+        }
+        return;
+      }
+
+      // ── Game inputs (move, attack, skill, dodge) ──
+      if (msg.type === 'input') {
+        const playerId = wsPlayers.get(ws);
+        if (!playerId) return;
+        engine.handlePlayerInput(playerId, msg.input);
+        return;
+      }
+
+    } catch (e) {
+      // Ignore malformed messages
+    }
+  });
+
   ws.on('close', () => {
+    const playerId = wsPlayers.get(ws);
+    if (playerId) {
+      const activeId = engine.hunterSwitch.getActiveHunterId(playerId);
+      if (activeId && engine.currentCombat) {
+        engine.currentCombat.setHunterControl(activeId, false);
+      }
+      wsPlayers.delete(ws);
+      console.log(`[WS] Controller disconnected, released ${playerId}`);
+    }
     spectators.delete(ws);
     console.log(`[WS] Spectator disconnected (${spectators.size} total)`);
   });
@@ -135,7 +232,7 @@ setInterval(() => {
 server.listen(SERVER.PORT, () => {
   console.log(`[Expedition v2] Server running on port ${SERVER.PORT}`);
   console.log(`[Expedition v2] WS spectator: ws://localhost:${SERVER.PORT}/ws`);
-  console.log(`[Expedition v2] Status: http://localhost:${SERVER.PORT}/api/expedition/status`);
+  console.log(`[Expedition v2] API: http://localhost:${SERVER.PORT}/api/expedition/*`);
 });
 
 // Graceful shutdown

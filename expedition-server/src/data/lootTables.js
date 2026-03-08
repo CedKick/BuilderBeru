@@ -757,12 +757,12 @@ export const LOOT_TABLES = {
   ],
 };
 
-// ── Mob wave tier by boss section ──
+// ── Mob wave tier by boss section (5 bosses) ──
 export function getMobWaveTier(bossIndex) {
-  if (bossIndex <= 2) return 'mob_wave_tier1';
-  if (bossIndex <= 4) return 'mob_wave_tier2';
-  if (bossIndex <= 9) return 'mob_wave_tier3';
-  return 'mob_wave_tier4';
+  if (bossIndex <= 0) return 'mob_wave_tier1';  // Boss 0: Gardien (forest)
+  if (bossIndex <= 1) return 'mob_wave_tier2';  // Boss 1: Sentinelle (stone/crystal)
+  if (bossIndex <= 2) return 'mob_wave_tier3';  // Boss 2: Seigneur Ombre (abyss)
+  return 'mob_wave_tier4';                       // Boss 3-4: Manaya + Ragnaros (void)
 }
 
 export function getLootTable(tableId) {

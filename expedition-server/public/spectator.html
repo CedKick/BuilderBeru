@@ -318,6 +318,39 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 .fp-stat-label { color: #94a3b8; }
 .fp-stat-val { font-weight: 600; font-variant-numeric: tabular-nums; }
 
+/* Skills panel */
+.fp-skills-title {
+  font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;
+  padding: 6px 12px 2px; flex-shrink: 0;
+}
+.fp-skills {
+  display: flex; flex-direction: column; gap: 3px; padding: 4px 10px 6px;
+  border-bottom: 1px solid #1e1e3a; flex-shrink: 0;
+}
+.fp-skill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 6px; background: #1a1a2e; border-radius: 4px; font-size: 9px;
+  position: relative; overflow: hidden;
+}
+.fp-skill-key {
+  width: 18px; height: 18px; border-radius: 3px; display: flex;
+  align-items: center; justify-content: center; font-weight: 700;
+  font-size: 8px; flex-shrink: 0; color: #fff;
+}
+.fp-skill-key.sk-basic { background: #374151; }
+.fp-skill-key.sk-rmb { background: #4b5563; }
+.fp-skill-key.sk-a { background: #7c3aed; }
+.fp-skill-key.sk-b { background: #2563eb; }
+.fp-skill-key.sk-ult { background: #dc2626; }
+.fp-skill-name { flex: 1; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fp-skill-cd { color: #94a3b8; font-variant-numeric: tabular-nums; flex-shrink: 0; min-width: 28px; text-align: right; }
+.fp-skill-cd.on-cd { color: #f59e0b; }
+.fp-skill-cd.ready { color: #22c55e; }
+.fp-skill-bar {
+  position: absolute; left: 0; bottom: 0; height: 2px; background: #f59e0b;
+  transition: width 0.3s linear;
+}
+
 /* Focus log */
 .fp-log-title {
   font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;
@@ -350,7 +383,20 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
   flex-shrink: 0;
 }
 .fp-control-btn:hover { background: rgba(167,139,250,0.2); border-color: #a78bfa; }
-.fp-control-btn.disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+.fp-control-btn.active { background: rgba(239,68,68,0.15); border-color: #ef4444; color: #ef4444; }
+.fp-control-btn.active:hover { background: rgba(239,68,68,0.3); }
+
+/* Control HUD (shown when controlling a hunter) */
+#control-hud {
+  display: none; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+  z-index: 30; background: rgba(10,10,30,0.92); border: 1px solid #a78bfa40;
+  border-radius: 8px; padding: 6px 14px; font-size: 10px; color: #94a3b8;
+  backdrop-filter: blur(6px); white-space: nowrap;
+}
+#control-hud.visible { display: flex; align-items: center; gap: 14px; }
+.ch-key { display: inline-block; background: #1e1b4b; border: 1px solid #4c1d95; border-radius: 3px;
+  padding: 1px 5px; font-weight: 700; color: #c4b5fd; font-size: 9px; min-width: 18px; text-align: center; }
+.ch-label { color: #64748b; }
 
 /* Connection */
 #connection {
@@ -409,9 +455,17 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
     <div class="fp-close" onclick="unfocusHunter()">&times;</div>
   </div>
   <div class="fp-stats" id="fp-stats"></div>
+  <div class="fp-skills-title">Skills</div>
+  <div class="fp-skills" id="fp-skills"></div>
   <div class="fp-log-title">Combat Log</div>
   <div id="focus-log"></div>
-  <div class="fp-control-btn disabled" id="fp-control-btn">Contrôler (bientôt)</div>
+  <div class="fp-control-btn" id="fp-control-btn" onclick="toggleControl()">Contrôler</div>
+</div>
+
+<!-- Control HUD (small top indicator when controlling) -->
+<div id="control-hud">
+  <span><span class="ch-key">1-6</span> <span class="ch-label">Changer chasseur</span></span>
+  <span><span class="ch-key">ESC</span> <span class="ch-label">Quitter contrôle</span></span>
 </div>
 
 <!-- Right Stats Panel -->
@@ -582,8 +636,205 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     floatingTexts.length = 0;
     particles.length = 0;
+    skillVFX.length = 0;
   }
 });
+
+// ═══════════════════════════════════════════════════════════
+// ── Skill Visual Effects System ──
+// Dramatic canvas effects for skill casts, element-colored
+// ═══════════════════════════════════════════════════════════
+
+let showSkillVFX = true; // Toggle via button
+const skillVFX = []; // { type, x, y, timer, maxTimer, color, glow, alpha, ...params }
+const MAX_VFX = 40;
+
+// Element color palettes (main + glow + soft)
+const ELEM_PAL = {
+  fire:   { main: '#ff6b35', glow: '#ff4400', soft: 'rgba(255,107,53,', ring: '#ffb347' },
+  water:  { main: '#4fc3f7', glow: '#0288d1', soft: 'rgba(79,195,247,', ring: '#81d4fa' },
+  shadow: { main: '#b388ff', glow: '#7c4dff', soft: 'rgba(179,136,255,', ring: '#ce93d8' },
+  light:  { main: '#fff176', glow: '#fdd835', soft: 'rgba(255,241,118,', ring: '#fff9c4' },
+};
+
+function getElemPal(element) {
+  return ELEM_PAL[element] || ELEM_PAL.shadow;
+}
+
+function addSkillVFX(type, x, y, element, ownerId, params = {}) {
+  if (!showSkillVFX || skillVFX.length >= MAX_VFX) return;
+  const pal = getElemPal(element);
+  skillVFX.push({ type, x, y, timer: 0, maxTimer: params.duration || 20, color: pal.main, glow: pal.glow, soft: pal.soft, ring: pal.ring, ownerId, alpha: 1, ...params });
+}
+
+function updateSkillVFX() {
+  for (let i = skillVFX.length - 1; i >= 0; i--) {
+    const v = skillVFX[i];
+    v.timer++;
+    v.alpha = Math.max(0, 1 - v.timer / v.maxTimer);
+    if (v.timer >= v.maxTimer) skillVFX.splice(i, 1);
+  }
+}
+
+function drawSkillVFX(ctx, scale, ox, oy) {
+  const ts = s => s * scale;
+  const tx = x => ox + x * scale;
+  const ty = y => oy + y * scale;
+
+  for (const v of skillVFX) {
+    const progress = v.timer / v.maxTimer;
+    // Dim other hunters' VFX when controlling
+    const dimMult = (isControlling && v.ownerId && v.ownerId !== controlledHunterId) ? 0.25 : 1;
+
+    ctx.save();
+    ctx.globalAlpha = v.alpha * dimMult;
+
+    switch (v.type) {
+      case 'slash_arc': {
+        // Melee slash: expanding arc with fade
+        const arcR = ts(v.range || 80) * (0.4 + progress * 0.6);
+        const arcAngle = (v.coneAngle || 60) * Math.PI / 180;
+        const startA = (v.angle || 0) - arcAngle / 2;
+        ctx.translate(tx(v.x), ty(v.y));
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, arcR, startA, startA + arcAngle);
+        ctx.closePath();
+        ctx.fillStyle = v.soft + (0.2 * v.alpha * dimMult) + ')';
+        ctx.fill();
+        // Edge glow
+        ctx.strokeStyle = v.color;
+        ctx.lineWidth = 2 + (1 - progress) * 2;
+        ctx.shadowColor = v.glow; ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(0, 0, arcR, startA, startA + arcAngle);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        break;
+      }
+
+      case 'explosion_ring': {
+        // AoE: expanding ring with inner glow
+        const maxR = ts(v.radius || 130);
+        const r = maxR * (0.2 + progress * 0.8);
+        const cx = tx(v.x), cy = ty(v.y);
+        // Inner glow
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        grad.addColorStop(0, v.soft + (0.15 * v.alpha * dimMult) + ')');
+        grad.addColorStop(0.7, v.soft + (0.05 * v.alpha * dimMult) + ')');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+        // Ring edge
+        ctx.strokeStyle = v.ring;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = v.glow; ctx.shadowBlur = 6;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        break;
+      }
+
+      case 'beam': {
+        // Projectile skill: laser line from source to target direction
+        const len = ts(v.range || 400) * (progress < 0.3 ? progress / 0.3 : 1);
+        const angle = v.angle || 0;
+        const sx = tx(v.x), sy2 = ty(v.y);
+        const ex = sx + Math.cos(angle) * len;
+        const ey = sy2 + Math.sin(angle) * len;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy2); ctx.lineTo(ex, ey);
+        ctx.strokeStyle = v.color;
+        ctx.lineWidth = (3 + (1 - progress) * 3) * dimMult;
+        ctx.shadowColor = v.glow; ctx.shadowBlur = 12;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        // Bright tip
+        if (progress < 0.7) {
+          ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#fff'; ctx.fill();
+        }
+        break;
+      }
+
+      case 'heal_pulse': {
+        // Healer: expanding soft green/blue ring with + symbol
+        const maxR = ts(v.radius || 150);
+        const r = maxR * (0.3 + progress * 0.7);
+        const cx = tx(v.x), cy = ty(v.y);
+        const grad = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, r);
+        grad.addColorStop(0, 'rgba(16,185,129,' + (0.12 * v.alpha * dimMult) + ')');
+        grad.addColorStop(1, 'rgba(16,185,129,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+        // Soft ring
+        ctx.strokeStyle = 'rgba(110,231,183,' + (0.4 * v.alpha * dimMult) + ')';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+        break;
+      }
+
+      case 'shield_pulse': {
+        // Tank shield: brief dome flash
+        const maxR = ts(v.radius || 100);
+        const r = maxR * (0.5 + progress * 0.5);
+        const cx = tx(v.x), cy = ty(v.y);
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(96,165,250,' + (0.5 * v.alpha * dimMult) + ')';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#3b82f6'; ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        break;
+      }
+
+      case 'dash_trail': {
+        // Dash: fading line trail
+        const len = ts(v.distance || 200);
+        const angle = v.angle || 0;
+        const sx = tx(v.x), sy2 = ty(v.y);
+        const ex = sx + Math.cos(angle) * len;
+        const ey = sy2 + Math.sin(angle) * len;
+        ctx.beginPath(); ctx.moveTo(sx, sy2); ctx.lineTo(ex, ey);
+        ctx.strokeStyle = v.soft + (0.4 * v.alpha * dimMult) + ')';
+        ctx.lineWidth = ts(v.width || 30);
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        break;
+      }
+
+      case 'whirlwind': {
+        // Berserker ult: spinning arcs
+        const r = ts(v.radius || 120);
+        const cx = tx(v.x), cy = ty(v.y);
+        const spin = v.timer * 0.3;
+        for (let a = 0; a < 3; a++) {
+          const baseAngle = spin + (a * Math.PI * 2 / 3);
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * (0.6 + progress * 0.4), baseAngle, baseAngle + 1.2);
+          ctx.strokeStyle = v.soft + (0.35 * v.alpha * dimMult) + ')';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = v.glow; ctx.shadowBlur = 6;
+          ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+        break;
+      }
+
+      case 'buff_aura': {
+        // Buff: subtle ring glow
+        const r = ts(25);
+        const cx = tx(v.x), cy = ty(v.y);
+        const pulse = 0.5 + 0.5 * Math.sin(v.timer * 0.4);
+        ctx.beginPath(); ctx.arc(cx, cy, r + pulse * 5, 0, Math.PI * 2);
+        ctx.strokeStyle = v.soft + (0.3 * v.alpha * dimMult) + ')';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        break;
+      }
+    }
+    ctx.restore();
+  }
+}
 
 function addHealParticles(x, y, count = 5) {
   for (let i = 0; i < count; i++) {
@@ -671,14 +922,14 @@ const HUNTER_SPRITES = {
   h_ilhwan:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
   h_minnie:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/Minnie_bcfolv.png',
   h_silverbaek:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606357/icons/build-33.png',
-  h_sian:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042083/Igris_portrait_xqbgqf.png',
+  h_sian:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772974472/SianDown_eipw03.png',
   h_charlotte:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606287/icons/build-5.png',
   h_lee_bora:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606327/icons/build-21.png',
   h_harper:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606309/icons/build-14.png',
   h_lim:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606332/icons/build-23.png',
   h_kang:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606322/icons/build-19.png',
-  h_son:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
-  h_isla:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606317/icons/build-17.png',
+  h_son:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771702659/TankBlock_zfgfuq.png',
+  h_isla:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772973035/IslaSprite_qsgiwt.png',
   h_hwang:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606314/icons/build-16.png',
   h_daijin:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771602808/Daijin_p1pvcs.png',
   h_pod042:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771604133/Pod042_rlmzhk.png',
@@ -696,6 +947,15 @@ const HUNTER_SPRITES = {
   h_a2:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771503623/A2_a0cyk9.png',
 };
 for (const [id, url] of Object.entries(HUNTER_SPRITES)) loadSprite(id, url);
+
+// Back-facing sprites (for hunters moving away from boss)
+const HUNTER_SPRITES_BACK = {
+  h_isla: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772973127/IslaSpriteBack_xuieyn.png',
+  h_sian: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772974567/SianBack_vawfvq.png',
+  h_mayuri: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772976079/MayuriSpriteBack_urghbh.png',
+};
+for (const [id, url] of Object.entries(HUNTER_SPRITES_BACK)) loadSprite(id + '_back', url);
+
 loadSprite('arena_bg', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771694314/mapManaya_gjdwpd.jpg');
 
 // Boss arena backgrounds (per boss index)
@@ -703,6 +963,8 @@ const BOSS_BG = {
   0: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772943232/paysage1erBoss_yeidwp.jpg',
   1: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772943415/Paysage2ndBoss_uyovz1.jpg',
   2: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772943972/Paysage3emeBoss_rxnor7.jpg',
+  3: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771694314/mapManaya_gjdwpd.jpg',
+  4: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772967337/Paysage5emeBoss_jleab4.jpg',
 };
 for (const [idx, url] of Object.entries(BOSS_BG)) loadSprite('boss_bg_' + idx, url);
 
@@ -711,6 +973,8 @@ const BOSS_SPRITES = {
   forest_guardian: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772942138/GardienDeLaForet_fsymf8.png',
   stone_sentinel: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772940101/SentinelDePierre_lh8vtt.png',
   shadow_lord: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772945039/SeigneurDesOmbres_rv40fw.png',
+  manaya: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771729827/tentaculeManaya_dkn8yg.png',
+  ragnaros: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772905671/Ragnaros_o5ttd1.png',
 };
 for (const [id, url] of Object.entries(BOSS_SPRITES)) loadSprite('boss_' + id, url);
 
@@ -722,6 +986,8 @@ const ADD_SPRITES = {
   forest_sbire_2: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772942556/SbireGardienForet2_aqebtr.png',
   forest_sbire_3: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772942557/SbireGardienForet3_dtwny4.png',
   shadow_wraith: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772945424/sbirePurpleFlame_mdhacr.png',
+  fire_elemental: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772967830/sbireFireElemental_zjhmix.png',
+  elite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772967830/sbireFireElemental_zjhmix.png',
 };
 for (const [id, url] of Object.entries(ADD_SPRITES)) loadSprite('add_' + id, url);
 
@@ -810,6 +1076,8 @@ function connect() {
     try {
       const msg = JSON.parse(e.data);
       if (msg.type === 'expedition_state') processState(msg.data);
+      if (msg.type === 'control_ack') onControlAck(msg);
+      if (msg.type === 'control_released') onControlReleased();
     } catch {}
   };
   ws.onclose = () => {
@@ -820,6 +1088,267 @@ function connect() {
   ws.onerror = () => ws.close();
 }
 connect();
+
+// ═══════════════════════════════════════════════════════════
+// ── Player Control System ──
+// ═══════════════════════════════════════════════════════════
+
+let isControlling = false;
+let controlledHunterId = null;
+let controlPlayerId = null;
+
+// Input state
+const keys = { w: false, a: false, s: false, d: false };
+let mouseX = 0, mouseY = 0;
+let mouseDown = false, rmouseDown = false;
+let lastSentMove = { x: 0, y: 0 };
+let lastSentAngle = 0;
+let inputSendTimer = 0;
+
+function toggleControl() {
+  if (isControlling) {
+    releaseControl();
+  } else {
+    takeControl();
+  }
+}
+
+function takeControl() {
+  if (!focusHunterId || !ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({ type: 'take_control', hunterId: focusHunterId }));
+}
+
+function releaseControl() {
+  if (!ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({ type: 'release_control' }));
+  onControlReleased();
+}
+
+function onControlAck(msg) {
+  isControlling = true;
+  controlledHunterId = msg.hunterId;
+  controlPlayerId = msg.playerId;
+  // Update UI
+  const btn = document.getElementById('fp-control-btn');
+  btn.classList.add('active');
+  btn.textContent = 'Relâcher (ESC)';
+  document.getElementById('control-hud').classList.add('visible');
+  // Prevent canvas right-click menu
+  document.getElementById('arena').style.cursor = 'crosshair';
+}
+
+function onControlReleased() {
+  isControlling = false;
+  controlledHunterId = null;
+  controlPlayerId = null;
+  // Send stop
+  if (ws && ws.readyState === 1) {
+    ws.send(JSON.stringify({ type: 'input', input: { type: 'stop' } }));
+  }
+  // Reset input state
+  keys.w = keys.a = keys.s = keys.d = false;
+  mouseDown = false; rmouseDown = false;
+  // Update UI
+  const btn = document.getElementById('fp-control-btn');
+  btn.classList.remove('active');
+  btn.textContent = 'Contrôler';
+  document.getElementById('control-hud').classList.remove('visible');
+  document.getElementById('arena').style.cursor = '';
+}
+
+// Center-screen alert (e.g., "Sort pas prêt! (3.2s)")
+let centerAlert = null; // { text, timer }
+function showCenterAlert(text, duration = 1.5) {
+  centerAlert = { text, timer: duration };
+}
+
+// Skill bar flash state: skillKey → { timer, color }
+const skillFlash = {};
+
+// Check skill cooldown before sending — show alert if not ready
+function trySendSkill(skillKey, inputType, angle) {
+  if (!state || !state.combat || !state.combat.hunters) { sendInput({ type: inputType, angle }); return; }
+  const h = state.combat.hunters.find(x => x.id === controlledHunterId);
+  if (!h || !h.skills) { sendInput({ type: inputType, angle }); return; }
+  const sk = h.skills[skillKey];
+  if (sk && sk.cd > 0) {
+    showCenterAlert(sk.name + ' pas prêt ! (' + sk.cd.toFixed(1) + 's)', 1.2);
+    skillFlash[skillKey] = { timer: 0.4, color: '#ef4444' }; // Flash red
+    return; // Don't send
+  }
+  sendInput({ type: inputType, angle });
+}
+
+function sendInput(input) {
+  if (!isControlling || !ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({ type: 'input', input }));
+}
+
+function getAimAngle() {
+  // Calculate angle from canvas center to mouse (in arena coordinates)
+  const canvas = document.getElementById('arena');
+  const rect = canvas.getBoundingClientRect();
+  // Find controlled hunter's screen position
+  if (!state || !state.combat || !state.combat.hunters) return 0;
+  const h = state.combat.hunters.find(x => x.id === controlledHunterId);
+  if (!h) return 0;
+  const pad = 80;
+  const scaleX = (canvas.width - pad * 2) / ARENA_W;
+  const scaleY = (canvas.height - pad * 2) / ARENA_H;
+  const sc = Math.min(scaleX, scaleY);
+  const ox = (canvas.width - ARENA_W * sc) / 2;
+  const oy = (canvas.height - ARENA_H * sc) / 2;
+  const hScreenX = ox + h.x * sc;
+  const hScreenY = oy + h.y * sc;
+  // Mouse position relative to canvas (account for DPR)
+  const dpr = window.devicePixelRatio || 1;
+  const mx = (mouseX - rect.left) * dpr;
+  const my = (mouseY - rect.top) * dpr;
+  return Math.atan2(my - hScreenY, mx - hScreenX);
+}
+
+// Send movement + aim at ~20Hz (every 50ms) during control
+setInterval(() => {
+  if (!isControlling) return;
+
+  // Movement direction from WASD
+  let dx = 0, dy = 0;
+  if (keys.w) dy -= 1;
+  if (keys.s) dy += 1;
+  if (keys.a) dx -= 1;
+  if (keys.d) dx += 1;
+  // Normalize diagonal
+  if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+
+  // Only send move if changed
+  if (dx !== lastSentMove.x || dy !== lastSentMove.y) {
+    if (dx === 0 && dy === 0) {
+      sendInput({ type: 'stop' });
+    } else {
+      sendInput({ type: 'move', dx, dy });
+    }
+    lastSentMove = { x: dx, y: dy };
+  }
+
+  // Always send aim angle
+  const angle = getAimAngle();
+  if (Math.abs(angle - lastSentAngle) > 0.05) {
+    sendInput({ type: 'aim', angle });
+    lastSentAngle = angle;
+  }
+}, 50);
+
+// ── Keyboard handlers ──
+document.addEventListener('keydown', (e) => {
+  if (!isControlling) return;
+  const k = e.key.toLowerCase();
+
+  // WASD / ZQSD movement (AZERTY & QWERTY compatible)
+  if (k === 'w' || k === 'z') { keys.w = true; e.preventDefault(); return; }
+  if (k === 'q') { keys.a = true; e.preventDefault(); return; } // Q = left (AZERTY)
+  if (k === 's') { keys.s = true; e.preventDefault(); return; }
+  if (k === 'd') { keys.d = true; e.preventDefault(); return; }
+
+  // Skills: A = skillA, E = skillB (AZERTY-friendly), B = skillB alt, R = ultimate
+  if (k === 'a' && !e.repeat) { trySendSkill('skillA', 'skillA', getAimAngle()); e.preventDefault(); return; }
+  if ((k === 'e' || k === 'b') && !e.repeat) { trySendSkill('skillB', 'skillB', getAimAngle()); e.preventDefault(); return; }
+  if (k === 'r' && !e.repeat) { trySendSkill('ultimate', 'ultimate', getAimAngle()); e.preventDefault(); return; }
+
+  // Dodge — direction from WASD keys (not mouse). Fallback to aim angle if no key pressed
+  if (k === ' ' && !e.repeat) {
+    // Check dodge CD
+    if (state && state.combat && state.combat.hunters) {
+      const dh = state.combat.hunters.find(x => x.id === controlledHunterId);
+      if (dh && dh.dodgeCd > 0) {
+        showCenterAlert('Esquive pas prête ! (' + dh.dodgeCd.toFixed(1) + 's)', 1.0);
+        skillFlash.dodge = { timer: 0.4, color: '#ef4444' };
+        e.preventDefault(); return;
+      }
+    }
+    let ddx = 0, ddy = 0;
+    if (keys.w) ddy -= 1; if (keys.s) ddy += 1;
+    if (keys.a) ddx -= 1; if (keys.d) ddx += 1;
+    const dodgeAngle = (ddx !== 0 || ddy !== 0) ? Math.atan2(ddy, ddx) : getAimAngle();
+    sendInput({ type: 'dodge', angle: dodgeAngle });
+    e.preventDefault(); return;
+  }
+
+  // Hunter switch (1-6)
+  if (k >= '1' && k <= '6' && !e.repeat) {
+    ws.send(JSON.stringify({ type: 'switch_hunter', slotIndex: parseInt(k) - 1 }));
+    e.preventDefault();
+    return;
+  }
+
+  // ESC to release control
+  if (k === 'escape') { releaseControl(); e.preventDefault(); return; }
+});
+
+document.addEventListener('keyup', (e) => {
+  if (!isControlling) return;
+  const k = e.key.toLowerCase();
+  if (k === 'w' || k === 'z') keys.w = false;
+  if (k === 'q') keys.a = false;
+  if (k === 's') keys.s = false;
+  if (k === 'd') keys.d = false;
+});
+
+// ── Mouse handlers ──
+document.getElementById('arena').addEventListener('mousedown', (e) => {
+  if (!isControlling) return;
+  if (e.button === 0) { // LMB = basic attack
+    mouseDown = true;
+    sendInput({ type: 'attack', angle: getAimAngle() });
+    e.preventDefault();
+  } else if (e.button === 2) { // RMB = secondary
+    rmouseDown = true;
+    sendInput({ type: 'secondary', angle: getAimAngle() });
+    e.preventDefault();
+  }
+});
+
+document.addEventListener('mouseup', (e) => {
+  if (!isControlling) return;
+  if (e.button === 0 && mouseDown) {
+    mouseDown = false;
+    sendInput({ type: 'attack_stop' });
+  } else if (e.button === 2 && rmouseDown) {
+    rmouseDown = false;
+    sendInput({ type: 'secondary_stop' });
+  }
+});
+
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+// Prevent right-click menu on canvas
+document.getElementById('arena').addEventListener('contextmenu', (e) => {
+  if (isControlling) e.preventDefault();
+});
+
+// Click on canvas to unfocus (when not controlling) or toggle VFX
+document.getElementById('arena').addEventListener('click', (e) => {
+  const rect = e.target.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const cx = (e.clientX - rect.left) * dpr;
+  const cy = (e.clientY - rect.top) * dpr;
+  // VFX toggle button
+  if (window._vfxBtnRect) {
+    const b = window._vfxBtnRect;
+    if (cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h) {
+      showSkillVFX = !showSkillVFX;
+      if (!showSkillVFX) skillVFX.length = 0;
+      return;
+    }
+  }
+  if (isControlling) return; // Don't unfocus while controlling
+  if (!focusHunterId) return; // Already unfocused
+  unfocusHunter();
+});
+
+// ═══════════════════════════════════════════════════════════
 
 // ── Format helpers ──
 function fmtNum(n) {
@@ -883,7 +1412,7 @@ function processState(s) {
     const sy = y => ooy + y * sc;
 
     for (const ev of s.events) {
-      // ── Focus panel: capture events for focused hunter ──
+      // ── Focus panel: capture events for focused hunter (batched) ──
       if (focusHunterId) {
         if (ev.type === 'skill_used' && ev.player === focusHunterId) {
           addFocusLogEntry('⚡ ' + (ev.skill || ev.effect || 'Skill'), 'skill');
@@ -891,25 +1420,30 @@ function processState(s) {
         if (ev.type === 'damage' && ev.source === focusHunterId && ev.amount > 0) {
           const isBoss = s.combat && s.combat.boss && ev.target === s.combat.boss.id;
           const targetName = isBoss ? 'Boss' : 'Add';
-          const critMark = ev.crit ? ' CRIT!' : '';
-          addFocusLogEntry('⚔ ' + (ev.skill || 'Auto') + ' → ' + targetName + ' ' + fmtNum(ev.amount) + critMark, ev.crit ? 'dmg-out fl-crit' : 'dmg-out');
+          addFocusLogBatch('dmg-out', ev.skill || 'Auto', targetName, ev.amount, !!ev.crit);
         }
         if (ev.type === 'damage' && ev.target === focusHunterId && ev.amount > 0) {
-          addFocusLogEntry('💥 -' + fmtNum(ev.amount) + ' (Boss)', 'dmg-in');
+          addFocusLogBatch('dmg-in', 'Boss', '', ev.amount, false);
         }
         if (ev.type === 'heal' && ev.target === focusHunterId && ev.amount > 0) {
-          addFocusLogEntry('💚 +' + fmtNum(ev.amount), 'heal');
+          addFocusLogBatch('heal', 'Soin', '', ev.amount, false);
         }
       }
 
       // ── Floating damage text (filtered when focused) ──
       if (ev.type === 'damage' && ev.amount > 0) {
-        const targetPos = hunterPositions[ev.target] ||
+        // Find target position: hunter, boss, or add
+        let targetPos = hunterPositions[ev.target] ||
           (s.combat && s.combat.boss && s.combat.boss.id === ev.target ? { x: s.combat.boss.x, y: s.combat.boss.y } : null);
+        if (!targetPos && s.combat && s.combat.adds) {
+          const add = s.combat.adds.find(a => a.id === ev.target);
+          if (add) targetPos = { x: add.x, y: add.y };
+        }
         if (targetPos) {
           const screenX = sx(targetPos.x);
           const screenY = sy(targetPos.y);
           const isBossDmg = s.combat && s.combat.boss && ev.target === s.combat.boss.id;
+          const isAddDmg = !isBossDmg && !hunterPositions[ev.target];
           const sourcePos = hunterPositions[ev.source];
           const sourceElement = sourcePos ? sourcePos.element : 'shadow';
 
@@ -919,15 +1453,15 @@ function processState(s) {
           const showDmg = !focusHunterId || isFocusedSource || isFocusedTarget;
 
           if (showDmg) {
-            if (isBossDmg) {
+            if (isBossDmg || isAddDmg) {
               const elColor = ELEMENT_COLORS[sourceElement] || '#fff';
               const critColor = ev.crit ? '#ffe066' : elColor;
               const dmgText = ev.crit ? fmtNum(ev.amount) + '!' : fmtNum(ev.amount);
               // Bigger text for focused hunter's damage
               if (isFocusedSource) {
-                addFloatingText(screenX, screenY, dmgText, critColor, ev.crit || true); // Force crit-style (bigger)
+                addFloatingText(screenX, screenY, dmgText, critColor, ev.crit || true);
               } else {
-                addFloatingText(screenX, screenY, dmgText, critColor, ev.crit);
+                addFloatingText(screenX, screenY, dmgText, isAddDmg ? '#f59e0b' : critColor, ev.crit);
               }
               if (sourcePos) addAttackParticles(sx(sourcePos.x), sy(sourcePos.y), screenX, screenY, sourceElement, ev.crit ? 6 : 3);
             } else {
@@ -984,6 +1518,80 @@ function processState(s) {
         }
       }
 
+      // ── Skill VFX triggers ──
+      if (showSkillVFX) {
+        // skill_used events → VFX based on effect type
+        if (ev.type === 'skill_used') {
+          const pos = hunterPositions[ev.player];
+          if (pos) {
+            const elem = pos.element || 'shadow';
+            const eff = ev.effect || '';
+            if (eff === 'taunt') {
+              addSkillVFX('explosion_ring', pos.x, pos.y, elem, ev.player, { radius: 300, duration: 25 });
+            } else if (eff === 'party_shield') {
+              addSkillVFX('shield_pulse', pos.x, pos.y, 'light', ev.player, { radius: 250, duration: 30 });
+            } else if (eff === 'invulnerable') {
+              addSkillVFX('buff_aura', pos.x, pos.y, 'light', ev.player, { duration: 60 });
+            } else if (eff === 'heal_zone') {
+              addSkillVFX('heal_pulse', pos.x, pos.y, elem, ev.player, { radius: 150, duration: 35 });
+            }
+          }
+        }
+        // AoE self burst (warrior tempête, mage onde)
+        if (ev.type === 'aoe_self_burst') {
+          const pos = hunterPositions[ev.source];
+          const elem = pos ? pos.element || 'shadow' : 'shadow';
+          addSkillVFX('explosion_ring', ev.x, ev.y, elem, ev.source, { radius: ev.radius || 130, duration: 25 });
+        }
+        // Cleanse burst
+        if (ev.type === 'cleanse_burst') {
+          addSkillVFX('heal_pulse', ev.x, ev.y, 'light', ev.source, { radius: ev.radius || 400, duration: 30 });
+        }
+        // Charged attack release (berserker)
+        if (ev.type === 'charge_release') {
+          const pos = hunterPositions[ev.source];
+          if (pos) {
+            const elem = pos.element || 'fire';
+            const bossPos2 = s.combat && s.combat.boss ? { x: s.combat.boss.x, y: s.combat.boss.y } : null;
+            const angle = bossPos2 ? Math.atan2(bossPos2.y - pos.y, bossPos2.x - pos.x) : 0;
+            addSkillVFX('slash_arc', pos.x, pos.y, elem, ev.source, { range: 90, coneAngle: 60, angle, duration: 18 });
+          }
+        }
+        // Resurrect channel
+        if (ev.type === 'resurrect_channel') {
+          const srcPos = hunterPositions[ev.source];
+          if (srcPos) addSkillVFX('heal_pulse', srcPos.x, srcPos.y, 'light', ev.source, { radius: 100, duration: 45 });
+        }
+        // Buff (rage, atk_up)
+        if (ev.type === 'buff') {
+          const pos = hunterPositions[ev.source];
+          if (pos) {
+            const elem = pos.element || 'fire';
+            addSkillVFX('buff_aura', pos.x, pos.y, elem, ev.source, { duration: 50 });
+          }
+        }
+        // Melee damage from skill (not basic) → slash arc
+        if (ev.type === 'damage' && ev.skill && ev.source) {
+          const srcPos = hunterPositions[ev.source];
+          if (srcPos) {
+            const srcH = s.combat && s.combat.hunters ? s.combat.hunters.find(h => h.id === ev.source) : null;
+            if (srcH && (srcH.class === 'dps_cac' || srcH.class === 'berserker' || srcH.class === 'tank')) {
+              const tgtPos = hunterPositions[ev.target] ||
+                (s.combat && s.combat.boss && s.combat.boss.id === ev.target ? { x: s.combat.boss.x, y: s.combat.boss.y } : null);
+              if (tgtPos) {
+                const angle = Math.atan2(tgtPos.y - srcPos.y, tgtPos.x - srcPos.x);
+                const elem = srcPos.element || 'shadow';
+                // Only show for non-basic (named skills)
+                const isBasic = ['Frappe de bouclier', 'Combo de lames', 'Frappe brutale'].includes(ev.skill);
+                if (!isBasic) {
+                  addSkillVFX('slash_arc', srcPos.x, srcPos.y, elem, ev.source, { range: 90, coneAngle: 70, angle, duration: 15 });
+                }
+              }
+            }
+          }
+        }
+      }
+
       // Boss heal (DPS check fail, soul drain, etc.)
       if (ev.type === 'boss_heal' && ev.amount > 0 && s.combat && s.combat.boss) {
         const bx = sx(s.combat.boss.x);
@@ -1031,6 +1639,8 @@ function addLocalEvent(text, cls) {
 let focusHunterId = null; // Click to highlight on map (persistent)
 const focusLog = []; // Recent events for focused hunter { text, type, time }
 const FOCUS_LOG_MAX = 60;
+let focusLogVersion = 0; // Incremented when log changes
+let focusLogRenderedVersion = -1; // Last rendered version
 
 function focusHunter(hunterId) {
   if (focusHunterId === hunterId) { unfocusHunter(); return; } // Toggle off
@@ -1053,12 +1663,60 @@ function unfocusHunter() {
   document.querySelectorAll('.party-hunter').forEach(el => el.classList.remove('ph-highlight'));
 }
 
+// Batching system: accumulate similar damage events over 1.2s windows
+const focusBatch = {}; // key -> { total, count, crits, type, skill, targetName, lastTime }
+const BATCH_WINDOW = 1200; // ms
+
+function flushBatches() {
+  const now = Date.now();
+  for (const key of Object.keys(focusBatch)) {
+    const b = focusBatch[key];
+    if (now - b.lastTime > BATCH_WINDOW) {
+      // Flush this batch as a single log entry
+      const elapsed = combatStartTime ? ((now - combatStartTime) / 1000) : 0;
+      const timeStr = Math.floor(elapsed / 60) + ':' + ('0' + Math.floor(elapsed % 60)).slice(-2);
+      let text;
+      if (b.logType === 'dmg-out') {
+        const critMark = b.crits > 0 ? ' (' + b.crits + ' CRIT)' : '';
+        const countMark = b.count > 1 ? ' ×' + b.count : '';
+        text = '⚔ ' + b.skill + ' → ' + b.targetName + ' ' + fmtNum(b.total) + countMark + critMark;
+      } else if (b.logType === 'dmg-in') {
+        const countMark = b.count > 1 ? ' ×' + b.count : '';
+        text = '💥 -' + fmtNum(b.total) + countMark + ' (Boss)';
+      } else if (b.logType === 'heal') {
+        const countMark = b.count > 1 ? ' ×' + b.count : '';
+        text = '💚 +' + fmtNum(b.total) + countMark;
+      }
+      if (text) {
+        focusLog.unshift({ text, type: b.crits > 0 ? b.logType + ' fl-crit' : b.logType, time: timeStr });
+        if (focusLog.length > FOCUS_LOG_MAX) focusLog.pop();
+        focusLogVersion++;
+      }
+      delete focusBatch[key];
+    }
+  }
+}
+
+function addFocusLogBatch(logType, skill, targetName, amount, isCrit) {
+  if (!focusHunterId) return;
+  const key = logType + '|' + (skill || '') + '|' + (targetName || '');
+  if (focusBatch[key]) {
+    focusBatch[key].total += amount;
+    focusBatch[key].count++;
+    if (isCrit) focusBatch[key].crits++;
+    focusBatch[key].lastTime = Date.now();
+  } else {
+    focusBatch[key] = { total: amount, count: 1, crits: isCrit ? 1 : 0, logType, skill: skill || 'Auto', targetName: targetName || '', lastTime: Date.now() };
+  }
+}
+
 function addFocusLogEntry(text, type) {
   if (!focusHunterId) return;
   const elapsed = combatStartTime ? ((Date.now() - combatStartTime) / 1000) : 0;
   const timeStr = Math.floor(elapsed / 60) + ':' + ('0' + Math.floor(elapsed % 60)).slice(-2);
   focusLog.unshift({ text, type, time: timeStr });
   if (focusLog.length > FOCUS_LOG_MAX) focusLog.pop();
+  focusLogVersion++;
 }
 
 function updateFocusPanel(hunters) {
@@ -1080,21 +1738,64 @@ function updateFocusPanel(hunters) {
   const hpPct = h.maxHp > 0 ? (h.hp / h.maxHp * 100).toFixed(0) : 0;
   const manaPct = h.maxMana > 0 ? (h.mana / h.maxMana * 100).toFixed(0) : 0;
 
+  // Offensive stat label: INT for mages/healers, ATK for others
+  const offLabel = h.int > 0 ? 'INT' : 'ATK';
+  const offVal = h.int > 0 ? h.int : (h.atk || 0);
+  const offColor = h.int > 0 ? '#c084fc' : '#fb923c';
+
   document.getElementById('fp-stats').innerHTML =
-    '<div class="fp-stat"><span class="fp-stat-label">HP</span><span class="fp-stat-val" style="color:#10b981">' + fmtNum(Math.round(h.hp)) + ' (' + hpPct + '%)</span></div>' +
-    '<div class="fp-stat"><span class="fp-stat-label">Mana</span><span class="fp-stat-val" style="color:#6366f1">' + Math.round(h.mana) + '/' + h.maxMana + '</span></div>' +
-    '<div class="fp-stat"><span class="fp-stat-label">DPS</span><span class="fp-stat-val" style="color:#f59e0b">' + fmtNum(dps) + '/s</span></div>' +
+    '<div class="fp-stat"><span class="fp-stat-label">HP</span><span class="fp-stat-val" style="color:#10b981">' + fmtNum(Math.round(h.hp)) + ' / ' + fmtNum(h.maxHp) + '</span></div>' +
+    '<div class="fp-stat"><span class="fp-stat-label">Mana</span><span class="fp-stat-val" style="color:#6366f1">' + Math.round(h.mana) + ' / ' + h.maxMana + '</span></div>' +
+    '<div class="fp-stat"><span class="fp-stat-label">' + offLabel + '</span><span class="fp-stat-val" style="color:' + offColor + '">' + fmtNum(offVal) + '</span></div>' +
+    '<div class="fp-stat"><span class="fp-stat-label">DEF</span><span class="fp-stat-val" style="color:#60a5fa">' + fmtNum(h.def || 0) + '</span></div>' +
+    '<div class="fp-stat"><span class="fp-stat-label">SPD</span><span class="fp-stat-val" style="color:#a78bfa">' + fmtNum(h.spd || 0) + '</span></div>' +
+    '<div class="fp-stat"><span class="fp-stat-label">CRIT</span><span class="fp-stat-val" style="color:#fbbf24">' + fmtNum(h.crit || 0) + '</span></div>' +
+    '<div class="fp-stat"><span class="fp-stat-label">RES</span><span class="fp-stat-val" style="color:#34d399">' + fmtNum(h.res || 0) + '</span></div>' +
+    '<div class="fp-stat" style="border-top:1px solid #1e1e4a;padding-top:3px;margin-top:2px"><span class="fp-stat-label">DPS</span><span class="fp-stat-val" style="color:#f59e0b">' + fmtNum(dps) + '/s</span></div>' +
     '<div class="fp-stat"><span class="fp-stat-label">DMG</span><span class="fp-stat-val" style="color:#e2e8f0">' + fmtNum(h.damageDealt || 0) + '</span></div>' +
+    (hps > 0 ? '<div class="fp-stat"><span class="fp-stat-label">HPS</span><span class="fp-stat-val" style="color:#10b981">' + fmtNum(hps) + '/s</span></div>' : '') +
     '<div class="fp-stat"><span class="fp-stat-label">Heal</span><span class="fp-stat-val" style="color:#10b981">' + fmtNum(h.healingDone || 0) + '</span></div>' +
     '<div class="fp-stat"><span class="fp-stat-label">Subi</span><span class="fp-stat-val" style="color:#ef4444">' + fmtNum(h.damageTaken || 0) + '</span></div>';
 
-  // Render focus log
-  const logEl = document.getElementById('focus-log');
-  const wasAtTop = logEl.scrollTop < 20;
-  logEl.innerHTML = focusLog.map(e =>
-    '<div class="fl-entry fl-' + e.type + '"><span>' + e.text + '</span><span class="fl-time">' + e.time + '</span></div>'
-  ).join('');
-  if (wasAtTop) logEl.scrollTop = 0;
+  // Render skills with cooldowns
+  const skillsEl = document.getElementById('fp-skills');
+  if (h.skills) {
+    const sk = h.skills;
+    const slots = [
+      { key: 'LMB', css: 'sk-basic', s: sk.basic },
+      { key: 'RMB', css: 'sk-rmb', s: sk.secondary },
+      { key: 'A', css: 'sk-a', s: sk.skillA },
+      { key: 'B', css: 'sk-b', s: sk.skillB },
+      { key: 'R', css: 'sk-ult', s: sk.ultimate },
+    ];
+    skillsEl.innerHTML = slots.map(sl => {
+      if (!sl.s || !sl.s.name) return '';
+      const cd = sl.s.cd || 0;
+      const maxCd = sl.s.maxCd || 0;
+      const cdText = cd > 0 ? cd.toFixed(1) + 's' : 'OK';
+      const cdClass = cd > 0 ? 'on-cd' : 'ready';
+      const barPct = maxCd > 0 && cd > 0 ? Math.round(cd / maxCd * 100) : 0;
+      return '<div class="fp-skill">' +
+        '<span class="fp-skill-key ' + sl.css + '">' + sl.key + '</span>' +
+        '<span class="fp-skill-name">' + sl.s.name + '</span>' +
+        '<span class="fp-skill-cd ' + cdClass + '">' + cdText + '</span>' +
+        (barPct > 0 ? '<div class="fp-skill-bar" style="width:' + barPct + '%"></div>' : '') +
+      '</div>';
+    }).join('');
+  } else {
+    skillsEl.innerHTML = '<div style="color:#4b5563;font-size:9px;padding:4px;">Aucune donnée</div>';
+  }
+
+  // Render focus log (only when new entries added — prevents flickering)
+  if (focusLogVersion !== focusLogRenderedVersion) {
+    const logEl = document.getElementById('focus-log');
+    const wasAtTop = logEl.scrollTop < 20;
+    logEl.innerHTML = focusLog.map(e =>
+      '<div class="fl-entry fl-' + e.type + '"><span>' + e.text + '</span><span class="fl-time">' + e.time + '</span></div>'
+    ).join('');
+    if (wasAtTop) logEl.scrollTop = 0;
+    focusLogRenderedVersion = focusLogVersion;
+  }
 }
 
 // Build party HUD DOM once, then update in-place (avoids re-fetching images every tick)
@@ -1689,6 +2390,7 @@ function updateHunterDetail(hunters) {
 // ── Canvas Render ──
 function render() {
   requestAnimationFrame(render);
+  flushBatches(); // Flush batched combat log entries
   ctx.fillStyle = '#0a0a1a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1955,28 +2657,64 @@ function render() {
     }
   }
 
-  // Projectiles — only show BOSS projectiles (hunter attacks are shown via particles/events)
+  // Projectiles — show ALL projectiles (boss + hunter) with trails
   if (c.projectiles) for (const p of c.projectiles) {
-    if (p.type !== 'boss_projectile') continue; // Skip player projectiles entirely
     const px = tx(p.x), py = ty(p.y);
-    const pr = Math.max(ts(p.radius || 5), 3);
-    const pColor = p.color || '#fbbf24';
+    const isBossProj = p.type === 'boss_projectile';
+    const isHunterProj = !isBossProj;
+
+    // When controlling: dim other hunters' projectiles, keep boss projectiles bright
+    const projAlpha = (isControlling && isHunterProj && p.owner !== controlledHunterId) ? 0.3 : 1;
+
+    // Color: boss projectiles = warm, hunter projectiles = by owner element color
+    let pColor = p.color || '#fbbf24';
+    let pElement = 'fire';
+    if (isHunterProj && c.hunters) {
+      const owner = c.hunters.find(h => h.id === p.owner);
+      if (owner) {
+        pElement = owner.element || 'shadow';
+        pColor = ELEMENT_COLORS[pElement] || CLASS_COLORS[owner.class] || owner.color || pColor;
+      }
+    }
+
+    const pr = Math.max(ts(p.radius || 5), isBossProj ? 4 : 3);
+
+    // ── Trail effect (velocity-based line behind projectile) ──
+    if (p.vx !== undefined || p.vy !== undefined) {
+      const speed = Math.hypot(p.vx || 0, p.vy || 0);
+      if (speed > 100) {
+        const trailLen = Math.min(ts(35), ts(speed * 0.025));
+        const angle = Math.atan2(-(p.vy || 0), -(p.vx || 0)); // Opposite of direction
+        const trailX = px + Math.cos(angle) * trailLen;
+        const trailY = py + Math.sin(angle) * trailLen;
+        const tGrad = ctx.createLinearGradient(px, py, trailX, trailY);
+        tGrad.addColorStop(0, pColor);
+        tGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = 0.5 * projAlpha;
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(trailX, trailY);
+        ctx.strokeStyle = tGrad;
+        ctx.lineWidth = pr * 1.2;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+    }
 
     // Glow halo
-    ctx.globalAlpha = 0.25;
-    ctx.beginPath(); ctx.arc(px, py, pr * 2, 0, Math.PI * 2);
+    ctx.globalAlpha = (isBossProj ? 0.35 : 0.2) * projAlpha;
+    ctx.beginPath(); ctx.arc(px, py, pr * (isBossProj ? 2.2 : 1.8), 0, Math.PI * 2);
     ctx.fillStyle = pColor; ctx.fill();
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = projAlpha;
 
     // Core orb
-    ctx.beginPath(); ctx.arc(px, py, pr * 0.7, 0, Math.PI * 2);
-    const grad = ctx.createRadialGradient(px, py, 0, px, py, pr * 0.7);
+    ctx.beginPath(); ctx.arc(px, py, pr * 0.8, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(px, py, 0, px, py, pr * 0.8);
     grad.addColorStop(0, '#fff');
-    grad.addColorStop(0.5, pColor);
-    grad.addColorStop(1, pColor + '60');
+    grad.addColorStop(0.4, pColor);
+    grad.addColorStop(1, pColor + '40');
     ctx.fillStyle = grad;
-    ctx.shadowColor = pColor; ctx.shadowBlur = 10;
+    ctx.shadowColor = pColor; ctx.shadowBlur = isBossProj ? 12 : 8;
     ctx.fill(); ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
   }
 
   // Hunters
@@ -2013,7 +2751,11 @@ function render() {
       continue;
     }
 
-    const sprite = SPRITES[h.hunterId] || SPRITES[h.class];
+    // Choose front/back sprite based on position relative to boss
+    const bossPos = c.boss ? { x: c.boss.x, y: c.boss.y } : null;
+    const facingAway = bossPos && h.y < bossPos.y - 30; // Hunter is above boss → moving away
+    const backSprite = SPRITES[h.hunterId + '_back'];
+    const sprite = (facingAway && backSprite) ? backSprite : (SPRITES[h.hunterId] || SPRITES[h.class]);
     const spriteSize = ts(isFocused ? 52 : 44); // Bigger sprite for focused
 
     if (sprite) {
@@ -2054,7 +2796,11 @@ function render() {
         ctx.beginPath(); ctx.arc(0, 0, ringR, 0, Math.PI * 2); ctx.stroke();
       }
 
+      // Flip sprite horizontally if hunter is to the right of the boss (facing left)
+      const flipX = bossPos && h.x > bossPos.x;
+      if (flipX) ctx.scale(-1, 1);
       ctx.drawImage(sprite, -spriteSize / 2, -spriteSize / 2, spriteSize, spriteSize);
+      if (flipX) ctx.scale(-1, 1);
       ctx.shadowBlur = 0; ctx.globalAlpha = 1;
 
       const hpPct = h.maxHp > 0 ? h.hp / h.maxHp : 1;
@@ -2067,6 +2813,54 @@ function render() {
         ctx.lineWidth = isFocused ? 3.5 : 2.5; ctx.stroke();
         ctx.globalAlpha = 1;
       }
+
+      // ── Channeling animation (resurrect, etc.) ──
+      if (h.casting && h.casting.type === 'resurrect') {
+        const castProg = h.casting.progress || 0;
+        const castR = spriteSize / 2 + 10;
+        const now = Date.now();
+        // Spinning golden ring (progress arc)
+        ctx.beginPath();
+        ctx.arc(0, 0, castR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * castProg);
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        // Pulsing inner glow
+        const pulse = 0.3 + 0.3 * Math.sin(now / 150);
+        ctx.beginPath(); ctx.arc(0, 0, castR - 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(251,191,36,' + pulse + ')';
+        ctx.fill();
+        // Floating sparkles around healer
+        for (let sp = 0; sp < 4; sp++) {
+          const sa = (now / 400) + sp * Math.PI / 2;
+          const sr = castR + 4 + Math.sin(now / 200 + sp) * 3;
+          ctx.beginPath(); ctx.arc(Math.cos(sa) * sr, Math.sin(sa) * sr, 2, 0, Math.PI * 2);
+          ctx.fillStyle = '#fff'; ctx.fill();
+        }
+        // Beam to target
+        if (h.casting.targetId) {
+          const tgtH = c.hunters.find(t => t.id === h.casting.targetId);
+          if (tgtH) {
+            const dx = (tgtH.x - h.x) * scale;
+            const dy = (tgtH.y - h.y) * scale;
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(dx, dy);
+            ctx.strokeStyle = 'rgba(251,191,36,' + (0.3 + 0.2 * Math.sin(now / 120)) + ')';
+            ctx.lineWidth = 2; ctx.setLineDash([4, 4]); ctx.lineDashOffset = -now / 50;
+            ctx.stroke(); ctx.setLineDash([]);
+            // Glow on target
+            ctx.beginPath(); ctx.arc(dx, dy, 12 + Math.sin(now / 200) * 3, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(251,191,36,' + (0.15 + 0.1 * Math.sin(now / 180)) + ')';
+            ctx.fill();
+          }
+        }
+        // Cast bar text
+        ctx.fillStyle = '#fbbf24'; ctx.font = 'bold ' + Math.max(9, ts(8)) + 'px Segoe UI';
+        ctx.textAlign = 'center';
+        ctx.fillText('Résurrection ' + Math.round(castProg * 100) + '%', 0, spriteSize / 2 + 22);
+      }
+
       ctx.restore();
     } else {
       ctx.globalAlpha = dimAlpha;
@@ -2323,11 +3117,216 @@ function render() {
     }
   }
 
+  // Skill VFX
+  updateSkillVFX();
+  drawSkillVFX(ctx, scale, ox, oy);
+
   // Particles & floating damage
   updateParticles();
   drawParticles(ctx);
   updateFloatingTexts();
   drawFloatingTexts(ctx);
+
+  // ── Grave markers on dead hunters (visible when controlling a healer) ──
+  if (isControlling && c.hunters) {
+    const ctrlH = c.hunters.find(x => x.id === controlledHunterId);
+    const isHealer = ctrlH && ctrlH.class === 'healer';
+    if (isHealer) {
+      const deadHunters = c.hunters.filter(h => !h.alive);
+      for (const d of deadHunters) {
+        const dx = tx(d.x), dy = ty(d.y);
+        const pulse = 0.5 + 0.3 * Math.sin(Date.now() / 500);
+        ctx.save();
+        ctx.globalAlpha = pulse;
+        // Cross/tombstone shape
+        ctx.fillStyle = '#94a3b8';
+        const cw = ts(6), ch = ts(18);
+        ctx.fillRect(dx - cw/2, dy - ch, cw, ch); // vertical
+        ctx.fillRect(dx - ch/3, dy - ch * 0.7, ch * 0.66, cw); // horizontal
+        // Top arc
+        ctx.beginPath(); ctx.arc(dx, dy - ch, cw/2 + 1, Math.PI, 0); ctx.fill();
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = '#fbbf24'; ctx.font = 'bold ' + Math.max(9, ts(8)) + 'px Segoe UI';
+        ctx.textAlign = 'center';
+        ctx.fillText(d.hunterName, dx, dy + ts(14));
+        ctx.fillStyle = '#ef4444'; ctx.font = Math.max(8, ts(7)) + 'px Segoe UI';
+        ctx.fillText('REZ', dx, dy + ts(23));
+        ctx.restore();
+      }
+    }
+  }
+
+  // ── Center alert ("Sort pas prêt!", etc.) ──
+  if (centerAlert) {
+    const dt = 1 / 60;
+    centerAlert.timer -= dt;
+    if (centerAlert.timer <= 0) {
+      centerAlert = null;
+    } else {
+      const fadeAlpha = Math.min(1, centerAlert.timer * 3); // Fade out last 0.33s
+      ctx.save();
+      ctx.globalAlpha = fadeAlpha * 0.95;
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      const tw = ctx.measureText(centerAlert.text).width || 200;
+      const boxW = Math.max(260, tw + 40);
+      ctx.fillRect(canvas.width/2 - boxW/2, canvas.height/2 - 25, boxW, 50);
+      ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+      ctx.strokeRect(canvas.width/2 - boxW/2, canvas.height/2 - 25, boxW, 50);
+      ctx.fillStyle = '#fca5a5'; ctx.font = 'bold 18px Segoe UI'; ctx.textAlign = 'center';
+      ctx.fillText(centerAlert.text, canvas.width/2, canvas.height/2 + 7);
+      ctx.restore();
+    }
+  }
+
+  // ── Big Skill Bar (bottom of screen, visible when controlling) ──
+  if (isControlling && c.hunters) {
+    const h = c.hunters.find(x => x.id === controlledHunterId);
+    if (h && h.skills) {
+      const sk = h.skills;
+      const slots = [
+        { key: 'LMB', skillKey: 'basic', sk: sk.basic, color: '#6b7280' },
+        { key: 'RMB', skillKey: 'secondary', sk: sk.secondary, color: '#4b5563' },
+        { key: 'A', skillKey: 'skillA', sk: sk.skillA, color: '#7c3aed' },
+        { key: 'E', skillKey: 'skillB', sk: sk.skillB, color: '#2563eb' },
+        { key: 'R', skillKey: 'ultimate', sk: sk.ultimate, color: '#dc2626' },
+        { key: 'SPACE', skillKey: 'dodge', sk: { name: 'Esquive', cd: h.dodgeCd || 0, maxCd: 6 }, color: '#0891b2' },
+      ];
+      const barY = canvas.height - 80;
+      const slotW = 88, slotH = 60, gap = 6;
+      const totalW = slots.length * slotW + (slots.length - 1) * gap;
+      const startX = (canvas.width - totalW) / 2;
+      const frameDt = 1 / 60;
+
+      // Decay flash timers
+      for (const fk in skillFlash) {
+        skillFlash[fk].timer -= frameDt;
+        if (skillFlash[fk].timer <= 0) delete skillFlash[fk];
+      }
+
+      ctx.save();
+
+      // Dark backdrop behind skill bar
+      const bdPad = 10;
+      ctx.fillStyle = 'rgba(6,6,18,0.75)';
+      ctx.beginPath();
+      const bdX = startX - bdPad, bdY = barY - 22, bdW = totalW + bdPad * 2, bdH = slotH + 32;
+      ctx.roundRect(bdX, bdY, bdW, bdH, 10);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(99,102,241,0.2)'; ctx.lineWidth = 1;
+      ctx.stroke();
+
+      for (let i = 0; i < slots.length; i++) {
+        const sl = slots[i];
+        if (!sl.sk || !sl.sk.name) continue;
+        const sx2 = startX + i * (slotW + gap);
+        const cd = sl.sk.cd || 0;
+        const maxCd = sl.sk.maxCd || 0;
+        const onCd = cd > 0;
+        const cdPct = (maxCd > 0 && cd > 0) ? cd / maxCd : 0;
+        const flash = skillFlash[sl.skillKey];
+        const isFlashing = flash && flash.timer > 0;
+
+        // Slot background with rounded corners
+        ctx.globalAlpha = 0.92;
+        ctx.beginPath();
+        ctx.roundRect(sx2, barY, slotW, slotH, 6);
+
+        if (isFlashing) {
+          // Flash red when spam
+          const flashAlpha = 0.3 + 0.4 * Math.sin(flash.timer * 25);
+          ctx.fillStyle = 'rgba(239,68,68,' + flashAlpha + ')';
+        } else if (onCd) {
+          ctx.fillStyle = 'rgba(20,20,45,0.95)';
+        } else {
+          ctx.fillStyle = 'rgba(20,40,30,0.85)';
+        }
+        ctx.fill();
+
+        // CD progress bar (orange fill from bottom → shrinks as CD recovers)
+        if (onCd && !isFlashing) {
+          ctx.beginPath();
+          ctx.roundRect(sx2, barY, slotW, slotH, 6);
+          ctx.save();
+          ctx.clip();
+          ctx.fillStyle = 'rgba(245,158,11,0.3)';
+          ctx.fillRect(sx2, barY + slotH * (1 - cdPct), slotW, slotH * cdPct);
+          ctx.restore();
+        }
+
+        // Green glow when ready
+        if (!onCd && !isFlashing) {
+          ctx.save();
+          ctx.shadowColor = '#22c55e';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.roundRect(sx2, barY, slotW, slotH, 6);
+          ctx.strokeStyle = '#22c55e80';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Border
+        ctx.beginPath();
+        ctx.roundRect(sx2, barY, slotW, slotH, 6);
+        ctx.strokeStyle = isFlashing ? '#ef4444' : (onCd ? '#f59e0b50' : '#22c55e60');
+        ctx.lineWidth = isFlashing ? 2.5 : (onCd ? 1 : 1.5);
+        ctx.stroke();
+
+        // Key badge (top-left rounded)
+        ctx.globalAlpha = 1;
+        const badgeW = sl.key.length > 3 ? 42 : 26;
+        ctx.beginPath();
+        ctx.roundRect(sx2 + 2, barY + 2, badgeW, 16, [4, 4, 4, 4]);
+        ctx.fillStyle = isFlashing ? '#7f1d1d' : sl.color;
+        ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Segoe UI'; ctx.textAlign = 'center';
+        ctx.fillText(sl.key, sx2 + 2 + badgeW / 2, barY + 14);
+
+        // Skill name
+        ctx.fillStyle = onCd ? '#64748b' : '#e2e8f0';
+        ctx.font = '10px Segoe UI'; ctx.textAlign = 'center';
+        const name = sl.sk.name.length > 11 ? sl.sk.name.slice(0, 10) + '…' : sl.sk.name;
+        ctx.fillText(name, sx2 + slotW / 2, barY + 34);
+
+        // CD text or PRÊT indicator
+        if (onCd) {
+          ctx.fillStyle = '#f59e0b'; ctx.font = 'bold 18px Segoe UI';
+          ctx.fillText(cd.toFixed(1) + 's', sx2 + slotW / 2, barY + 55);
+        } else {
+          ctx.fillStyle = '#22c55e'; ctx.font = 'bold 13px Segoe UI';
+          ctx.fillText('PRÊT', sx2 + slotW / 2, barY + 53);
+        }
+      }
+
+      // Mana bar above skill bar
+      if (h.maxMana > 0) {
+        const manaW = totalW, manaH = 7;
+        const manaX = startX, manaY = barY - 14;
+        const manaPct = Math.max(0, h.mana / h.maxMana);
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath(); ctx.roundRect(manaX, manaY, manaW, manaH, 3); ctx.fillStyle = '#0f172a'; ctx.fill();
+        ctx.beginPath(); ctx.roundRect(manaX, manaY, manaW * manaPct, manaH, 3);
+        ctx.fillStyle = manaPct < 0.2 ? '#ef4444' : '#6366f1'; ctx.fill();
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = '#c4b5fd'; ctx.font = 'bold 10px Segoe UI'; ctx.textAlign = 'center';
+        ctx.fillText(Math.round(h.mana) + ' / ' + h.maxMana + ' MANA', manaX + manaW / 2, manaY - 3);
+      }
+
+      // VFX toggle (small button top-right of skill bar)
+      const vfxBtnX = startX + totalW - 50, vfxBtnY = barY - 30;
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath(); ctx.roundRect(vfxBtnX, vfxBtnY, 50, 14, 3);
+      ctx.fillStyle = showSkillVFX ? 'rgba(34,197,94,0.3)' : 'rgba(100,100,100,0.3)';
+      ctx.fill();
+      ctx.fillStyle = showSkillVFX ? '#4ade80' : '#64748b'; ctx.font = '9px Segoe UI'; ctx.textAlign = 'center';
+      ctx.fillText(showSkillVFX ? 'VFX ON' : 'VFX OFF', vfxBtnX + 25, vfxBtnY + 11);
+      // Store for click detection
+      window._vfxBtnRect = { x: vfxBtnX, y: vfxBtnY, w: 50, h: 14 };
+
+      ctx.restore();
+    }
+  }
 }
 requestAnimationFrame(render);
 </script>

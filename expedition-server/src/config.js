@@ -46,9 +46,9 @@ export const ARENA = {
 
 // ─── Player/Hunter Physics ───────────────────────────────
 export const PLAYER = {
-  RADIUS: 18,
-  BASE_SPEED: 35,               // px/s base movement (realistic pace like Manaya)
-  DODGE_SPEED: 120,             // px/s during dodge
+  RADIUS: 22,
+  BASE_SPEED: 145,              // px/s — same as Manaya game-server
+  DODGE_SPEED: 420,             // px/s during dodge — same as Manaya
   DODGE_DURATION: 0.6,          // seconds
   DODGE_COOLDOWN: 6.0,          // seconds
   DODGE_IFRAMES: 1.0,           // 1s invincibility

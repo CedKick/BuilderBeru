@@ -183,12 +183,70 @@ export class BotAI {
       }
     }
 
-    // ── Sphère de Mort — run far away (>310px) ──
+    // ── Sphère de Mort — run far away (>270px) ──
     if (castName === 'Sphère de Mort') {
-      if (distToBoss < 310) {
+      if (distToBoss < 280) {
         return [this._moveAway(player, boss)];
       }
       return [{ type: 'stop' }];
+    }
+
+    // ── Generic pattern handling based on boss.currentPattern ──
+    if (boss.casting && boss.currentPattern) {
+      const pat = boss.currentPattern.pattern;
+
+      // Double donut (Anneau Destructeur) — phase 1: run away >360px, phase 2: run to 160-370px
+      if (pat.type === 'double_donut') {
+        // Check if phase 2 is active (outer ring zones exist)
+        const outerDonut = gs.aoeZones.find(z => z.id?.startsWith('dbl_outer_') && (z.type === 'donut_telegraph' || z.type === 'donut_explosion'));
+        if (outerDonut) {
+          // Phase 2: safe zone is 160-370px. Aim for ~260px.
+          if (distToBoss < 170) {
+            return [this._moveAway(player, boss)];
+          } else if (distToBoss > 350) {
+            if (!player.dodging && player.dodgeCooldown <= 0) {
+              return [{ type: 'dodge', angle: angleToBoss }];
+            }
+            return [this._moveToward(player, boss)];
+          } else if (distToBoss > 300) {
+            return [this._moveToward(player, boss)];
+          }
+          return [{ type: 'stop' }];
+        }
+        // Phase 1: safe <120px or >360px. Run away to >360px.
+        if (distToBoss < 365) {
+          return [this._moveAway(player, boss)];
+        }
+        return [{ type: 'stop' }];
+      }
+
+      // Simple donut — run to boss center (safe inside)
+      if (pat.type === 'donut') {
+        const safe = pat.innerSafe || 150;
+        if (distToBoss > safe - 20) {
+          return [this._moveToward(player, boss)];
+        }
+        return [{ type: 'stop' }];
+      }
+      // Generic large aoe_ring — run out of range
+      if (pat.type === 'aoe_ring' && (pat.outerRadius || 300) >= 250) {
+        const outer = pat.outerRadius || 300;
+        if (distToBoss < outer + 50) {
+          return [this._moveAway(player, boss)];
+        }
+        return [{ type: 'stop' }];
+      }
+      // Percent HP attack — critical, run to safety
+      if (pat.type === 'percent_hp_attack') {
+        const outer = pat.outerRadius || 400;
+        const inner = pat.innerSafe || 0;
+        if (inner > 0 && distToBoss < inner) return null; // Safe inside
+        if (distToBoss < outer + 30) {
+          if (inner > 0) return [this._moveToward(player, boss)];
+          return [this._moveAway(player, boss)];
+        }
+        return [{ type: 'stop' }];
+      }
     }
 
     // ── Double Impact — two phases ──
@@ -355,26 +413,33 @@ export class BotAI {
   }
 
   // ── DODGE LOGIC ──
-  // Dodge roll (i-frames) for immediate threats — NOT for OS mechanics (those use movement)
+  // Generic dodge system for expedition boss patterns.
+  // Reacts to boss casting state + AoE zones, not just hardcoded attack names.
   _checkDodge(player, gs, boss, distToBoss) {
     if (player.dodging || player.dodgeCooldown > 0.5) return null;
 
-    // Check AoE zones that threaten us (skip harmless types)
+    // ── 1. Active AoE zones threatening us ──
     for (const zone of gs.aoeZones) {
-      // Skip non-damaging zones
+      // Skip non-damaging / visual-only zones
       if (zone.type.includes('telegraph') || zone.type.includes('outline') ||
-          zone.type === 'donut_safe' || zone.type === 'poison_follow') continue;
-      // Skip poison clouds — low damage, not worth dodge
+          zone.type === 'donut_safe' || zone.type === 'poison_follow' ||
+          zone.type === 'soak_circle' || zone.type === 'boss_heal_cast') continue;
       if (zone.type === 'poison_cloud') continue;
 
       const distToZone = this._dist(player, zone);
       const danger = zone.radius + 30;
 
-      // Active explosion or zone about to hit
+      // Active damaging zone
       const isDangerous = zone.active && zone.ttl > 0.1;
       if (distToZone < danger && isDangerous) {
         const awayAngle = Math.atan2(player.y - zone.y, player.x - zone.x);
         return { type: 'dodge', angle: awayAngle };
+      }
+
+      // Boss donut about to resolve — dodge INTO safe zone if outside
+      if (zone.type === 'boss_donut' && distToZone > (zone.innerSafe || 150) + 20) {
+        const towardAngle = Math.atan2(zone.y - player.y, zone.x - player.x);
+        return { type: 'dodge', angle: towardAngle };
       }
     }
 
@@ -386,16 +451,112 @@ export class BotAI {
       }
     }
 
-    // Boss casting frontal cone — dodge sideways (non-tank only)
-    if (boss.casting && this.playerClass !== 'tank' && distToBoss < 280) {
-      const castName = boss.casting.name;
-      // Only dodge for frontal attacks (not special mechanics)
-      if (castName === 'Souffle Frontal' || castName === 'Griffe Rapide' || castName === 'Balayage de Queue') {
-        const playerAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
-        const angleDiff = this._angleDiff(playerAngle, boss.rotation || 0);
-        if (Math.abs(angleDiff) < Math.PI / 2.5) {
-          const sideAngle = (boss.rotation || 0) + Math.PI / 2 * (angleDiff > 0 ? 1 : -1);
-          return { type: 'dodge', angle: sideAngle };
+    // ── 2. Generic boss casting reaction ──
+    // React to ANY boss pattern during telegraph/cast, based on pattern type
+    if (boss.casting && boss.currentPattern) {
+      const pat = boss.currentPattern.pattern;
+      const castProgress = boss.casting.progress || 0;
+
+      // Only react when telegraph is > 50% done (gives AI realistic reaction time)
+      if (castProgress < 0.5) return null;
+
+      switch (pat.type) {
+        case 'cone_telegraph': {
+          // Non-tanks dodge sideways if in the cone
+          if (this.playerClass === 'tank') break;
+          const range = pat.range || 250;
+          if (distToBoss > range + 50) break; // Out of range, safe
+          const playerAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
+          const angleDiff = this._angleDiff(playerAngle, boss.rotation || 0);
+          const halfCone = ((pat.coneAngle || 90) * Math.PI / 180) / 2;
+          if (Math.abs(angleDiff) < halfCone + 0.2) {
+            // In the cone — dodge perpendicular
+            const sideAngle = (boss.rotation || 0) + Math.PI / 2 * (angleDiff > 0 ? 1 : -1);
+            return { type: 'dodge', angle: sideAngle };
+          }
+          break;
+        }
+        case 'aoe_ring': {
+          // Dodge away from boss if within outer radius
+          const outer = pat.outerRadius || 300;
+          if (distToBoss < outer + 40) {
+            const awayAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
+            return { type: 'dodge', angle: awayAngle };
+          }
+          break;
+        }
+        case 'donut': {
+          // Dodge TOWARD boss to reach inner safe zone
+          const safe = pat.innerSafe || 150;
+          if (distToBoss > safe + 30) {
+            const towardAngle = Math.atan2(boss.y - player.y, boss.x - player.x);
+            return { type: 'dodge', angle: towardAngle };
+          }
+          break;
+        }
+        case 'double_donut': {
+          // Phase 1: dodge AWAY if in ring (120-360px)
+          if (distToBoss > 100 && distToBoss < 370) {
+            const awayAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
+            return { type: 'dodge', angle: awayAngle };
+          }
+          break;
+        }
+        case 'line_telegraph': {
+          // Dodge perpendicular if in the line path
+          const range = pat.range || 800;
+          const halfW = (pat.lineWidth || 80) / 2;
+          const dx = player.x - boss.x, dy = player.y - boss.y;
+          const cos = Math.cos(boss.rotation || 0), sin = Math.sin(boss.rotation || 0);
+          const along = dx * cos + dy * sin;
+          const perp = -dx * sin + dy * cos;
+          if (along >= -20 && along <= range + 20 && Math.abs(perp) < halfW + 40) {
+            const sideAngle = (boss.rotation || 0) + Math.PI / 2 * (perp > 0 ? 1 : -1);
+            return { type: 'dodge', angle: sideAngle };
+          }
+          break;
+        }
+        case 'targeted_aoe_multi': {
+          // Can't predict exact target, but if close to boss during cast, dodge away
+          if (distToBoss < (pat.aoeRadius || 100) + 80 && this.playerClass !== 'tank') {
+            const awayAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
+            return { type: 'dodge', angle: awayAngle };
+          }
+          break;
+        }
+        case 'fire_wave': {
+          // Dodge away early — the wave expands from boss
+          const maxR = pat.maxRadius || 500;
+          if (distToBoss < maxR * 0.6) {
+            const awayAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
+            return { type: 'dodge', angle: awayAngle };
+          }
+          break;
+        }
+        case 'percent_hp_attack': {
+          // CRITICAL — dodge at all costs (sets HP to X%)
+          const outer = pat.outerRadius || 400;
+          const inner = pat.innerSafe || 0;
+          if (inner > 0 && distToBoss < inner) break; // Already in safe zone
+          if (distToBoss < outer + 30) {
+            if (inner > 0) {
+              // Dodge toward safe inner zone
+              const towardAngle = Math.atan2(boss.y - player.y, boss.x - player.x);
+              return { type: 'dodge', angle: towardAngle };
+            }
+            // No safe zone — just dodge away and pray for i-frames
+            const awayAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
+            return { type: 'dodge', angle: awayAngle };
+          }
+          break;
+        }
+        case 'ultimate_wipe': {
+          // Save dodge for i-frames right before cast resolves (> 80% telegraph)
+          if (castProgress > 0.8) {
+            const awayAngle = Math.atan2(player.y - boss.y, player.x - boss.x);
+            return { type: 'dodge', angle: awayAngle };
+          }
+          break;
         }
       }
     }

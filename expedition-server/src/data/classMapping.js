@@ -26,6 +26,7 @@ export const CLASS_STAT_MULTS = {
   healer: {
     hp: 1.8,
     atk: 0.3,       // Very low damage
+    int: 0.8,        // Supports scale on INT for healing/damage
     def: 1.0,
     spd: 0.9,
     crit: 0.3,
@@ -33,6 +34,7 @@ export const CLASS_STAT_MULTS = {
     mana: 800,       // High mana for healing
     aggroMult: 0.7,
     color: '#10b981',
+    usesInt: true,    // Offensive stat = INT instead of ATK
   },
   dps_cac: {  // Warrior (assassins)
     hp: 1.2,
@@ -71,6 +73,7 @@ export const CLASS_STAT_MULTS = {
   mage: {
     hp: 0.9,
     atk: 0.6,       // Lower raw ATK but high skill power
+    int: 1.0,        // Mages scale on INT for damage
     def: 0.4,
     spd: 0.9,
     crit: 0.7,
@@ -78,6 +81,7 @@ export const CLASS_STAT_MULTS = {
     mana: 1000,      // Highest mana pool
     aggroMult: 0.9,
     color: '#c084fc',
+    usesInt: true,    // Offensive stat = INT instead of ATK
   },
 };
 
@@ -94,10 +98,15 @@ export function buildCombatStats(hunterId, inscriptionStats) {
   const mults = CLASS_STAT_MULTS[combatClass];
   if (!mults) return inscriptionStats;
 
+  // INT: use inscription INT if provided, fallback to ATK
+  const rawInt = inscriptionStats.int || inscriptionStats.atk;
+  const intMult = mults.int || 0;
+
   return {
     maxHp: Math.round(inscriptionStats.hp * mults.hp),
     hp: Math.round(inscriptionStats.hp * mults.hp),
     atk: Math.round(inscriptionStats.atk * mults.atk),
+    int: Math.round(rawInt * intMult),  // 0 for non-INT classes
     def: Math.round(inscriptionStats.def * mults.def),
     spd: Math.round(inscriptionStats.spd * mults.spd),
     crit: Math.round(inscriptionStats.crit * mults.crit),
@@ -105,6 +114,7 @@ export function buildCombatStats(hunterId, inscriptionStats) {
     maxMana: mults.mana,
     mana: mults.useRage ? 0 : mults.mana,
     useRage: !!mults.useRage,
+    usesInt: !!mults.usesInt,
     aggroMult: mults.aggroMult,
     color: mults.color,
     combatClass,

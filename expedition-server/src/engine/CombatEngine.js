@@ -493,10 +493,16 @@ export class CombatEngine {
   // ── Damage Calculation ──
 
   calculateDamage(attacker, power, defender) {
-    // Base damage (apply atk_up buffs, e.g. Berserker Rage)
-    let effectiveAtk = attacker.atk;
-    for (const b of (attacker.buffs || [])) {
-      if (b.type === 'atk_up') effectiveAtk *= (1 + b.value);
+    // Base damage — use getOffensiveStat() which handles INT/Mana scaling
+    // Buffs are already applied inside getOffensiveStat()
+    let effectiveAtk = attacker.getOffensiveStat
+      ? attacker.getOffensiveStat()
+      : attacker.atk;
+    // Fallback buff application for entities without getOffensiveStat
+    if (!attacker.getOffensiveStat) {
+      for (const b of (attacker.buffs || [])) {
+        if (b.type === 'atk_up') effectiveAtk *= (1 + b.value);
+      }
     }
     let damage = effectiveAtk * (power / 100);
 

@@ -481,12 +481,11 @@ export class ExpeditionEngine {
   // --- Loot Phase ---
 
   _rollLoot(bossIndex, isWipe = false) {
-    const bossId = bossIndex + 1; // LootEngine uses 1-based
     const aliveHunters = this.hunters.filter(h => h.alive);
     const extraRolls = Math.max(0, Math.floor((aliveHunters.length - 30) / 10));
 
-    // Roll boss drops
-    const drops = LootEngine.generateBossLoot(bossId, extraRolls);
+    // Roll boss drops (bossIndex 0-4, each maps to 3 old tables)
+    const drops = LootEngine.generateBossLoot(bossIndex, extraRolls);
     if (drops.length === 0) {
       this._addFeed('Aucun butin...', 'loot');
       return;
@@ -510,7 +509,7 @@ export class ExpeditionEngine {
 
     // Feed messages for each drop
     const bossDef = getBossDefinition(bossIndex);
-    this._addFeed(`--- BUTIN: ${bossDef?.name || 'Boss ' + bossId} ---`, 'loot_header');
+    this._addFeed(`--- BUTIN: ${bossDef?.name || 'Boss ' + (bossIndex + 1)} ---`, 'loot_header');
 
     for (const r of results) {
       if (r.stolen) {
@@ -621,6 +620,75 @@ export class ExpeditionEngine {
     }
   }
 
+  // --- Status (for API) ---
+
+  getStatus() {
+    return {
+      state: this.state,
+      bossIndex: this.currentBossIndex,
+      totalBosses: EXPEDITION.TOTAL_BOSSES,
+      playerCount: this.players.size,
+      hunterCount: this.hunters.length,
+      aliveCount: this.hunters.filter(h => h.alive).length,
+      bossResults: this.bossResults.map(r => ({
+        bossIndex: r.bossIndex,
+        victory: r.victory,
+        time: r.time,
+      })),
+    };
+  }
+
+  // --- Start from DB entries (for API force-start) ---
+
+  async start(expeditionId, dbEntries) {
+    if (this.state !== 'idle' && this.state !== 'registration') {
+      throw new Error('Engine is not in idle/registration state');
+    }
+
+    this.expeditionId = expeditionId;
+
+    // Convert DB entries to engine format
+    for (const entry of dbEntries) {
+      const username = entry.username;
+      const characterIds = typeof entry.character_ids === 'string'
+        ? JSON.parse(entry.character_ids) : entry.character_ids;
+      const characterData = typeof entry.character_data === 'string'
+        ? JSON.parse(entry.character_data) : (entry.character_data || {});
+
+      const hunterEntries = characterIds.map(hId => ({
+        hunterId: hId,
+        fullStats: characterData[hId]?.fullStats || characterData[hId] || {},
+        stars: characterData[hId]?.stars || 0,
+        level: characterData[hId]?.level || 140,
+        weaponPassive: characterData[hId]?.weaponPassive || null,
+      }));
+
+      const playerId = `player_${username}`;
+      this.registerPlayer(playerId, username, hunterEntries);
+    }
+
+    return this.startExpedition();
+  }
+
+  // --- Reset (for API) ---
+
+  reset() {
+    this.destroy();
+    this.state = 'idle';
+    this.expeditionId = null;
+    this.players.clear();
+    this.hunters = [];
+    this.hunterSwitch = new HunterSwitch();
+    this.currentBossIndex = 0;
+    this.bossResults = [];
+    this._mobWaveDone = false;
+    this._phaseTimer = 0;
+    this.scrollX = 0;
+    this.feedLog = [];
+    this.lootResults = [];
+    console.log('[Expedition] Engine reset');
+  }
+
   // --- Cleanup ---
 
   destroy() {
@@ -630,5 +698,34 @@ export class ExpeditionEngine {
     this.currentCombat = null;
     this.currentMobWave = null;
     this._phaseInterval = null;
+  }
+
+  // --- Admin: skip directly to a boss (0-indexed) ---
+  skipToBoss(bossIndex) {
+    if (bossIndex < 0 || bossIndex >= EXPEDITION.TOTAL_BOSSES) return false;
+
+    // Stop whatever is running
+    if (this.currentCombat) { this.currentCombat.stop(); this.currentCombat = null; }
+    if (this.currentMobWave) { this.currentMobWave.stop(); this.currentMobWave = null; }
+    if (this._phaseInterval) { clearInterval(this._phaseInterval); this._phaseInterval = null; }
+
+    // Reset all hunters to full HP/mana
+    for (const h of this.hunters) {
+      h.alive = true;
+      h.hp = h.maxHp;
+      if (h.mana !== undefined) h.mana = h.maxMana || h.mana;
+      h.resetForEncounter();
+    }
+
+    // Jump to target boss
+    this.currentBossIndex = bossIndex;
+    this._mobWaveDone = true;
+    this.bossResults = [];
+    this.feedLog = [];
+    this._addFeed(`⚡ SKIP — Direct au Boss ${bossIndex + 1} !`, 'phase');
+
+    console.log(`[Expedition] ADMIN SKIP to Boss ${bossIndex + 1}`);
+    this._startCombat();
+    return true;
   }
 }

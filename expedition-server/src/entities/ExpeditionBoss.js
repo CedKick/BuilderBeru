@@ -194,6 +194,33 @@ export class ExpeditionBoss {
       }
     }
 
+    // Double donut phase 2 detonation
+    if (this._doubleDonutPhase2) {
+      this._doubleDonutPhase2.timer -= dt;
+      if (this._doubleDonutPhase2.timer <= 0) {
+        const { bossX, bossY, bossId } = this._doubleDonutPhase2;
+        const hunters = gameState.getAliveHunters();
+        for (const h of hunters) {
+          if (h.dodging) continue;
+          const dist = Math.hypot(h.x - bossX, h.y - bossY);
+          // Outer ring OS: 370-550px
+          if (dist >= 370 && dist < 550 + (h.radius || 18)) {
+            const actual = h.takeTrueDamage(999999);
+            if (actual > 0) gameState.addEvent({ type: 'damage', source: bossId, target: h.id, amount: actual, skill: 'Anneau Extérieur' });
+          }
+          // Laser trap OS: too close (<160px)
+          if (dist < 160 + (h.radius || 18)) {
+            const actual = h.takeTrueDamage(999999);
+            if (actual > 0) gameState.addEvent({ type: 'damage', source: bossId, target: h.id, amount: actual, skill: 'Laser Piège' });
+          }
+        }
+        // Visual explosions
+        gameState.addAoeZone({ id: `dbl_outer_exp_${Date.now()}`, type: 'donut_explosion', x: bossX, y: bossY, radius: 550, innerRadius: 370, ttl: 0.5, active: true, source: bossId });
+        gameState.addAoeZone({ id: `dbl_laser_exp_${Date.now()}`, type: 'circle_explosion', x: bossX, y: bossY, radius: 160, ttl: 0.5, active: true, source: bossId });
+        this._doubleDonutPhase2 = null;
+      }
+    }
+
     // Phase check
     this._checkPhaseTransition(gameState);
 
@@ -379,6 +406,51 @@ export class ExpeditionBoss {
           }
         }
         gameState.addAoeZone({ x: this.x, y: this.y, radius: outer, type: 'boss_donut', innerSafe: safe, ttl: 1.5 });
+        break;
+      }
+
+      case 'double_donut': {
+        // Faithful reproduction of Manaya's Anneau Destructeur (2-phase donut)
+        // Phase 1: inner ring 130-350px OS → safe if <120px or >360px
+        // Phase 2 (1.2s later): outer ring 370-550px OS + laser <160px OS
+        // Safe zone phase 2: 160-370px
+        const bossX = this.x, bossY = this.y;
+        const bossId = this.id;
+
+        // Phase 1: hit anyone in ring 130-350
+        for (const h of hunters) {
+          if (h.dodging) continue;
+          const dist = Math.hypot(h.x - bossX, h.y - bossY);
+          if (dist > 120 && dist < 360) {
+            const actual = h.takeTrueDamage(999999);
+            if (actual > 0) gameState.addEvent({ type: 'damage', source: bossId, target: h.id, amount: actual, skill: 'Anneau Destructeur' });
+          }
+        }
+        // Phase 1 visual
+        gameState.addAoeZone({
+          id: `dbl_inner_exp_${Date.now()}`, type: 'donut_explosion',
+          x: bossX, y: bossY, radius: 350, innerRadius: 130,
+          ttl: 0.5, active: true, source: bossId,
+        });
+        gameState.addEvent({ type: 'boss_message', text: '⚠️ Deuxième anneau ! Ne restez pas près d\'elle !' });
+
+        // Phase 2 telegraph
+        gameState.addAoeZone({
+          id: `dbl_outer_tel_${Date.now()}`, type: 'donut_telegraph',
+          x: bossX, y: bossY, radius: 550, innerRadius: 370,
+          ttl: 1.5, active: false, source: bossId,
+        });
+        gameState.addAoeZone({
+          id: `dbl_laser_tel_${Date.now()}`, type: 'circle_telegraph',
+          x: bossX, y: bossY, radius: 160,
+          ttl: 1.5, active: false, source: bossId,
+        });
+
+        // Schedule phase 2 detonation after 1.2s
+        this._doubleDonutPhase2 = {
+          timer: 1.2,
+          bossX, bossY, bossId,
+        };
         break;
       }
 

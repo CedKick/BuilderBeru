@@ -14,7 +14,7 @@ const TIER_TO_WAVE = {
   mob_wave_tier4: 'tier4',
 };
 
-export function generateEncounterSequence(bossCount = 15) {
+export function generateEncounterSequence(bossCount = 5) {
   const encounters = [];
 
   for (let bossIdx = 0; bossIdx < bossCount; bossIdx++) {
@@ -26,13 +26,13 @@ export function generateEncounterSequence(bossCount = 15) {
     const waveTier = TIER_TO_WAVE[lootTier] || 'tier1';
     const wavePool = WAVE_COMPOSITIONS[waveTier] || WAVE_COMPOSITIONS.tier1;
 
-    // 3-5 mob waves before each boss (more waves = more AoE value)
-    const baseWaves = bossIdx < 5 ? 4 : bossIdx < 10 ? 3 : 3;
-    const waveCount = baseWaves + Math.floor(Math.random() * 2);
+    // 3-5 mob waves before each boss
+    const baseWaves = 3 + bossIdx; // Boss 0: 3 waves, Boss 4: 7 waves
+    const waveCount = Math.min(baseWaves + Math.floor(Math.random() * 2), 7);
     for (let w = 0; w < waveCount; w++) {
       const composition = wavePool[Math.floor(Math.random() * wavePool.length)];
       // Difficulty scales with boss section and wave progress
-      const difficultyMult = 1 + bossIdx * 0.4 + w * 0.1;
+      const difficultyMult = 1 + bossIdx * 0.8 + w * 0.1;
 
       encounters.push({
         type: 'mob_wave',

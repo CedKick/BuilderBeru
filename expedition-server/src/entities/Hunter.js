@@ -32,6 +32,8 @@ export class Hunter {
     this.useRage = stats.useRage;
     this.mana = stats.mana;
     this.atk = stats.atk;
+    this.int = stats.int || 0;           // INT stat (mages/supports)
+    this.usesInt = stats.usesInt || false; // true = damage scales on INT
     this.def = stats.def;
     this.spd = stats.spd;
     this.crit = stats.crit;
@@ -40,9 +42,12 @@ export class Hunter {
     this.color = stats.color;
     this.dmgBonus = 0;
 
+    // Megumin special: offensive stat = maxMana instead of INT
+    this._isMegumin = (hunterId === 'h_megumin');
+
     // Store base stats for reset between encounters
     this._baseStats = {
-      maxHp: this.maxHp, atk: this.atk, def: this.def,
+      maxHp: this.maxHp, atk: this.atk, int: this.int, def: this.def,
       spd: this.spd, crit: this.crit, res: this.res,
     };
 
@@ -103,13 +108,38 @@ export class Hunter {
   }
 
   get speed() {
-    let speed = PLAYER.BASE_SPEED * (this.spd / 180);
+    // Cap SPD ratio — base ~80 px/s, max ~101 px/s with high SPD
+    // Intentionally slower than Manaya (145) — 30 hunters on screen need calmer movement
+    const spdRatio = 0.55 + Math.min(0.15, (this.spd - 180) / 2000);
+    let speed = PLAYER.BASE_SPEED * spdRatio;
     if (this.blocking) speed *= this.skills.secondary?.speedMult || 0.3;
     for (const b of this.buffs) {
       if (b.type === 'speed_up') speed *= (1 + b.value);
       if (b.type === 'speed_down') speed *= (1 - b.value);
     }
     return speed;
+  }
+
+  // Offensive stat: ATK for melee/archers, INT for mages/supports, maxMana for Megumin
+  getOffensiveStat() {
+    if (this._isMegumin) {
+      // Megumin scales on her max mana pool — bigger mana = bigger explosions
+      return this.maxMana;
+    }
+    if (this.usesInt && this.int > 0) {
+      // Mages and supports scale on INT
+      let total = this.int;
+      for (const b of this.buffs) {
+        if (b.type === 'atk_up') total = Math.floor(total * (1 + b.value));
+      }
+      return total;
+    }
+    // Everyone else: ATK
+    let total = this.atk;
+    for (const b of this.buffs) {
+      if (b.type === 'atk_up') total = Math.floor(total * (1 + b.value));
+    }
+    return total;
   }
 
   takeTrueDamage(rawDamage, source) {
@@ -214,6 +244,7 @@ export class Hunter {
     // Restore base stats
     this.maxHp = this._baseStats.maxHp;
     this.atk = this._baseStats.atk;
+    this.int = this._baseStats.int;
     this.def = this._baseStats.def;
     this.spd = this._baseStats.spd;
     this.crit = this._baseStats.crit;

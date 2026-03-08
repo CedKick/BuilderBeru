@@ -251,11 +251,31 @@ export class HttpApi {
   }
 
   // GET /api/expedition/boss-loot
-  // Returns all 15 boss loot tables with FULL codex data (stats, set bonuses, weapon passives)
+  // Returns all 5 boss loot tables (each consolidates 3 old tables) with FULL codex data
   getBossLoot(req, res) {
+    // Each expedition boss maps to 3 old loot tables (15→5 consolidation)
+    const BOSS_TABLE_MAP = [
+      [1, 2, 3],     // Boss 0: Gardien
+      [4, 5, 6],     // Boss 1: Sentinelle
+      [7, 8, 9],     // Boss 2: Seigneur Ombre
+      [10, 11, 12],  // Boss 3: Manaya
+      [13, 14, 15],  // Boss 4: Ragnaros
+    ];
+
     const bosses = BOSS_DEFINITIONS.map((boss, i) => {
-      const bossNum = i + 1;
-      const table = getLootTable(`boss_${bossNum}`);
+      const tableIds = BOSS_TABLE_MAP[i] || [];
+      // Merge 3 tables, dedup by itemId (keep highest dropChance)
+      const merged = new Map();
+      for (const tid of tableIds) {
+        for (const entry of getLootTable(`boss_${tid}`)) {
+          const key = entry.itemId + (entry.setId || '') + (entry.weaponId || '') + (entry.uniqueId || '');
+          const existing = merged.get(key);
+          if (!existing || entry.dropChance > existing.dropChance) {
+            merged.set(key, { ...entry });
+          }
+        }
+      }
+      const table = [...merged.values()];
 
       const loot = table.map(entry => {
         // Determine if this item is SR-eligible (gear/sets/weapons/uniques only)
@@ -338,9 +358,9 @@ export class HttpApi {
       });
 
       return {
-        bossId: bossNum,
+        bossId: i + 1,
         name: boss.name,
-        zone: bossNum <= 5 ? 'foret' : bossNum <= 10 ? 'abysses' : 'neant',
+        zone: i <= 0 ? 'foret' : i <= 1 ? 'transition' : i <= 2 ? 'abysses' : i <= 3 ? 'void' : 'endgame',
         loot,
       };
     });

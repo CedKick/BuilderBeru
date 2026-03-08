@@ -166,6 +166,15 @@ export default function HomePage() {
       beruMessage: "Le Colisee des Ombres t'attend... Tes chibis sont prets ?",
       alt: "Shadow Colosseum - Chibi Battle RPG",
     },
+    {
+      label: "Expedition I",
+      path: "/expedition",
+      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772942138/GardienDeLaForet_fsymf8.png",
+      glowColor: "rgba(245, 158, 11, 0.5)",
+      isNew: true,
+      beruMessage: "L'Expedition commence ! 5 boss, 30 chasseurs... Qui survivra ?",
+      alt: "Expedition I - Cooperative Boss Raid",
+    },
   ];
 
   // Beru hover reaction cooldown

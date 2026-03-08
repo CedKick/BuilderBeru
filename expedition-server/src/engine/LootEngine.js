@@ -12,33 +12,43 @@ import { rollEssenceDrop } from '../data/essenceSystem.js';
 export class LootEngine {
 
   // ═══════════════════════════════════════════════════════
-  // Generate boss loot by bossId (1-15)
-  // Uses codex name/rarity as primary source, enriches with full stats from source files
-  // Each loot rolls independently — can return 0 to N items (multi-drop)
+  // Generate boss loot by expedition boss index (0-4)
+  // Each expedition boss maps to 3 old boss tables (15→5 consolidation)
+  // Boss 0 → boss_1+2+3, Boss 1 → boss_4+5+6, Boss 2 → boss_7+8+9,
+  // Boss 3 → boss_10+11+12, Boss 4 → boss_13+14+15
   // Returns: [{ itemId, itemName, rarity, binding, type, slot, stats, dropChance, ... }]
   // ═══════════════════════════════════════════════════════
-  static generateBossLoot(bossId, extraRolls = 0) {
-    if (bossId < 1 || bossId > 15) return [];
+  static generateBossLoot(bossIndex, extraRolls = 0) {
+    // Map expedition boss (0-4) → 3 old loot table IDs (1-based)
+    const BOSS_TABLE_MAP = [
+      [1, 2, 3],     // Boss 0: Gardien → forest zone tables
+      [4, 5, 6],     // Boss 1: Sentinelle → late forest + early abyss
+      [7, 8, 9],     // Boss 2: Seigneur Ombre → abyss zone tables
+      [10, 11, 12],  // Boss 3: Manaya → late abyss + early void
+      [13, 14, 15],  // Boss 4: Ragnaros → void zone tables (endgame)
+    ];
 
-    // 1. Retrieve boss loot table from codex
-    const table = getLootTable(`boss_${bossId}`);
-    if (!table.length) return [];
+    const tableIds = BOSS_TABLE_MAP[bossIndex];
+    if (!tableIds) return [];
 
-    // 2. Roll each loot independently against dropChance
-    //    Roll the entire table QUANTITY_MULTIPLIER times for more drops
-    //    Endgame bosses (8+) get extra rolls for reinforced loot
-    //    extraRolls: bonus from dynamic scaling (>30 hunters)
     const drops = [];
     const baseRolls = LOOT.QUANTITY_MULTIPLIER || 1;
-    const rolls = (bossId >= 8 ? baseRolls + 1 : baseRolls) + extraRolls;
-    for (let r = 0; r < rolls; r++) {
-      for (const entry of table) {
-        const roll = Math.random() * 100;
-        if (roll >= entry.dropChance) continue;
 
-        // 3. Resolve full item data (codex name/rarity + source file stats)
-        const drop = LootEngine._resolveDropEntry(entry);
-        if (drop) drops.push(drop);
+    // Roll each of the 3 source tables
+    for (const oldBossId of tableIds) {
+      const table = getLootTable(`boss_${oldBossId}`);
+      if (!table.length) continue;
+
+      // Endgame tables (old boss 8+) get +1 bonus roll
+      const rolls = (oldBossId >= 8 ? baseRolls + 1 : baseRolls) + extraRolls;
+      for (let r = 0; r < rolls; r++) {
+        for (const entry of table) {
+          const roll = Math.random() * 100;
+          if (roll >= entry.dropChance) continue;
+
+          const drop = LootEngine._resolveDropEntry(entry);
+          if (drop) drops.push(drop);
+        }
       }
     }
 
