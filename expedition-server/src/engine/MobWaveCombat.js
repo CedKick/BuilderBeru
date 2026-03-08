@@ -7,6 +7,7 @@ import { SERVER, ARENA } from '../config.js';
 import { GameState } from './GameState.js';
 import { CombatEngine } from './CombatEngine.js';
 import { PhysicsEngine } from './PhysicsEngine.js';
+import { PassiveEngine } from './PassiveEngine.js';
 import { BotAI } from './BotAI.js';
 
 // Mob wave definitions per boss section
@@ -66,6 +67,7 @@ export class MobWaveCombat {
     this.state = new GameState(hunters, null);
     this.combat = new CombatEngine(this.state);
     this.physics = new PhysicsEngine(this.state);
+    this.passives = new PassiveEngine();
 
     this.bossSection = bossSection;
     this.onEnd = onEnd;
@@ -200,6 +202,11 @@ export class MobWaveCombat {
     this.startTime = Date.now();
     this.tick = 0;
     this._subWaveIdx = 0;
+
+    // Init PassiveEngine (2pc bonuses, SC weapon passives)
+    const aliveHunters = this.state.hunters.filter(h => h.alive);
+    this.passives.initCombat(aliveHunters);
+    this.passives.setCharacters(this.state.hunters);
     this._allSpawned = false;
 
     console.log(`[MobWave] Starting wave combat (section ${this.bossSection})`);
@@ -264,6 +271,13 @@ export class MobWaveCombat {
     // Update projectiles & AoE
     this.physics.updateProjectiles(gs, dt);
     this.physics.updateAoeZones(gs, dt);
+
+    // Passive Engine tick
+    const passiveEvents = [];
+    this.passives.tick(dt, gs.getAliveHunters(), gs.getAliveAdds(), passiveEvents);
+    for (const evt of passiveEvents) {
+      gs.addEvent(evt);
+    }
 
     // Cleanup
     gs.cleanup();

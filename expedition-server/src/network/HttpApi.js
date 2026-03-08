@@ -478,7 +478,7 @@ export class HttpApi {
   // POST /api/expedition/create (admin)
   async createExpedition(req, res) {
     const body = await this.readBody(req);
-    const name = body?.name || 'Expedition I';
+    const name = body?.name || 'Expédition II';
     const scheduledAt = body?.scheduledAt ? new Date(body.scheduledAt) : new Date();
 
     const expedition = await db.createExpedition(name, scheduledAt);
@@ -522,7 +522,7 @@ export class HttpApi {
     }
 
     // Create a fresh expedition
-    const newExp = await db.createExpedition('Expedition I', new Date());
+    const newExp = await db.createExpedition('Expédition II', new Date());
     await db.updateExpeditionStatus(newExp.id, 'registration');
 
     console.log('[API] Expedition reset, new expedition:', newExp.id);

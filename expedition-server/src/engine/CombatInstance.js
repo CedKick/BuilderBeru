@@ -7,6 +7,7 @@ import { SERVER, BOSS as BOSS_CFG } from '../config.js';
 import { GameState } from './GameState.js';
 import { CombatEngine } from './CombatEngine.js';
 import { PhysicsEngine } from './PhysicsEngine.js';
+import { PassiveEngine } from './PassiveEngine.js';
 import { BotAI } from './BotAI.js';
 import { ExpeditionBoss } from '../entities/ExpeditionBoss.js';
 import { getBossDefinition } from '../data/bossDefinitions.js';
@@ -21,6 +22,7 @@ export class CombatInstance {
     this.state = new GameState(hunters, boss);
     this.combat = new CombatEngine(this.state);
     this.physics = new PhysicsEngine(this.state);
+    this.passives = new PassiveEngine();
 
     this.bossIndex = bossIndex;
     this.bossName = bossDef.name;
@@ -95,6 +97,11 @@ export class CombatInstance {
     this._lastTime = Date.now();
     this.startTime = Date.now();
     this.tick = 0;
+
+    // Initialize PassiveEngine — applies permanent 2pc set bonuses, SC weapon passives
+    const aliveHunters = this.state.hunters.filter(h => h.alive);
+    this.passives.initCombat(aliveHunters);
+    this.passives.setCharacters(this.state.hunters);
 
     console.log(`[Combat] Boss ${this.bossIndex + 1}/5: ${this.bossName} (${(this.state.boss.maxHp / 1e6).toFixed(0)}M HP)`);
     console.log(`[Combat] Alive hunters: ${this.state.getAliveHunters().length}/${this.state.hunters.length}`);
@@ -187,7 +194,14 @@ export class CombatInstance {
     // 6. Collision detection
     this.physics.checkCollisions(gs, this.combat, dt);
 
-    // 7. Cleanup
+    // 7. Passive Engine tick (timers, dots, periodic effects)
+    const passiveEvents = [];
+    this.passives.tick(dt, gs.getAliveHunters(), gs.getAliveAdds().concat(gs.boss?.alive ? [gs.boss] : []), passiveEvents);
+    for (const evt of passiveEvents) {
+      gs.addEvent(evt);
+    }
+
+    // 8. Cleanup
     gs.cleanup();
 
     // 8. Periodic progress log (every 10s)
@@ -260,6 +274,9 @@ export class CombatInstance {
           break;
         case 'dodge':
           this.combat.dodge(hunter, angle);
+          break;
+        case 'hunter_skill':
+          this.combat.useHunterSkill(hunter, input.slotIndex || 0, angle);
           break;
       }
     }

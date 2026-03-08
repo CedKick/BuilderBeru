@@ -134,7 +134,44 @@ export class BotAI {
         break;
     }
 
+    // ── 3. HUNTER SKILLS (1/2/3) — use when off cooldown ──
+    this._thinkHunterSkills(inputs, player, gs, boss, distToBoss, angleToBoss);
+
     return inputs;
+  }
+
+  // Use hunter-specific skills (from hunterData) when available
+  _thinkHunterSkills(inputs, player, gs, boss, distToBoss, angleToBoss) {
+    if (!player.hunterSkills || player.hunterSkills.length === 0) return;
+
+    for (let i = 0; i < player.hunterSkills.length; i++) {
+      const skill = player.hunterSkills[i];
+      if (!skill) continue;
+
+      // Check cooldown
+      if (player.hunterCds[i] > 0) continue;
+
+      // Check mana (10% maxMana for skills with CD)
+      if (skill.cdMax > 0 && player.mana < player.maxMana * 0.10) continue;
+
+      // Skills with cdMax 0 are spammable — use less frequently to avoid spam
+      if (skill.cdMax === 0 && Math.random() > 0.15) continue;
+
+      // Heal skills: only use when HP below 70%
+      if (skill.healSelf && player.hp > player.maxHp * 0.7) continue;
+
+      // Self-damage skills (e.g. EXPLOSION): only use when HP above 40%
+      if (skill.selfDamage && player.hp < player.maxHp * 0.4) continue;
+
+      // Damage skills: check range
+      if (skill.power > 0) {
+        const isRanged = player.skills.basic?.hitbox === 'projectile';
+        const range = isRanged ? 800 : 200;
+        if (distToBoss > range + (boss.radius || 40) + 50) continue;
+      }
+
+      inputs.push({ type: 'hunter_skill', slotIndex: i, angle: angleToBoss });
+    }
   }
 
   // ── MAJOR MECHANIC OVERRIDE ──
@@ -683,8 +720,8 @@ export class BotAI {
     // ── Purification (skillB) — cleanse player debuffs + gives crit/speed buff ──
     if (player.cooldowns.skillB <= 0 && player.mana >= 40) {
       const debuffedAlly = allies.find(p => p.buffs.some(b =>
-        b.type === 'poison' || b.type === 'speed_down' || b.type === 'weak' ||
-        b.type.startsWith('manaya_mark_')
+        b.type && (b.type === 'poison' || b.type === 'speed_down' || b.type === 'weak' ||
+        b.type.startsWith('manaya_mark_'))
       ));
       if (debuffedAlly) {
         inputs.push({ type: 'skill', skill: 'skillB', angle: angleToBoss });

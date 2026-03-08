@@ -29,14 +29,15 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 .phase-wiped { background: #7f1d1d; color: white; }
 
 .boss-bar-wrap {
-  background: #1e1e3a; border-radius: 6px; padding: 6px 12px; margin-bottom: 4px;
-  border: 1px solid #2d2d5a;
+  background: rgba(14,14,36,0.85); border-radius: 8px; padding: 6px 16px 8px;
+  margin: 4px auto 0; width: 55%; max-width: 700px; min-width: 320px;
+  border: 1px solid #2d2d5a; backdrop-filter: blur(6px);
 }
 .boss-name { font-size: 13px; font-weight: 600; color: #f87171; }
 .boss-phase { font-size: 10px; color: #a78bfa; margin-left: 8px; }
 .boss-hp-bar {
-  height: 18px; background: #1a1a2e; border-radius: 4px; overflow: hidden;
-  margin-top: 3px; position: relative;
+  height: 26px; background: #1a1a2e; border-radius: 5px; overflow: hidden;
+  margin-top: 4px; position: relative; border: 1px solid rgba(255,255,255,0.08);
 }
 .boss-hp-fill {
   height: 100%; transition: width 0.15s ease;
@@ -45,8 +46,17 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 .boss-hp-text {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  font-size: 12px; font-weight: 700; color: white; text-shadow: 0 1px 4px rgba(0,0,0,0.9);
 }
+.boss-buffs {
+  display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; min-height: 14px;
+}
+.boss-buff {
+  font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 3px;
+  display: flex; align-items: center; gap: 3px;
+}
+.boss-buff.debuff { background: rgba(220,38,38,0.25); color: #fca5a5; border: 1px solid rgba(220,38,38,0.4); }
+.boss-buff.buff { background: rgba(34,197,94,0.2); color: #86efac; border: 1px solid rgba(34,197,94,0.35); }
 .team-info { display: flex; gap: 14px; font-size: 11px; color: #94a3b8; }
 .team-info span { display: flex; align-items: center; gap: 4px; }
 .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
@@ -135,6 +145,10 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 .acct-btn.active { background: #1e1e3a; color: #e2e8f0; border-color: #a78bfa; }
 .acct-btn:hover { border-color: #a78bfa; color: #cbd5e1; }
 
+/* Boss filter rows */
+.boss-filter-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; margin: 1px 0; cursor: pointer; border-radius: 4px; font-size: 10px; transition: background 0.15s; }
+.boss-filter-row:hover { background: #1e1b4b; }
+
 /* Account summary row */
 .acct-summary {
   display: flex; justify-content: space-between; padding: 5px 12px;
@@ -202,6 +216,42 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 .ev-loot_summary { color: #a78bfa; font-size: 10px; border-bottom: 1px solid #2d2d5a; padding-bottom: 4px; margin-bottom: 4px; }
 .ev-info { color: #cbd5e1; }
 
+/* ── Loot Popup Toasts ── */
+#loot-toasts {
+  position: fixed; top: 50%; right: 20px; z-index: 50;
+  transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 6px; align-items: flex-end;
+  pointer-events: none;
+}
+.loot-toast {
+  background: linear-gradient(135deg, rgba(15,15,35,0.95) 0%, rgba(30,20,60,0.95) 100%);
+  border: 1px solid #f59e0b; border-radius: 8px;
+  padding: 8px 14px; min-width: 220px; max-width: 340px;
+  animation: lootSlideIn 0.4s ease-out, lootFadeOut 0.6s ease-in 4.4s forwards;
+  box-shadow: 0 0 20px rgba(245,158,11,0.3);
+}
+.loot-toast.epic { border-color: #a855f7; box-shadow: 0 0 25px rgba(168,85,247,0.4); }
+.loot-toast.mythique { border-color: #ef4444; box-shadow: 0 0 25px rgba(239,68,68,0.4); }
+.loot-toast.stolen { border-color: #64748b; box-shadow: 0 0 10px rgba(100,116,139,0.2); opacity: 0.7; }
+.loot-toast-header { font-size: 9px; color: #f59e0b; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+.loot-toast.epic .loot-toast-header { color: #a855f7; }
+.loot-toast.mythique .loot-toast-header { color: #ef4444; }
+.loot-toast.stolen .loot-toast-header { color: #64748b; }
+.loot-toast-item { font-size: 13px; font-weight: 600; color: #fbbf24; }
+.loot-toast.epic .loot-toast-item { color: #c084fc; }
+.loot-toast.mythique .loot-toast-item { color: #f87171; }
+.loot-toast.stolen .loot-toast-item { color: #94a3b8; text-decoration: line-through; }
+.loot-toast-winner { font-size: 10px; color: #22d3ee; margin-top: 2px; }
+.loot-toast.stolen .loot-toast-winner { color: #ef4444; }
+@keyframes lootSlideIn {
+  from { transform: translateX(100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes lootFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateX(40px); }
+}
+
 /* Feed filter buttons */
 #feed-filters {
   display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap;
@@ -216,8 +266,8 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 
 /* ── Left Party HUD ── */
 #party-hud {
-  position: fixed; top: 80px; left: 0; width: 200px; z-index: 15;
-  max-height: calc(100vh - 100px); overflow-y: auto;
+  position: fixed; top: 44px; left: 0; width: 200px; z-index: 15;
+  max-height: calc(100vh - 200px); overflow-y: auto;
   background: linear-gradient(90deg, rgba(10,10,26,0.92) 0%, rgba(10,10,26,0.7) 85%, transparent 100%);
   padding: 6px 0 6px 6px;
   pointer-events: auto;
@@ -342,6 +392,9 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 .fp-skill-key.sk-a { background: #7c3aed; }
 .fp-skill-key.sk-b { background: #2563eb; }
 .fp-skill-key.sk-ult { background: #dc2626; }
+.fp-skill-key.sk-h1 { background: #0ea5e9; }
+.fp-skill-key.sk-h2 { background: #14b8a6; }
+.fp-skill-key.sk-h3 { background: #f97316; }
 .fp-skill-name { flex: 1; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fp-skill-cd { color: #94a3b8; font-variant-numeric: tabular-nums; flex-shrink: 0; min-width: 28px; text-align: right; }
 .fp-skill-cd.on-cd { color: #f59e0b; }
@@ -388,7 +441,7 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 
 /* Control HUD (shown when controlling a hunter) */
 #control-hud {
-  display: none; position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+  display: none; position: fixed; bottom: 105px; left: 50%; transform: translateX(-50%);
   z-index: 30; background: rgba(10,10,30,0.92); border: 1px solid #a78bfa40;
   border-radius: 8px; padding: 6px 14px; font-size: 10px; color: #94a3b8;
   backdrop-filter: blur(6px); white-space: nowrap;
@@ -397,6 +450,14 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 .ch-key { display: inline-block; background: #1e1b4b; border: 1px solid #4c1d95; border-radius: 3px;
   padding: 1px 5px; font-weight: 700; color: #c4b5fd; font-size: 9px; min-width: 18px; text-align: center; }
 .ch-label { color: #64748b; }
+
+/* Keybind modal */
+.kb-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-radius: 5px; margin-bottom: 3px; background: #0f0f2a; }
+.kb-row:hover { background: #1e1b4b; }
+.kb-row.kb-active { background: #2d1b69; border: 1px solid #7c3aed; }
+.kb-label { color: #a5b4fc; font-size: 11px; }
+.kb-key { color: #c4b5fd; font-size: 11px; font-weight: 700; background: #1e1b4b; border: 1px solid #4c1d95; border-radius: 4px; padding: 2px 10px; cursor: pointer; min-width: 60px; text-align: center; }
+.kb-key:hover { background: #2d1b69; }
 
 /* Connection */
 #connection {
@@ -432,6 +493,7 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
       <div class="boss-hp-fill" id="boss-hp-fill" style="width:100%"></div>
       <div class="boss-hp-text" id="boss-hp-text">100%</div>
     </div>
+    <div class="boss-buffs" id="boss-buffs"></div>
   </div>
   <div class="team-info" id="team-info"></div>
 </div>
@@ -465,7 +527,21 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 <!-- Control HUD (small top indicator when controlling) -->
 <div id="control-hud">
   <span><span class="ch-key">1-6</span> <span class="ch-label">Changer chasseur</span></span>
+  <span><span class="ch-key">F/G/H</span> <span class="ch-label">Hunter Skills</span></span>
+  <span><span class="ch-key">F10</span> <span class="ch-label">Touches</span></span>
   <span><span class="ch-key">ESC</span> <span class="ch-label">Quitter contrôle</span></span>
+</div>
+
+<!-- Keybind Modal -->
+<div id="keybind-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;justify-content:center;align-items:center;">
+  <div style="background:#1a1a2e;border:1px solid #4c1d95;border-radius:10px;padding:20px 28px;min-width:320px;max-width:420px;">
+    <div style="font-size:15px;font-weight:700;color:#c4b5fd;margin-bottom:14px;text-align:center;">Configuration des Touches</div>
+    <div id="keybind-list"></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:center;">
+      <button onclick="resetKeybinds()" style="background:#2d1b69;color:#c4b5fd;border:1px solid #4c1d95;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:11px;">Reset défaut</button>
+      <button onclick="closeKeybindModal()" style="background:#4c1d95;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:11px;">Fermer</button>
+    </div>
+  </div>
 </div>
 
 <!-- Right Stats Panel -->
@@ -528,6 +604,7 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 </div>
 
 <!-- Events / Feed Log -->
+<div id="loot-toasts"></div>
 <div id="events-wrap" style="position:fixed;bottom:10px;left:10px;z-index:10;width:340px;">
   <div id="feed-filters">
     <span class="feed-filter active" data-filter="all" onclick="setFeedFilter('all')">Tout</span>
@@ -906,8 +983,8 @@ const HUNTER_SPRITES = {
   h_yoo:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606370/icons/build-37.png',
   h_gina:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606297/icons/build-9.png',
   h_song:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606359/icons/build-34.png',
-  h_megumin:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771533719/Megumin_yymsbq.png',
-  h_chae_in:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606282/icons/build-3.png',
+  h_megumin:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772971375/MeguminSprite_k5vo2q.png',
+  h_chae_in:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772977759/ChaeSpriteDown_yrgxir.png',
   h_frieren:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
   h_alicia:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606278/icons/build.png',
   h_meri:'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
@@ -953,6 +1030,7 @@ const HUNTER_SPRITES_BACK = {
   h_isla: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772973127/IslaSpriteBack_xuieyn.png',
   h_sian: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772974567/SianBack_vawfvq.png',
   h_mayuri: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772976079/MayuriSpriteBack_urghbh.png',
+  h_chae_in: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772977758/ChaeSpriteBack_yuzlpt.png',
 };
 for (const [id, url] of Object.entries(HUNTER_SPRITES_BACK)) loadSprite(id + '_back', url);
 
@@ -1038,9 +1116,53 @@ function renderFeedLog(feedLog) {
     return '<div class="' + cls + '">' + e.text + '</div>';
   }).join('');
 }
+
+// ── Loot Toast Popup System ──
+const seenLootTimestamps = new Set();
+function checkLootToasts(feedLog) {
+  const lootTypes = ['loot_win', 'loot_epic', 'loot_stolen'];
+  const toastContainer = document.getElementById('loot-toasts');
+  if (!toastContainer) return;
+
+  for (const entry of feedLog) {
+    if (!lootTypes.includes(entry.type)) continue;
+    const key = entry.t + '_' + entry.text.slice(0, 30);
+    if (seenLootTimestamps.has(key)) continue;
+    seenLootTimestamps.add(key);
+
+    // Parse the loot text
+    const toast = document.createElement('div');
+    let rarity = '';
+    if (entry.type === 'loot_stolen') rarity = 'stolen';
+    else if (entry.type === 'loot_epic') rarity = 'mythique';
+    else if (entry.text.match(/\(epic\)/i)) rarity = 'epic';
+    toast.className = 'loot-toast' + (rarity ? ' ' + rarity : '');
+
+    const headerLabel = entry.type === 'loot_stolen' ? 'VOLE !' : entry.type === 'loot_epic' ? 'LOOT EPIQUE !' : 'NOUVEAU LOOT';
+    toast.innerHTML = `
+      <div class="loot-toast-header">${headerLabel}</div>
+      <div class="loot-toast-item">${entry.text}</div>
+    `;
+
+    toastContainer.appendChild(toast);
+    // Auto-remove after animation
+    setTimeout(() => toast.remove(), 5200);
+  }
+
+  // Trim seen set (keep last 200)
+  if (seenLootTimestamps.size > 200) {
+    const arr = [...seenLootTimestamps];
+    arr.splice(0, arr.length - 100);
+    seenLootTimestamps.clear();
+    arr.forEach(k => seenLootTimestamps.add(k));
+  }
+}
+
 let currentTab = 'dmg';
 let selectedHunterId = null;
 let combatStartTime = null;
+let currentBossFilter = 'all'; // 'all' or boss index (0, 1, 2...)
+let bossResultsCache = []; // Cached bossResults with stats for filtering
 
 // DPS history for graph (sampled every 2s)
 const dpsHistory = []; // { t, dps, heal }
@@ -1238,25 +1360,128 @@ setInterval(() => {
   }
 }, 50);
 
+// ── Keybinds system (configurable, saved in localStorage) ──
+const DEFAULT_BINDS = {
+  up: ['w', 'z'],       // QWERTY W + AZERTY Z
+  left: ['q'],           // AZERTY Q (QWERTY: use A for skill)
+  down: ['s'],
+  right: ['d'],
+  skillA: ['a'],
+  skillB: ['e'],
+  ultimate: ['r'],
+  dodge: [' '],
+  hunterSkill1: ['f'],
+  hunterSkill2: ['g'],
+  hunterSkill3: ['h'],
+};
+let keybinds = { ...DEFAULT_BINDS };
+try {
+  const saved = localStorage.getItem('expedition_keybinds');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    // Merge saved over defaults (keeps new keys from updates)
+    for (const action in parsed) {
+      if (DEFAULT_BINDS[action] !== undefined) keybinds[action] = parsed[action];
+    }
+  }
+} catch (e) {}
+
+function saveKeybinds() {
+  localStorage.setItem('expedition_keybinds', JSON.stringify(keybinds));
+}
+
+function keyMatch(key, action) {
+  return keybinds[action] && keybinds[action].includes(key);
+}
+
+function getBindLabel(action) {
+  const b = keybinds[action];
+  if (!b || b.length === 0) return '?';
+  return b[0] === ' ' ? 'SPACE' : b[0].toUpperCase();
+}
+
+// ── Keybind settings modal ──
+let keybindModalOpen = false;
+let rebindingAction = null;
+
+function openKeybindModal() {
+  keybindModalOpen = true;
+  const modal = document.getElementById('keybind-modal');
+  modal.style.display = 'flex';
+  renderKeybindModal();
+}
+
+function closeKeybindModal() {
+  keybindModalOpen = false;
+  rebindingAction = null;
+  document.getElementById('keybind-modal').style.display = 'none';
+}
+
+function renderKeybindModal() {
+  const LABELS = {
+    up: 'Haut', left: 'Gauche', down: 'Bas', right: 'Droite',
+    skillA: 'Skill A', skillB: 'Skill B', ultimate: 'Ultimate', dodge: 'Esquive',
+    hunterSkill1: 'Hunter Skill 1', hunterSkill2: 'Hunter Skill 2', hunterSkill3: 'Hunter Skill 3',
+  };
+  const el = document.getElementById('keybind-list');
+  el.innerHTML = Object.keys(DEFAULT_BINDS).map(action => {
+    const label = LABELS[action] || action;
+    const keyLabel = keybinds[action].map(k => k === ' ' ? 'SPACE' : k.toUpperCase()).join(' / ');
+    const isRebinding = rebindingAction === action;
+    return '<div class="kb-row' + (isRebinding ? ' kb-active' : '') + '" data-action="' + action + '">' +
+      '<span class="kb-label">' + label + '</span>' +
+      '<span class="kb-key" onclick="startRebind(\'' + action + '\')">' +
+        (isRebinding ? 'Appuyer une touche...' : keyLabel) +
+      '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function startRebind(action) {
+  rebindingAction = action;
+  renderKeybindModal();
+}
+
+function resetKeybinds() {
+  keybinds = { ...DEFAULT_BINDS };
+  // Deep copy arrays
+  for (const k in keybinds) keybinds[k] = [...DEFAULT_BINDS[k]];
+  saveKeybinds();
+  renderKeybindModal();
+}
+
 // ── Keyboard handlers ──
 document.addEventListener('keydown', (e) => {
-  if (!isControlling) return;
   const k = e.key.toLowerCase();
 
-  // WASD / ZQSD movement (AZERTY & QWERTY compatible)
-  if (k === 'w' || k === 'z') { keys.w = true; e.preventDefault(); return; }
-  if (k === 'q') { keys.a = true; e.preventDefault(); return; } // Q = left (AZERTY)
-  if (k === 's') { keys.s = true; e.preventDefault(); return; }
-  if (k === 'd') { keys.d = true; e.preventDefault(); return; }
+  // Keybind rebinding mode
+  if (rebindingAction) {
+    if (k === 'escape') { rebindingAction = null; renderKeybindModal(); return; }
+    keybinds[rebindingAction] = [k];
+    saveKeybinds();
+    rebindingAction = null;
+    renderKeybindModal();
+    e.preventDefault(); return;
+  }
 
-  // Skills: A = skillA, E = skillB (AZERTY-friendly), B = skillB alt, R = ultimate
-  if (k === 'a' && !e.repeat) { trySendSkill('skillA', 'skillA', getAimAngle()); e.preventDefault(); return; }
-  if ((k === 'e' || k === 'b') && !e.repeat) { trySendSkill('skillB', 'skillB', getAimAngle()); e.preventDefault(); return; }
-  if (k === 'r' && !e.repeat) { trySendSkill('ultimate', 'ultimate', getAimAngle()); e.preventDefault(); return; }
+  // Toggle keybind modal with F10
+  if (k === 'f10') { keybindModalOpen ? closeKeybindModal() : openKeybindModal(); e.preventDefault(); return; }
 
-  // Dodge — direction from WASD keys (not mouse). Fallback to aim angle if no key pressed
-  if (k === ' ' && !e.repeat) {
-    // Check dodge CD
+  if (!isControlling) return;
+
+  // Movement
+  if (keyMatch(k, 'up')) { keys.w = true; e.preventDefault(); return; }
+  if (keyMatch(k, 'left')) { keys.a = true; e.preventDefault(); return; }
+  if (keyMatch(k, 'down')) { keys.s = true; e.preventDefault(); return; }
+  if (keyMatch(k, 'right')) { keys.d = true; e.preventDefault(); return; }
+
+  // Class skills
+  if (keyMatch(k, 'skillA') && !e.repeat) { trySendSkill('skillA', 'skillA', getAimAngle()); e.preventDefault(); return; }
+  if (keyMatch(k, 'skillB') && !e.repeat) { trySendSkill('skillB', 'skillB', getAimAngle()); e.preventDefault(); return; }
+  if (keyMatch(k, 'ultimate') && !e.repeat) { trySendSkill('ultimate', 'ultimate', getAimAngle()); e.preventDefault(); return; }
+
+  // Dodge
+  if (keyMatch(k, 'dodge') && !e.repeat) {
     if (state && state.combat && state.combat.hunters) {
       const dh = state.combat.hunters.find(x => x.id === controlledHunterId);
       if (dh && dh.dodgeCd > 0) {
@@ -1273,11 +1498,15 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault(); return;
   }
 
+  // Hunter skills (F/G/H by default)
+  if (keyMatch(k, 'hunterSkill1') && !e.repeat) { sendInput({ type: 'hunter_skill', slotIndex: 0, angle: getAimAngle() }); e.preventDefault(); return; }
+  if (keyMatch(k, 'hunterSkill2') && !e.repeat) { sendInput({ type: 'hunter_skill', slotIndex: 1, angle: getAimAngle() }); e.preventDefault(); return; }
+  if (keyMatch(k, 'hunterSkill3') && !e.repeat) { sendInput({ type: 'hunter_skill', slotIndex: 2, angle: getAimAngle() }); e.preventDefault(); return; }
+
   // Hunter switch (1-6)
   if (k >= '1' && k <= '6' && !e.repeat) {
     ws.send(JSON.stringify({ type: 'switch_hunter', slotIndex: parseInt(k) - 1 }));
-    e.preventDefault();
-    return;
+    e.preventDefault(); return;
   }
 
   // ESC to release control
@@ -1287,10 +1516,10 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) => {
   if (!isControlling) return;
   const k = e.key.toLowerCase();
-  if (k === 'w' || k === 'z') keys.w = false;
-  if (k === 'q') keys.a = false;
-  if (k === 's') keys.s = false;
-  if (k === 'd') keys.d = false;
+  if (keyMatch(k, 'up')) keys.w = false;
+  if (keyMatch(k, 'left')) keys.a = false;
+  if (keyMatch(k, 'down')) keys.s = false;
+  if (keyMatch(k, 'right')) keys.d = false;
 });
 
 // ── Mouse handlers ──
@@ -1417,13 +1646,13 @@ function processState(s) {
         if (ev.type === 'skill_used' && ev.player === focusHunterId) {
           addFocusLogEntry('⚡ ' + (ev.skill || ev.effect || 'Skill'), 'skill');
         }
-        if (ev.type === 'damage' && ev.source === focusHunterId && ev.amount > 0) {
+        if ((ev.type === 'damage' || ev.type === 'skill_damage') && ev.source === focusHunterId && ev.amount > 0) {
           const isBoss = s.combat && s.combat.boss && ev.target === s.combat.boss.id;
           const targetName = isBoss ? 'Boss' : 'Add';
-          addFocusLogBatch('dmg-out', ev.skill || 'Auto', targetName, ev.amount, !!ev.crit);
+          addFocusLogBatch('dmg-out', ev.skillName || ev.skill || 'Auto', targetName, ev.amount, !!ev.crit);
         }
-        if (ev.type === 'damage' && ev.target === focusHunterId && ev.amount > 0) {
-          addFocusLogBatch('dmg-in', 'Boss', '', ev.amount, false);
+        if ((ev.type === 'damage' || ev.type === 'skill_damage' || ev.type === 'pattern_damage') && ev.target === focusHunterId && ev.amount > 0) {
+          addFocusLogBatch('dmg-in', ev.type === 'pattern_damage' ? (ev.pattern || 'Boss') : 'Boss', '', ev.amount, false);
         }
         if (ev.type === 'heal' && ev.target === focusHunterId && ev.amount > 0) {
           addFocusLogBatch('heal', 'Soin', '', ev.amount, false);
@@ -1431,7 +1660,7 @@ function processState(s) {
       }
 
       // ── Floating damage text (filtered when focused) ──
-      if (ev.type === 'damage' && ev.amount > 0) {
+      if ((ev.type === 'damage' || ev.type === 'skill_damage' || ev.type === 'pattern_damage') && ev.amount > 0) {
         // Find target position: hunter, boss, or add
         let targetPos = hunterPositions[ev.target] ||
           (s.combat && s.combat.boss && s.combat.boss.id === ev.target ? { x: s.combat.boss.x, y: s.combat.boss.y } : null);
@@ -1610,6 +1839,7 @@ function processState(s) {
   if (s.feedLog && s.feedLog.length > 0) {
     lastFeedLog = s.feedLog;
     renderFeedLog(s.feedLog);
+    checkLootToasts(s.feedLog);
   }
 
   // Local events (deaths during combat)
@@ -1739,9 +1969,10 @@ function updateFocusPanel(hunters) {
   const manaPct = h.maxMana > 0 ? (h.mana / h.maxMana * 100).toFixed(0) : 0;
 
   // Offensive stat label: INT for mages/healers, ATK for others
-  const offLabel = h.int > 0 ? 'INT' : 'ATK';
-  const offVal = h.int > 0 ? h.int : (h.atk || 0);
-  const offColor = h.int > 0 ? '#c084fc' : '#fb923c';
+  const isIntClass = h.usesInt || h.class === 'healer' || h.class === 'dps_range';
+  const offLabel = isIntClass ? 'INT' : 'ATK';
+  const offVal = isIntClass ? (h.int || 0) : (h.atk || 0);
+  const offColor = isIntClass ? '#c084fc' : '#fb923c';
 
   document.getElementById('fp-stats').innerHTML =
     '<div class="fp-stat"><span class="fp-stat-label">HP</span><span class="fp-stat-val" style="color:#10b981">' + fmtNum(Math.round(h.hp)) + ' / ' + fmtNum(h.maxHp) + '</span></div>' +
@@ -1768,7 +1999,7 @@ function updateFocusPanel(hunters) {
       { key: 'B', css: 'sk-b', s: sk.skillB },
       { key: 'R', css: 'sk-ult', s: sk.ultimate },
     ];
-    skillsEl.innerHTML = slots.map(sl => {
+    let html = slots.map(sl => {
       if (!sl.s || !sl.s.name) return '';
       const cd = sl.s.cd || 0;
       const maxCd = sl.s.maxCd || 0;
@@ -1782,6 +2013,29 @@ function updateFocusPanel(hunters) {
         (barPct > 0 ? '<div class="fp-skill-bar" style="width:' + barPct + '%"></div>' : '') +
       '</div>';
     }).join('');
+
+    // Hunter-specific skills (1/2/3)
+    if (h.hunterSkills && h.hunterSkills.length > 0) {
+      html += '<div style="border-top:1px solid #1e1e4a;margin-top:3px;padding-top:3px;font-size:8px;color:#64748b;margin-bottom:2px">HUNTER SKILLS</div>';
+      const hKeys = [getBindLabel('hunterSkill1'), getBindLabel('hunterSkill2'), getBindLabel('hunterSkill3')];
+      const hCss = ['sk-h1', 'sk-h2', 'sk-h3'];
+      for (let hi = 0; hi < h.hunterSkills.length; hi++) {
+        const hs = h.hunterSkills[hi];
+        if (!hs || !hs.name) continue;
+        const cd = hs.cd || 0;
+        const maxCd = hs.maxCd || 0;
+        const cdText = cd > 0 ? cd.toFixed(1) + 's' : 'OK';
+        const cdClass = cd > 0 ? 'on-cd' : 'ready';
+        const barPct = maxCd > 0 && cd > 0 ? Math.round(cd / maxCd * 100) : 0;
+        html += '<div class="fp-skill">' +
+          '<span class="fp-skill-key ' + hCss[hi] + '">' + hKeys[hi] + '</span>' +
+          '<span class="fp-skill-name">' + hs.name + '</span>' +
+          '<span class="fp-skill-cd ' + cdClass + '">' + cdText + '</span>' +
+          (barPct > 0 ? '<div class="fp-skill-bar" style="width:' + barPct + '%"></div>' : '') +
+        '</div>';
+      }
+    }
+    skillsEl.innerHTML = html;
   } else {
     skillsEl.innerHTML = '<div style="color:#4b5563;font-size:9px;padding:4px;">Aucune donnée</div>';
   }
@@ -2000,12 +2254,43 @@ function updateUI(s) {
 
     const hpFill = document.getElementById('boss-hp-fill');
     hpFill.style.width = fillPct + '%';
-    hpFill.style.background = BAR_COLORS[barColorIdx];
+    hpFill.style.background = b.invincible ? 'linear-gradient(90deg, #fbbf24, #f59e0b)' : BAR_COLORS[barColorIdx];
     // Show previous bar color underneath
     document.querySelector('.boss-hp-bar').style.background = currentBar > 1 ? BAR_COLORS[prevBarColorIdx] : '#1a1a2e';
+    // Invincibility visual: pulsing border + glow
+    const hpBar = document.querySelector('.boss-hp-bar');
+    if (b.invincible) {
+      hpBar.style.border = '2px solid #fbbf24';
+      hpBar.style.boxShadow = '0 0 12px rgba(251,191,36,0.6)';
+    } else {
+      hpBar.style.border = '1px solid rgba(255,255,255,0.08)';
+      hpBar.style.boxShadow = 'none';
+    }
 
+    const invLabel = b.invincible ? '  ✦ INVINCIBLE ' + b.invincibleTimer.toFixed(1) + 's' : '';
     document.getElementById('boss-hp-text').textContent =
-      fmtNum(b.hp) + ' / ' + fmtNum(b.maxHp) + '  x' + currentBar + ' (' + pct.toFixed(1) + '%)';
+      fmtNum(b.hp) + ' / ' + fmtNum(b.maxHp) + '  x' + currentBar + ' (' + pct.toFixed(1) + '%)' + invLabel;
+
+    // Boss buffs/debuffs
+    const buffsEl = document.getElementById('boss-buffs');
+    let buffsHtml = '';
+    // Debuffs (red) — things applied BY hunters to the boss
+    if (b.defDebuff) buffsHtml += '<span class="boss-buff debuff">⬇ DEF -' + Math.round((1 - b.defDebuff.mult) * 100) + '% (' + b.defDebuff.timer.toFixed(1) + 's)</span>';
+    if (b.stunned) buffsHtml += '<span class="boss-buff debuff">⬇ STUN (' + b.stunnedTimer.toFixed(1) + 's)</span>';
+    if (b.burning) buffsHtml += '<span class="boss-buff debuff">🔥 BURN (' + b.burnTimer.toFixed(1) + 's)</span>';
+    // Buffs (green) — things the boss gives itself
+    if (b.invincible) buffsHtml += '<span class="boss-buff buff" style="background:rgba(251,191,36,0.35);color:#fef3c7;border-color:rgba(251,191,36,0.6)">✦ INVINCIBLE (' + b.invincibleTimer.toFixed(1) + 's)</span>';
+    if (b.shielded) buffsHtml += '<span class="boss-buff buff">🛡 Bouclier ' + fmtNum(b.shieldHp) + '</span>';
+    if (b.enraged) buffsHtml += '<span class="boss-buff buff" style="background:rgba(220,38,38,0.35);color:#fca5a5;border-color:rgba(220,38,38,0.6)">⚠ ENRAGE</span>';
+    if (b.rageBuff > 0) buffsHtml += '<span class="boss-buff buff">⬆ Rage x' + b.rageBuff + ' (' + b.rageBuffTimer.toFixed(1) + 's)</span>';
+    if (b.burstActive) buffsHtml += '<span class="boss-buff buff">⚡ Sprint</span>';
+    // Dynamic boss buffs (dispellable)
+    if (b.activeBuffs) {
+      for (const ab of b.activeBuffs) {
+        buffsHtml += '<span class="boss-buff buff" style="border-color:' + (ab.color || '#22c55e') + '40">⬆ ' + ab.name + (ab.stacks > 1 ? ' x' + ab.stacks : '') + ' (' + ab.duration.toFixed(1) + 's)</span>';
+      }
+    }
+    buffsEl.innerHTML = buffsHtml;
   } else {
     bossSection.style.display = 'none';
   }
@@ -2018,8 +2303,9 @@ function updateUI(s) {
       '<span><span class="dot dot-alive"></span> ' + alive + '/' + total + ' en vie</span>' +
       (s.combat.timer != null ? '<span style="color:#64748b">Enrage: ' + Math.max(0, s.combat.timer).toFixed(0) + 's</span>' : '');
 
-    updateGlobalStats(hunters);
-    updateHunterList(hunters);
+    const filteredHunters = getBossFilteredHunters(hunters);
+    updateGlobalStats(filteredHunters);
+    updateHunterList(filteredHunters);
     updatePartyHud(hunters);
     drawDpsGraph();
     if (focusHunterId) updateFocusPanel(hunters);
@@ -2029,21 +2315,67 @@ function updateUI(s) {
     updatePartyHud(s.hunters);
   }
 
-  // Per-boss results section
+  // Per-boss results section (only rebuild when data changes, not every tick)
   if (s.bossResults && s.bossResults.length > 0) {
-    const section = document.getElementById('boss-results-section');
-    section.style.display = 'block';
-    const BOSS_NAMES = ['Gardien Foret', 'Sentinelle Pierre', 'Seigneur Ombres', 'Manaya', 'Boss Final'];
-    document.getElementById('boss-results-list').innerHTML = s.bossResults.map(r => {
-      const name = BOSS_NAMES[r.bossIndex] || 'Boss ' + (r.bossIndex + 1);
-      const icon = r.victory ? '<span style="color:#10b981">V</span>' : '<span style="color:#ef4444">X</span>';
-      const time = r.time ? r.time.toFixed(0) + 's' : '?';
-      const hp = r.bossHpPercent != null ? (r.bossHpPercent * 100).toFixed(0) + '% restant' : '';
-      return '<div style="display:flex;justify-content:space-between;margin:2px 0;">' +
-        '<span>' + icon + ' ' + name + '</span>' +
-        '<span style="color:#64748b;">' + (r.victory ? time : hp || 'WIPE') + '</span></div>';
-    }).join('');
+    const newCount = s.bossResults.length;
+    const changed = !bossResultsCache || bossResultsCache.length !== newCount;
+    bossResultsCache = s.bossResults;
+    if (changed) renderBossResults(s);
+    document.getElementById('boss-results-section').style.display = 'block';
   }
+  // Show boss results section even during first boss if combat is active
+  if (s.combat && s.combat.boss && (!bossResultsCache || bossResultsCache.length === 0)) {
+    bossResultsCache = [];
+    renderBossResults(s);
+    document.getElementById('boss-results-section').style.display = 'block';
+  }
+}
+
+let _lastBossFilterRendered = null;
+function renderBossResults(s) {
+  _lastBossFilterRendered = currentBossFilter;
+  const BOSS_NAMES = ['Gardien Foret', 'Sentinelle Pierre', 'Seigneur Ombres', 'Manaya', 'Boss Final'];
+  const completed = bossResultsCache || [];
+  // Count: completed bosses + current boss if in combat
+  const currentBossIdx = s && s.bossIndex != null ? s.bossIndex : -1;
+  const hasCurrent = s && s.combat && s.combat.boss && !completed.find(r => r.bossIndex === currentBossIdx);
+  const totalBossCount = completed.length + (hasCurrent ? 1 : 0);
+  if (totalBossCount === 0) return;
+
+  const allActive = currentBossFilter === 'all' ? ' style="background:#2d1b69;border-radius:4px;"' : '';
+  let html = '<div class="boss-filter-row" onclick="setBossFilter(\'all\')"' + allActive + '>' +
+    '<span style="color:#c4b5fd;font-weight:600;">Global</span>' +
+    '<span style="color:#64748b;">' + totalBossCount + ' boss</span></div>';
+
+  // Completed bosses
+  html += completed.map(r => {
+    const name = BOSS_NAMES[r.bossIndex] || 'Boss ' + (r.bossIndex + 1);
+    const icon = r.victory ? '<span style="color:#10b981">V</span>' : '<span style="color:#ef4444">X</span>';
+    const time = r.time ? r.time.toFixed(0) + 's' : '?';
+    const hp = r.bossHpPercent != null ? (r.bossHpPercent * 100).toFixed(0) + '% restant' : '';
+    const active = currentBossFilter === r.bossIndex ? ' style="background:#2d1b69;border-radius:4px;"' : '';
+    const bossStats = getBossFilteredStats(r.bossIndex);
+    const totalDmg = bossStats.reduce((a, h) => a + h.damageDealt, 0);
+    const dps = r.time > 0 ? Math.round(totalDmg / r.time) : 0;
+    return '<div class="boss-filter-row" onclick="setBossFilter(' + r.bossIndex + ')"' + active + '>' +
+      '<span>' + icon + ' ' + name + '</span>' +
+      '<span style="color:#f59e0b;font-size:9px;">' + fmtNum(dps) + '/s</span>' +
+      '<span style="color:#64748b;">' + (r.victory ? time : hp || 'WIPE') + '</span></div>';
+  }).join('');
+
+  // Current boss (in progress)
+  if (hasCurrent) {
+    const name = BOSS_NAMES[currentBossIdx] || 'Boss ' + (currentBossIdx + 1);
+    const active = currentBossFilter === 'current' ? ' style="background:#2d1b69;border-radius:4px;"' : '';
+    const b = s.combat.boss;
+    const hpPct = b.maxHp > 0 ? (b.hp / b.maxHp * 100).toFixed(0) : '?';
+    html += '<div class="boss-filter-row" onclick="setBossFilter(\'current\')"' + active + '>' +
+      '<span style="color:#f59e0b">⚔</span> <span>' + name + '</span>' +
+      '<span style="color:#f59e0b;font-size:9px;">EN COURS</span>' +
+      '<span style="color:#64748b;">' + hpPct + '% HP</span></div>';
+  }
+
+  document.getElementById('boss-results-list').innerHTML = html;
 }
 
 // ── Global Stats ──
@@ -2051,7 +2383,14 @@ function updateGlobalStats(hunters) {
   const totalDmg = hunters.reduce((a, h) => a + (h.damageDealt || 0), 0);
   const totalHeal = hunters.reduce((a, h) => a + (h.healingDone || 0), 0);
   const totalTaken = hunters.reduce((a, h) => a + (h.damageTaken || 0), 0);
-  const elapsed = combatStartTime ? (Date.now() - combatStartTime) / 1000 : 0;
+  // Use boss-specific time when filtering by boss
+  let elapsed;
+  if (currentBossFilter !== 'all' && bossResultsCache) {
+    const br = bossResultsCache.find(r => r.bossIndex === currentBossFilter);
+    elapsed = br && br.time ? br.time : 0;
+  } else {
+    elapsed = combatStartTime ? (Date.now() - combatStartTime) / 1000 : 0;
+  }
   const dps = elapsed > 0 ? Math.round(totalDmg / elapsed) : 0;
 
   document.getElementById('gs-dps').textContent = fmtNum(dps) + '/s';
@@ -2100,13 +2439,78 @@ function drawDpsGraph() {
   g.fillText(fmtNum(dpsHistory[dpsHistory.length-1].heal) + '/s', c.width - 80, 16);
 }
 
+// ── Boss Filter ──
+function setBossFilter(bossIdx) {
+  currentBossFilter = bossIdx;
+  // Re-render boss filter rows (highlight active)
+  renderBossResults(state);
+  // Re-render hunter list with filtered stats
+  if (state && state.combat) {
+    const hunters = getBossFilteredHunters(state.combat.hunters);
+    updateGlobalStats(hunters);
+    updateHunterList(hunters);
+  }
+}
+
+// Get per-boss stats (delta between consecutive boss results)
+function getBossFilteredStats(bossIndex) {
+  if (!bossResultsCache || bossResultsCache.length === 0) return [];
+  const result = bossResultsCache.find(r => r.bossIndex === bossIndex);
+  if (!result || !result.stats) return [];
+
+  // Find previous boss result to compute delta
+  const prevIdx = bossResultsCache.findIndex(r => r.bossIndex === bossIndex) - 1;
+  const prevStats = prevIdx >= 0 && bossResultsCache[prevIdx].stats ? bossResultsCache[prevIdx].stats : [];
+
+  return result.stats.map(s => {
+    const prev = prevStats.find(p => p.id === s.id);
+    return {
+      ...s,
+      damageDealt: s.damageDealt - (prev ? prev.damageDealt : 0),
+      damageTaken: s.damageTaken - (prev ? prev.damageTaken : 0),
+      healingDone: s.healingDone - (prev ? prev.healingDone : 0),
+      deaths: s.deaths - (prev ? prev.deaths : 0),
+    };
+  });
+}
+
+// Get hunters with stats overridden by boss filter
+function getBossFilteredHunters(hunters) {
+  if (currentBossFilter === 'all') return hunters;
+  // "current" = boss in progress: delta = current stats minus last completed boss stats
+  if (currentBossFilter === 'current') {
+    const lastResult = bossResultsCache && bossResultsCache.length > 0 ? bossResultsCache[bossResultsCache.length - 1] : null;
+    const prevStats = lastResult && lastResult.stats ? lastResult.stats : [];
+    return hunters.map(h => {
+      const prev = prevStats.find(p => p.id === h.id);
+      if (!prev) return h;
+      return { ...h,
+        damageDealt: (h.damageDealt || 0) - (prev.damageDealt || 0),
+        damageTaken: (h.damageTaken || 0) - (prev.damageTaken || 0),
+        healingDone: (h.healingDone || 0) - (prev.healingDone || 0),
+        deaths: (h.deaths || 0) - (prev.deaths || 0),
+      };
+    });
+  }
+  const bossStats = getBossFilteredStats(currentBossFilter);
+  if (bossStats.length === 0) return hunters;
+  return hunters.map(h => {
+    const bs = bossStats.find(s => s.id === h.id);
+    if (!bs) return h;
+    return { ...h, damageDealt: bs.damageDealt, damageTaken: bs.damageTaken, healingDone: bs.healingDone, deaths: bs.deaths };
+  });
+}
+
 // ── Tab switching ──
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => {
     t.className = 'tab' + (t.dataset.tab === tab ? (' active' + (tab === 'heal' ? ' active-heal' : tab === 'taken' ? ' active-heal' : ' active-dmg')) : '');
   });
-  if (state && state.combat) updateHunterList(state.combat.hunters);
+  if (state && state.combat) {
+    const hunters = getBossFilteredHunters(state.combat.hunters);
+    updateHunterList(hunters);
+  }
 }
 
 // ── Account Filter ──
@@ -2115,11 +2519,18 @@ function setAccountFilter(acct) {
   document.querySelectorAll('.acct-btn').forEach(el => {
     el.classList.toggle('active', el.dataset.acct === acct);
   });
-  if (state && state.combat) updateHunterList(state.combat.hunters);
+  if (state && state.combat) {
+    const hunters = getBossFilteredHunters(state.combat.hunters);
+    updateHunterList(hunters);
+  }
 }
 
+let _lastAccountList = '';
 function updateAccountFilter(hunters) {
   const accounts = [...new Set(hunters.map(h => h.username))].sort();
+  const key = accounts.join(',') + '|' + currentAccountFilter;
+  if (key === _lastAccountList) return; // Don't rebuild if unchanged
+  _lastAccountList = key;
   const el = document.getElementById('account-filter');
   el.innerHTML = '<span class="acct-btn' + (currentAccountFilter === 'all' ? ' active' : '') +
     '" data-acct="all" onclick="setAccountFilter(\'all\')">Tous</span>' +
@@ -2330,7 +2741,9 @@ function updateHunterDetail(hunters) {
   document.getElementById('det-sub').textContent = h.username + ' | ' + (CLASS_LABELS[h.class] || h.class) + (h.alive ? '' : ' | MORT');
 
   document.getElementById('det-hp').textContent = h.hp.toLocaleString() + ' / ' + h.maxHp.toLocaleString();
-  document.getElementById('det-atk').textContent = (h.atk || 0).toLocaleString();
+  const detIsInt = h.usesInt || h.class === 'healer' || h.class === 'dps_range';
+  document.querySelector('#det-atk').previousElementSibling.textContent = detIsInt ? 'INT' : 'ATK';
+  document.getElementById('det-atk').textContent = (detIsInt ? (h.int || 0) : (h.atk || 0)).toLocaleString();
   document.getElementById('det-def').textContent = (h.def || 0).toLocaleString();
   document.getElementById('det-spd').textContent = (h.spd || 0).toLocaleString();
   document.getElementById('det-crit').textContent = (h.crit || 0);
@@ -2699,20 +3112,21 @@ function render() {
       }
     }
 
-    // Glow halo
-    ctx.globalAlpha = (isBossProj ? 0.35 : 0.2) * projAlpha;
-    ctx.beginPath(); ctx.arc(px, py, pr * (isBossProj ? 2.2 : 1.8), 0, Math.PI * 2);
+    // Glow halo — smaller for hunter projectiles
+    ctx.globalAlpha = (isBossProj ? 0.35 : 0.12) * projAlpha;
+    ctx.beginPath(); ctx.arc(px, py, pr * (isBossProj ? 2.2 : 1.2), 0, Math.PI * 2);
     ctx.fillStyle = pColor; ctx.fill();
     ctx.globalAlpha = projAlpha;
 
     // Core orb
-    ctx.beginPath(); ctx.arc(px, py, pr * 0.8, 0, Math.PI * 2);
-    const grad = ctx.createRadialGradient(px, py, 0, px, py, pr * 0.8);
+    const coreR = pr * (isBossProj ? 0.8 : 0.6);
+    ctx.beginPath(); ctx.arc(px, py, coreR, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(px, py, 0, px, py, coreR);
     grad.addColorStop(0, '#fff');
     grad.addColorStop(0.4, pColor);
     grad.addColorStop(1, pColor + '40');
     ctx.fillStyle = grad;
-    ctx.shadowColor = pColor; ctx.shadowBlur = isBossProj ? 12 : 8;
+    ctx.shadowColor = pColor; ctx.shadowBlur = isBossProj ? 12 : 4;
     ctx.fill(); ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
   }
@@ -2751,11 +3165,20 @@ function render() {
       continue;
     }
 
-    // Choose front/back sprite based on position relative to boss
+    // Choose front/back sprite based on facing direction
     const bossPos = c.boss ? { x: c.boss.x, y: c.boss.y } : null;
-    const facingAway = bossPos && h.y < bossPos.y - 30; // Hunter is above boss → moving away
+    // Determine facing angle: controlled hunters use aimAngle (mouse), bots face the boss
+    let facingAngle = 0; // default: facing down (positive Y)
+    if (h.isControlled && h.aimAngle != null) {
+      facingAngle = h.aimAngle;
+    } else if (bossPos) {
+      facingAngle = Math.atan2(bossPos.y - h.y, bossPos.x - h.x);
+    }
+    // facingAngle: 0=right, PI/2=down, -PI/2=up, PI=left
+    // "facing away" = looking upward (negative Y component = sin < -0.3)
+    const facingUp = Math.sin(facingAngle) < -0.3;
     const backSprite = SPRITES[h.hunterId + '_back'];
-    const sprite = (facingAway && backSprite) ? backSprite : (SPRITES[h.hunterId] || SPRITES[h.class]);
+    const sprite = (facingUp && backSprite) ? backSprite : (SPRITES[h.hunterId] || SPRITES[h.class]);
     const spriteSize = ts(isFocused ? 52 : 44); // Bigger sprite for focused
 
     if (sprite) {
@@ -2796,12 +3219,39 @@ function render() {
         ctx.beginPath(); ctx.arc(0, 0, ringR, 0, Math.PI * 2); ctx.stroke();
       }
 
-      // Flip sprite horizontally if hunter is to the right of the boss (facing left)
-      const flipX = bossPos && h.x > bossPos.x;
+      // Flip sprite horizontally based on facing direction (left = flip)
+      const flipX = Math.cos(facingAngle) < 0;
       if (flipX) ctx.scale(-1, 1);
       ctx.drawImage(sprite, -spriteSize / 2, -spriteSize / 2, spriteSize, spriteSize);
       if (flipX) ctx.scale(-1, 1);
       ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+
+      // ── Melee slash VFX (sword arc in element color) ──
+      const isMelee = h.class === 'tank' || h.class === 'dps_cac' || h.class === 'berserker';
+      if (isMelee && h.comboStep > 0) {
+        const elCol = ELEMENT_COLORS[h.element] || '#fff';
+        const slashR = spriteSize * 0.7 + 6;
+        const aimA = h.aimAngle || 0;
+        // Alternate slash direction per combo step
+        const swingDir = h.comboStep % 2 === 1 ? 1 : -1;
+        const halfArc = 0.9; // ~50deg half-cone
+        ctx.save();
+        ctx.globalAlpha = 0.75 * dimAlpha;
+        // Glow
+        ctx.shadowColor = elCol; ctx.shadowBlur = 12;
+        // Main arc stroke
+        ctx.strokeStyle = elCol; ctx.lineWidth = ts(4);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(0, 0, slashR, aimA - halfArc * swingDir, aimA + halfArc * swingDir);
+        ctx.stroke();
+        // Inner thinner bright line
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = ts(1.5); ctx.globalAlpha = 0.5 * dimAlpha;
+        ctx.beginPath();
+        ctx.arc(0, 0, slashR * 0.85, aimA - halfArc * 0.7 * swingDir, aimA + halfArc * 0.7 * swingDir);
+        ctx.stroke();
+        ctx.restore();
+      }
 
       const hpPct = h.maxHp > 0 ? h.hp / h.maxHp : 1;
       if (hpPct < 1) {
@@ -3050,7 +3500,7 @@ function render() {
       else { ctx.shadowColor = '#ef444480'; ctx.shadowBlur = 15; }
 
       ctx.save();
-      ctx.rotate(b.rotation + Math.PI / 2); // +90deg so sprite faces forward
+      ctx.rotate(b.rotation - Math.PI / 2); // sprite faces down, offset so it faces rotation direction
       const spriteW = bossSize * 0.9;
       const spriteH = bossSize * 0.9;
       ctx.drawImage(bossSprite, -spriteW / 2, -spriteH / 2, spriteW, spriteH);
@@ -3190,6 +3640,12 @@ function render() {
         { key: 'E', skillKey: 'skillB', sk: sk.skillB, color: '#2563eb' },
         { key: 'R', skillKey: 'ultimate', sk: sk.ultimate, color: '#dc2626' },
         { key: 'SPACE', skillKey: 'dodge', sk: { name: 'Esquive', cd: h.dodgeCd || 0, maxCd: 6 }, color: '#0891b2' },
+        // Hunter-specific skills (F/G/H)
+        ...(h.hunterSkills || []).map((hs, i) => ({
+          key: getBindLabel(['hunterSkill1','hunterSkill2','hunterSkill3'][i]), skillKey: 'hunterSkill' + i,
+          sk: { name: hs.name, cd: hs.cd || 0, maxCd: hs.maxCd || 0 },
+          color: ['#0ea5e9', '#14b8a6', '#f97316'][i],
+        })),
       ];
       const barY = canvas.height - 80;
       const slotW = 88, slotH = 60, gap = 6;

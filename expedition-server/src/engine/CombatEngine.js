@@ -588,6 +588,7 @@ export class CombatEngine {
       power: skill.power,
       piercing: skill.piercing || false,
       isBasic: skill.isBasic || false,
+      manaOnHit: skill.manaOnHit || 0,
       alive: true,
       ttl: 2.0, // Max lifetime
     });
@@ -848,14 +849,17 @@ export class CombatEngine {
       }
     }
 
-    // Healer cleanse also dispels boss rage buff!
-    if (skill.dispelsBossRage && this.gs.boss && this.gs.boss.alive && this.gs.boss.rageBuff > 0) {
-      const had = this.gs.boss.dispelRage();
-      if (had > 0) {
-        this.gs.addEvent({
-          type: 'boss_message',
-          text: '✨ Rage de Manaya dissipée par ' + (player.username || player.id) + ' !',
-        });
+    // Healer cleanse: dispel ONE boss buff if in range
+    if (skill.dispelsBossRage && this.gs.boss && this.gs.boss.alive) {
+      const dist = Math.hypot(this.gs.boss.x - player.x, this.gs.boss.y - player.y);
+      if (dist <= skill.range + (this.gs.boss.radius || 40)) {
+        const removed = this.gs.boss.dispelOneBuff();
+        if (removed) {
+          this.gs.addEvent({
+            type: 'boss_message',
+            text: '✨ ' + (removed.name || 'Buff') + ' dissipé par ' + (player.hunterName || player.id) + ' !',
+          });
+        }
       }
     }
   }
@@ -1115,6 +1119,13 @@ export class CombatEngine {
       }
     }
 
+    // Hunter skill cooldowns (keys 1/2/3)
+    if (player.hunterCds) {
+      for (let i = 0; i < player.hunterCds.length; i++) {
+        if (player.hunterCds[i] > 0) player.hunterCds[i] = Math.max(0, player.hunterCds[i] - dt);
+      }
+    }
+
     // Dodge cooldown
     if (player.dodgeCooldown > 0) {
       player.dodgeCooldown = Math.max(0, player.dodgeCooldown - dt);
@@ -1284,6 +1295,123 @@ export class CombatEngine {
         player.blocking = false;
       }
       this.gs.addAggro(player.id, AGGRO.BLOCK_AGGRO_PER_SEC * dt * player.aggroMult);
+    }
+  }
+
+  // ── Hunter Skills (keys 1/2/3) ──
+  // Unique skills from hunterData.js — damage, buffs, heals, manaScaling
+
+  useHunterSkill(player, slotIndex, angle) {
+    if (!player.alive || player.dodging || player.casting) return;
+    if (!player.hunterSkills || !player.hunterSkills[slotIndex]) return;
+    if (player.hunterCds[slotIndex] > 0) return;
+
+    const skill = player.hunterSkills[slotIndex];
+    const manaCost = Math.floor(player.maxMana * 0.10); // 10% max mana per hunter skill
+
+    // Skills with cdMax 0 are basic-like, no mana cost
+    if (skill.cdMax > 0 && player.mana < manaCost) return;
+    if (skill.cdMax > 0) player.mana -= manaCost;
+
+    // Set cooldown
+    player.hunterCds[slotIndex] = skill.maxCd || 0;
+
+    const offensiveStat = player.getOffensiveStat();
+
+    // Effectiveness multiplier — hunter skills are bonus flavor, not main DPS source
+    const HUNTER_SKILL_MULT = 0.12;
+
+    // ── Damage ──
+    if (skill.power > 0) {
+      let totalPower = skill.power * HUNTER_SKILL_MULT;
+
+      // Megumin manaScaling: damage scales with current mana ratio × INT
+      // Formula: power × (1 + manaScaling × manaRatio) / NERF_DIVISOR
+      // At 100% mana with manaScaling:7 → ×8 base, nerfed ÷3 → ×2.67
+      // At 50% mana → ×4.5 base, nerfed ÷3 → ×1.5
+      if (skill.manaScaling) {
+        const manaRatio = player.maxMana > 0 ? player.mana / player.maxMana : 0;
+        const manaBonus = skill.manaScaling * manaRatio;
+        totalPower = totalPower * (1 + manaBonus) / 3; // ÷3 nerf
+      }
+
+      const damage = Math.floor(offensiveStat * totalPower / 100);
+
+      // Deal damage to boss or nearest enemy
+      const boss = this.gs.boss;
+      if (boss && boss.alive) {
+        const dist = Math.hypot(boss.x - player.x, boss.y - player.y);
+        const range = player.skills.basic?.hitbox === 'projectile' ? 800 : 200;
+        if (dist <= range + boss.radius) {
+          const actual = boss.takeDamage(damage, player);
+          player.stats.damageDealt += actual;
+          this.gs.addAggro(player.id, actual * 0.5 * (player.aggroMult || 1));
+          // Emit damage event (floating text) + skill_used event (VFX/log)
+          this.gs.addEvent({
+            type: 'damage',
+            source: player.id,
+            target: boss.id,
+            amount: actual,
+            crit: false,
+            skill: skill.name,
+          });
+          this.gs.addEvent({
+            type: 'skill_used',
+            player: player.id,
+            skill: skill.name,
+            effect: 'hunter_skill',
+            isHunterSkill: true,
+          });
+        }
+      }
+
+      // Also hit adds in range
+      for (const add of this.gs.getAliveAdds()) {
+        const dist = Math.hypot(add.x - player.x, add.y - player.y);
+        if (dist <= 250 + (add.radius || 15)) {
+          const actual = add.takeDamage ? add.takeDamage(Math.floor(damage * 0.6), player) : 0;
+          player.stats.damageDealt += actual;
+        }
+      }
+
+      // Self damage (Megumin EXPLOSION, Kaneki Centipede, etc.)
+      if (skill.selfDamage) {
+        const selfDmg = Math.floor(player.maxHp * skill.selfDamage / 100);
+        player.hp = Math.max(1, player.hp - selfDmg);
+      }
+    }
+
+    // ── Buffs (scaled by HUNTER_SKILL_MULT) ──
+    if (skill.buffAtk) {
+      player.addBuff({
+        type: 'atk_up',
+        value: (skill.buffAtk / 100) * HUNTER_SKILL_MULT,
+        dur: (skill.buffDur || 3) * 7,  // Scale duration like CD
+        source: `hunter_${skill.name}`,
+      });
+    }
+    if (skill.buffDef) {
+      player.addBuff({
+        type: 'def_up',
+        value: (skill.buffDef / 100) * HUNTER_SKILL_MULT,
+        dur: (skill.buffDur || 3) * 7,
+        source: `hunter_${skill.name}`,
+      });
+    }
+
+    // ── Heal Self (scaled) ──
+    if (skill.healSelf) {
+      const healAmt = Math.floor(player.maxHp * skill.healSelf / 100 * HUNTER_SKILL_MULT);
+      const actual = player.heal(healAmt);
+      player.stats.healingDone += actual;
+    }
+
+    // ── Debuff on boss (scaled) ──
+    if (skill.debuffDef && this.gs.boss?.alive) {
+      const scaledDebuff = Math.round(skill.debuffDef * HUNTER_SKILL_MULT);
+      if (scaledDebuff > 0) {
+        this.gs.boss.addDebuff?.('def_down', scaledDebuff, (skill.debuffDur || 2) * 7, player.id);
+      }
     }
   }
 

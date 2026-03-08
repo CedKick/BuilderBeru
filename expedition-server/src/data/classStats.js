@@ -66,33 +66,34 @@ export const CLASS_SKILLS = {
     basic: {
       name: 'Trait de lumière', power: 1200, range: 1100, hitbox: 'projectile',
       projSpeed: 1100, projRadius: 8, cooldown: 0.45, manaCost: 0,
-      isBasic: true, manaOnHit: 25,
+      isBasic: true, manaOnHit: 18,  // nerfed from 25 — must auto-attack more to sustain
     },
     secondary: {
       name: 'Cercle de Soin', type: 'heal_zone', healPct: 0.10,
       range: 500, zoneRadius: 150, zoneDuration: 4.0, healTicks: 5,
-      cooldown: 10.0, manaCost: 30,
+      cooldown: 10.0, manaCost: 80,  // 30→80: heal zone is expensive
     },
     skillA: {
       name: 'Soin de Zone', type: 'heal_aoe', healPct: 0.10,
-      range: 750, cooldown: 6, manaCost: 55,
+      range: 750, cooldown: 6, manaCost: 120,  // 55→120: big AoE heal = big cost
       atkBuff: 0.25, atkBuffDur: 10,
     },
     skillB: {
       name: 'Purification', type: 'cleanse', range: 800,
-      cooldown: 10, manaCost: 40, removesDebuffs: true, dispelsBossRage: true,
+      cooldown: 10, manaCost: 90,  // 40→90: cleanse + boss dispel is powerful
+      removesDebuffs: true, dispelsBossRage: true,
       critBuff: 10, spdBuff: 0.10, buffDur: 10,
     },
     ultimate: {
       name: 'Résurrection Divine', type: 'resurrect',
-      cooldown: 20, manaCost: 0, manaCostPercent: 0.15, healPercent: 0.5,
+      cooldown: 20, manaCost: 0, manaCostPercent: 0.35, healPercent: 0.5,  // 15%→35% max mana
       range: 600, channelDuration: 6.0,
     },
   },
 
   dps_cac: {
     basic: {
-      name: 'Combo de lames', power: 210, range: 80, hitbox: 'cone',
+      name: 'Combo de lames', power: 180, range: 80, hitbox: 'cone',
       coneAngle: 60, cooldown: 0.3, manaCost: 0, isBasic: true, rageGain: 18,
     },
     secondary: {

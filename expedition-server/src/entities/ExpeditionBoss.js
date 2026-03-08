@@ -40,6 +40,8 @@ export class ExpeditionBoss {
     this.phase = 0;
     this.phaseDefinitions = definition.phases || [];
     this._phaseChecked = new Set();
+    this.invincible = false;
+    this.invincibleTimer = 0;
 
     // Pattern system
     this.allPatterns = (definition.patterns || []).map(p => ({
@@ -54,6 +56,10 @@ export class ExpeditionBoss {
     this.rageBuff = 0;
     this.rageBuffTimer = 0;
     this.speedStacks = 0;
+
+    // Boss buff system (visible, dispellable by healer cleanse)
+    // Each buff: { id, name, type, value, duration, maxDuration, stacks, color }
+    this.activeBuffs = [];
 
     // AI targeting
     this.targetId = null;
@@ -132,6 +138,15 @@ export class ExpeditionBoss {
       return;
     }
 
+    // Invincibility countdown (phase transition)
+    if (this.invincible) {
+      this.invincibleTimer -= dt;
+      if (this.invincibleTimer <= 0) {
+        this.invincible = false;
+        this.invincibleTimer = 0;
+      }
+    }
+
     // Burn DoT
     if (this._burning) {
       this._burnTimer -= dt;
@@ -150,8 +165,9 @@ export class ExpeditionBoss {
       this.enraged = true;
     }
 
-    // Speed multiplier
-    let spdMult = (this.enraged ? BOSS_CFG.ENRAGE_SPEED_MULT : 1.0) * (1 + (this.speedStacks || 0) * 0.10);
+    // Speed multiplier (includes boss_spd_up buff stacks)
+    const spdBuffStacks = this.getBuffStacks('boss_spd_up');
+    let spdMult = (this.enraged ? BOSS_CFG.ENRAGE_SPEED_MULT : 1.0) * (1 + (this.speedStacks || 0) * 0.10) * (1 + spdBuffStacks * 0.20);
 
     // Acceleration bursts
     if (this._burstActive) {
@@ -183,6 +199,31 @@ export class ExpeditionBoss {
     if (this.rageBuff > 0) {
       this.rageBuffTimer -= dt;
       if (this.rageBuffTimer <= 0) { this.rageBuff = 0; this.rageBuffTimer = 0; }
+    }
+
+    // Tick active buffs
+    this.updateBuffs(dt);
+
+    // Self-buff: boss gives itself periodic buffs in later phases
+    this._selfBuffTimer = (this._selfBuffTimer || 0) + dt;
+    if (this._selfBuffTimer >= 15 && this.phase >= 1 && !this.currentPattern) {
+      this._selfBuffTimer = 0;
+      // Phase 1+: ATK buff (stacking, dispellable)
+      if (Math.random() < 0.4 + this.phase * 0.15) {
+        this.addBossBuff({
+          id: 'boss_atk_up', name: 'Fureur', duration: 20, value: 0.15,
+          maxStacks: 3, color: '#ef4444',
+        });
+        gameState.addEvent({ type: 'boss_message', text: `🔥 ${this.name} se renforce ! (Fureur x${this.getBuffStacks('boss_atk_up')})` });
+      }
+      // Phase 2+: Speed buff
+      if (this.phase >= 2 && Math.random() < 0.3) {
+        this.addBossBuff({
+          id: 'boss_spd_up', name: 'Célérité', duration: 12, value: 0.20,
+          maxStacks: 2, color: '#f59e0b',
+        });
+        gameState.addEvent({ type: 'boss_message', text: `⚡ ${this.name} accélère ! (Célérité x${this.getBuffStacks('boss_spd_up')})` });
+      }
     }
 
     // DPS check stagger debuff
@@ -280,6 +321,9 @@ export class ExpeditionBoss {
           label: pd.label,
           bossName: this.name,
         });
+        // Invincibility during phase transition (3s)
+        this.invincible = true;
+        this.invincibleTimer = 3.0;
         // Speed stack on major phase changes
         if (i >= 2) this.speedStacks++;
         break;
@@ -348,7 +392,8 @@ export class ExpeditionBoss {
   }
 
   _executePattern(pattern, gameState) {
-    const rawDamage = this.atk * (pattern.power || 1.0) * (this.enraged ? BOSS_CFG.ENRAGE_DMG_MULT : 1.0) * (1 + this.rageBuff * 0.15);
+    const atkBuffStacks = this.getBuffStacks('boss_atk_up');
+    const rawDamage = this.atk * (pattern.power || 1.0) * (this.enraged ? BOSS_CFG.ENRAGE_DMG_MULT : 1.0) * (1 + this.rageBuff * 0.15) * (1 + atkBuffStacks * 0.15);
     const hunters = gameState.getAliveHunters();
 
     switch (pattern.type) {
@@ -1059,6 +1104,7 @@ export class ExpeditionBoss {
 
   takeDamage(rawDamage, source) {
     if (!this.alive) return 0;
+    if (this.invincible) return 0;
     let damage = rawDamage;
 
     // Shield absorb
@@ -1097,6 +1143,79 @@ export class ExpeditionBoss {
   applyBurn(duration) {
     this._burning = true;
     this._burnTimer = duration;
+  }
+
+  // ── Boss Buff System ──
+  addBossBuff(buff) {
+    const existing = this.activeBuffs.find(b => b.id === buff.id);
+    if (existing) {
+      // Stack or refresh
+      existing.stacks = Math.min((existing.stacks || 1) + 1, buff.maxStacks || 5);
+      existing.duration = buff.duration;
+      existing.value = buff.value;
+    } else {
+      this.activeBuffs.push({
+        id: buff.id,
+        name: buff.name,
+        type: buff.type || 'buff',   // 'buff' (green) or 'debuff' (red on boss = from hunters)
+        value: buff.value || 0,
+        duration: buff.duration,
+        maxDuration: buff.duration,
+        stacks: 1,
+        maxStacks: buff.maxStacks || 5,
+        color: buff.color || '#22c55e',
+      });
+    }
+  }
+
+  updateBuffs(dt) {
+    for (let i = this.activeBuffs.length - 1; i >= 0; i--) {
+      this.activeBuffs[i].duration -= dt;
+      if (this.activeBuffs[i].duration <= 0) {
+        this.activeBuffs.splice(i, 1);
+      }
+    }
+  }
+
+  // Dispel one buff (healer cleanse removes strongest buff)
+  dispelOneBuff() {
+    if (this.activeBuffs.length === 0 && this.rageBuff <= 0) return null;
+
+    // Priority: rageBuff first, then highest-stacked active buff
+    if (this.rageBuff > 0) {
+      const val = this.rageBuff;
+      this.rageBuff = 0;
+      this.rageBuffTimer = 0;
+      return { name: 'Rage', value: val };
+    }
+
+    // Remove the buff with most stacks (most impactful)
+    if (this.activeBuffs.length > 0) {
+      this.activeBuffs.sort((a, b) => b.stacks - a.stacks);
+      const removed = this.activeBuffs.shift();
+      return removed;
+    }
+    return null;
+  }
+
+  // Legacy alias
+  dispelRage() {
+    if (this.rageBuff > 0) {
+      const val = this.rageBuff;
+      this.rageBuff = 0;
+      this.rageBuffTimer = 0;
+      return val;
+    }
+    return 0;
+  }
+
+  hasBuff(id) {
+    return this.activeBuffs.some(b => b.id === id);
+  }
+
+  getBuffStacks(id) {
+    const b = this.activeBuffs.find(b => b.id === id);
+    return b ? b.stacks : 0;
   }
 
   _clampPosition() {

@@ -1,9 +1,10 @@
 import pg from 'pg';
 const { Pool } = pg;
 
+const isLocalDB = (process.env.DATABASE_URL || '').includes('localhost');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: isLocalDB ? false : { rejectUnauthorized: false },
   connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,
   max: 5,

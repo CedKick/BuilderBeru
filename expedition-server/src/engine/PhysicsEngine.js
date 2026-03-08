@@ -91,7 +91,9 @@ export class PhysicsEngine {
 
             // Mana/Rage on hit for basic projectile attacks
             if (proj.isBasic) {
-              const gain = owner.useRage ? 10 : PLAYER.MANA_ON_HIT;
+              const baseGain = owner.useRage ? 10 : PLAYER.MANA_ON_HIT;
+              const extraGain = proj.manaOnHit || 0;
+              const gain = baseGain + extraGain;
               if (gain > 0) owner.mana = Math.min(owner.maxMana, owner.mana + gain);
             }
 

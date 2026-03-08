@@ -9,7 +9,7 @@ import { buildCombatStats, getCombatClass } from '../data/classMapping.js';
 import { HUNTERS } from '../data/hunterData.js';
 
 export class Hunter {
-  constructor({ id, username, hunterId, hunterName, inscriptionStats, ownerPlayerId, slotIndex }) {
+  constructor({ id, username, hunterId, hunterName, inscriptionStats, ownerPlayerId, slotIndex, equippedSets, weaponPassive, weaponId }) {
     this.id = id;                      // Unique ID (e.g., "kly_h_frieren")
     this.username = username;          // Display name
     this.hunterId = hunterId;          // e.g., "h_frieren"
@@ -42,8 +42,29 @@ export class Hunter {
     this.color = stats.color;
     this.dmgBonus = 0;
 
-    // Megumin special: offensive stat = maxMana instead of INT
+    // Megumin special: manaScaling skills use inscription mana (stored separately)
     this._isMegumin = (hunterId === 'h_megumin');
+    this.inscriptionMana = inscriptionStats.mana || 0;  // Real mana/INT from colosseum (for manaScaling)
+
+    // Display stats — raw inscription values for the UI (players see their real stats)
+    // Combat uses nerfed values (this.atk, this.int), but UI shows these
+    this.displayStats = {
+      hp: inscriptionStats.hp || this.maxHp,
+      atk: inscriptionStats.atk || this.atk,
+      int: inscriptionStats.mana || 0,   // inscription mana = INT for display
+      def: inscriptionStats.def || this.def,
+      spd: inscriptionStats.spd || this.spd,
+      crit: inscriptionStats.crit || this.crit,
+      res: inscriptionStats.res || this.res,
+      mana: inscriptionStats.mana || this.maxMana,
+    };
+
+    // Expedition gear (for PassiveEngine — set bonuses + weapon passives)
+    this.expeditionGear = {
+      sets: equippedSets || {},    // { setId: pieceCount } from colosseum artifacts
+      weaponId: weaponId || null,  // Expedition weapon ID (if any)
+    };
+    this.scWeaponPassive = weaponPassive || null;  // SC weapon passive (sulfuras_fury, katana_v_chaos, etc.)
 
     // Store base stats for reset between encounters
     this._baseStats = {
@@ -61,6 +82,14 @@ export class Hunter {
     // Skills (from Manaya class definition)
     this.skills = { ...CLASS_SKILLS[this.class] };
 
+    // Hunter-specific skills (3 unique skills from hunterData, mapped to keys 1/2/3)
+    const hunterDef = HUNTERS[hunterId];
+    this.hunterSkills = (hunterDef?.skills || []).map((s, i) => ({
+      ...s,
+      slotIndex: i,            // 0=key1, 1=key2, 2=key3
+      maxCd: (s.cdMax || 0) * 7,  // cdMax N → N×7 seconds real CD
+    }));
+
     // Cooldowns
     this.cooldowns = {
       basic: 0,
@@ -69,6 +98,8 @@ export class Hunter {
       skillB: 0,
       ultimate: 0,
     };
+    // Hunter skill cooldowns (keys 1/2/3)
+    this.hunterCds = [0, 0, 0];
 
     // State
     this.alive = true;
@@ -120,12 +151,9 @@ export class Hunter {
     return speed;
   }
 
-  // Offensive stat: ATK for melee/archers, INT for mages/supports, maxMana for Megumin
+  // Offensive stat: ATK for melee/archers, INT for mages/supports
+  // Megumin: uses INT like other mages (her manaScaling skills add bonus from inscription mana separately)
   getOffensiveStat() {
-    if (this._isMegumin) {
-      // Megumin scales on her max mana pool — bigger mana = bigger explosions
-      return this.maxMana;
-    }
     if (this.usesInt && this.int > 0) {
       // Mages and supports scale on INT
       let total = this.int;

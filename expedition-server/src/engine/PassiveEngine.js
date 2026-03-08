@@ -1267,7 +1267,7 @@ export class PassiveEngine {
       // 4pc: mana +5% (CD 8s)
       if (this.hasPassive(char.id, 'enhanced_infamy') && s.infamyManaCD <= 0) {
         s.infamyManaCD = 8;
-        char.regenMana(Math.floor(char.maxMana * 0.05));
+        char.mana = Math.min(char.maxMana, char.mana + Math.floor(char.maxMana * 0.05));
       }
     }
 
@@ -1454,7 +1454,7 @@ export class PassiveEngine {
       }
       // Apply regen x3 when active (3s window)
       if (s.arcaneAdaptiveRegenActive && s.arcaneAdaptiveRegenCD > 17) {
-        char.regenMana(Math.floor(char.maxMana * 0.05 * dt)); // Aggressive regen
+        char.mana = Math.min(char.maxMana, char.mana + Math.floor(char.maxMana * 0.05 * dt)); // Aggressive regen
       } else {
         s.arcaneAdaptiveRegenActive = false;
       }

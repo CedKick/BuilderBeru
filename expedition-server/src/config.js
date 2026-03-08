@@ -52,8 +52,8 @@ export const PLAYER = {
   DODGE_DURATION: 0.6,          // seconds
   DODGE_COOLDOWN: 6.0,          // seconds
   DODGE_IFRAMES: 1.0,           // 1s invincibility
-  MANA_REGEN_RATE: 1.5,         // passive mana/s
-  MANA_ON_HIT: 8,               // mana per basic attack hit
+  MANA_REGEN_RATE: 0.8,         // passive mana/s (nerfed: healers were perma-full)
+  MANA_ON_HIT: 12,              // mana per basic attack hit (buffed: reward auto-attacking)
 };
 
 // ─── Boss Config ─────────────────────────────────────────

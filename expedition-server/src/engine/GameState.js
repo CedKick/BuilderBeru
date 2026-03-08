@@ -3,6 +3,7 @@
 // Fork of Manaya's GameState adapted for expedition (hunters instead of players).
 
 import { ARENA, BOSS as BOSS_CFG } from '../config.js';
+import { HUNTERS } from '../data/hunterData.js';
 
 export class GameState {
   constructor(hunters, boss) {
@@ -123,6 +124,22 @@ export class GameState {
         phase: this.boss.phase,
         enraged: this.boss.enraged,
         spriteId: this.boss.spriteId || null,
+        shielded: this.boss.shielded || false,
+        shieldHp: this.boss.shieldHp || 0,
+        defDebuff: this.boss._defDebuffTimer > 0 ? { timer: Math.round(this.boss._defDebuffTimer * 10) / 10, mult: this.boss._defDebuffMult } : null,
+        speedStacks: this.boss.speedStacks || 0,
+        rageBuff: this.boss.rageBuff || 0,
+        rageBuffTimer: Math.round((this.boss.rageBuffTimer || 0) * 10) / 10,
+        stunned: this.boss._stunned || false,
+        stunnedTimer: Math.round((this.boss._stunnedTimer || 0) * 10) / 10,
+        burning: this.boss._burning || false,
+        burnTimer: Math.round((this.boss._burnTimer || 0) * 10) / 10,
+        burstActive: this.boss._burstActive || false,
+        invincible: this.boss.invincible || false,
+        invincibleTimer: Math.round((this.boss.invincibleTimer || 0) * 10) / 10,
+        activeBuffs: (this.boss.activeBuffs || []).map(b => ({
+          id: b.id, name: b.name, stacks: b.stacks, duration: Math.round(b.duration * 10) / 10, color: b.color,
+        })),
         casting: this.boss.casting,
         telegraph: this.boss.currentPattern && this.boss.currentPattern.state === 'telegraph' ? {
           type: this.boss.currentPattern.pattern.type,
@@ -148,8 +165,8 @@ export class GameState {
         element: h.element,
         x: Math.round(h.x),
         y: Math.round(h.y),
-        hp: h.hp,
-        maxHp: h.maxHp,
+        hp: Math.round(h.hp),
+        maxHp: Math.round(h.maxHp),
         mana: Math.round(h.mana),
         maxMana: h.maxMana,
         alive: h.alive,
@@ -159,18 +176,21 @@ export class GameState {
         dodgeCd: Math.round((h.dodgeCooldown || 0) * 10) / 10,
         blocking: h.blocking,
         casting: h.casting ? { skill: h.casting.skill, type: h.casting.type, progress: h.casting.duration > 0 ? h.casting.timer / h.casting.duration : 0, targetId: h.casting.targetId } : null,
+        comboStep: h.comboStep || 0,
+        aimAngle: h.aimAngle != null ? Math.round(h.aimAngle * 100) / 100 : 0,
         isControlled: h.isControlled,
         ownerPlayerId: h.ownerPlayerId,
         damageDealt: h.stats.damageDealt,
         damageTaken: h.stats.damageTaken,
         healingDone: h.stats.healingDone,
         deaths: h.stats.deaths,
-        atk: h.atk,
-        int: h.int || 0,
-        def: h.def,
-        spd: h.spd,
-        crit: h.crit,
-        res: h.res,
+        atk: h.displayStats?.atk || h.atk,
+        int: h.usesInt ? (h.displayStats?.int || h.int || 0) : 0,
+        usesInt: h.usesInt || false,
+        def: h.displayStats?.def || h.def,
+        spd: h.displayStats?.spd || h.spd,
+        crit: h.displayStats?.crit || h.crit,
+        res: h.displayStats?.res || h.res,
         // Skills with cooldown state for HUD
         skills: h.skills ? {
           basic:     { name: h.skills.basic?.name,     cd: Math.round((h.cooldowns?.basic || 0) * 10) / 10, maxCd: h.skills.basic?.cooldown },
@@ -179,6 +199,23 @@ export class GameState {
           skillB:    { name: h.skills.skillB?.name,     cd: Math.round((h.cooldowns?.skillB || 0) * 10) / 10, maxCd: h.skills.skillB?.cooldown },
           ultimate:  { name: h.skills.ultimate?.name,   cd: Math.round((h.cooldowns?.ultimate || 0) * 10) / 10, maxCd: h.skills.ultimate?.cooldown },
         } : null,
+        // Hunter-specific skills from hunterData (3 unique skills per hunter) + current CD
+        hunterSkills: (h.hunterSkills || []).map((s, i) => ({
+          name: s.name,
+          power: s.power,
+          cdMax: s.cdMax || 0,
+          maxCd: s.maxCd || 0,
+          cd: Math.round((h.hunterCds?.[i] || 0) * 10) / 10,
+          buffAtk: s.buffAtk || 0,
+          buffDef: s.buffDef || 0,
+          healSelf: s.healSelf || 0,
+          manaScaling: s.manaScaling || 0,
+          selfDamage: s.selfDamage || 0,
+        })),
+        // Equipment info for detail panel
+        equippedSets: h.expeditionGear?.sets || {},
+        weaponPassive: h.scWeaponPassive || null,
+        inscriptionMana: h.inscriptionMana || 0,
       })),
       adds: this.adds.filter(a => a.alive).map(a => ({
         id: a.id,
@@ -195,7 +232,7 @@ export class GameState {
         vx: Math.round(p.vx || 0),
         vy: Math.round(p.vy || 0),
         radius: p.radius,
-        owner: p.ownerId,
+        owner: p.owner || p.ownerId,
         color: p.color,
         type: p.type,
       })),

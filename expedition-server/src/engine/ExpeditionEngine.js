@@ -97,6 +97,9 @@ export class ExpeditionEngine {
           inscriptionStats: entry.fullStats,
           ownerPlayerId: playerId,
           slotIndex: i,
+          equippedSets: entry.equippedSets || {},
+          weaponPassive: entry.weaponPassive || null,
+          weaponId: entry.weaponId || null,
         });
 
         this.hunters.push(hunter);
@@ -129,6 +132,8 @@ export class ExpeditionEngine {
         stars: h.stars || 0,
         level: h.level || 140,
         weaponPassive: h.weaponPassive || null,
+        weaponId: h.weaponId || null,
+        equippedSets: h.equippedSets || {},
       })));
     }
     return this.startExpedition();
@@ -416,6 +421,15 @@ export class ExpeditionEngine {
     for (const h of byAtk.slice(0, 5)) {
       console.log(`  ${h.hunterName} (${h.username}) -- ATK: ${h.atk} | HP: ${h.maxHp} | Class: ${h.class}`);
     }
+
+    // Log INT stats for mages/healers
+    const intHunters = this.hunters.filter(h => h.usesInt && h.int > 0).sort((a, b) => b.int - a.int);
+    if (intHunters.length > 0) {
+      console.log(`[Expedition] Top INT (mages/healers):`);
+      for (const h of intHunters.slice(0, 5)) {
+        console.log(`  ${h.hunterName} (${h.username}) -- INT: ${h.int} | inscMana: ${h.inscriptionMana} | Class: ${h.class}`);
+      }
+    }
   }
 
   // --- State for broadcast ---
@@ -455,6 +469,10 @@ export class ExpeditionEngine {
         victory: r.victory,
         time: r.time,
         bossHpPercent: r.bossHpPercent,
+        stats: (r.stats || []).map(s => ({
+          id: s.id, hunterId: s.hunterId, hunterName: s.hunterName, username: s.username, class: s.class,
+          damageDealt: s.damageDealt, damageTaken: s.damageTaken, healingDone: s.healingDone, deaths: s.deaths, alive: s.alive,
+        })),
       })),
       combat: activeCombat ? activeCombat.getSnapshot() : null,
       events: activeCombat ? activeCombat.getEvents() : [],
@@ -491,8 +509,13 @@ export class ExpeditionEngine {
       return;
     }
 
-    // Build SR selections (empty for bots — no SR system yet)
+    // Build SR selections from player registration data
     const srSelections = new Map();
+    for (const [playerId, playerData] of this.players) {
+      if (playerData.srItems && playerData.srItems.length > 0) {
+        srSelections.set(playerData.username, playerData.srItems);
+      }
+    }
 
     // Distribute loot among alive players (by username)
     const playerList = [];
@@ -558,6 +581,15 @@ export class ExpeditionEngine {
 
     const banters = [];
 
+    // ── Helper: check if a player's hunters are present ──
+    const ownerOf = name => this.hunters.filter(h => h.username === name);
+    const hasPlayer = name => ownerOf(name).length > 0;
+    const isGrrrrr = name => name === 'GRRRRR' || name === 'Grrrrr' || name === 'grrrrr';
+    const grrrrrHunters = this.hunters.filter(h => isGrrrrr(h.username));
+    const hasGrrrrr = grrrrrHunters.length > 0;
+    const hasBob = hasPlayer('Bobby') || hasPlayer('Bob');
+    const hasDamon = hasPlayer('damon');
+
     // March-specific banter
     if (this.state === 'march') {
       banters.push(
@@ -566,6 +598,8 @@ export class ExpeditionEngine {
         `${h1.hunterName} verifie son equipement en marchant.`,
         `"On arrive bientot?" — ${h1.hunterName}`,
         `${h1.hunterName} fait craquer ses doigts, pret au combat.`,
+        `${h1.hunterName} : "J'ai un mauvais pressentiment..."`,
+        `${h1.hunterName} ramasse une pierre et la jette au loin.`,
       );
       if (h2) {
         banters.push(
@@ -574,6 +608,8 @@ export class ExpeditionEngine {
           `"Tu crois qu'on peut le battre?" — ${h1.hunterName} a ${h2.hunterName}`,
           `${h2.hunterName} donne une tape amicale a ${h1.hunterName}. "On va tout defoncer!"`,
           `${h1.hunterName} : "T'inquiete, je te couvre." ${h2.hunterName} : "C'est plutot moi qui te couvre."`,
+          `${h1.hunterName} : "T'as mange quoi ce matin?" ${h2.hunterName} : "...des tacos."`,
+          `${h2.hunterName} : "Si on survit, je vous invite au resto." ${h1.hunterName} : "Des tacos?"`,
         );
       }
       if (dead.length > 0) {
@@ -583,6 +619,21 @@ export class ExpeditionEngine {
           `"${d.hunterName} nous manque..." — ${h1.hunterName}`,
         );
       }
+      // Inside jokes — march
+      if (hasDamon) banters.push(
+        `Quelqu'un murmure : "damon a pas pris de pause depuis 3 jours..."`,
+        `${h1.hunterName} : "damon, tu dors quand au juste?" ... Pas de reponse.`,
+        `On raconte que damon n'a jamais pris de pause. Meme les boss ont peur de son endurance.`,
+      );
+      if (hasGrrrrr) banters.push(
+        `La legende GRRRRR avance en tete. Les monstres reculent par respect.`,
+        `${h1.hunterName} chuchote : "Paraît que GRRRRR loot jamais rien..."`,
+        `GRRRRR marche en silence. Ses poches sont vides. Comme d'habitude.`,
+      );
+      if (hasBob) banters.push(
+        `Bobby fredonne en marchant. Personne n'ose lui dire d'arreter.`,
+        `${h1.hunterName} : "Bobby, tu joues Megumin ce soir hein? Hein??"`,
+      );
     }
 
     // Campfire-specific banter
@@ -594,6 +645,9 @@ export class ExpeditionEngine {
         `"Ce boss etait costaud..." — ${h1.hunterName}`,
         `${h1.hunterName} soigne ses blessures au coin du feu.`,
         `${h1.hunterName} ferme les yeux un instant, recuperant ses forces.`,
+        `"Qui a ramene les tacos?" — ${h1.hunterName}`,
+        `${h1.hunterName} sort un tacos de nulle part et commence a manger. Tout le monde le regarde.`,
+        `"Y'a plus de tacos?!" — ${h1.hunterName}, scandalise.`,
       );
       if (h2) {
         banters.push(
@@ -603,6 +657,9 @@ export class ExpeditionEngine {
           `${h1.hunterName} et ${h2.hunterName} discutent strategie pour le prochain combat.`,
           `${h2.hunterName} : "J'ai fait plus de degats que toi." ${h1.hunterName} : "Dans tes reves."`,
           `${h1.hunterName} montre ses cicatrices de combat. ${h2.hunterName} leve les yeux au ciel.`,
+          `${h1.hunterName} : "T'as vu mon DPS?" ${h2.hunterName} : "J'ai vu que t'es mort 3 fois."`,
+          `${h2.hunterName} passe un tacos a ${h1.hunterName}. "Tiens, t'as bien bosse."`,
+          `${h1.hunterName} : "Je loot rien depuis le debut." ${h2.hunterName} : "Bienvenue au club GRRRRR."`,
         );
       }
       if (dead.length > 0) {
@@ -611,8 +668,40 @@ export class ExpeditionEngine {
           `${d.hunterName} se releve lentement, encore etourdi.`,
           `"Merci pour la rez..." — ${d.hunterName}, a moitie conscient.`,
           `${h1.hunterName} aide ${d.hunterName} a se remettre sur pied.`,
+          `${d.hunterName} : "C'est la derniere fois que je meurs. Probablement."`,
         );
       }
+      // Inside jokes — campfire
+      if (hasDamon) banters.push(
+        `damon fixe le feu. Ca fait 47h qu'il n'a pas dormi. Normal.`,
+        `${h1.hunterName} : "damon, tu veux pas te reposer?" damon : "Me reposer? C'est quoi?"`,
+        `damon detourne le regard... "60? Pff, pas besoin de ce truc."`,
+        `On murmure que damon a deja fini le prochain boss pendant qu'on campait.`,
+        `damon mange son tacos en 3 secondes et retourne s'entrainer.`,
+      );
+      if (hasGrrrrr) banters.push(
+        `GRRRRR regarde le butin des autres avec envie. Comme d'habitude, rien pour lui.`,
+        `${h1.hunterName} : "GRRRRR, un jour tu looteras un truc, promis." GRRRRR : "..."`,
+        `Tout le monde montre son loot. GRRRRR mange son tacos en silence.`,
+        `"La legende raconte que GRRRRR a roll 1 sur chaque item de l'expedition..."`,
+        `GRRRRR se plaint : "Meme les mobs me steal rien parce que j'ai RIEN."`,
+        `${h1.hunterName} offre un item a GRRRRR par pitie. GRRRRR refuse fierement.`,
+      );
+      if (hasBob) banters.push(
+        `Bobby regarde ses mains. "Megumin ou rien." Le groupe approuve.`,
+        `${h1.hunterName} : "Bobby, tu te souviens la fois sans Megumin? Le boss a 4%..."`,
+        `Bobby : "J'ai dit qu'on en parle plus du boss a 4%." Le silence est lourd.`,
+        `Quelqu'un murmure : "Bobby, Ant Queen, 300B..." Bobby rougit. "C'etait un BUG."`,
+        `Bobby : "Mon Megumin fait plus de degats que toute votre equipe." Personne ne conteste.`,
+        `${h1.hunterName} : "Bobby, montre ton score Ant Queen." Bobby : "Non." Tout le monde rigole.`,
+      );
+      // Tacos general
+      banters.push(
+        `Le feu de camp sent les tacos ce soir. Tout le monde approuve.`,
+        `Debat anime autour du feu : fromage ou guacamole dans les tacos?`,
+        `${h1.hunterName} : "On devrait ouvrir un stand de tacos apres l'expedition."`,
+        `Le groupe se met d'accord : apres le dernier boss, c'est tacos pour tout le monde.`,
+      );
     }
 
     if (banters.length > 0) {
@@ -661,10 +750,20 @@ export class ExpeditionEngine {
         stars: characterData[hId]?.stars || 0,
         level: characterData[hId]?.level || 140,
         weaponPassive: characterData[hId]?.weaponPassive || null,
+        weaponId: characterData[hId]?.weaponId || null,
+        equippedSets: characterData[hId]?.equippedSets || {},
       }));
 
       const playerId = `player_${username}`;
       this.registerPlayer(playerId, username, hunterEntries);
+
+      // Store SR items for loot distribution
+      const srItems = typeof entry.sr_items === 'string'
+        ? JSON.parse(entry.sr_items) : (entry.sr_items || []);
+      if (srItems.length > 0) {
+        const playerData = this.players.get(playerId);
+        if (playerData) playerData.srItems = srItems;
+      }
     }
 
     return this.startExpedition();

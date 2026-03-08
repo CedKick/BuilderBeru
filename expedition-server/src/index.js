@@ -3,56 +3,57 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
-import { SERVER } from './config.js';
+import { SERVER, EXPEDITION } from './config.js';
 import { ExpeditionEngine } from './engine/ExpeditionEngine.js';
 import { HttpApi } from './network/HttpApi.js';
+import * as db from './db/queries.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ─── Real player inscription data (bot testing) ──────────
+// ─── Real player inscription data from expedition #36 (2026-03-07) ──────────
 const PLAYER_DATA = [
   {
     username: 'Kly',
     hunters: [
-      { hunterId: 'h_frieren', fullStats: { hp: 27631, atk: 6377, def: 1052, spd: 941.9, crit: 378.8, res: 298.3, mana: 47898 }, stars: 272, level: 140, weaponPassive: null },
-      { hunterId: 'h_chae_in', fullStats: { hp: 30675, atk: 13525.4, def: 1274, spd: 1037.8, crit: 408.8, res: 304.3, mana: 6733 }, stars: 286, level: 140, weaponPassive: 'katana_z_fury' },
-      { hunterId: 'h_meri', fullStats: { hp: 34597.3, atk: 5082, def: 2369, spd: 836.2, crit: 172.6, res: 416.2, mana: 31951 }, stars: 257, level: 140, weaponPassive: null },
-      { hunterId: 'h_megumin', fullStats: { hp: 14189, atk: 3004, def: 664, spd: 649, crit: 313.2, res: 267.6, mana: 9449 }, stars: 154, level: 140, weaponPassive: 'katana_v_chaos' },
-      { hunterId: 'h_lee_bora', fullStats: { hp: 17816, atk: 4899.9, def: 823, spd: 650.4, crit: 183.5, res: 246, mana: 24616 }, stars: 70, level: 140, weaponPassive: 'guldan_halo' },
-      { hunterId: 'h_mayuri', fullStats: { hp: 20567.1, atk: 4415, def: 1058, spd: 610.3, crit: 124.5, res: 281.1, mana: 26869 }, stars: 73, level: 140, weaponPassive: null },
+      { hunterId: 'h_frieren', fullStats: { hp: 24471, atk: 5866.6, def: 1070, spd: 923.7, crit: 396.6, res: 338.7, mana: 52301, manaRegen: 15, manaCostReduce: 20, waterDmgFlat: 4.5 }, stars: 286, level: 140, weaponId: 'w_katana_v', weaponPassive: 'katana_v_chaos', equippedSets: { pacte_ombres: 4, source_arcanique: 4 } },
+      { hunterId: 'h_chae_in', fullStats: { hp: 30089, atk: 14523.8, def: 1213, spd: 1037.5, crit: 428.2, res: 269.6, mana: 5992, manaRegen: 15 }, stars: 303, level: 140, weaponId: 'tacos_eternel', weaponPassive: 'tacos_chaos', equippedSets: { rage_eternelle: 4, equilibre_supreme: 4 } },
+      { hunterId: 'h_meri', fullStats: { hp: 32388.3, atk: 4631, def: 2218, spd: 903.5, crit: 188.7, res: 426.7, mana: 32858, manaRegen: 15 }, stars: 272, level: 140, weaponId: 'gae_bolg', weaponPassive: 'gae_bolg_pierce', equippedSets: { pacte_ombres: 4, aura_commandeur: 2, sacrifice_martyr: 2 } },
+      { hunterId: 'h_megumin', fullStats: { hp: 14649, atk: 5175, def: 652, spd: 703.5, crit: 282.4, res: 243, mana: 34388, manaRegen: 15, manaCostReduce: 40 }, stars: 166, level: 140, weaponId: 'thyrsus', weaponPassive: null, equippedSets: { chaines_destin: 2, tempete_arcane: 2, resonance_arcanique: 4 } },
+      { hunterId: 'h_lee_bora', fullStats: { hp: 18794, atk: 4711, def: 818, spd: 571.4, crit: 187.5, res: 223.1, mana: 31490, manaRegen: 15, manaCostReduce: 15 }, stars: 81, level: 140, weaponId: 'ea_staff', weaponPassive: 'ea_celestial', equippedSets: { pacte_ombres: 4, tempete_arcane: 2, esprit_transcendant: 2 } },
+      { hunterId: 'h_mayuri', fullStats: { hp: 21248.1, atk: 4198, def: 926, spd: 605, crit: 123.8, res: 288.4, mana: 27751, manaRegen: 15, waterDmgFlat: 7.5 }, stars: 84, level: 140, weaponId: 'amenonuhoko', weaponPassive: 'amenonuhoko_divine', equippedSets: { pacte_ombres: 4, sacrifice_martyr: 2, esprit_transcendant: 2 } },
     ],
   },
   {
     username: 'Bobby',
     hunters: [
-      { hunterId: 'h_meri', fullStats: { hp: 37324, atk: 9693.5, def: 1908.5, spd: 788, crit: 412, res: 500.5, mana: 8926 }, stars: 264, level: 140, weaponPassive: null },
-      { hunterId: 'h_sian', fullStats: { hp: 15189, atk: 14267.5, def: 1098.5, spd: 1075, crit: 621.7, res: 238.7, mana: 3303 }, stars: 255, level: 140, weaponPassive: null },
-      { hunterId: 'h_ilhwan', fullStats: { hp: 17315, atk: 15351.5, def: 1053.5, spd: 1048, crit: 679, res: 223.6, mana: 3295 }, stars: 254, level: 140, weaponPassive: null },
-      { hunterId: 'h_son', fullStats: { hp: 20320, atk: 10252.5, def: 1704.5, spd: 449, crit: 422.3, res: 397.3, mana: 2357 }, stars: 131, level: 140, weaponPassive: null },
-      { hunterId: 'h_isla', fullStats: { hp: 10126, atk: 7855.5, def: 997.5, spd: 525, crit: 251.6, res: 323.6, mana: 4928 }, stars: 149, level: 140, weaponPassive: null },
-      { hunterId: 'h_megumin', fullStats: { hp: 4376, atk: 10288.5, def: 503.5, spd: 630, crit: 528, res: 353.8, mana: 11530 }, stars: 175, level: 140, weaponPassive: 'katana_v_chaos' },
+      { hunterId: 'h_meri', fullStats: { hp: 49260, atk: 5459, def: 1684, spd: 922.3, crit: 227.9, res: 544, mana: 34680, manaRegen: 15 }, stars: 280, level: 140, weaponId: 'amenonuhoko', weaponPassive: 'amenonuhoko_divine', equippedSets: { pacte_ombres: 4, benediction_celeste: 4 } },
+      { hunterId: 'h_sian', fullStats: { hp: 24009, atk: 14030.9, def: 682, spd: 1054.4, crit: 437.8, res: 212.5, mana: 5806, manaRegen: 15 }, stars: 263, level: 140, weaponId: 'kusanagi', weaponPassive: 'kusanagi_shadow', equippedSets: { rage_eternelle: 4, fureur_desespoir: 1, ombre_souveraine: 3 } },
+      { hunterId: 'h_ilhwan', fullStats: { hp: 27791, atk: 14917, def: 777, spd: 1104.3, crit: 564.1, res: 200.3, mana: 7494, manaRegen: 15 }, stars: 263, level: 140, weaponId: 'w_epee_monarque', weaponPassive: null, equippedSets: { ombre_souveraine: 4, infamie_chaotique: 4 } },
+      { hunterId: 'h_son', fullStats: { hp: 29457, atk: 7753, def: 1503, spd: 474, crit: 324.3, res: 385.9, mana: 6594, manaRegen: 15 }, stars: 145, level: 140, weaponId: 'w_masse_tenebres', weaponPassive: null, equippedSets: { volonte_de_fer: 4, benediction_celeste: 4 } },
+      { hunterId: 'h_isla', fullStats: { hp: 30751, atk: 5133, def: 994, spd: 642.9, crit: 264.1, res: 388.8, mana: 23139, manaRegen: 15 }, stars: 166, level: 140, weaponId: 'yggdrasil', weaponPassive: null, equippedSets: { pacte_ombres: 4, chaines_destin: 4 } },
+      { hunterId: 'h_megumin', fullStats: { hp: 15851, atk: 6074, def: 279, spd: 647.2, crit: 408.5, res: 288.2, mana: 37719, manaRegen: 15, manaCostReduce: 40 }, stars: 189, level: 140, weaponId: 'w_katana_v', weaponPassive: 'katana_v_chaos', equippedSets: { tempete_arcane: 2, esprit_transcendant: 2, resonance_arcanique: 4 } },
     ],
   },
   {
     username: 'damon',
     hunters: [
-      { hunterId: 'h_frieren', fullStats: { hp: 20433, atk: 10025, def: 1217, spd: 987, crit: 561.7, res: 505.2, mana: 8009 }, stars: 214, level: 140, weaponPassive: 'katana_z_fury' },
-      { hunterId: 'h_meri', fullStats: { hp: 43501.6, atk: 5307, def: 2188, spd: 917.6, crit: 351.1, res: 564.7, mana: 14804 }, stars: 222, level: 140, weaponPassive: null },
-      { hunterId: 'h_ilhwan', fullStats: { hp: 24210.3, atk: 12087.7, def: 1447, spd: 1244.2, crit: 630.3, res: 330.9, mana: 5743 }, stars: 218, level: 140, weaponPassive: null },
-      { hunterId: 'h_isla', fullStats: { hp: 43937.8, atk: 4893, def: 1790, spd: 680.9, crit: 273.6, res: 443.7, mana: 6114 }, stars: 93, level: 140, weaponPassive: null },
-      { hunterId: 'h_gojo', fullStats: { hp: 15692, atk: 6578, def: 1364, spd: 832.1, crit: 532.7, res: 391, mana: 21972 }, stars: 125, level: 140, weaponPassive: 'katana_v_chaos' },
-      { hunterId: 'h_megumin', fullStats: { hp: 11816.7, atk: 9677.5, def: 969.7, spd: 817.5, crit: 504.6, res: 454.9, mana: 7710 }, stars: 160, level: 140, weaponPassive: 'sulfuras_fury' },
+      { hunterId: 'h_frieren', fullStats: { hp: 17442.7, atk: 9169, def: 1230, spd: 988, crit: 560.8, res: 510.2, mana: 12341, manaRegen: 15, fireDmgFlat: 6, waterDmgFlat: 10.6 }, stars: 224, level: 140, weaponId: 'w_katana_z', weaponPassive: 'katana_z_fury', equippedSets: { maree_eternelle: 1, fureur_desespoir: 1, ombre_souveraine: 1, sacrifice_martyr: 1, infamie_chaotique: 1, expertise_bestiale: 3 } },
+      { hunterId: 'h_meri', fullStats: { hp: 43917.6, atk: 5393, def: 2258, spd: 952.6, crit: 357.1, res: 585.9, mana: 19616, manaRegen: 15, fireDmgFlat: 2, waterDmgFlat: 1 }, stars: 237, level: 140, weaponId: 'thyrsus', weaponPassive: null, equippedSets: { flamme_maudite: 1, volonte_de_fer: 2, expertise_bestiale: 1, benediction_celeste: 4 } },
+      { hunterId: 'h_ilhwan', fullStats: { hp: 24834.3, atk: 12679.7, def: 1470, spd: 1275.2, crit: 628.7, res: 333.9, mana: 6401, manaRegen: 15, shadowDmgFlat: 7.2 }, stars: 230, level: 140, weaponId: 'w_epee_monarque', weaponPassive: null, equippedSets: { flamme_maudite: 1, volonte_de_fer: 1, infamie_chaotique: 4, expertise_bestiale: 2 } },
+      { hunterId: 'h_isla', fullStats: { hp: 44779.8, atk: 4914, def: 1820, spd: 693.9, crit: 276.4, res: 450.1, mana: 6845, manaRegen: 15, shadowDmgFlat: 9.5 }, stars: 102, level: 140, weaponId: 'w_griffe_nuit', weaponPassive: null, equippedSets: { echo_temporel: 1, volonte_de_fer: 3, benediction_celeste: 4 } },
+      { hunterId: 'h_gojo', fullStats: { hp: 16284, atk: 6698, def: 1402, spd: 867.1, crit: 552.7, res: 398.3, mana: 24571, manaRegen: 15, lightDmgFlat: 9.5 }, stars: 143, level: 140, weaponId: 'w_katana_v', weaponPassive: 'katana_v_chaos', equippedSets: { infamie_chaotique: 4, expertise_bestiale: 4 } },
+      { hunterId: 'h_megumin', fullStats: { hp: 15685, atk: 6838, def: 893, spd: 867.1, crit: 526.5, res: 392.6, mana: 19906, manaRegen: 15, fireDmgFlat: 83.6 }, stars: 168, level: 140, weaponId: 'ea_staff', weaponPassive: 'ea_celestial', equippedSets: { flamme_maudite: 4, expertise_bestiale: 2 } },
     ],
   },
   {
     username: 'shy',
     hunters: [
-      { hunterId: 'h_sian', fullStats: { hp: 11878, atk: 12948.6, def: 670, spd: 1085.6, crit: 456.8, res: 258.7, mana: 3402 }, stars: 305, level: 140, weaponPassive: 'shadow_silence' },
-      { hunterId: 'h_ilhwan', fullStats: { hp: 15864, atk: 12944.6, def: 666, spd: 1082.4, crit: 516.6, res: 232, mana: 3169 }, stars: 297, level: 140, weaponPassive: 'katana_z_fury' },
-      { hunterId: 'h_son', fullStats: { hp: 17888, atk: 7891.2, def: 2191, spd: 357, crit: 134.2, res: 373.7, mana: 3992 }, stars: 132, level: 140, weaponPassive: 'katana_v_chaos' },
-      { hunterId: 'h_isla', fullStats: { hp: 8117, atk: 8140.4, def: 931, spd: 618.4, crit: 86.9, res: 259.8, mana: 2847 }, stars: 91, level: 140, weaponPassive: 'guldan_halo' },
-      { hunterId: 'h_megumin', fullStats: { hp: 7963, atk: 11299.4, def: 463, spd: 623, crit: 412.8, res: 291.4, mana: 6071 }, stars: 213, level: 140, weaponPassive: 'sulfuras_fury' },
-      { hunterId: 'h_daijin', fullStats: { hp: 8258, atk: 10367.9, def: 533, spd: 696.5, crit: 384.9, res: 132.4, mana: 3216 }, stars: 106, level: 140, weaponPassive: null },
+      { hunterId: 'h_sian', fullStats: { hp: 11878, atk: 12948.6, def: 670, spd: 1085.6, crit: 456.8, res: 258.7, mana: 3402, manaRegen: 15, shadowDmgFlat: 10.7 }, stars: 305, level: 140, weaponPassive: 'shadow_silence' },
+      { hunterId: 'h_ilhwan', fullStats: { hp: 15864, atk: 12944.6, def: 666, spd: 1082.4, crit: 516.6, res: 232, mana: 3169, manaRegen: 15, waterDmgFlat: 1 }, stars: 297, level: 140, weaponPassive: 'katana_z_fury' },
+      { hunterId: 'h_son', fullStats: { hp: 17888, atk: 7891.2, def: 2191, spd: 357, crit: 134.2, res: 373.7, mana: 3992, manaRegen: 15 }, stars: 132, level: 140, weaponPassive: 'katana_v_chaos' },
+      { hunterId: 'h_isla', fullStats: { hp: 8117, atk: 8140.4, def: 931, spd: 618.4, crit: 86.9, res: 259.8, mana: 2847, manaRegen: 15, lightDmgFlat: 1, shadowDmgFlat: 9 }, stars: 91, level: 140, weaponPassive: 'guldan_halo' },
+      { hunterId: 'h_megumin', fullStats: { hp: 7963, atk: 11299.4, def: 463, spd: 623, crit: 412.8, res: 291.4, mana: 6071, manaRegen: 15, fireDmgFlat: 4 }, stars: 213, level: 140, weaponPassive: 'sulfuras_fury' },
+      { hunterId: 'h_daijin', fullStats: { hp: 8258, atk: 10367.9, def: 533, spd: 696.5, crit: 384.9, res: 132.4, mana: 3216, manaRegen: 15, fireDmgFlat: 12, shadowDmgFlat: 6 }, stars: 106, level: 140, weaponPassive: null },
     ],
   },
 ];
@@ -62,10 +63,50 @@ const PLAYER_DATA = [
 const engine = new ExpeditionEngine();
 const httpApi = new HttpApi(engine);
 
-// Auto-start bot expedition with real player data
-console.log('\n[Expedition v2] Booting with real player data...');
-const result = engine.startBotExpedition(PLAYER_DATA);
-console.log('[Expedition v2] Start result:', result);
+// ─── Registration mode: create expedition in DB + auto-launch at 19h ───
+
+async function ensureExpeditionExists() {
+  const existing = await db.getCurrentExpedition();
+  if (existing) {
+    console.log(`[Expedition v2] Existing expedition #${existing.id} (status: ${existing.status})`);
+    return existing;
+  }
+  const exp = await db.createExpedition('Expédition II', new Date());
+  await db.updateExpeditionStatus(exp.id, 'registration');
+  console.log(`[Expedition v2] Created new expedition #${exp.id} in registration mode`);
+  return exp;
+}
+
+ensureExpeditionExists().catch(err => console.error('[Expedition v2] DB init error:', err));
+
+// Auto-launch check every 30s: if 19h Paris and expedition is in registration, start it
+setInterval(async () => {
+  try {
+    if (engine.state !== 'idle') return; // Already running or no registration
+
+    const expedition = await db.getCurrentExpedition();
+    if (!expedition || expedition.status !== 'registration') return;
+
+    const now = new Date();
+    const paris = new Date(now.toLocaleString('en-US', { timeZone: EXPEDITION.TIMEZONE }));
+    const h = paris.getHours();
+    const m = paris.getMinutes();
+
+    // Launch at 19h00 Paris (or later if server was down)
+    if (h >= EXPEDITION.LAUNCH_HOUR) {
+      const entries = await db.getEntries(expedition.id);
+      if (entries.length === 0) {
+        console.log('[Expedition v2] 19h reached but no players registered, waiting...');
+        return;
+      }
+      console.log(`\n[Expedition v2] AUTO-LAUNCH at ${h}:${String(m).padStart(2,'0')} Paris — ${entries.length} players registered`);
+      await engine.start(expedition.id, entries);
+      await db.updateExpeditionStatus(expedition.id, 'running', { startedAt: new Date() });
+    }
+  } catch (err) {
+    console.error('[Expedition v2] Auto-launch check error:', err);
+  }
+}, 30000);
 
 // ─── HTTP Server ─────────────────────────────────────────
 

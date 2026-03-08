@@ -28,7 +28,7 @@ export class AIController {
     else if (idleSec >= 4) idleMultiplier = 1.5;  // 4s idle → ×1.5 regen
 
     const manaRegen = character.maxMana * baseManaRegenPct * (1 + bonusPct / 100) * idleMultiplier;
-    character.regenMana(manaRegen * dt);
+    character.mana = Math.min(character.maxMana, character.mana + manaRegen * dt);
 
     switch (character.role) {
       case 'frontline':       return AIController.decideFrontline(character, allies, enemies, boss);
