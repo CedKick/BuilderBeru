@@ -2956,6 +2956,10 @@ export default function ShadowColosseum() {
   const executeCleanup = () => {
     if (!cleanupPreview || cleanupPreview.totalDelete === 0) return;
 
+    // CRITICAL: cancel any pending debounced save that holds OLD data in its closure.
+    // Without this, the 10s timer fires AFTER cleanup and overwrites localStorage with 1426 artifacts.
+    if (_debouncedSyncTimer) { clearTimeout(_debouncedSyncTimer); _debouncedSyncTimer = null; }
+
     const deleteUids = new Set(cleanupPreview.toDelete.map(a => a.uid));
     let cleanedData = null;
 

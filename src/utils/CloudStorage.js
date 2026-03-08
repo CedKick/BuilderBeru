@@ -199,6 +199,8 @@ class CloudStorageManager {
     // Invalidate sync hash so syncKey pushes to cloud
     delete this._lastSyncHash[key];
     try { localStorage.removeItem(HASH_PREFIX + key); } catch {}
+    // Invalidate ETags so F5 fetches fresh from cloud (not stale 304)
+    try { localStorage.removeItem(ETAG_PREFIX + key); localStorage.removeItem(ETAG_PREFIX + '_all'); } catch {}
   }
 
   /** Force save + immediate sync to cloud (no debounce, no throttle).
