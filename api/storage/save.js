@@ -312,7 +312,7 @@ export default async function handler(req, res) {
   try {
     await ensureTable();
 
-    const { deviceId: bodyDeviceId, key, data: rawData, compressed, payload, clientTimestamp, clientVersion } = req.body;
+    const { deviceId: bodyDeviceId, key, data: rawData, compressed, payload, clientTimestamp, clientVersion, forceOverwrite } = req.body;
 
     // Decompress gzipped payload if client sent compressed data
     let data = rawData;
@@ -415,7 +415,8 @@ export default async function handler(req, res) {
       // CHECK 1: Size — refuse if new data is suspiciously small (empty/corrupt)
       // Skip for shadow_colosseum_raid: React sends partial data (hunterCollection/raidStats only),
       // CHECK 4 below will patch in gear fields from cloud.
-      if (key !== 'shadow_colosseum_raid' && cloudSize > MIN_SIZE_CHECK && sizeBytes < cloudSize * CORRUPTION_RATIO) {
+      // Skip if forceOverwrite (mass cleanup — legitimate intentional shrink)
+      if (!forceOverwrite && key !== 'shadow_colosseum_raid' && cloudSize > MIN_SIZE_CHECK && sizeBytes < cloudSize * CORRUPTION_RATIO) {
         // Before rejecting: client sends trimmed data (drop logs capped, orphan rerollCounts removed).
         // Cloud may store old bloated version. Trim cloud data and re-compare.
         const trimmedCloud = _trimServerData(key, existing.rows[0].data);
