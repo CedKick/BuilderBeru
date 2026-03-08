@@ -587,7 +587,7 @@ class CloudStorageManager {
       const json = await resp.json();
       this._online = true;
       // Update tracked cloud size + timestamp after successful sync
-      this._cloudSizes[key] = json.size || localSize;
+      this._cloudSizes[key] = json.size || jsonStr.length;
       if (json.serverTimestamp) this._cloudTimestamps[key] = json.serverTimestamp;
       // If server merged our data with another session's, log it
       if (json.merged) {
