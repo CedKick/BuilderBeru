@@ -166,7 +166,7 @@ export const ROLE_MAP = {
 export const CLASS_MAP = {
   tank:     'tank',
   fighter:  'berserker',    // Fighters → berserker (melee DPS, charged attacks)
-  assassin: 'dps_cac',      // Assassins → warrior (combo melee, rage)
+  assassin: 'berserker',    // Assassins → berserker (melee DPS, mana, whirlwind)
   mage:     'mage',          // Mages → mage (ranged, projectiles, Zollstraak)
   support:  'healer',        // Supports → healer (heal zone, cleanse, rez)
 };
