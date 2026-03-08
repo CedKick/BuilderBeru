@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import shadowCoinManager from './ChibiSystem/ShadowCoinManager';
-import { getAuthUser } from '../utils/auth';
+import { getAuthUser, isLoggedIn } from '../utils/auth';
 import { API_URL } from '../utils/api.js';
 
 // ═══════════════════════════════════════════════════════════════
@@ -1718,6 +1718,42 @@ const FloatingBeruMascot = () => {
     pollAdminMessages(); // Poll initial
     const interval = setInterval(pollAdminMessages, 900000); // 15 min (was 5 min — save network)
     return () => clearInterval(interval);
+  }, []);
+
+  // ─── Nag non-logged-in users to register (10min first, then every ~1h) ───
+  useEffect(() => {
+    if (isLoggedIn()) return; // Already logged in, no nagging
+
+    const NAG_MESSAGES = [
+      "Hé toi ! Tu sais que tu peux créer un compte ? Tes données seront sauvegardées en ligne... sinon tu risques de TOUT perdre ! 😱",
+      "Psst... Tu joues sans compte là. Un cache vidé et pouf, tout disparait ! Inscris-toi, c'est gratuit 🫣",
+      "Toujours pas inscrit ? Béru est triste... Tes chibis, tes artefacts, ton niveau... tout ça peut s'envoler sans sauvegarde cloud ☁️",
+      "Hey ! Je te rappelle gentiment que sans compte, tes données sont en danger. Clique sur le bouton Connexion en haut ! 🔑",
+      "Moi Béru, je te le dis : inscris-toi. Sinon un jour tu pleureras et je pourrai rien faire 😤",
+      "Allez, 30 secondes pour t'inscrire et tes données sont en sécurité pour toujours ! C'est gratuit, c'est rapide, c'est Béru-approved ✅",
+    ];
+
+    let nagIndex = 0;
+    const showNag = () => {
+      if (isLoggedIn()) return; // User logged in since last check
+      const msg = NAG_MESSAGES[nagIndex % NAG_MESSAGES.length];
+      nagIndex++;
+      window.dispatchEvent(new CustomEvent('beru-react', {
+        detail: { message: msg, mood: 'thinking', duration: 12000 }
+      }));
+    };
+
+    // First nag after 10 minutes
+    const firstTimer = setTimeout(() => {
+      showNag();
+      // Then every ~55-65 minutes (randomized so it's not robotic)
+    }, 10 * 60 * 1000);
+
+    const interval = setInterval(() => {
+      showNag();
+    }, (55 + Math.random() * 10) * 60 * 1000); // 55-65 min
+
+    return () => { clearTimeout(firstTimer); clearInterval(interval); };
   }, []);
 
   // ─── Easter Egg: "shy" user → "Salut le moine" ─────────────
