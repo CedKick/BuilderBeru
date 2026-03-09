@@ -597,6 +597,14 @@ export class CombatEngine {
   _coneAttack(player, skill, angle) {
     const halfCone = ((skill.coneAngle || 90) * Math.PI / 180) / 2;
 
+    // ── Auto-aim for player-controlled hunters ──
+    // Client aim angle is based on stale broadcast position (10Hz),
+    // causing desync with server position. Auto-correct toward nearest target.
+    if (player.isControlled) {
+      angle = this._autoAimNearest(player, skill.range, angle);
+      player.aimAngle = angle;
+    }
+
     // Hit boss
     const boss = this.gs.boss;
     if (boss && boss.alive) {
@@ -674,6 +682,36 @@ export class CombatEngine {
         }
       }
     }
+  }
+
+  // Auto-aim: find nearest enemy in range and return angle to it.
+  // Falls back to original client angle if nothing in range.
+  _autoAimNearest(player, range, fallbackAngle) {
+    let bestDist = Infinity;
+    let bestAngle = fallbackAngle;
+
+    const boss = this.gs.boss;
+    if (boss && boss.alive) {
+      const dx = boss.x - player.x;
+      const dy = boss.y - player.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= range + boss.radius + 50) { // +50 tolerance
+        bestDist = dist;
+        bestAngle = Math.atan2(dy, dx);
+      }
+    }
+
+    for (const add of this.gs.getAliveAdds()) {
+      const dx = add.x - player.x;
+      const dy = add.y - player.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= range + add.radius + 50 && dist < bestDist) {
+        bestDist = dist;
+        bestAngle = Math.atan2(dy, dx);
+      }
+    }
+
+    return bestAngle;
   }
 
   _taunt(player, skill) {

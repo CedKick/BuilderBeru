@@ -605,7 +605,12 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 
 <!-- Events / Feed Log -->
 <div id="loot-toasts"></div>
-<div id="events-wrap" style="position:fixed;bottom:10px;left:10px;z-index:10;width:340px;">
+<div id="events-wrap" style="position:fixed;bottom:10px;left:10px;z-index:10;width:340px;cursor:grab;">
+  <div id="events-drag-handle" style="display:flex;align-items:center;justify-content:space-between;padding:2px 8px 4px;cursor:grab;user-select:none;">
+    <span style="font-size:9px;color:#64748b;letter-spacing:1px;">&#9776; LOGS</span>
+    <span id="events-toggle" onclick="toggleEventsPanel()" style="cursor:pointer;font-size:12px;color:#64748b;padding:0 4px;">&#9660;</span>
+  </div>
+  <div id="events-content">
   <div id="feed-filters">
     <span class="feed-filter active" data-filter="all" onclick="setFeedFilter('all')">Tout</span>
     <span class="feed-filter" data-filter="combat" onclick="setFeedFilter('combat')">Combat</span>
@@ -614,7 +619,55 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
     <span class="feed-filter" data-filter="phase" onclick="setFeedFilter('phase')">Phases</span>
   </div>
   <div id="events"></div>
+  </div>
 </div>
+
+<script>
+// ── Draggable events panel ──
+(function() {
+  const wrap = document.getElementById('events-wrap');
+  const handle = document.getElementById('events-drag-handle');
+  let isDragging = false, startX, startY, startLeft, startBottom;
+
+  handle.addEventListener('mousedown', (e) => {
+    if (e.target.id === 'events-toggle') return;
+    isDragging = true;
+    startX = e.clientX; startY = e.clientY;
+    const rect = wrap.getBoundingClientRect();
+    startLeft = rect.left;
+    startBottom = window.innerHeight - rect.bottom;
+    wrap.style.cursor = 'grabbing';
+    handle.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    wrap.style.left = (startLeft + dx) + 'px';
+    wrap.style.bottom = (startBottom - dy) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    wrap.style.cursor = 'grab';
+    handle.style.cursor = 'grab';
+  });
+})();
+
+function toggleEventsPanel() {
+  const content = document.getElementById('events-content');
+  const toggle = document.getElementById('events-toggle');
+  if (content.style.display === 'none') {
+    content.style.display = '';
+    toggle.innerHTML = '&#9660;';
+  } else {
+    content.style.display = 'none';
+    toggle.innerHTML = '&#9650;';
+  }
+}
+</script>
 
 <script>
 const ARENA_W = 1600, ARENA_H = 1200;

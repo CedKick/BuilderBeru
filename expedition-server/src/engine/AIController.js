@@ -83,8 +83,9 @@ export class AIController {
       return { type: 'move', targetX: target.x - COMBAT.MELEE_RANGE * 0.8 };
     }
 
-    // Retreat slightly if HP very low and healers exist
-    if (char.hp / char.maxHp < 0.2) {
+    // Retreat if HP critical — assassins retreat earlier (fragile) but come back fast
+    const retreatThreshold = char.hunterClass === 'assassin' ? 0.30 : 0.20;
+    if (char.hp / char.maxHp < retreatThreshold) {
       const hasHealer = allies.some(a => a.role === 'backline_heal' && a.alive);
       if (hasHealer) {
         return { type: 'move', targetX: char.x - 100 };

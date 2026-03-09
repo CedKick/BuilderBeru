@@ -235,6 +235,10 @@ export default function Expedition() {
   const [success, setSuccess] = useState('');
   const pollRef = useRef(null);
 
+  // Draggable Loots Boss button
+  const [lootBtnPos, setLootBtnPos] = useState({ x: null, y: null });
+  const lootDragRef = useRef(null);
+
   // Recap
   const [recapData, setRecapData] = useState(null);
   const [recapTab, setRecapTab] = useState('summary');
@@ -595,10 +599,30 @@ export default function Expedition() {
           <X className="w-4 h-4" /> Retour
         </button>
 
-        {/* Floating Codex Button */}
+        {/* Floating Codex Button — Draggable */}
         <button
-          onClick={() => setShowCodexOverlay(true)}
-          className="fixed top-2 right-2 z-50 bg-[#1a1a2e]/90 hover:bg-yellow-600 text-yellow-400 hover:text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 border border-yellow-500/30 transition-colors"
+          ref={lootDragRef}
+          onClick={(e) => { if (!e._dragged) setShowCodexOverlay(true); }}
+          onMouseDown={(e) => {
+            const btn = lootDragRef.current;
+            if (!btn) return;
+            const rect = btn.getBoundingClientRect();
+            const offX = e.clientX - rect.left, offY = e.clientY - rect.top;
+            let moved = false;
+            const onMove = (ev) => {
+              moved = true;
+              setLootBtnPos({ x: ev.clientX - offX, y: ev.clientY - offY });
+            };
+            const onUp = (ev) => {
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+              if (moved) ev._dragged = true;
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+          }}
+          className="fixed z-50 bg-[#1a1a2e]/90 hover:bg-yellow-600 text-yellow-400 hover:text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 border border-yellow-500/30 transition-colors cursor-grab active:cursor-grabbing"
+          style={lootBtnPos.x != null ? { left: lootBtnPos.x, top: lootBtnPos.y } : { top: 8, right: 8 }}
         >
           <BookOpen className="w-4 h-4" /> Loots Boss
           {myRegisteredSRs.length > 0 && (
