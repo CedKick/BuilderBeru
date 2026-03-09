@@ -30,6 +30,7 @@ import {
   GULDAN_HEAL_PER_STACK, GULDAN_DEF_PER_HIT, GULDAN_ATK_PER_HIT, GULDAN_SPD_CHANCE, GULDAN_SPD_BOOST, GULDAN_SPD_MAX_STACKS, GULDAN_STUN_CHANCE,
   initExpPassive, expPassiveBeforeAttack, expPassiveAfterAttack, expPassiveOnDamageTaken, EXPEDITION_PASSIVE_IDS,
 } from './equipmentData';
+import { initForgeState, forgeOnBattleStart, forgeBeforeAttack, forgeAfterAttack, forgeOnDamageTaken, forgeApplyPermanentOnBuild } from './forgePassiveEngine';
 import {
   CLASS_SET_TIERS, CLASS_IDEAL_STATS,
   getResolvedTiers, getSetTier, getStatColor, scoreArtifact as scoreArtifactUtil,
@@ -925,7 +926,7 @@ export default function PvpLive() {
     const weaponPassive = wId && WEAPONS[wId] ? WEAPONS[wId].passive : null;
     const artPassives = getActivePassives(artifactsData?.[id]);
 
-    return {
+    const fighter = {
       id, name: chibi.name, sprite: chibi.sprite || SPRITES[id], element: chibi.element,
       class: chibi.class || (HUNTERS[id]?.class) || 'fighter',
       rarity: chibi.rarity,
@@ -949,7 +950,13 @@ export default function PvpLive() {
         // Expedition weapon passive state
         ...(weaponPassive && EXPEDITION_PASSIVE_IDS.includes(weaponPassive) ? initExpPassive(weaponPassive) : {}),
       },
+      // Forge community weapon passives
+      forgePassives: wId && WEAPONS[wId]?.forgePassives ? WEAPONS[wId].forgePassives : null,
+      forgeState: wId && WEAPONS[wId]?.forgePassives ? initForgeState(WEAPONS[wId].forgePassives) : null,
     };
+    // Apply permanent forge passives at build time
+    if (fighter.forgePassives) forgeApplyPermanentOnBuild(fighter, fighter.forgePassives);
+    return fighter;
   }, [allPool, coloData, raidData]);
 
   // Start online battle (build fighters locally)
@@ -972,6 +979,12 @@ export default function PvpLive() {
       ...oppFighters.map((f, i) => ({ ...f, type: 'enemy', idx: i })),
     ];
     const turnOrder = buildSpdTurnOrder(entries);
+
+    // Forge Community Weapon Passives: onBattleStart
+    const allFighters = [...myFighters, ...oppFighters];
+    allFighters.forEach(f => {
+      if (f.forgeState) forgeOnBattleStart(f, f.forgeState, allFighters, [], []);
+    });
 
     const battleState = {
       playerTeam: myFighters,
@@ -1384,6 +1397,12 @@ export default function PvpLive() {
     applyTeamPassives(playerFighters);
     applyTeamPassives(beruFighters);
 
+    // Forge Community Weapon Passives: onBattleStart
+    const allFightersLocal = [...playerFighters, ...beruFighters];
+    allFightersLocal.forEach(f => {
+      if (f.forgeState) forgeOnBattleStart(f, f.forgeState, allFightersLocal, [], []);
+    });
+
     // Build turn order
     const entries = [
       ...playerFighters.map((f, i) => ({ ...f, type: 'team', idx: i })),
@@ -1598,6 +1617,14 @@ export default function PvpLive() {
         if (expBefore.defPenPct > 0) target.def = Math.floor(target.def * (1 - expBefore.defPenPct));
         for (const msg of expBefore.log) setBattleLog(prev => [...prev, { text: `${attacker.name} : ${msg}`, type: 'passive' }]);
       }
+      // Forge Community Weapon Passives: beforeAttack
+      if (attacker.forgeState) {
+        const forgeLog = [];
+        const fb = forgeBeforeAttack(attacker, attacker.forgeState, target, forgeLog);
+        if (fb.atkMult > 0) attacker.atk = Math.floor(attacker.atk * (1 + fb.atkMult));
+        if (fb.defPenPct > 0) target.def = Math.floor(target.def * (1 - fb.defPenPct));
+        for (const msg of forgeLog) setBattleLog(prev => [...prev, { text: msg.text || `${attacker.name} : ${msg}`, type: 'passive' }]);
+      }
     }
 
     // Compute attack result
@@ -1631,6 +1658,13 @@ export default function PvpLive() {
           setBattleLog(prev => [...prev, { text: `${defender.name} absorbe le coup fatal !`, type: 'passive' }]);
         }
         for (const msg of expDmg.log) setBattleLog(prev => [...prev, { text: `${defender.name} : ${msg}`, type: 'passive' }]);
+      }
+      // Forge Community Weapon Passives: onDamageTaken (defender)
+      if (dmg > 0 && defender.forgeState) {
+        const forgeLog = [];
+        const forgeDmg = forgeOnDamageTaken(defender, defender.forgeState, dmg, attacker, false, forgeLog);
+        dmg = forgeDmg.reducedDmg;
+        for (const msg of forgeLog) setBattleLog(prev => [...prev, { text: msg.text || `${defender.name} : ${msg}`, type: 'passive' }]);
       }
       res.damage = dmg;
       defender.hp = Math.max(0, defender.hp - dmg);
@@ -1696,6 +1730,13 @@ export default function PvpLive() {
           attacker.shield = (attacker.shield || 0) + expAfter.shield;
         }
         for (const msg of expAfter.log) setBattleLog(prev => [...prev, { text: `${attacker.name} : ${msg}`, type: 'passive' }]);
+      }
+      // Forge Community Weapon Passives: afterAttack
+      if (attacker.forgeState) {
+        const allFighters = [...(battleStateRef.current?.p1Fighters || []), ...(battleStateRef.current?.p2Fighters || [])].filter(f => f.alive);
+        const forgeLog = [];
+        forgeAfterAttack(attacker, attacker.forgeState, defender, res.damage, res.isCrit, !defender.alive, allFighters, forgeLog);
+        for (const msg of forgeLog) setBattleLog(prev => [...prev, { text: msg.text || `${attacker.name} : ${msg}`, type: 'passive' }]);
       }
     }
 

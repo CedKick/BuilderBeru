@@ -39,6 +39,8 @@ export async function loadCommunityWeapons() {
             desc: w.desc_fr || '',
             community: true,
             creator: w.creator_username,
+            powerScore: w.power_score || 0,
+            dropRate: w.drop_rate || 0,
           };
 
           // Inject custom awakening passives (A1-A5) with human-readable labels
@@ -55,11 +57,14 @@ export async function loadCommunityWeapons() {
             });
           }
 
-          // Build passive description for display
+          // Parse and store raw passive data for combat engine
           const passivesData = typeof w.passives === 'string'
             ? JSON.parse(w.passives) : (w.passives || []);
           const activePassives = passivesData.filter(p => p?.id && p.id !== 'none');
           if (activePassives.length > 0) {
+            // Raw data for forgePassiveEngine (combat)
+            WEAPONS[w.weapon_id].forgePassives = activePassives;
+            // Human-readable descriptions (display)
             const passiveDescs = activePassives.map(p => {
               const t = FORGE_PASSIVE_TEMPLATES[p.id];
               if (!t) return null;

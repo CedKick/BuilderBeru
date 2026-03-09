@@ -1898,7 +1898,7 @@ export function rollWeaponDrop(stageTier, isBoss = false) {
   if (Math.random() > chance) return null;
   const rarityPool = COLOSSEUM_WEAPON_DROP.tierPool[stageTier] || ['rare'];
   const rarity = rarityPool[Math.floor(Math.random() * rarityPool.length)];
-  const candidates = Object.values(WEAPONS).filter(w => !w.secret && w.rarity === rarity);
+  const candidates = Object.values(WEAPONS).filter(w => !w.secret && !w.community && w.rarity === rarity);
   if (candidates.length === 0) return null;
   return candidates[Math.floor(Math.random() * candidates.length)].id;
 }
@@ -2003,14 +2003,14 @@ export function rollRaidWeaponDrop(raidTier, isFullClear = false) {
   if (isFullClear && RAID_WEAPON_DROP.fullClearGuaranteed) {
     const rarityPool = RAID_WEAPON_DROP.tierPool[raidTier] || ['rare'];
     const rarity = rarityPool[Math.floor(Math.random() * rarityPool.length)];
-    const candidates = Object.values(WEAPONS).filter(w => !w.secret && w.rarity === rarity);
+    const candidates = Object.values(WEAPONS).filter(w => !w.secret && !w.community && w.rarity === rarity);
     return candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)].id : null;
   }
   const chance = RAID_WEAPON_DROP.dropChance[raidTier] || 0.10;
   if (Math.random() > chance) return null;
   const rarityPool = RAID_WEAPON_DROP.tierPool[raidTier] || ['rare'];
   const rarity = rarityPool[Math.floor(Math.random() * rarityPool.length)];
-  const candidates = Object.values(WEAPONS).filter(w => !w.secret && w.rarity === rarity);
+  const candidates = Object.values(WEAPONS).filter(w => !w.secret && !w.community && w.rarity === rarity);
   return candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)].id : null;
 }
 

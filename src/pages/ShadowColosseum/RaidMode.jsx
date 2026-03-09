@@ -40,6 +40,9 @@ import {
   initExpPassive, expPassiveBeforeAttack, expPassiveAfterAttack, expPassiveOnDamageTaken, EXPEDITION_PASSIVE_IDS,
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
+import { initForgeState, forgeOnBattleStart, forgeBeforeAttack, forgeAfterAttack, forgeOnDamageTaken, forgeApplyPermanentOnBuild } from './forgePassiveEngine';
+import { computeDropRates } from '../../data/forgePassiveTemplates.js';
+import { getCommunityWeaponsCache } from '../../utils/communityWeapons.js';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
 import { isFarming, stopFarm } from '../../utils/offlineFarm';
 import { cloudStorage } from '../../utils/CloudStorage';
@@ -93,6 +96,23 @@ export default function RaidMode() {
   // ─── Result state ──────────────────────────────────────────
   const [resultData, setResultData] = useState(null);
   const [showDetailedStats, setShowDetailedStats] = useState(false);
+
+  // ─── Faction buffs (for community weapon drop mult) ────────
+  const [factionBuffs, setFactionBuffs] = useState(null);
+  useEffect(() => {
+    if (!isLoggedIn()) return;
+    (async () => {
+      try {
+        const resp = await fetch(`${API_URL}/factions?action=status`, { headers: authHeaders() });
+        const d = await resp.json();
+        if (d.success && d.inFaction && d.buffs) setFactionBuffs(d.buffs);
+      } catch { /* silently fail */ }
+    })();
+  }, []);
+  const getFactionLootMult = (buffId) => {
+    if (!factionBuffs || !factionBuffs[buffId]) return 1;
+    return 1 + factionBuffs[buffId] * 0.05;
+  };
 
   // ─── Ranking state ──────────────────────────────────────────
   const [showRanking, setShowRanking] = useState(false);
@@ -439,7 +459,7 @@ export default function RaidMode() {
       return m;
     })();
 
-    return {
+    const fighter = {
       id, name: chibi.name, element: chibi.element, class: chibi.class,
       sprite: chibi.sprite, rarity: chibi.rarity, weaponType,
       hp: finalHp, maxHp: finalHp, shield: 0,
@@ -474,7 +494,13 @@ export default function RaidMode() {
       hunterClass: HUNTERS[id]?.class || 'fighter',
       lastAttackAt: 0, attackInterval: spdToInterval(finalSpd),
       alive: true,
+      // Forge community weapon passives
+      forgePassives: wId2 && WEAPONS[wId2]?.forgePassives ? WEAPONS[wId2].forgePassives : null,
+      forgeState: wId2 && WEAPONS[wId2]?.forgePassives ? initForgeState(WEAPONS[wId2].forgePassives) : null,
     };
+    // Apply permanent forge passives at build time (deathLink HP/SPD etc.)
+    if (fighter.forgePassives) forgeApplyPermanentOnBuild(fighter, fighter.forgePassives);
+    return fighter;
   }, [allPool, coloData]);
 
   const buildBossEntity = useCallback((tier = 1) => {
@@ -614,6 +640,11 @@ export default function RaidMode() {
           ps.supremeAllStatsDuration = p.allStatsDuration || 3;
         }
       });
+    });
+
+    // ─── Forge Community Weapon Passives: onBattleStart ───
+    chibis.forEach(c => {
+      if (c.forgeState) forgeOnBattleStart(c, c.forgeState, chibis, [], []);
     });
 
     // Increment daily raid count + save tier preference
@@ -866,6 +897,23 @@ export default function RaidMode() {
         }
       }
 
+      // Community weapon drops — 10 independent rolls per community weapon
+      if (!raidWeaponDrop) {
+        const communityWeapons = Object.values(WEAPONS).filter(w => w.community && w.dropRate > 0);
+        for (const cw of communityWeapons) {
+          const rates = computeDropRates(cw.powerScore || 0);
+          if (!rates.raid_sc) continue;
+          const fMult = getFactionLootMult(`loot_${cw.id}`);
+          for (let i = 0; i < 10; i++) {
+            if (Math.random() * 100 < rates.raid_sc * fMult * lootMult) {
+              raidWeaponDrop = { id: cw.id, ...cw };
+              break;
+            }
+          }
+          if (raidWeaponDrop) break;
+        }
+      }
+
       // Alkahest drops — tier-based rolls (5% chance each), scaled by lootMult
       const ALKAHEST_ROLLS_BY_TIER = { 1: 30, 2: 45, 3: 60, 4: 90, 5: 120, 6: 150 };
       const alkRolls = Math.floor((ALKAHEST_ROLLS_BY_TIER[tier] || 10) * lootMult);
@@ -1085,6 +1133,13 @@ export default function RaidMode() {
         if (expBefore.atkMult > 0) chibi.atk = Math.floor(chibi.atk * (1 + expBefore.atkMult));
         if (expBefore.defPenPct > 0) state.boss.def = Math.floor(state.boss.def * (1 - expBefore.defPenPct));
         for (const msg of expBefore.log) logEntries.push({ text: `${chibi.name} : ${msg}`, time: elapsed, type: 'buff' });
+      }
+
+      // ── Forge Community Weapon Passives: beforeAttack ──
+      if (chibi.forgeState) {
+        const fb = forgeBeforeAttack(chibi, chibi.forgeState, state.boss, logEntries);
+        if (fb.atkMult > 0) chibi.atk = Math.floor(chibi.atk * (1 + fb.atkMult));
+        if (fb.defPenPct > 0) state.boss.def = Math.floor(state.boss.def * (1 - fb.defPenPct));
       }
 
       // ── ULTIME Artifact Passives: beforeAttack ──
@@ -1443,6 +1498,12 @@ export default function RaidMode() {
           for (const msg of expAfter.log) logEntries.push({ text: `${chibi.name} : ${msg}`, time: elapsed, type: 'buff' });
         }
 
+        // ── Forge Community Weapon Passives: afterAttack ──
+        if (chibi.forgeState) {
+          const allTeam = [...state.team1, ...state.team2].filter(c => c.alive);
+          forgeAfterAttack(chibi, chibi.forgeState, state.boss, result.damage, result.isCrit, state.boss.hp <= 0, allTeam, logEntries);
+        }
+
         // ── ULTIME Artifact Passives: afterAttack ──
         // Rage Eternelle (2p): +1% ATK per attack (max 15 stacks) — individual
         const eternalRage = chibi.passives?.find(p => p.type === 'eternalRageStack');
@@ -1797,6 +1858,12 @@ export default function RaidMode() {
               // Lethal blow was absorbed — keep target alive
             }
             for (const msg of expDmg.log) logEntries.push({ text: `${target.name} : ${msg}`, time: elapsed, type: 'buff' });
+          }
+
+          // ── Forge Community Weapon Passives: onDamageTaken ──
+          if (target.forgeState) {
+            const forgeDmg = forgeOnDamageTaken(target, target.forgeState, actualDmg, state.boss, false, logEntries);
+            actualDmg = forgeDmg.reducedDmg;
           }
 
           target.hp -= actualDmg;

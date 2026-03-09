@@ -53,6 +53,8 @@ import {
   ENCHANT_ALKAHEST_COST, enchantArtifactStat, rerollArtifactMainStat, rerollArtifactFull, enchantWeaponStat, ENCHANT_MAIN_STAT_POOL,
   initExpPassive, expPassiveBeforeAttack, expPassiveAfterAttack, expPassiveOnDamageTaken, EXPEDITION_PASSIVE_IDS,
 } from './equipmentData';
+import { initForgeState, forgeOnBattleStart, forgeBeforeAttack, forgeAfterAttack, forgeOnDamageTaken, forgeApplyPermanentOnBuild } from './forgePassiveEngine';
+import { computeDropRates, computeLootLocations } from '../../data/forgePassiveTemplates.js';
 import {
   isArc2Unlocked, ARC2_STAGES, ARC2_TIER_NAMES, ARC2_STORIES,
   ARC2_LOCKED_BERU_DIALOGUES, ARC2_BEBE_MACHINE_REACTIONS, GRIMOIRE_WEISS,
@@ -1548,12 +1550,17 @@ export default function ShadowColosseum() {
 
     // Weapon passive state
     const wId = data.weapons[id];
-    const weaponPassive = wId && WEAPONS[wId] ? WEAPONS[wId].passive : null;
+    const wDef = wId ? WEAPONS[wId] : null;
+    const weaponPassive = wDef?.passive || null;
+
+    // Forge passives (community weapons)
+    const forgePassives = wDef?.forgePassives || null;
+    const forgeState = initForgeState(forgePassives);
 
     // Artifact set passives (ARC II / Raid / Ultime)
     const artPassives = getActivePassives(data.artifacts?.[id]);
 
-    return {
+    const fighter = {
       id, name: c.name, sprite: getSprite(id), element: c.element,
       hp: fs.hp, maxHp: fs.hp, atk: fs.atk, def: fs.def,
       spd: fs.spd, crit: Math.min(80, fs.crit), res: Math.min(70, fs.res),
@@ -1565,6 +1572,7 @@ export default function ShadowColosseum() {
       isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support' || HUNTERS[id]?.class === 'tank',
       hunterClass: HUNTERS[id]?.class || 'fighter',
       artPassives, // artifact set passives for combat
+      forgeState, // forge passive state for combat
       passiveState: {
         sianStacks: 0,
         ...(weaponPassive === 'sulfuras_fury' ? { sulfurasStacks: 0 } : {}),
@@ -1596,6 +1604,9 @@ export default function ShadowColosseum() {
         infamyMpRecovery: 0,      // Chaotic Infamy: MP recovery %
       },
     };
+    // Apply forge passive permanent stats (deathLink HP malus, etc.)
+    if (forgePassives) forgeApplyPermanentOnBuild(fighter, forgePassives);
+    return fighter;
   };
 
   const startArc2Battle = () => {
@@ -1704,6 +1715,15 @@ export default function ShadowColosseum() {
           ps.infamyMpCooldown = 0;
         }
       });
+    });
+
+    // ─── Forge passives: onBattleStart (shields, auras, debuffs) ───
+    const forgeLog = [];
+    fighters.forEach(f => {
+      if (f.forgeState) {
+        // Note: enemies not yet built, so we pass empty. sharedCurse will apply at first round.
+        forgeOnBattleStart(f, f.forgeState, fighters, [], forgeLog);
+      }
     });
 
     // Save team for "Previous Team" button
@@ -1984,6 +2004,14 @@ export default function ShadowColosseum() {
       if (ps.guldanState.spdStacks > 0) fighter.atk = Math.floor(fighter.atk * (1 + ps.guldanState.spdStacks * GULDAN_SPD_BOOST * 0.1));
     }
 
+    // ─── Forge passives: beforeAttack ───
+    if (fighter.forgeState) {
+      const fb = forgeBeforeAttack(fighter, fighter.forgeState, enemy, b.log);
+      if (fb.atkMult !== 1) fighter.atk = Math.floor(fighter.atk * fb.atkMult);
+      // DEF pen stored on fighter, applied in computeAttack via tb
+      if (fb.defPenPct > 0) fighter.tb = { ...fighter.tb, defPen: (fighter.tb.defPen || 0) + fb.defPenPct };
+    }
+
     // ─── Artifact passives: beforeAttack ───
     // Burning Curse: +DMG dealt bonus + stacking
     if (ps.curseDmgDealt > 0) {
@@ -2119,6 +2147,12 @@ export default function ShadowColosseum() {
           b.log.unshift({ msg: `${fighter.name} : HALO DIVIN ! ${deadAlly.name} ressuscite a 50% PV !`, type: 'player' });
         }
       }
+    }
+
+    // ─── Forge passives: afterAttack ───
+    if (fighter.forgeState) {
+      const killed = !enemy.alive;
+      forgeAfterAttack(fighter, fighter.forgeState, enemy, dmg, result.isCrit, killed, b.team, b.log);
     }
 
     // ─── Artifact passives: afterAttack ───
@@ -2482,6 +2516,20 @@ export default function ShadowColosseum() {
     const rolledWeaponId = rollWeaponDrop(stage.tier, !!stage.isBoss);
     if (rolledWeaponId && WEAPONS[rolledWeaponId]) {
       weaponDrop = { id: rolledWeaponId, ...WEAPONS[rolledWeaponId] };
+    }
+    // Community weapon drops (ARC I location, divider /1000)
+    if (!weaponDrop) {
+      const arc1Loot = (data.lootBoostMs > 0) ? 2 : 1;
+      const communityWeps = Object.values(WEAPONS).filter(w => w.community && w.dropRate > 0);
+      for (const cw of communityWeps) {
+        const rates = computeDropRates(cw.powerScore || 0);
+        if (!rates.arc1) continue;
+        const fMult = getFactionLootMult(`loot_${cw.id}`);
+        if (Math.random() * 100 < rates.arc1 * arc1Loot * fMult) {
+          weaponDrop = { id: cw.id, ...cw };
+          break;
+        }
+      }
     }
     // Skin drop (stage/tier based)
     let skinDrop = null;
@@ -4126,6 +4174,25 @@ export default function ShadowColosseum() {
     if (!weaponDrop && stage.id === 'archdemon' && Math.random() < (1 / 10000) * lootMult * getFactionLootMult('loot_guldan')) {
       const isNew = data.weaponCollection['w_guldan'] === undefined;
       weaponDrop = { id: 'w_guldan', ...WEAPONS.w_guldan, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_guldan'] || 0) + 1, MAX_WEAPON_AWAKENING) };
+    }
+
+    // ─── Community weapon drops (independent roll per forge weapon) ───
+    if (!weaponDrop) {
+      const locKey = 'arc2'; // ARC II location
+      const communityWeps = Object.values(WEAPONS).filter(w => w.community && w.dropRate > 0);
+      for (const cw of communityWeps) {
+        const dropRates = computeDropRates(cw.powerScore || 0);
+        const rate = dropRates[locKey]; // rate for this location (already divided)
+        if (!rate) continue; // weapon not available at this location
+        const locs = computeLootLocations(cw.powerScore || 0);
+        if (!locs.includes(locKey)) continue;
+        const factionMult = getFactionLootMult(`loot_${cw.id}`);
+        if (Math.random() * 100 < rate * lootMult * factionMult) {
+          const isNew = data.weaponCollection[cw.id] === undefined;
+          weaponDrop = { id: cw.id, ...cw, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection[cw.id] || 0) + 1, MAX_WEAPON_AWAKENING) };
+          break; // only one community weapon per fight
+        }
+      }
     }
 
     // Log legendary hunter drops (from universal system)
