@@ -730,11 +730,11 @@ export default function Forge() {
                                 }}
                                 className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-white text-xs focus:border-amber-500 focus:outline-none"
                               >
-                                {def.options.map((opt, i) => (
-                                  <option key={opt} value={opt}>
-                                    {opt} {def.costs[i] > 0 ? `(+${def.costs[i]} pts)` : def.costs[i] < 0 ? `(${def.costs[i]} pts)` : ''}
-                                  </option>
-                                ))}
+                                {def.options.map((opt, i) => {
+                                  const label = (key.toLowerCase().includes('duration') && opt === 0) ? '∞ Permanent' : opt;
+                                  const costStr = def.costs[i] > 0 ? `(+${def.costs[i]} pts)` : def.costs[i] < 0 ? `(${def.costs[i]} pts)` : '';
+                                  return <option key={opt} value={opt}>{label} {costStr}</option>;
+                                })}
                               </select>
                             </div>
                           ))}
@@ -906,6 +906,13 @@ function buildPassiveDesc(id, params) {
   if (!t || id === 'none') return '';
   let d = t.desc;
   for (const [k, v] of Object.entries(params || {})) {
+    // durationTurns: 0 = permanent
+    if (k === 'durationTurns' && (v === 0 || v === '0')) {
+      d = d.replace(/Dure \{durationTurns\} tours[^.]*\.?/, 'Effet permanent.');
+      d = d.replace(/pendant \{durationTurns\} tours/, 'en permanence');
+      d = d.replace(`{${k}}`, '∞');
+      continue;
+    }
     d = d.replace(`{${k}}`, v);
   }
   return d;
@@ -1061,7 +1068,7 @@ function WeaponCard({ weapon, onClick, showDelete, onDelete }) {
             <span>Score {w.power_score}</span>
             <span>•</span>
             <span className={Number(w.drop_rate) >= 1 ? 'text-green-500' : Number(w.drop_rate) >= 0.01 ? 'text-amber-500' : 'text-red-500'}>
-              {computeDropRateLabel(w.power_score)}
+              {formatDropRate(computeBaseDropRate(w.power_score))}
             </span>
           </div>
         </div>
