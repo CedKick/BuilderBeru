@@ -150,7 +150,8 @@ export default function FactionHub() {
     },
   };
 
-  const FACTION_BUFFS = {
+  // Fallback buff definitions (used before API loads)
+  const FALLBACK_BUFFS = {
     loot_sulfuras: { name: 'Loot Sulfuras', description: '+5% drop rate Sulfuras par niv', maxLevel: 50, baseLevels: 10, baseCost: 100, icon: '🔥' },
     loot_raeshalare: { name: 'Loot Raeshalare', description: '+5% drop rate Raeshalare par niv', maxLevel: 50, baseLevels: 10, baseCost: 100, icon: '🏹' },
     loot_katana_z: { name: 'Loot Katana Z', description: '+5% drop rate Katana Z par niv', maxLevel: 50, baseLevels: 10, baseCost: 100, icon: '⚡' },
@@ -165,6 +166,9 @@ export default function FactionHub() {
     dmg_shadow: { name: 'Degats Dark', description: '+1% degats Dark par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150, icon: '🌑' },
     dmg_earth: { name: 'Degats Terre', description: '+1% degats Terre par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150, icon: '🪨' },
   };
+
+  // Backend-driven buff definitions (hardcoded + community weapons, loaded from status API)
+  const [FACTION_BUFFS, setFactionBuffs] = useState(FALLBACK_BUFFS);
 
   const getCostForLevel = (buffId, targetLevel) => {
     const buff = FACTION_BUFFS[buffId];
@@ -209,6 +213,21 @@ export default function FactionHub() {
 
       if (data.success) {
         setFactionData(data.inFaction ? data : null);
+
+        // Use buff definitions from backend (includes community weapons)
+        if (data.buffDefinitions) {
+          // Add client-side icons for base buffs (backend doesn't store icons)
+          const ICON_MAP = {
+            loot_sulfuras: '🔥', loot_raeshalare: '🏹', loot_katana_z: '⚡', loot_katana_v: '🌊', loot_guldan: '🪄',
+            stats_hp: '❤️', stats_atk: '⚔️', stats_def: '🛡️',
+            dmg_fire: '🔥', dmg_water: '💧', dmg_light: '✨', dmg_shadow: '🌑', dmg_earth: '🪨',
+          };
+          const withIcons = {};
+          for (const [id, def] of Object.entries(data.buffDefinitions)) {
+            withIcons[id] = { ...def, icon: def.icon || ICON_MAP[id] || '⚔️' };
+          }
+          setFactionBuffs(withIcons);
+        }
 
         // Load weekly stats if in faction
         if (data.inFaction) {
@@ -996,6 +1015,9 @@ function BuffsTab({ buffs, currentLevels, onUpgrade, pointsAvailable, getCostFor
               <div>
                 <h3 className="font-bold text-white">{buffConfig.name}</h3>
                 <p className="text-xs text-gray-400">{buffConfig.description}</p>
+                {buffConfig.community && (
+                  <p className="text-[10px] text-purple-400 mt-0.5">Forgé par {buffConfig.creator}</p>
+                )}
               </div>
             </div>
 

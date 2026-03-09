@@ -25,10 +25,11 @@ export const FACTIONS = {
   },
 };
 
-export const FACTION_BUFFS = {
-  loot_sulfuras: { name: 'Loot Sulfuras', description: '+% drop rate Sulfuras', maxLevel: 50, baseLevels: 10, baseCost: 100 },
-  loot_raeshalare: { name: 'Loot Raeshalare', description: '+% drop rate Raeshalare', maxLevel: 50, baseLevels: 10, baseCost: 100 },
-  loot_katana_z: { name: 'Loot Katana Z', description: '+% drop rate Katana Z', maxLevel: 50, baseLevels: 10, baseCost: 100 },
+// Hardcoded base buffs (weapons + stats + element damage)
+const BASE_FACTION_BUFFS = {
+  loot_sulfuras: { name: 'Loot Sulfuras', description: '+5% drop rate Sulfuras par niv', maxLevel: 50, baseLevels: 10, baseCost: 100 },
+  loot_raeshalare: { name: 'Loot Raeshalare', description: '+5% drop rate Raeshalare par niv', maxLevel: 50, baseLevels: 10, baseCost: 100 },
+  loot_katana_z: { name: 'Loot Katana Z', description: '+5% drop rate Katana Z par niv', maxLevel: 50, baseLevels: 10, baseCost: 100 },
   loot_katana_v: { name: 'Loot Katana V', description: '+5% drop rate Katana V par niv', maxLevel: 50, baseLevels: 10, baseCost: 100 },
   loot_guldan: { name: "Loot Gul'dan", description: "+5% drop rate Baton de Gul'dan par niv", maxLevel: 50, baseLevels: 10, baseCost: 100 },
   stats_hp: { name: 'HP Bonus', description: '+1% HP par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150 },
@@ -41,11 +42,46 @@ export const FACTION_BUFFS = {
   dmg_earth: { name: 'Degats Terre', description: '+1% degats Terre par niveau', maxLevel: 50, baseLevels: 20, baseCost: 150 },
 };
 
+// Keep exported for backward compat (used by getCostForLevel at minimum)
+export const FACTION_BUFFS = BASE_FACTION_BUFFS;
+
+// Fetch community weapons from forge table and generate loot buff entries
+const ELEMENT_ICONS = { fire: '🔥', water: '💧', shadow: '🌑', light: '✨', wind: '🍃', earth: '🪨' };
+
+async function getCommunityWeaponBuffs() {
+  try {
+    const result = await query('SELECT weapon_id, name, element, icon, creator_username FROM community_weapons');
+    const buffs = {};
+    for (const w of result.rows) {
+      buffs[`loot_${w.weapon_id}`] = {
+        name: `Loot ${w.name}`,
+        description: `+5% drop rate ${w.name} par niv`,
+        maxLevel: 50,
+        baseLevels: 10,
+        baseCost: 150,
+        community: true,
+        creator: w.creator_username,
+        icon: ELEMENT_ICONS[w.element] || w.icon || '⚔️',
+      };
+    }
+    return buffs;
+  } catch {
+    return {};
+  }
+}
+
+// Returns merged base + community buffs (single source of truth)
+async function getAllBuffs() {
+  const communityBuffs = await getCommunityWeaponBuffs();
+  return { ...BASE_FACTION_BUFFS, ...communityBuffs };
+}
+
 export function getCostForLevel(buffId, targetLevel) {
-  const buff = FACTION_BUFFS[buffId];
-  if (!buff) return Infinity;
-  if (targetLevel <= buff.baseLevels) return buff.baseCost;
-  return 500 + (targetLevel - buff.baseLevels - 1) * 250;
+  const buff = BASE_FACTION_BUFFS[buffId];
+  // For community buffs, use default config
+  const config = buff || { maxLevel: 50, baseLevels: 10, baseCost: 150 };
+  if (targetLevel <= config.baseLevels) return config.baseCost;
+  return 500 + (targetLevel - config.baseLevels - 1) * 250;
 }
 
 export const FACTION_CHANGE_COST = 5000; // Shadow Coins cost to change faction
@@ -142,9 +178,10 @@ async function handleInit(req, res) {
     )
   `);
 
-  // Initialize buffs for both factions
+  // Initialize buffs for both factions (hardcoded + community weapons)
+  const allBuffs = await getAllBuffs();
   for (const factionId of Object.keys(FACTIONS)) {
-    for (const buffId of Object.keys(FACTION_BUFFS)) {
+    for (const buffId of Object.keys(allBuffs)) {
       await query(
         `INSERT INTO faction_buffs (faction, buff_id, level)
          VALUES ($1, $2, 0)
@@ -228,6 +265,9 @@ async function handleStatus(req, res) {
     buffsMap[b.buff_id] = b.level;
   });
 
+  // Return all buff definitions (hardcoded + community) so client has full metadata
+  const allBuffs = await getAllBuffs();
+
   return res.json({
     success: true,
     inFaction: true,
@@ -240,6 +280,7 @@ async function handleStatus(req, res) {
     pointsAvailable: player.contribution_points - player.points_spent,
     joinedAt: player.joined_at,
     buffs: buffsMap,
+    buffDefinitions: allBuffs,
     farmActive: !!player.farm_active,
     farmStageId: player.farm_stage_id,
     farmStartedAt: player.farm_started_at,
@@ -298,7 +339,8 @@ async function handleUpgradeBuff(req, res) {
   if (!user) return res.status(401).json({ success: false, message: 'Authentication required' });
 
   const { buffId } = req.body;
-  const buffConfig = FACTION_BUFFS[buffId];
+  const allBuffs = await getAllBuffs();
+  const buffConfig = allBuffs[buffId];
   if (!buffConfig) {
     return res.status(400).json({ success: false, message: 'Invalid buff' });
   }
