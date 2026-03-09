@@ -1000,6 +1000,20 @@ export default function Codex() {
                           </div>
                         )}
 
+                        {/* Community weapon passives (from Forge) */}
+                        {w.community && w.passiveDescs?.length > 0 && (
+                          <div className="space-y-2 mb-4">
+                            {w.passiveDescs.map((p, i) => (
+                              <div key={i} className={`p-3 rounded-xl border ${p.category === 'drawback' ? 'bg-red-500/10 border-red-500/30' : 'bg-purple-500/10 border-purple-500/30'}`}>
+                                <div className={`text-[10px] font-bold uppercase mb-1 ${p.category === 'drawback' ? 'text-red-400' : 'text-purple-400'}`}>
+                                  Passive Unique — {p.name}
+                                </div>
+                                <div className={`text-[11px] ${p.category === 'drawback' ? 'text-red-300' : 'text-purple-300'}`}>{p.desc}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         <button onClick={() => setSelectedWeapon(null)}
                           className="w-full py-2 rounded-xl bg-gray-800/60 border border-gray-700/30 text-sm font-bold text-gray-400 hover:text-white hover:border-purple-500/40 transition-all">
                           Fermer

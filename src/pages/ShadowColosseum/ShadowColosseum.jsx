@@ -13061,6 +13061,20 @@ export default function ShadowColosseum() {
                   );
                 })}
               </div>
+              {/* Community weapon passives (from Forge) */}
+              {wDet?.community && wDet?.passiveDescs?.length > 0 && (
+                <div className="mb-3 space-y-2">
+                  {wDet.passiveDescs.map((p, i) => (
+                    <div key={i} className={`p-2.5 rounded-lg border ${p.category === 'drawback' ? 'bg-red-500/10 border-red-500/30' : 'bg-purple-500/10 border-purple-500/30'}`}>
+                      <div className={`text-[10px] font-bold uppercase mb-1 ${p.category === 'drawback' ? 'text-red-400' : 'text-purple-400'}`}>
+                        Passive — {p.name}
+                      </div>
+                      <div className={`text-xs ${p.category === 'drawback' ? 'text-red-300' : 'text-purple-300'}`}>{p.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Flat bonuses A6-A10 */}
               <div className="text-xs font-bold text-indigo-400 mb-1.5">Bonus Supplementaires</div>
               <div className="space-y-1.5">
