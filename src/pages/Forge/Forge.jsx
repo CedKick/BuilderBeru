@@ -1,5 +1,6 @@
 // src/pages/Forge/Forge.jsx — La Forge du Monarque (Community Weapon Creator)
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Hammer, Sword, Shield, Zap, Flame, Droplets, Eye, Wind, Mountain,
@@ -500,6 +501,9 @@ export default function Forge() {
 
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-white p-4 md:p-8 max-w-6xl mx-auto">
+      {/* Back to Colosseum */}
+      <Link to="/shadow-colosseum" className="text-sm text-gray-500 hover:text-purple-400 transition-colors mb-2 inline-block">← Retour au Colisee</Link>
+
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 bg-clip-text text-transparent">

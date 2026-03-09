@@ -370,6 +370,7 @@ export default function Expedition() {
           weaponPassive, // SC weapon passive identifier (sulfuras_fury, katana_v_chaos, etc.)
           weaponId: wId || null, // Weapon ID for expedition weapon resolution
           equippedSets, // { setId: pieceCount } from colosseum artifacts
+          forgePassives: weaponDef?.forgePassives || null, // Community weapon forge passives [{id, params}]
         };
       }
       await api('/api/expedition/register', 'POST', {

@@ -597,6 +597,33 @@ export default function MailInbox() {
     }
   };
 
+  const deleteReadMails = async () => {
+    const readPersonal = mails.filter(m => m.read && m.recipientUsername && (!m.rewards || m.claimed));
+    if (readPersonal.length === 0) {
+      alert('Aucun message lu a nettoyer');
+      return;
+    }
+    if (!confirm(`Supprimer ${readPersonal.length} message(s) lu(s) ?`)) return;
+
+    try {
+      const resp = await fetch(`${API_URL}/mail?action=delete-read`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      });
+      const data = await resp.json();
+      if (data.success) {
+        const deletedIds = new Set(readPersonal.map(m => m.id));
+        setMails(prev => prev.filter(m => !deletedIds.has(m.id)));
+        alert(`${data.deletedCount} message(s) supprime(s)`);
+      } else {
+        alert('\u274C ' + (data.message || 'Erreur'));
+      }
+    } catch (err) {
+      console.error('Failed to delete read mails:', err);
+      alert('\u274C Impossible de nettoyer. Verifiez votre connexion.');
+    }
+  };
+
   const sendSupportMessage = async () => {
     if (!supportSubject.trim() || !supportMessage.trim()) {
       setSupportError('Sujet et message requis');
@@ -952,6 +979,16 @@ export default function MailInbox() {
           >
             <Gift size={16} className="inline mr-2" />
             Recompenses
+          </button>
+
+          {/* Clean read messages */}
+          <button
+            onClick={deleteReadMails}
+            className="px-4 py-2 rounded-lg font-semibold bg-white/5 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-all flex items-center gap-2"
+            title="Supprimer tous les messages lus"
+          >
+            <Trash2 size={16} />
+            Nettoyer les lus
           </button>
 
           {/* Contact Support button */}

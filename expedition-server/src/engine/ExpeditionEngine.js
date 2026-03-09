@@ -100,6 +100,7 @@ export class ExpeditionEngine {
           equippedSets: entry.equippedSets || {},
           weaponPassive: entry.weaponPassive || null,
           weaponId: entry.weaponId || null,
+          forgePassives: entry.forgePassives || null,
         });
 
         this.hunters.push(hunter);
@@ -134,6 +135,7 @@ export class ExpeditionEngine {
         weaponPassive: h.weaponPassive || null,
         weaponId: h.weaponId || null,
         equippedSets: h.equippedSets || {},
+        forgePassives: h.forgePassives || null,
       })));
     }
     return this.startExpedition();
@@ -752,6 +754,7 @@ export class ExpeditionEngine {
         weaponPassive: characterData[hId]?.weaponPassive || null,
         weaponId: characterData[hId]?.weaponId || null,
         equippedSets: characterData[hId]?.equippedSets || {},
+        forgePassives: characterData[hId]?.forgePassives || null,
       }));
 
       const playerId = `player_${username}`;

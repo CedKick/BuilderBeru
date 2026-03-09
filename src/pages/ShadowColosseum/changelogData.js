@@ -5,6 +5,84 @@
 
 export const CHANGELOG = [
   {
+    version: '0.9.17',
+    date: '2026-03-09',
+    title: 'Forge du Monarque — Passifs en Combat & Drop System',
+    entries: [
+      {
+        category: 'new',
+        items: [
+          'Les passifs des armes forgees sont maintenant actifs en combat dans TOUS les modes : ARC I, ARC II, Raid SC et PvP',
+          'Les 20+ passifs forge fonctionnent : Lame Maudite, Devoration, Flamme Interieure, Foudre en Chaine, Bouclier Celeste, etc.',
+          'Les armes community ont leur propre taux de drop independant base sur leur Power Score',
+          'Raid SC : 10 tentatives de drop par arme community a chaque raid',
+          'Buff de faction "Loot" : augmente le taux de drop de l\'arme community ciblee (+5%/niveau)',
+        ],
+      },
+      {
+        category: 'balance',
+        items: [
+          'Les armes community ne polluent plus le pool de drop generique — elles drop uniquement via leur taux custom',
+          'Taux de drop par zone : Expedition /1, ARC II /50, ARC I /1000, Raid SC /1000 (x10 rolls)',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.9.16',
+    date: '2026-03-09',
+    title: 'Forge du Monarque — Buffs de Faction Automatiques',
+    entries: [
+      {
+        category: 'new',
+        items: [
+          'Chaque arme forgee par la communaute genere automatiquement un buff de faction "Loot"',
+          'Les buffs de faction sont maintenant pilotes par le serveur — plus besoin de mise a jour manuelle',
+          'Badge "Forge par [createur]" visible dans le Hub Faction pour les buffs community',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.9.15',
+    date: '2026-03-08',
+    title: 'Forge du Monarque — Creation d\'Armes Community',
+    entries: [
+      {
+        category: 'new',
+        items: [
+          'Forge du Monarque : creez vos propres armes avec stats, element, passifs et eveils personnalises',
+          'Jusqu\'a 3 passifs par arme parmi 20+ archetypes (Lame Maudite, Bouclier Celeste, Aura du Commandeur...)',
+          'Systeme d\'eveil A1-A5 avec stats personnalisables (ATK%, DEF%, CRIT%, HP%, INT%...)',
+          'Power Score calcule automatiquement — determine la rarete et le taux de drop',
+          'Beru surveille la forge et commente vos creations !',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.9.14',
+    date: '2026-03-06',
+    title: 'Expedition II & Ameliorations Globales',
+    entries: [
+      {
+        category: 'new',
+        items: [
+          'Expedition : controle direct de vos personnages (plus d\'auto-combat)',
+          'Auto-inscription pour l\'expedition avec toggle independant',
+          'Bouton retour vers le Colosseum depuis l\'expedition',
+        ],
+      },
+      {
+        category: 'balance',
+        items: [
+          'Assassins reclasses en Berserker — meilleure survie en expedition',
+          'Spectateur : detection automatique des combats en cours',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.13',
     date: '2026-03-04',
     title: 'Expedition — Synergies & Passifs Equipe',

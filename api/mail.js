@@ -606,6 +606,34 @@ async function handleDelete(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// DELETE-READ — Bulk delete all read messages (no unclaimed rewards)
+// ═══════════════════════════════════════════════════════════════
+
+async function handleDeleteRead(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
+
+  // Soft-delete all read personal mail where rewards are null or already claimed
+  const result = await query(
+    `UPDATE player_mail
+     SET expires_at = NOW()
+     WHERE recipient_username = $1
+       AND read = true
+       AND (rewards IS NULL OR claimed = true)
+       AND (expires_at IS NULL OR expires_at > NOW())
+     RETURNING id`,
+    [user.username]
+  );
+
+  return res.status(200).json({
+    success: true,
+    deletedCount: result.rows.length,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // CONTACT-SUPPORT — Players can send 1 message per day to admin
 // ═══════════════════════════════════════════════════════════════
 
@@ -707,6 +735,8 @@ export default async function handler(req, res) {
         return await handleMarkRead(req, res);
       case 'delete':
         return await handleDelete(req, res);
+      case 'delete-read':
+        return await handleDeleteRead(req, res);
       case 'search-users':
         return await handleSearchUsers(req, res);
       case 'contact-support':

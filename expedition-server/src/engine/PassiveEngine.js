@@ -148,6 +148,8 @@ export class PassiveEngine {
         fragarachHitCount: 0,      // Fragarach: tornado every 5 hits
         tacosStacks: 0,            // Tacos Eternel: +10% all stats per kill (infinite)
         amenoRezUsed: false,       // Ame-no-nuhoko: rez 1 ally per combat
+        // ── Forge Passive State ──
+        forgePassives: null,       // Array of { id, params, stacks, dots, ... } or null
       });
 
       // ── Apply combat-start passives ──
@@ -159,6 +161,9 @@ export class PassiveEngine {
         cs.celestialShieldHp = shield;
         cs.celestialShieldActive = true;
       }
+
+      // ── Forge Passive Init ──
+      this._initForgePassives(char);
     }
 
     // ── Post-init team passives (need all chars loaded) ──
@@ -285,6 +290,11 @@ export class PassiveEngine {
         }
       }
     }
+
+    // ── Forge Team Passives (commanderAura, sharedCurse) ──
+    for (const char of characters) {
+      this._initForgeTeamPassives(char, characters, []);
+    }
   }
 
   computeActiveSets(equippedSets) {
@@ -352,6 +362,382 @@ export class PassiveEngine {
       if (b4.mana_regen_pct) char._manaRegenBonus = (char._manaRegenBonus || 0) + b4.mana_regen_pct;
       if (b4.mana_cost_reduce) char._manaCostReduce = (char._manaCostReduce || 0) + b4.mana_cost_reduce;
     }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // FORGE PASSIVES — Community weapon passive support
+  // ═══════════════════════════════════════════════════════
+
+  _initForgePassives(char) {
+    const s = this.state.get(char.id);
+    if (!s || !char.forgePassives?.length) return;
+
+    const entries = [];
+    for (const p of char.forgePassives) {
+      if (!p.id || p.id === 'none') continue;
+      const e = { id: p.id, params: p.params || {} };
+      switch (p.id) {
+        case 'innerFlameStack':    e.stacks = 0; break;
+        case 'burnProc':           e.dots = []; break;
+        case 'cursedBlade':        e.stacks = 0; break;
+        case 'dragonSlayer':       e.hits = 0; e.aoeBonus = 0; break;
+        case 'lifesteal':          break;
+        case 'devoration':         e.stacks = 0; break;
+        case 'celestialShield':    e.shieldHp = 0; e.broken = false; break;
+        case 'powerAccumulation':  e.stacks = 0; e.bursting = false; e.burstTurns = 0; break;
+        case 'deathLink':          e.hits = 0; break;
+        case 'combatEcho':         e.stackTurns = []; break;
+        case 'sharedCurse':        e.applied = false; break;
+        case 'dodgeCounter':       break;
+        case 'ironGuard':          break;
+        case 'defIgnore':          break;
+        case 'guardianShield':     e.allyDied = false; break;
+        case 'commanderAura':      break;
+        case 'desperateFury':      break;
+        case 'manaFlow':           break;
+        case 'chainLightning':     break;
+        case 'echoCD':             break;
+        case 'healBoost':          e.shieldHp = 0; break;
+        case 'cursedPact':         e.turnsLeft = -1; break;
+        case 'berserkerRage':      e.doubled = false; break;
+        case 'voidSacrifice':      break;
+        default: break;
+      }
+      entries.push(e);
+    }
+    if (entries.length === 0) return;
+    s.forgePassives = entries;
+
+    // Apply permanent stat modifications
+    for (const e of entries) {
+      const p = e.params;
+      switch (e.id) {
+        case 'defIgnore':
+          char._defPen = (char._defPen || 0) + (p.penPct || 8);
+          break;
+        case 'guardianShield':
+          char._forgeDmgReduce = (char._forgeDmgReduce || 0) + (p.reducePct || 10);
+          break;
+        case 'cursedPact': {
+          const malus = (p.malusValue || 10) / 100;
+          const bonus = (p.bonusValue || 5) / 100;
+          const ms = (p.malusStat || 'RES').toUpperCase();
+          const bs = (p.bonusStat || 'ATK').toUpperCase();
+          if (ms === 'RES') char.res = Math.max(0, char.res * (1 - malus));
+          else if (ms === 'DEF') char.def = Math.floor(char.def * (1 - malus));
+          else if (ms === 'HP') { char.hp = Math.floor(char.hp * (1 - malus)); char.maxHp = char.hp; }
+          else if (ms === 'SPD') char.spd = Math.floor(char.spd * (1 - malus));
+          if (bs === 'ATK' || bs === 'INT') char.atk = Math.floor(char.atk * (1 + bonus));
+          else if (bs === 'CRIT') char.crit = Math.min(80, char.crit + (p.bonusValue || 5));
+          else if (bs === 'CRIT_DMG') char._critDmgBonus = (char._critDmgBonus || 0) + (p.bonusValue || 5);
+          break;
+        }
+        case 'berserkerRage': {
+          const malus = (p.resMalus || 10) / 100;
+          const bonus = (p.atkBonus || 5) / 100;
+          char.res = Math.max(0, char.res * (1 - malus));
+          char.atk = Math.floor(char.atk * (1 + bonus));
+          break;
+        }
+        case 'voidSacrifice': {
+          const malus = (p.defMalus || 10) / 100;
+          char.def = Math.floor(char.def * (1 - malus));
+          char.crit = Math.min(80, char.crit + (p.critBonus || 5));
+          char._critDmgBonus = (char._critDmgBonus || 0) + (p.critDmgBonus || 5);
+          break;
+        }
+        case 'deathLink': {
+          const hpMalus = (p.hpMalus || 10) / 100;
+          char.hp = Math.floor(char.hp * (1 - hpMalus));
+          char.maxHp = char.hp;
+          char.spd += (p.spdBonus || 5);
+          break;
+        }
+        case 'celestialShield': {
+          const shieldAmt = Math.floor(char.maxHp * (p.shieldPct || 10) / 100);
+          e.shieldHp = shieldAmt;
+          break;
+        }
+      }
+    }
+  }
+
+  // Called during post-init (team passives) for forge commanderAura & sharedCurse
+  _initForgeTeamPassives(char, allChars, enemies) {
+    const s = this.state.get(char.id);
+    if (!s?.forgePassives) return;
+
+    for (const e of s.forgePassives) {
+      const p = e.params;
+      switch (e.id) {
+        case 'commanderAura': {
+          const stat = (p.stat || 'ATK').toLowerCase();
+          const pct = (p.buffPct || 5) / 100;
+          const allies = allChars.filter(a => a.username === char.username && a.alive);
+          for (const ally of allies) {
+            if (stat === 'atk' || stat === 'int') ally.atk = Math.floor(ally.atk * (1 + pct));
+            else if (stat === 'def') ally.def = Math.floor(ally.def * (1 + pct));
+            else if (stat === 'crit') ally.crit = Math.min(80, ally.crit + (p.buffPct || 5));
+          }
+          break;
+        }
+        case 'sharedCurse': {
+          if (e.applied) break;
+          e.applied = true;
+          const resMalus = p.resMalus || 10;
+          char.res = Math.max(0, char.res - resMalus);
+          const debuffPct = (p.enemyDebuff || 5) / 100;
+          const maxTargets = p.maxTargets || 1;
+          const targets = (enemies || []).filter(en => en?.alive).slice(0, maxTargets);
+          for (const t of targets) {
+            if (t.addDebuff) t.addDebuff('atk_shred', Math.floor(debuffPct * 100), 999, char.id);
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  // Forge onHit: stacking, procs, lifesteal, etc.
+  _forgeOnHit(char, target, damage, isCrit, events) {
+    const s = this.state.get(char.id);
+    if (!s?.forgePassives) return 0;
+    let bonusDamage = 0;
+
+    // Calculate ATK multiplier from accumulated stacks
+    let atkMult = 1;
+    for (const e of s.forgePassives) {
+      const p = e.params;
+      switch (e.id) {
+        case 'innerFlameStack':
+          if (e.stacks > 0) atkMult *= (1 + e.stacks * (p.dmgPerStack || 1) / 100);
+          break;
+        case 'desperateFury': {
+          const missingPct = Math.max(0, 1 - char.hp / char.maxHp) * 100;
+          atkMult *= (1 + missingPct * (p.dmgPerPct || 0.3) / 100);
+          break;
+        }
+        case 'manaFlow': {
+          const manaPct = (char.mana || 0) / (char.maxMana || 100) * 100;
+          if (manaPct >= (p.manaThreshold || 80)) atkMult *= (1 + (p.dmgBonus || 10) / 100);
+          break;
+        }
+        case 'powerAccumulation':
+          if (e.stacks > 0) atkMult *= (1 + e.stacks * (p.perStack || 1) / 100);
+          if (e.bursting) atkMult *= (1 + (p.maxBonus || 10) / 100);
+          break;
+        case 'berserkerRage': {
+          const hpPct = char.hp / char.maxHp * 100;
+          if (hpPct < (p.hpThreshold || 50) && e.doubled) {
+            atkMult *= (1 + (p.atkBonus || 5) / 100);
+          }
+          break;
+        }
+        case 'cursedBlade':
+          if (e.stacks > 0) atkMult *= (1 + e.stacks * (p.perCrit || 2) / 100);
+          break;
+      }
+    }
+    if (atkMult > 1) bonusDamage += Math.floor(damage * (atkMult - 1));
+
+    // Post-damage procs
+    for (const e of s.forgePassives) {
+      const p = e.params;
+      switch (e.id) {
+        case 'innerFlameStack': {
+          const max = p.maxStacks || 5;
+          if (e.stacks < max) e.stacks++;
+          break;
+        }
+        case 'burnProc': {
+          if (Math.random() * 100 < (p.chance || 10)) {
+            const dotDmg = Math.max(1, Math.floor(target.maxHp * (p.dotPct || 1) / 100));
+            e.dots.push({ dmg: dotDmg, turns: p.duration || 3 });
+            events.push({ type: 'passive_proc', charId: char.id, passive: 'forge_burn', message: `Forge: Cendres Ardentes!` });
+          }
+          if (e.dots.length > 0 && target.alive) {
+            let totalDot = 0;
+            e.dots = e.dots.filter(d => { totalDot += d.dmg; d.turns--; return d.turns > 0; });
+            if (totalDot > 0) {
+              target.hp = Math.max(0, target.hp - totalDot);
+              if (target.hp <= 0) target.alive = false;
+            }
+          }
+          break;
+        }
+        case 'chainLightning': {
+          if (Math.random() * 100 < (p.chance || 15)) {
+            const chainDmg = Math.floor(damage * (p.dmgPct || 30) / 100);
+            const targets = p.targets || 1;
+            bonusDamage += chainDmg * targets;
+            events.push({ type: 'passive_proc', charId: char.id, passive: 'forge_chain', message: `Forge: Eclair en Chaine!` });
+          }
+          break;
+        }
+        case 'dragonSlayer': {
+          e.hits++;
+          if (e.hits >= (p.hits || 5)) {
+            e.hits = 0;
+            const aoeDmg = Math.floor(char.getOffensiveStat() * ((p.aoeMult || 150) + e.aoeBonus) / 100);
+            bonusDamage += aoeDmg;
+            e.aoeBonus += (p.stackBonus || 5);
+            events.push({ type: 'passive_proc', charId: char.id, passive: 'forge_dragon', message: `Forge: Pourfendeur AoE!` });
+          }
+          break;
+        }
+        case 'lifesteal': {
+          if (damage > 0 && Math.random() * 100 < (p.chance || 15)) {
+            const heal = Math.floor(damage * (p.stealPct || 8) / 100);
+            if (heal > 0 && char.alive) char.heal(heal);
+          }
+          break;
+        }
+        case 'powerAccumulation': {
+          const max = p.maxStacks || 5;
+          if (e.stacks < max) e.stacks++;
+          if (e.stacks >= max && !e.bursting) {
+            e.bursting = true;
+            e.burstTurns = p.burstTurns || 2;
+            events.push({ type: 'passive_proc', charId: char.id, passive: 'forge_accumulation', message: `Forge: Accumulation MAX!` });
+          }
+          if (e.bursting) { e.burstTurns--; if (e.burstTurns <= 0) { e.bursting = false; e.stacks = 0; } }
+          break;
+        }
+        case 'deathLink': {
+          e.hits++;
+          if (e.hits >= (p.hitInterval || 3)) {
+            e.hits = 0;
+            bonusDamage += Math.floor(char.getOffensiveStat() * (p.procDmg || 50) / 100);
+            events.push({ type: 'passive_proc', charId: char.id, passive: 'forge_deathlink', message: `Forge: Lien Mortel!` });
+          }
+          break;
+        }
+        case 'echoCD': {
+          if (Math.random() * 100 < (p.chance || 15)) {
+            // Reduce a random hunter cooldown
+            const cds = char.hunterCds || [];
+            for (let i = 0; i < cds.length; i++) {
+              if (cds[i] > 0) { cds[i] = Math.max(0, cds[i] - (p.cdReduce || 1)); break; }
+            }
+          }
+          break;
+        }
+        case 'berserkerRage': {
+          const hpPct = char.hp / char.maxHp * 100;
+          if (hpPct < (p.hpThreshold || 50) && !e.doubled) {
+            e.doubled = true;
+            e.doubleTurns = p.durationTurns || 2;
+          }
+          if (e.doubled && e.doubleTurns > 0) e.doubleTurns--;
+          if (e.doubled && e.doubleTurns <= 0) e.doubled = false;
+          break;
+        }
+      }
+    }
+
+    // Devoration lifesteal (permanent from kills)
+    if (damage > 0 && (char._forgeLifestealPct || 0) > 0 && char.alive) {
+      const heal = Math.floor(damage * char._forgeLifestealPct / 100);
+      if (heal > 0) char.heal(heal);
+    }
+
+    return bonusDamage;
+  }
+
+  // Forge onCrit: cursed blade stacking
+  _forgeOnCrit(char, target, damage, events) {
+    const s = this.state.get(char.id);
+    if (!s?.forgePassives) return;
+
+    for (const e of s.forgePassives) {
+      if (e.id !== 'cursedBlade') continue;
+      const p = e.params;
+      if (e.stacks < (p.maxStacks || 5)) {
+        e.stacks++;
+        const hpCost = Math.floor(char.maxHp * (p.hpCost || 1) / 100);
+        char.hp = Math.max(1, char.hp - hpCost);
+        events.push({ type: 'passive_proc', charId: char.id, passive: 'forge_cursed_blade', message: `Forge: Lame Maudite x${e.stacks}!` });
+      }
+    }
+  }
+
+  // Forge onKill: devoration, voidSacrifice
+  _forgeOnKill(char, target, events) {
+    const s = this.state.get(char.id);
+    if (!s?.forgePassives) return;
+
+    for (const e of s.forgePassives) {
+      const p = e.params;
+      switch (e.id) {
+        case 'devoration': {
+          if (e.stacks < (p.maxStacks || 3)) {
+            e.stacks++;
+            const bonus = (p.perKill || 3) / 100;
+            char.atk = Math.floor(char.atk * (1 + bonus));
+            char._forgeLifestealPct = (char._forgeLifestealPct || 0) + (p.stealPerKill || 1);
+            events.push({ type: 'passive_proc', charId: char.id, passive: 'forge_devoration', message: `Forge: Devoration x${e.stacks}!` });
+          }
+          break;
+        }
+        case 'voidSacrifice': {
+          const heal = Math.floor(char.maxHp * (p.healOnKill || 2) / 100);
+          if (heal > 0 && char.alive) char.heal(heal);
+          break;
+        }
+      }
+    }
+  }
+
+  // Forge onDamageTaken: damage reduction, shields, dodge/counter
+  _forgeOnDamageTaken(char, incomingDmg, attacker, isCrit, events) {
+    const s = this.state.get(char.id);
+    if (!s?.forgePassives) return incomingDmg;
+    let dmg = incomingDmg;
+
+    // Flat damage reduction from guardianShield
+    const dmgReduce = char._forgeDmgReduce || 0;
+    if (dmgReduce > 0) dmg = Math.floor(dmg * (1 - dmgReduce / 100));
+
+    for (const e of s.forgePassives) {
+      const p = e.params;
+      switch (e.id) {
+        case 'celestialShield': {
+          if (e.shieldHp > 0) {
+            const absorbed = Math.min(e.shieldHp, dmg);
+            e.shieldHp -= absorbed;
+            dmg -= absorbed;
+            if (e.shieldHp <= 0 && !e.broken) {
+              e.broken = true;
+              const heal = Math.floor(char.maxHp * (p.healPct || 10) / 100);
+              char.heal(heal);
+              char.def = Math.floor(char.def * (1 + (p.defBoost || 10) / 100));
+              events.push({ type: 'passive_proc', charId: char.id, passive: 'forge_shield_break', message: `Forge: Bouclier brise! +DEF +Heal` });
+            }
+          }
+          break;
+        }
+        case 'dodgeCounter': {
+          if (Math.random() * 100 < (p.dodgePct || 6)) {
+            dmg = 0;
+            if (attacker?.alive) {
+              const counterDmg = Math.floor(char.getOffensiveStat() * (p.counterPct || 60) / 100);
+              attacker.hp = Math.max(0, attacker.hp - counterDmg);
+              if (attacker.hp <= 0) attacker.alive = false;
+              events.push({ type: 'passive_proc', charId: char.id, passive: 'forge_dodge_counter', message: `Forge: Esquive + contre!` });
+            }
+          }
+          break;
+        }
+        case 'ironGuard': {
+          if (isCrit) {
+            dmg = Math.floor(dmg * (1 - (p.critReduce || 15) / 100));
+            events.push({ type: 'passive_proc', charId: char.id, passive: 'forge_iron_guard', message: `Forge: Cuirasse de Fer!` });
+          }
+          break;
+        }
+      }
+    }
+    return dmg;
   }
 
   hasPassive(charId, passiveId) {
@@ -691,6 +1077,9 @@ export class PassiveEngine {
       s.sulfurasStacks = Math.min(SC_WEAPON.SULFURAS_STACK_MAX, s.sulfurasStacks + SC_WEAPON.SULFURAS_STACK_PER_HIT);
     }
 
+    // ── FORGE PASSIVES ──
+    bonusDamage += this._forgeOnHit(char, target, damage, isCrit, events);
+
     return { bonusDamage };
   }
 
@@ -751,6 +1140,9 @@ export class PassiveEngine {
       const waveDmg = Math.floor(char.getOffensiveStat() * 1.5);
       events.push({ type: 'passive_aoe', charId: char.id, passive: 'longinus_wave', damage: waveDmg, radius: 250 });
     }
+
+    // ── FORGE PASSIVES ──
+    this._forgeOnCrit(char, target, damage, events);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -865,6 +1257,9 @@ export class PassiveEngine {
     if (this.has2pcPassive(char.id, 'eternal_rage_stack')) {
       s.eternalRageStacks = Math.min(15, s.eternalRageStacks + 3);
     }
+
+    // ── FORGE PASSIVES ──
+    this._forgeOnKill(char, target, events);
   }
 
   // ═══════════════════════════════════════════════════════

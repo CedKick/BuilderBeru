@@ -9,7 +9,7 @@ import { buildCombatStats, getCombatClass } from '../data/classMapping.js';
 import { HUNTERS } from '../data/hunterData.js';
 
 export class Hunter {
-  constructor({ id, username, hunterId, hunterName, inscriptionStats, ownerPlayerId, slotIndex, equippedSets, weaponPassive, weaponId }) {
+  constructor({ id, username, hunterId, hunterName, inscriptionStats, ownerPlayerId, slotIndex, equippedSets, weaponPassive, weaponId, forgePassives }) {
     this.id = id;                      // Unique ID (e.g., "kly_h_frieren")
     this.username = username;          // Display name
     this.hunterId = hunterId;          // e.g., "h_frieren"
@@ -65,6 +65,7 @@ export class Hunter {
       weaponId: weaponId || null,  // Expedition weapon ID (if any)
     };
     this.scWeaponPassive = weaponPassive || null;  // SC weapon passive (sulfuras_fury, katana_v_chaos, etc.)
+    this.forgePassives = forgePassives || null;    // Community weapon forge passives [{id, params}]
 
     // Store base stats for reset between encounters
     this._baseStats = {
@@ -198,6 +199,12 @@ export class Hunter {
 
     // Defense reduction
     damage *= (100 / (100 + this.def));
+
+    // Forge passive: flat damage reduction (guardianShield)
+    if (this._forgeDmgReduce > 0) {
+      damage *= (1 - this._forgeDmgReduce / 100);
+    }
+
     damage = Math.max(1, Math.round(damage));
     this.hp -= damage;
     this.stats.damageTaken += damage;
