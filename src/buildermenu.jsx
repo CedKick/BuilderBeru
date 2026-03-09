@@ -220,6 +220,13 @@ export default function BuilderMenu({ isOpen, onClose }) {
           isSubItem: true
         },
         {
+          path: '/forge',
+          label: 'Forge du Monarque',
+          icon: Hammer,
+          color: 'orange',
+          isNew: true
+        },
+        {
           path: '/codex',
           label: 'Codex',
           icon: BookOpen,

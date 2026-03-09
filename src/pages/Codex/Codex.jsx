@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Search, Swords, BookOpen, ArrowLeft, Users, Shield, Zap, MapPin, ScrollText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Swords, BookOpen, ArrowLeft, Users, Shield, Zap, MapPin, ScrollText, Hammer } from 'lucide-react';
 import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwakeningBonuses, computeWeaponBonuses,
   ARTIFACT_SETS, RAID_ARTIFACT_SETS, ARC2_ARTIFACT_SETS, ULTIME_ARTIFACT_SETS, ALL_ARTIFACT_SETS,
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL, RARITY_SUB_COUNT,
@@ -12,6 +12,8 @@ import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars, getAwakeningPassives }
 import { CHANGELOG, CHANGELOG_CATEGORIES } from '../ShadowColosseum/changelogData';
 import { ULTIMATE_SKILLS } from '../ShadowColosseum/talentSkillData';
 import { ALL_MECHANICS_TABS } from '../ShadowColosseum/codexMechanicsData';
+import { API_URL } from '../../utils/api.js';
+import { FORGE_PASSIVE_TEMPLATES, WEAPON_TYPES as FORGE_WEAPON_TYPES, ELEMENTS as FORGE_ELEMENTS, computeBaseDropRate, computeDropRates, computeLootLocations, computeExpeditionBoss, formatDropRate, LOOT_LOCATIONS } from '../../data/forgePassiveTemplates.js';
 
 // ═══════════════════════════════════════════════════════════════
 // CODEX — Encyclopedie du Shadow Colosseum
@@ -169,6 +171,7 @@ const CODEX_TABS = [
   { id: 'artifacts', label: 'Artefacts',   Icon: Shield },
   { id: 'mechanics', label: 'Mecaniques',  Icon: Zap },
   { id: 'expedition', label: 'Expedition', Icon: MapPin },
+  { id: 'forge',      label: 'Forge',      Icon: Hammer },
   { id: 'changelog',  label: 'Changelog',  Icon: ScrollText },
 ];
 
@@ -203,6 +206,9 @@ export default function Codex() {
   // ─── Boss codex state ───
   const [selectedBoss, setSelectedBoss] = useState(null);
   const [bossZoneFilter, setBossZoneFilter] = useState('all');
+
+  // ─── Forge (community weapons) ───
+  const [forgeWeapons, setForgeWeapons] = useState([]);
 
   // ─── Load save data ───
   const [weaponCollection, setWeaponCollection] = useState({});
@@ -241,6 +247,11 @@ export default function Codex() {
         }
       }
     } catch {}
+
+    // Fetch community weapons for Forge tab
+    fetch(`${API_URL}/forge?action=list`).then(r => r.json()).then(d => {
+      if (d.success) setForgeWeapons(d.weapons || []);
+    }).catch(() => {});
   }, []);
 
   // ─── Expedition ownership tracking ───
@@ -1904,6 +1915,137 @@ export default function Codex() {
             )}
           </div>
 
+        </div>
+      )}
+
+      {/* ═══════════════ FORGE (Community Weapons) ═══════════════ */}
+      {activeTab === 'forge' && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <Hammer size={20} className="text-amber-400" />
+            Armes de la Forge
+            <span className="text-xs text-gray-500 font-normal ml-2">{forgeWeapons.length} arme{forgeWeapons.length > 1 ? 's' : ''}</span>
+          </h2>
+          <p className="text-xs text-gray-500">Armes créées par la communauté. Disponibles en drop dans l'Expédition.</p>
+
+          {forgeWeapons.length === 0 ? (
+            <div className="text-center py-12 text-gray-600">
+              <Hammer size={40} className="mx-auto mb-3 opacity-30" />
+              <p>Aucune arme forgée. Rends-toi à la <a href="/forge" className="text-amber-400 underline">Forge du Monarque</a> pour créer la première !</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {forgeWeapons.map(w => {
+                const wt = FORGE_WEAPON_TYPES.find(t => t.key === w.weapon_type);
+                const el = FORGE_ELEMENTS.find(e => e.key === w.element);
+                const rarityColor = { rare: '#3b82f6', legendaire: '#f59e0b', mythique: '#ef4444' }[w.rarity] || '#9ca3af';
+                const allPassives = (() => {
+                  try { const p = typeof w.passives === 'string' ? JSON.parse(w.passives) : w.passives; return Array.isArray(p) ? p.filter(x => x?.id && x.id !== 'none') : []; }
+                  catch { return []; }
+                })();
+                const awakenings = (() => {
+                  try { const a = typeof w.awakening_passives === 'string' ? JSON.parse(w.awakening_passives) : w.awakening_passives; return Array.isArray(a) ? a : []; }
+                  catch { return []; }
+                })();
+                const isOwned = weaponCollection[w.weapon_id] !== undefined;
+                const score = w.power_score || 0;
+                const dropRates = computeDropRates(score);
+                const lootKeys = computeLootLocations(score);
+                const boss = computeExpeditionBoss(score);
+
+                return (
+                  <div key={w.weapon_id}
+                    className={`bg-gray-900/80 border rounded-xl p-4 transition-all hover:border-gray-600 ${isOwned ? 'border-amber-600/50' : 'border-gray-800'}`}
+                    style={{ opacity: isOwned ? 1 : 0.7 }}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-2xl">{wt?.icon || '⚔️'}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-sm truncate" style={{ color: rarityColor }}>{w.name}</h3>
+                        <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                          {el && <span style={{ color: el.color }}>{el.label}</span>}
+                          <span>•</span>
+                          <span>{wt?.label}</span>
+                          {w.scaling_stat === 'int' && <span className="text-purple-400">(INT)</span>}
+                          <span>•</span>
+                          <span className="uppercase" style={{ color: rarityColor }}>{w.rarity}</span>
+                        </div>
+                      </div>
+                      {isOwned && (
+                        <span className="text-[9px] bg-amber-600/30 text-amber-400 px-1.5 py-0.5 rounded font-bold">OBTENUE</span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5 text-xs mb-2">
+                      <span className="bg-black/40 rounded px-2 py-1">
+                        <span className="text-gray-500">{w.scaling_stat === 'int' ? 'INT' : 'ATK'}</span> <span className="text-amber-400 font-bold">{w.atk}</span>
+                      </span>
+                      {w.bonus_stat && Number(w.bonus_value) > 0 && (
+                        <span className="bg-black/40 rounded px-2 py-1">
+                          <span className="text-gray-500">{w.bonus_stat.replace(/_/g, ' ')}</span>{' '}
+                          <span className="text-blue-400 font-bold">+{Number(w.bonus_value)}{w.bonus_stat.includes('flat') ? '' : '%'}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {allPassives.length > 0 && (
+                      <div className="space-y-1 mb-2">
+                        {allPassives.map((p, i) => {
+                          const t = FORGE_PASSIVE_TEMPLATES[p.id];
+                          return t ? (
+                            <div key={i} className="text-[10px] text-purple-300 bg-purple-900/20 rounded px-2 py-1">
+                              ✦ {t.name}
+                              {t.category === 'drawback' && <span className="text-red-400 ml-1 text-[9px]">(Pacte)</span>}
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
+
+                    {awakenings.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {awakenings.map((aw, i) => (
+                          <span key={i} className="text-[9px] bg-black/30 rounded px-1.5 py-0.5 text-gray-400">
+                            A{i + 1} +{aw.value}% {aw.key?.replace(/_/g, ' ').replace('pct', '%')}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Loot info */}
+                    <div className="space-y-0.5 mb-2">
+                      {LOOT_LOCATIONS.map(loc => {
+                        const active = lootKeys.includes(loc.key);
+                        const rate = dropRates[loc.key];
+                        return (
+                          <div key={loc.key} className={`flex items-center justify-between text-[10px] px-1.5 py-0.5 rounded ${active ? '' : 'opacity-30 line-through'}`}>
+                            <span className={active ? 'text-gray-400' : 'text-gray-600'}>
+                              {loc.icon} {loc.label}
+                              {loc.key === 'expedition' && boss && (
+                                <span className="text-amber-400 ml-1">
+                                  {boss.min === boss.max ? `(Boss ${boss.min})` : `(Boss ${boss.min}-${boss.max})`}
+                                </span>
+                              )}
+                            </span>
+                            {active && rate != null && (
+                              <span className={`font-bold ${rate >= 5 ? 'text-green-400' : rate >= 0.1 ? 'text-amber-400' : 'text-red-400'}`}>
+                                {formatDropRate(rate)}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex justify-between items-center text-[10px] text-gray-600 border-t border-gray-800 pt-2 mt-2">
+                      <span>Score <span className={`font-bold ${score >= 80 ? 'text-red-400' : score >= 50 ? 'text-amber-400' : 'text-green-400'}`}>{score}</span></span>
+                      <span>Forgee par <span className="text-amber-400">{w.creator_username}</span></span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

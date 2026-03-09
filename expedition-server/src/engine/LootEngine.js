@@ -5,6 +5,7 @@ import { getSetById } from '../data/expeditionSets.js';
 import { getWeaponById } from '../data/expeditionWeapons.js';
 import { getUniqueById } from '../data/expeditionUniques.js';
 import { rollEssenceDrop } from '../data/essenceSystem.js';
+import { getCommunityWeapons } from '../data/communityWeaponsCache.js';
 
 // ── Loot Engine ──
 // Handles drop rolling, SR priority, /100 rolls, wipe steal, and essence drops.
@@ -50,6 +51,31 @@ export class LootEngine {
           if (drop) drops.push(drop);
         }
       }
+    }
+
+    // ── Community (Forge) weapons: independent rolls ──
+    try {
+      const forgeWeapons = getCommunityWeapons();
+      for (const fw of forgeWeapons) {
+        if (Math.random() * 100 < fw.drop_rate) {
+          drops.push({
+            itemId: fw.weapon_id,
+            itemName: fw.name,
+            rarity: fw.rarity,
+            binding: 'lqr',
+            type: 'weapon',
+            slot: 'weapon',
+            stats: { atk_flat: fw.atk, ...(fw.bonus_stat ? { [fw.bonus_stat]: Number(fw.bonus_value) || 0 } : {}) },
+            weaponId: fw.weapon_id,
+            passive: null,
+            dropChance: fw.drop_rate,
+            community: true,
+            creator: fw.creator_username,
+          });
+        }
+      }
+    } catch (e) {
+      // Community weapons fetch failed — non-blocking
     }
 
     return drops;

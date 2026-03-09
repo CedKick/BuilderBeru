@@ -19,6 +19,7 @@ import raidRankingHandler from '../api/raid-ranking.js';
 import raidProfileHandler from '../api/raid-profile.js';
 import dropLogHandler from '../api/drop-log.js';
 import beruMessagesHandler from '../api/beru-messages.js';
+import forgeHandler from '../api/forge.js';
 
 import storageInitHandler from '../api/storage/init.js';
 import storageLoadHandler from '../api/storage/load.js';
@@ -91,6 +92,9 @@ app.all('/api/drop-log', dropLogHandler);
 
 // Beru messages
 app.all('/api/beru-messages', beruMessagesHandler);
+
+// Forge du Monarque (community weapons)
+app.all('/api/forge', forgeHandler);
 
 // Storage
 app.post('/api/storage/init', storageInitHandler);

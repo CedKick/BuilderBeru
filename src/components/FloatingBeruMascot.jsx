@@ -1190,6 +1190,9 @@ const FloatingBeruMascot = () => {
   const isVisible = beruMode !== 'hidden';
   const isCalm = beruMode === 'calm';
   const beruModeRef = useRef(beruMode);
+  const [forgeLocked, setForgeLocked] = useState(false);
+  const forgeLockedRef = useRef(false);
+  const hideAttemptCount = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
   const [clickCombo, setClickCombo] = useState(0);
   const [secretMode, setSecretMode] = useState(null); // 'konami', 'disco', 'clone'
@@ -1677,6 +1680,27 @@ const FloatingBeruMascot = () => {
     window.addEventListener('beru-react', handleBeruReact);
     return () => window.removeEventListener('beru-react', handleBeruReact);
   }, [showBubble, spawnParticles]);
+
+  // ─── Forge Lock — Beru can't be hidden during Forge ──────────
+  useEffect(() => {
+    const handleForgeLock = (e) => {
+      const locked = e.detail?.locked ?? false;
+      setForgeLocked(locked);
+      forgeLockedRef.current = locked;
+      if (locked) {
+        hideAttemptCount.current = 0;
+        // Force normal mode if currently hidden/calm
+        if (beruModeRef.current !== 'normal') {
+          setBeruMode('normal');
+          localStorage.setItem('beru_mascot_mode', 'normal');
+          beruModeRef.current = 'normal';
+          setMood('idle');
+        }
+      }
+    };
+    window.addEventListener('beru-forge-lock', handleForgeLock);
+    return () => window.removeEventListener('beru-forge-lock', handleForgeLock);
+  }, []);
 
   // ─── Admin Messages Polling ─────────────────────────────────
   useEffect(() => {
@@ -2712,6 +2736,15 @@ const FloatingBeruMascot = () => {
   };
 
   const selectMode = (mode) => {
+    // Forge lock: Beru can't be hidden or calmed
+    if (forgeLockedRef.current && mode !== 'normal') {
+      hideAttemptCount.current += 1;
+      const count = hideAttemptCount.current;
+      setShowModeMenu(false);
+      // Fire event so Forge page sends back the angry reaction
+      window.dispatchEvent(new CustomEvent('beru-hide-attempt', { detail: { count } }));
+      return; // Block the mode change
+    }
     setBeruMode(mode);
     localStorage.setItem('beru_mascot_mode', mode);
     setShowModeMenu(false);
@@ -2926,26 +2959,35 @@ const FloatingBeruMascot = () => {
               className="absolute bottom-9 right-0 bg-gray-900/95 backdrop-blur-md rounded-xl p-2 border border-purple-500/30 shadow-xl"
               style={{ width: '140px' }}
             >
-              <div className="text-[9px] text-purple-400/80 font-bold uppercase tracking-wider mb-1.5 text-center">Mode Beru</div>
-              {BERU_MODES.map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => selectMode(mode)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all mb-0.5 ${
-                    beruMode === mode
-                      ? 'bg-purple-500/25 text-purple-300 border border-purple-500/40'
-                      : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border border-transparent'
-                  }`}
-                >
-                  <span className="text-sm">{MODE_ICONS[mode]}</span>
-                  <div className="text-left">
-                    <div>{MODE_LABELS[mode]}</div>
-                    <div className="text-[8px] text-gray-500 font-normal">
-                      {mode === 'normal' ? 'Se balade (loin de la souris)' : mode === 'calm' ? 'Dort en bas, mode tacos' : 'Invisible (chibis actifs)'}
+              <div className="text-[9px] text-purple-400/80 font-bold uppercase tracking-wider mb-1.5 text-center">
+                {forgeLocked ? '🔒 Forge — Surveillance' : 'Mode Beru'}
+              </div>
+              {BERU_MODES.map(mode => {
+                const locked = forgeLocked && mode !== 'normal';
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => selectMode(mode)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all mb-0.5 ${
+                      beruMode === mode
+                        ? 'bg-purple-500/25 text-purple-300 border border-purple-500/40'
+                        : locked
+                          ? 'text-gray-600 border border-transparent cursor-not-allowed'
+                          : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border border-transparent'
+                    }`}
+                  >
+                    <span className="text-sm">{locked ? '🔒' : MODE_ICONS[mode]}</span>
+                    <div className="text-left">
+                      <div>{MODE_LABELS[mode]}</div>
+                      <div className="text-[8px] text-gray-500 font-normal">
+                        {locked
+                          ? 'Le Monarque interdit !'
+                          : mode === 'normal' ? 'Se balade (loin de la souris)' : mode === 'calm' ? 'Dort en bas, mode tacos' : 'Invisible (chibis actifs)'}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>

@@ -5422,8 +5422,8 @@ export default function ShadowColosseum() {
             <p className="text-normal-responsive text-gray-500 mt-0.5">Classement des meilleurs hunters Level 140 !</p>
           </Link>
 
-          {/* Codex, Shop, Artifacts & Members Buttons */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2 gap-responsive-tight mb-4">
+          {/* Codex, Shop, Artifacts, Faction & Forge Buttons */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2 gap-responsive-tight mb-4">
             <Link
               to="/codex"
               className="p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/20 to-teal-900/20 hover:from-cyan-900/40 hover:to-teal-900/40 transition-all text-center group">
@@ -5474,6 +5474,34 @@ export default function ShadowColosseum() {
               </div>
               <p className="text-normal-responsive text-gray-500 mt-0.5">Membres & Buffs</p>
             </Link>
+            {(() => {
+              const accLvl = accountLevelFromXp(data.accountXp || 0).level;
+              const unlocked = accLvl >= 0; // TODO: remettre 5000 avant deploy
+              return unlocked ? (
+                <Link
+                  to="/forge"
+                  className="p-3 rounded-xl border border-orange-500/30 bg-gradient-to-r from-orange-900/20 to-red-900/20 hover:from-orange-900/40 hover:to-red-900/40 transition-all text-center group">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="text-lg">{'\u2694\uFE0F'}</span>
+                    <span className="font-bold text-orange-400 group-hover:text-orange-300 text-sm">FORGE</span>
+                  </div>
+                  <p className="text-normal-responsive text-gray-500 mt-0.5">Armes & Boss</p>
+                </Link>
+              ) : (
+                <div
+                  className="p-3 rounded-xl border border-gray-700/50 bg-gradient-to-r from-gray-800/30 to-gray-900/30 text-center opacity-50 cursor-not-allowed relative group"
+                  title={`Niveau de compte requis : 5000 (actuel : ${accLvl})`}>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="text-lg grayscale">{'\u2694\uFE0F'}</span>
+                    <span className="font-bold text-gray-500 text-sm">FORGE</span>
+                  </div>
+                  <p className="text-normal-responsive text-gray-600 mt-0.5">Niv. 5000 requis</p>
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 border border-gray-600 text-xs text-gray-300 px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                    Niveau de compte requis : 5000
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* No chibis warning */}

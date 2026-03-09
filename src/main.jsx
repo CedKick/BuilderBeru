@@ -68,6 +68,10 @@ import { cloudStorage } from './utils/CloudStorage';
 // Cloud sync on app startup (non-blocking)
 cloudStorage.initialSync().catch(() => {});
 
+// Load community weapons into WEAPONS object (non-blocking)
+import { loadCommunityWeapons } from './utils/communityWeapons.js';
+loadCommunityWeapons().catch(() => {});
+
 import HomePage from './HomePage.jsx';
 import AppLayout from './AppLayout.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
@@ -100,6 +104,7 @@ const AdminMailSender = React.lazy(() => import('./pages/AdminMailSender.jsx'));
 const AdminPanel = React.lazy(() => import('./pages/AdminPanel.jsx'));
 const FactionHub = React.lazy(() => import('./pages/FactionHub.jsx'));
 const Expedition = React.lazy(() => import('./pages/Expedition/Expedition.jsx'));
+const Forge = React.lazy(() => import('./pages/Forge/Forge.jsx'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -148,6 +153,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/faction" element={<FactionHub />} />
               <Route path="/expedition" element={<Expedition />} />
               <Route path="/training-dummy" element={<TrainingDummy />} />
+              <Route path="/forge" element={<Forge />} />
             </Routes>
           </Suspense>
         </AppLayout>
