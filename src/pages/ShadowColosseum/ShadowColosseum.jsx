@@ -6089,7 +6089,7 @@ export default function ShadowColosseum() {
                 const storyWatched = data.arc2StoriesWatched[tier];
                 const prevTierBoss = tier > 1 ? ARC2_STAGES.filter(s => s.tier === tier - 1 && s.isBoss)[0] : null;
                 const tierUnlocked = tier === 1 || (prevTierBoss && isArc2StageCleared(prevTierBoss.id));
-                const tierMap = { 1: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771507737/mapTier1ARCII_q1mgs8.png' }[tier];
+                const tierMap = { 1: 'https://api.builderberu.com/cdn/images/mapTier1ARCII_q1mgs8.webp' }[tier];
 
                 return (
                   <div key={`a2t${tier}`} className="mb-4 relative rounded-xl overflow-hidden" style={tierMap ? { background: `linear-gradient(to bottom, rgba(15,15,26,0.75), rgba(15,15,26,0.92))` } : {}}>
@@ -7321,7 +7321,7 @@ export default function ShadowColosseum() {
             {phase === 'advance' && <div className="text-center py-2 mb-2"><div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto" /></div>}
             {phase === 'victory' && (
               <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-4">
-                <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771551432/Victory_hcur2y.png" alt="Victory" className="w-32 mx-auto mb-1 drop-shadow-[0_0_12px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 1.5s ease-in-out infinite' }} />
+                <img loading="lazy" src="https://api.builderberu.com/cdn/images/Victory_hcur2y.webp" alt="Victory" className="w-32 mx-auto mb-1 drop-shadow-[0_0_12px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 1.5s ease-in-out infinite' }} />
               </motion.div>
             )}
             {phase === 'defeat' && (
@@ -12208,7 +12208,7 @@ export default function ShadowColosseum() {
         <div className="max-w-xl mx-auto px-4 pt-12 text-center">
           {result.won ? (
             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
-              <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771551432/Victory_hcur2y.png" alt="Victory" className="w-48 mx-auto mb-2 drop-shadow-[0_0_16px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }} />
+              <img loading="lazy" src="https://api.builderberu.com/cdn/images/Victory_hcur2y.webp" alt="Victory" className="w-48 mx-auto mb-2 drop-shadow-[0_0_16px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }} />
               {result.starLevel > 0 && (
                 <div className="mb-2">
                   <div className="flex items-center justify-center gap-0.5">

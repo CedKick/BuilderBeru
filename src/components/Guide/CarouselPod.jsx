@@ -178,7 +178,7 @@ export default function CarouselPOD({ data, onSelect }) {
                                                     className="w-[90%] h-auto object-contain rounded-md z-0"
                                                 />
                                                 <img loading="lazy"
-                                                    src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749054035/cadre_ojwsaz.png"
+                                                    src="https://api.builderberu.com/cdn/images/cadre_ojwsaz.webp"
                                                     alt="Cadre"
                                                     className="absolute top-0 left-0 w-full h-full pointer-events-none z-10"
                                                 />

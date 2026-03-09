@@ -1713,7 +1713,7 @@ export default function RaidMode() {
       // ── MEGUMIN EXPLOSION — special VFX + sound + Beru reaction ──
       if (skill.consumeAllMana) {
         vfxEvents.push({ id: now + Math.random() + 0.01, type: 'megumin_explosion', sourceId: chibi.id, damage: result.damage, isCrit: result.isCrit, timestamp: now });
-        try { const sfx = new Audio('https://res.cloudinary.com/dbg7m8qjd/video/upload/v1771534482/ExposionMegumin_wpz0qo.mp3'); sfx.volume = 0.5; sfx.play().catch(() => {}); } catch {}
+        try { const sfx = new Audio('https://api.builderberu.com/cdn/audio/ExposionMegumin_wpz0qo.mp3'); sfx.volume = 0.5; sfx.play().catch(() => {}); } catch {}
         window.dispatchEvent(new CustomEvent('beru-react', {
           detail: {
             message: ["WAAAH !! C'est quoi cette EXPLOSION ?!", "BERU A PEUR !! TROP DE FEU !!", "Megumin est FOLLE !! Ca va tout detruire !!", "EXPLOSION !! BERU SE CACHE !!"][Math.floor(Math.random() * 4)],

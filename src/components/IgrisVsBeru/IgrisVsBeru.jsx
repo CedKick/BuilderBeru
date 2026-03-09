@@ -18,10 +18,10 @@ import './IgrisVsBeru.css';
 
 // ─── Sprites ─────────────────────────────────────────────────
 
-const IGRIS_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png';
-const IGRIS_LEFT = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570544/igris_left_cw3w5g.png';
-const IGRIS_RIGHT = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570506/igris_right_jmyupb.png';
-const BERU_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png';
+const IGRIS_SPRITE = 'https://api.builderberu.com/cdn/images/igris_face_xj5mqo.webp';
+const IGRIS_LEFT = 'https://api.builderberu.com/cdn/images/igris_left_cw3w5g.webp';
+const IGRIS_RIGHT = 'https://api.builderberu.com/cdn/images/igris_right_jmyupb.webp';
+const BERU_SPRITE = 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp';
 
 const PROJECTILE_EMOJIS = ['⚔️', '🔥', '⚡', '💀', '🗡️', '🐜', '👊', '💥'];
 const IMPACT_EMOJIS = ['💥', '✨', '🔥', '⚡'];

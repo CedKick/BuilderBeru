@@ -19,8 +19,8 @@ export const characters = {
   },
    'ilhwan': {
     name: 'Ilhwan',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+    img: 'https://api.builderberu.com/cdn/images/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.webp',
+    icon: 'https://api.builderberu.com/cdn/images/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.webp',
     class: 'Assassin',
     grade: 'SSR',
     element: 'Dark',
@@ -50,8 +50,8 @@ export const characters = {
   },
   'yuqi': {
     name: 'YUQI',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
+    img: 'https://api.builderberu.com/cdn/images/yuki_dqefqm.webp',
+    icon: 'https://api.builderberu.com/cdn/images/yuki_dqefqm.webp',
     class: 'Breaker',
     grade: 'SSR',
     element: 'Fire',
@@ -81,8 +81,8 @@ export const characters = {
   },
   'soyeon': {
     name: 'Soyeon',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/soyeon_fstvg4.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/soyeon_fstvg4.png',
+    img: 'https://api.builderberu.com/cdn/images/soyeon_fstvg4.webp',
+    icon: 'https://api.builderberu.com/cdn/images/soyeon_fstvg4.webp',
     class: 'Fighter',
     grade: 'SSR',
     element: 'Wind',
@@ -112,8 +112,8 @@ export const characters = {
   },
   'minnie': {
     name: 'Minnie',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/Minnie_bcfolv.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/Minnie_bcfolv.png',
+    img: 'https://api.builderberu.com/cdn/images/Minnie_bcfolv.webp',
+    icon: 'https://api.builderberu.com/cdn/images/Minnie_bcfolv.webp',
     class: 'Assasin',
     grade: 'SSR',
     element: 'Dark',
@@ -143,8 +143,8 @@ export const characters = {
   },
   'jinah': {
     name: 'Jinah',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869840/jinah_vrbddm.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869067/jinah_icon_pfdee6.png',
+    img: 'https://api.builderberu.com/cdn/images/jinah_vrbddm.webp',
+    icon: 'https://api.builderberu.com/cdn/images/jinah_icon_pfdee6.webp',
     class: 'Support',
     grade: 'SSR',
     element: 'Wind',
@@ -164,7 +164,7 @@ export const characters = {
     buffs: [
       {
         name: 'Shield',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383923/defense_jinah_bzd7tr.png',
+        img: 'https://api.builderberu.com/cdn/images/defense_jinah_bzd7tr.webp',
         duration: 30,
         target: 'self',
         effects: [
@@ -173,7 +173,7 @@ export const characters = {
       },
       {
         name: 'Wind Damage Taken Increase',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383924/wind_damage_taken_jinah_brirej.png',
+        img: 'https://api.builderberu.com/cdn/images/wind_damage_taken_jinah_brirej.webp',
         duration: 20,
         target: 'shared',
         effects: [
@@ -182,7 +182,7 @@ export const characters = {
       },
       {
         name: 'Sudden Showers',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383915/rain_jinah_uufuxy.png',
+        img: 'https://api.builderberu.com/cdn/images/rain_jinah_uufuxy.webp',
         duration: 25,
         target: 'shared',
         effects: [
@@ -191,7 +191,7 @@ export const characters = {
       },
       {
         name: 'Aero',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754384587/Aero_jinah_hjuchd.png',
+        img: 'https://api.builderberu.com/cdn/images/Aero_jinah_hjuchd.webp',
         duration: 25,
         target: 'shared',
         effects: [
@@ -200,7 +200,7 @@ export const characters = {
       },
       {
         name: "Wind's Touch",
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754391315/windtTouch_jinah_w7hmrx.png',
+        img: 'https://api.builderberu.com/cdn/images/windtTouch_jinah_w7hmrx.webp',
         duration: -1, // Infini
         target: 'shared',
         stacks: 10,
@@ -216,7 +216,7 @@ export const characters = {
       },
       {
         name: "Wings of Freedom",
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754394834/wingOfFreedom_jinah_tavng0.png', // Tu devras uploader l'image
+        img: 'https://api.builderberu.com/cdn/images/wingOfFreedom_jinah_tavng0.webp', // Tu devras uploader l'image
         duration: 5,
         target: 'self', // Ou 'shared' si c'est pour toute l'équipe
         stacks: 1,
@@ -227,7 +227,7 @@ export const characters = {
       },
       {
         name: "4 Star Jinah",
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754395402/fourStar_jinah_izutbk.png', // Tu devras uploader l'image
+        img: 'https://api.builderberu.com/cdn/images/fourStar_jinah_izutbk.webp', // Tu devras uploader l'image
         duration: -1, // Infini (passif)
         target: 'shared', // Pour tous les membres Wind de l'équipe
         effects: [
@@ -236,7 +236,7 @@ export const characters = {
       },
       {
         name: "Jinah's Weapon Buff",
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754506761/buffWeapon_jinah_xdosfy.png',
+        img: 'https://api.builderberu.com/cdn/images/buffWeapon_jinah_xdosfy.webp',
         duration: -1, // Infini
         target: 'shared', // Pour toute l'équipe
         effects: [
@@ -247,8 +247,8 @@ export const characters = {
   },
   'jinwoo': {
     name: 'Sung Jinwoo',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755010471/sungjiwoo_rfmpth.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755010471/sungjiwoo_rfmpth.png',
+    img: 'https://api.builderberu.com/cdn/images/sungjiwoo_rfmpth.webp',
+    icon: 'https://api.builderberu.com/cdn/images/sungjiwoo_rfmpth.webp',
     class: 'Monarch',
     grade: 'SSR',
     element: 'none',
@@ -293,8 +293,8 @@ export const characters = {
   },
   'shuhua': {
     name: 'Shuhua',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',
+    img: 'https://api.builderberu.com/cdn/images/Shuhua1_difnjb.webp',
+    icon: 'https://api.builderberu.com/cdn/images/IconShuhua_njc2f2.webp',
     class: 'Fighter',
     grade: 'SSR',
     element: 'Water',
@@ -323,8 +323,8 @@ export const characters = {
       }]
   }, 'miyeon': {
     name: 'Miyeon',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
+    img: 'https://api.builderberu.com/cdn/images/miyeon_ijwudx.webp',
+    icon: 'https://api.builderberu.com/cdn/images/miyeon_ijwudx.webp',
     class: 'Fighter',
     grade: 'SSR',
     element: 'Light',
@@ -353,8 +353,8 @@ export const characters = {
       }]
   }, 'niermann': {
     name: 'Lennart Niermann',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114179/niermann_arxjer.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114267/build-niermann_phfwmu.png',
+    img: 'https://api.builderberu.com/cdn/images/niermann_arxjer.webp',
+    icon: 'https://api.builderberu.com/cdn/images/build-niermann_phfwmu.webp',
     class: 'Fighter',
     grade: 'SSR',
     element: 'Wind',
@@ -374,7 +374,7 @@ export const characters = {
     buffs: [
       {
         name: "Defensive Divination Circle",
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754508325/DefensiveDivinationCircle_lennart_ln8nxu.png',
+        img: 'https://api.builderberu.com/cdn/images/DefensiveDivinationCircle_lennart_ln8nxu.webp',
         duration: 20, // 20 secondes
         target: 'self',
         effects: [
@@ -384,7 +384,7 @@ export const characters = {
       },
       {
         name: "Defense Reduction Mark",
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754512224/DefenseReductionMark_Lennart_rmaard.png',
+        img: 'https://api.builderberu.com/cdn/images/DefenseReductionMark_Lennart_rmaard.webp',
         duration: 40,
         target: 'self',
         effects: [
@@ -393,7 +393,7 @@ export const characters = {
       },
       {
         name: "Wind Synergy",
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754514229/fourStarLennart_y59gsr.png',
+        img: 'https://api.builderberu.com/cdn/images/fourStarLennart_y59gsr.webp',
         duration: 0,
         target: 'shared',
         effects: [
@@ -406,8 +406,8 @@ export const characters = {
 
   'chae': {
     name: 'Cha Hae-In Valkyrie',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604309/chae_mlnz8k.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606282/icons/build-3.png',
+    img: 'https://api.builderberu.com/cdn/images/chae_mlnz8k.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-3.webp',
     class: 'Fighter',
     grade: 'SSR',
     element: 'Water',
@@ -437,8 +437,8 @@ export const characters = {
   },
   'kanae': {
     name: 'Tawata Kanae',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604318/kanae_squvh2.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606320/icons/build-18.png',
+    img: 'https://api.builderberu.com/cdn/images/kanae_squvh2.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-18.webp',
     class: 'Assassin',
     grade: 'SSR',
     element: 'Fire',
@@ -468,8 +468,8 @@ export const characters = {
   },
   'frieren': {
     name: 'Frieren',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+    img: 'https://api.builderberu.com/cdn/images/frieren_portrait_jtvtcd.webp',
+    icon: 'https://api.builderberu.com/cdn/images/frieren_portrait_jtvtcd.webp',
     class: 'Support',
     grade: 'SSR',
     element: 'Water',
@@ -489,7 +489,7 @@ export const characters = {
     buffs: [
       {
         name: 'Water Support',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+        img: 'https://api.builderberu.com/cdn/images/frieren_portrait_jtvtcd.webp',
         duration: 30,
         target: 'shared',
         effects: [
@@ -498,7 +498,7 @@ export const characters = {
       },
       {
         name: 'Water Damage Boost',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+        img: 'https://api.builderberu.com/cdn/images/frieren_portrait_jtvtcd.webp',
         duration: 20,
         target: 'shared',
         effects: [
@@ -509,8 +509,8 @@ export const characters = {
   },
   'stark': {
     name: 'Stark',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
+    img: 'https://api.builderberu.com/cdn/images/stark_portrait_ag5teg.webp',
+    icon: 'https://api.builderberu.com/cdn/images/stark_portrait_ag5teg.webp',
     class: 'Break',
     grade: 'SSR',
     element: 'Fire',
@@ -530,7 +530,7 @@ export const characters = {
     buffs: [
       {
         name: 'Fire Break',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
+        img: 'https://api.builderberu.com/cdn/images/stark_portrait_ag5teg.webp',
         duration: 25,
         target: 'shared',
         effects: [
@@ -539,7 +539,7 @@ export const characters = {
       },
       {
         name: 'Fire Damage Boost',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
+        img: 'https://api.builderberu.com/cdn/images/stark_portrait_ag5teg.webp',
         duration: 20,
         target: 'shared',
         effects: [
@@ -550,8 +550,8 @@ export const characters = {
   },
   'fern': {
     name: 'Fern',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+    img: 'https://api.builderberu.com/cdn/images/fern_portrait_vu4q7v.webp',
+    icon: 'https://api.builderberu.com/cdn/images/fern_portrait_vu4q7v.webp',
     class: 'DPS',
     grade: 'SSR',
     element: 'Fire',
@@ -571,7 +571,7 @@ export const characters = {
     buffs: [
       {
         name: 'Fire Attack Boost',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+        img: 'https://api.builderberu.com/cdn/images/fern_portrait_vu4q7v.webp',
         duration: 30,
         target: 'shared',
         effects: [
@@ -580,7 +580,7 @@ export const characters = {
       },
       {
         name: 'Fire Damage Increase',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+        img: 'https://api.builderberu.com/cdn/images/fern_portrait_vu4q7v.webp',
         duration: 25,
         target: 'shared',
         effects: [
@@ -591,8 +591,8 @@ export const characters = {
   },
   'reed': {
     name: 'Christopher Reed',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042084/Reed_portrait_ldj0p5.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042084/Reed_portrait_ldj0p5.png',
+    img: 'https://api.builderberu.com/cdn/images/Reed_portrait_ldj0p5.webp',
+    icon: 'https://api.builderberu.com/cdn/images/Reed_portrait_ldj0p5.webp',
     class: 'Infusion',
     grade: 'SSR',
     element: 'Fire',
@@ -612,7 +612,7 @@ export const characters = {
     buffs: [
       {
         name: 'Fire Infusion',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+        img: 'https://api.builderberu.com/cdn/images/frieren_portrait_jtvtcd.webp',
         duration: 30,
         target: 'shared',
         effects: [
@@ -621,7 +621,7 @@ export const characters = {
       },
       {
         name: 'Fire Damage Boost',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+        img: 'https://api.builderberu.com/cdn/images/frieren_portrait_jtvtcd.webp',
         duration: 20,
         target: 'shared',
         effects: [
@@ -632,8 +632,8 @@ export const characters = {
   },
   'laura': {
     name: 'Laura',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042083/LauraPortrait_vrrea6.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042083/LauraPortrait_vrrea6.png',
+    img: 'https://api.builderberu.com/cdn/images/LauraPortrait_vrrea6.webp',
+    icon: 'https://api.builderberu.com/cdn/images/LauraPortrait_vrrea6.webp',
     class: 'Support',
     grade: 'SSR',
     element: 'Light',
@@ -653,7 +653,7 @@ export const characters = {
     buffs: [
       {
         name: 'Light Attack Boost',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+        img: 'https://api.builderberu.com/cdn/images/fern_portrait_vu4q7v.webp',
         duration: 30,
         target: 'shared',
         effects: [
@@ -662,7 +662,7 @@ export const characters = {
       },
       {
         name: 'Light Damage Increase',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+        img: 'https://api.builderberu.com/cdn/images/fern_portrait_vu4q7v.webp',
         duration: 25,
         target: 'shared',
         effects: [
@@ -673,8 +673,8 @@ export const characters = {
   },
   'alicia': {
     name: 'Alicia Blanche',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604309/alicia_fzpzkf.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606278/icons/build.png',
+    img: 'https://api.builderberu.com/cdn/images/alicia_fzpzkf.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build.webp',
     class: 'Mage',
     grade: 'SSR',
     element: 'Water',
@@ -703,8 +703,8 @@ export const characters = {
   },
   'mirei': {
     name: 'Amamiya Mirei',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604327/mirei_nb6arm.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606340/icons/build-26.png',
+    img: 'https://api.builderberu.com/cdn/images/mirei_nb6arm.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-26.webp',
     class: 'Assassin',
     grade: 'SSR',
     element: 'Wind',
@@ -734,8 +734,8 @@ export const characters = {
   },
   'baek': {
     name: 'Baek Yoonho',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604214/baek_tgrbx8.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747647495/build_baek_wwcvhp.png',
+    img: 'https://api.builderberu.com/cdn/images/baek_tgrbx8.webp',
+    icon: 'https://api.builderberu.com/cdn/images/build_baek_wwcvhp.webp',
     class: 'Tank',
     grade: 'SSR',
     element: 'Light',
@@ -765,8 +765,8 @@ export const characters = {
   },
   'chae-in': {
     name: 'Cha Hae In',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604308/chae-in_zafver.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606285/icons/build-4.png',
+    img: 'https://api.builderberu.com/cdn/images/chae-in_zafver.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-4.webp',
     class: 'Fighter',
     grade: 'SSR',
     element: 'Light',
@@ -796,8 +796,8 @@ export const characters = {
   },
   'charlotte': {
     name: 'Charlotte',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604306/charlotte_bbsqv1.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606287/icons/build-5.png',
+    img: 'https://api.builderberu.com/cdn/images/charlotte_bbsqv1.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-5.webp',
     class: 'Mage',
     grade: 'SSR',
     element: 'Dark',
@@ -827,8 +827,8 @@ export const characters = {
   },
   'choi': {
     name: 'Choi Jong-In',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604310/choi_a4k5sl.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606289/icons/build-6.png',
+    img: 'https://api.builderberu.com/cdn/images/choi_a4k5sl.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-6.webp',
     class: 'Mage',
     grade: 'SSR',
     element: 'Fire',
@@ -858,8 +858,8 @@ export const characters = {
   },
   'emma': {
     name: 'Emma Laurent',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604311/emma_vvw5lt.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606292/icons/build-7.png',
+    img: 'https://api.builderberu.com/cdn/images/emma_vvw5lt.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-7.webp',
     class: 'Tank',
     grade: 'SSR',
     element: 'Fire',
@@ -889,8 +889,8 @@ export const characters = {
   },
   'esil': {
     name: 'Esil Radiru',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604313/esil_bjzrv2.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606294/icons/build-8.png',
+    img: 'https://api.builderberu.com/cdn/images/esil_bjzrv2.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-8.webp',
     class: 'Ranger',
     grade: 'SSR',
     element: 'Fire',
@@ -920,8 +920,8 @@ export const characters = {
   },
   'gina': {
     name: 'Gina',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604312/gina_emzlpd.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606297/icons/build-9.png',
+    img: 'https://api.builderberu.com/cdn/images/gina_emzlpd.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-9.webp',
     class: 'Support',
     grade: 'SSR',
     element: 'Fire',
@@ -951,8 +951,8 @@ export const characters = {
   },
   'go': {
     name: 'Go Gunhee',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604312/go_e5tq0a.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606299/icons/build-10.png',
+    img: 'https://api.builderberu.com/cdn/images/go_e5tq0a.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-10.webp',
     class: 'Tank',
     grade: 'SSR',
     element: 'Light',
@@ -982,8 +982,8 @@ export const characters = {
   },
   'goto': {
     name: 'Goto Ryuji',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604314/goto_pirfgy.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604314/goto_pirfgy.png',
+    img: 'https://api.builderberu.com/cdn/images/goto_pirfgy.webp',
+    icon: 'https://api.builderberu.com/cdn/images/goto_pirfgy.webp',
     class: 'Tank',
     grade: 'SSR',
     element: 'Wind',
@@ -1003,7 +1003,7 @@ export const characters = {
     buffs: [
       {
         name: "Arrogance",
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754515830/arrogance_goto_fnicil.png',
+        img: 'https://api.builderberu.com/cdn/images/arrogance_goto_fnicil.webp',
         duration: 20, // 20 secondes
         target: 'self',
         effects: [
@@ -1013,7 +1013,7 @@ export const characters = {
       },
       {
         name: "Third Hunter Boost",
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754516654/fourStarGoto_qgsvgp.png', // À remplacer
+        img: 'https://api.builderberu.com/cdn/images/fourStarGoto_qgsvgp.webp', // À remplacer
         duration: 0, // Passif permanent
         target: 'shared', // Cible spécifique : 3ème membre de l'équipe
         effects: [
@@ -1022,7 +1022,7 @@ export const characters = {
       },
       {
         name: "Exorcise",
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754555890/exorcice_goto_ierpym.png',
+        img: 'https://api.builderberu.com/cdn/images/exorcice_goto_ierpym.webp',
         duration: 7,
         target: 'self',
         effects: [
@@ -1032,8 +1032,8 @@ export const characters = {
   },
   'han': {
     name: 'Han Se-Mi',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604315/han_pfyz7e.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606304/icons/build-12.png',
+    img: 'https://api.builderberu.com/cdn/images/han_pfyz7e.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-12.webp',
     class: 'Healer',
     grade: 'SSR',
     element: 'Wind',
@@ -1063,8 +1063,8 @@ export const characters = {
   },
   'harper': {
     name: 'Harper',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604316/harper_fvn1d9.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606309/icons/build-14.png',
+    img: 'https://api.builderberu.com/cdn/images/harper_fvn1d9.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-14.webp',
     class: 'Tank',
     grade: 'SSR',
     element: 'Dark',
@@ -1094,8 +1094,8 @@ export const characters = {
   },
   'hwang': {
     name: 'Hwang Dongsoo',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604316/Hwang_wumgnp.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606311/icons/build-15.png',
+    img: 'https://api.builderberu.com/cdn/images/Hwang_wumgnp.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-15.webp',
     class: 'Fighter',
     grade: 'SSR',
     element: 'Wind',
@@ -1125,8 +1125,8 @@ export const characters = {
   },
   'isla': {
     name: 'Isla Wright',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604215/isla_w9mnlc.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606317/icons/build-17.png',
+    img: 'https://api.builderberu.com/cdn/images/isla_w9mnlc.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-17.webp',
     class: 'Healer',
     grade: 'SSR',
     element: 'Dark',
@@ -1156,8 +1156,8 @@ export const characters = {
   },
   'lim': {
     name: 'Lim Tae-Gyu',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604325/lim_gahgsq.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606332/icons/build-23.png',
+    img: 'https://api.builderberu.com/cdn/images/lim_gahgsq.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-23.webp',
     class: 'Breaker',
     grade: 'SSR',
     element: 'Dark',
@@ -1196,8 +1196,8 @@ export const characters = {
   },
   'lee': {
     name: 'Lee Bora',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604324/lee_khjilr.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606327/icons/build-21.png',
+    img: 'https://api.builderberu.com/cdn/images/lee_khjilr.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-21.webp',
     class: 'Mage',
     grade: 'SSR',
     element: 'Dark',
@@ -1227,8 +1227,8 @@ export const characters = {
   },
   'meilin': {
     name: 'Meilin Fisher',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604218/meilin_k17bnw.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606335/icons/build-24.png',
+    img: 'https://api.builderberu.com/cdn/images/meilin_k17bnw.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-24.webp',
     class: 'Healer',
     grade: 'SSR',
     element: 'Water',
@@ -1258,8 +1258,8 @@ export const characters = {
   },
   'min': {
     name: 'Min Byung-Gu',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604326/min_tw1eio.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606337/icons/build-25.png',
+    img: 'https://api.builderberu.com/cdn/images/min_tw1eio.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-25.webp',
     class: 'Healer',
     grade: 'SSR',
     element: 'Light',
@@ -1289,8 +1289,8 @@ export const characters = {
   },
   'seo': {
     name: 'Seo Jiwoo',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604210/seo_qsvfhj.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606349/icons/build-30.png',
+    img: 'https://api.builderberu.com/cdn/images/seo_qsvfhj.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-30.webp',
     class: 'Tank',
     grade: 'SSR',
     element: 'Water',
@@ -1320,8 +1320,8 @@ export const characters = {
   },
   'seorin': {
     name: 'Seorin',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604210/seorin_t7irtj.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606352/icons/build-31.png',
+    img: 'https://api.builderberu.com/cdn/images/seorin_t7irtj.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-31.webp',
     class: 'Ranger',
     grade: 'SSR',
     element: 'Water',
@@ -1351,8 +1351,8 @@ export const characters = {
   },
   'shimizu': {
     name: 'Shimizu Akari',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604212/shimizu_a3devg.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606355/icons/build-32.png',
+    img: 'https://api.builderberu.com/cdn/images/shimizu_a3devg.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-32.webp',
     class: 'Healer',
     grade: 'SSR',
     element: 'Light',
@@ -1382,8 +1382,8 @@ export const characters = {
   },
   'silverbaek': {
     name: 'Silver Mane Baek Yoonho',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604211/silverbaek_kg7wuz.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606357/icons/build-33.png',
+    img: 'https://api.builderberu.com/cdn/images/silverbaek_kg7wuz.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-33.webp',
     class: 'Fighter',
     grade: 'SSR',
     element: 'Dark',
@@ -1413,8 +1413,8 @@ export const characters = {
   },
   'sian': {
     name: 'Sian Halat',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042083/Igris_portrait_xqbgqf.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042083/Igris_portrait_xqbgqf.png',
+    img: 'https://api.builderberu.com/cdn/images/Igris_portrait_xqbgqf.webp',
+    icon: 'https://api.builderberu.com/cdn/images/Igris_portrait_xqbgqf.webp',
     class: 'Assassin',
     grade: 'SSR',
     element: 'Dark',
@@ -1434,7 +1434,7 @@ export const characters = {
     buffs: [
       {
         name: 'Def Pen Buff (A5)',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+        img: 'https://api.builderberu.com/cdn/images/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.webp',
         duration: 30,
         target: 'shared', // Buff TEAM Dark only
         element: 'Dark', // Uniquement pour les membres Dark (Sung n'en profite pas !)
@@ -1445,8 +1445,8 @@ export const characters = {
   },
   'son': {
     name: 'Son Kihoon',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
+    img: 'https://api.builderberu.com/cdn/images/Son_Portrait_vmup4f.webp',
+    icon: 'https://api.builderberu.com/cdn/images/Son_Portrait_vmup4f.webp',
     class: 'Tank',
     grade: 'SSR',
     element: 'Dark',
@@ -1476,8 +1476,8 @@ export const characters = {
   },
   'thomas': {
     name: 'Thomas Andre',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604216/thomas_jr9x92.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606363/icons/build-35.png',
+    img: 'https://api.builderberu.com/cdn/images/thomas_jr9x92.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-35.webp',
     class: 'Fighter',
     grade: 'SSR',
     element: 'Light',
@@ -1507,8 +1507,8 @@ export const characters = {
   },
   'woo': {
     name: 'Woo Jinchul',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604217/woo_pfrpik.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606367/icons/build-36.png',
+    img: 'https://api.builderberu.com/cdn/images/woo_pfrpik.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-36.webp',
     class: 'Tank',
     grade: 'SSR',
     element: 'Wind',
@@ -1538,8 +1538,8 @@ export const characters = {
   },
   'yoo': {
     name: 'Yoo Soohyun',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604218/yoo_mrwt08.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606370/icons/build-37.png',
+    img: 'https://api.builderberu.com/cdn/images/yoo_mrwt08.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-37.webp',
     class: 'Mage',
     grade: 'SSR',
     element: 'Fire',
@@ -1569,8 +1569,8 @@ export const characters = {
   },
   'anna': {
     name: 'Anna Ruiz',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604212/anna_ygnv0l.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606280/icons/build-2.png',
+    img: 'https://api.builderberu.com/cdn/images/anna_ygnv0l.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-2.webp',
     class: 'Ranger',
     grade: 'SR',
     element: 'Water',
@@ -1600,8 +1600,8 @@ export const characters = {
   },
   'han-song': {
     name: 'Han Song-Yi',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604213/han-song_xsfzja.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606306/icons/build-13.png',
+    img: 'https://api.builderberu.com/cdn/images/han-song_xsfzja.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-13.webp',
     class: 'Assassin',
     grade: 'SR',
     element: 'Water',
@@ -1631,8 +1631,8 @@ export const characters = {
   },
   'hwang-dongsuk': {
     name: 'Hwang Dongsuk',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604317/hwang-dongsuk_g1humr.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606314/icons/build-16.png',
+    img: 'https://api.builderberu.com/cdn/images/hwang-dongsuk_g1humr.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-16.webp',
     class: 'Tank',
     grade: 'SR',
     element: 'Dark',
@@ -1662,8 +1662,8 @@ export const characters = {
   },
   'jo': {
     name: 'Jo Kyuhwan',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747689385/jojo3_tjhgu8.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747649046/jojo_vmdzhg.png',
+    img: 'https://api.builderberu.com/cdn/images/jojo3_tjhgu8.webp',
+    icon: 'https://api.builderberu.com/cdn/images/jojo_vmdzhg.webp',
     class: 'Mage',
     grade: 'SR',
     element: 'Light',
@@ -1693,8 +1693,8 @@ export const characters = {
   },
   'kang': {
     name: 'Kang Taeshik',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604320/kang_y6r5f4.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606322/icons/build-19.png',
+    img: 'https://api.builderberu.com/cdn/images/kang_y6r5f4.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-19.webp',
     class: 'Assassin',
     grade: 'SR',
     element: 'Dark',
@@ -1724,8 +1724,8 @@ export const characters = {
   },
   'kim-chul': {
     name: 'Kim Chul',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604322/kim-chul_z9jha4.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747646719/build__kim-chul_sptghm.png',
+    img: 'https://api.builderberu.com/cdn/images/kim-chul_z9jha4.webp',
+    icon: 'https://api.builderberu.com/cdn/images/build__kim-chul_sptghm.webp',
     class: 'Tank',
     grade: 'SR',
     element: 'Light',
@@ -1755,8 +1755,8 @@ export const characters = {
   },
   'kim-sangshik': {
     name: 'Kim Sangshik',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604321/kim-sangshik_rmknpe.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606325/icons/build-20.png',
+    img: 'https://api.builderberu.com/cdn/images/kim-sangshik_rmknpe.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-20.webp',
     class: 'Tank',
     grade: 'SR',
     element: 'Wind',
@@ -1785,8 +1785,8 @@ export const characters = {
   },
   'lee-johee': {
     name: 'Lee Johee',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604323/lee-johee_ispe3p.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606330/icons/build-22.png',
+    img: 'https://api.builderberu.com/cdn/images/lee-johee_ispe3p.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-22.webp',
     class: 'Healer',
     grade: 'SR',
     element: 'Water',
@@ -1816,8 +1816,8 @@ export const characters = {
   },
   'nam': {
     name: 'Nam Chae-Young',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604328/nam_rb2ogg.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606342/icons/build-27.png',
+    img: 'https://api.builderberu.com/cdn/images/nam_rb2ogg.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-27.webp',
     class: 'Ranger',
     grade: 'SR',
     element: 'Water',
@@ -1847,8 +1847,8 @@ export const characters = {
   },
   'park-beom': {
     name: 'Park Beom-Shik',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604328/park-beom_er1y0k.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606345/icons/build-28.png',
+    img: 'https://api.builderberu.com/cdn/images/park-beom_er1y0k.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-28.webp',
     class: 'Fighter',
     grade: 'SR',
     element: 'Wind',
@@ -1878,8 +1878,8 @@ export const characters = {
   },
   'park-heejin': {
     name: 'Park Heejin',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604307/park-heejin_tsukcl.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606347/icons/build-29.png',
+    img: 'https://api.builderberu.com/cdn/images/park-heejin_tsukcl.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-29.webp',
     class: 'Mage',
     grade: 'SR',
     element: 'Wind',
@@ -1909,8 +1909,8 @@ export const characters = {
   },
   'song': {
     name: 'Song Chiyul',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604215/song_usr7ja.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606359/icons/build-34.png',
+    img: 'https://api.builderberu.com/cdn/images/song_usr7ja.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-34.webp',
     class: 'Mage',
     grade: 'SR',
     element: 'Fire',
@@ -1940,8 +1940,8 @@ export const characters = {
   },
   'yoo-jinho': {
     name: 'Yoo Jinho',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604221/yoo-jinho_csl27q.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606372/icons/build-38.png',
+    img: 'https://api.builderberu.com/cdn/images/yoo-jinho_csl27q.webp',
+    icon: 'https://api.builderberu.com/cdn/images/icons_build-38.webp',
     class: 'Tank',
     grade: 'SR',
     element: 'Light',
@@ -1971,8 +1971,8 @@ export const characters = {
   },
   'meri': {
     name: 'Meri Laine',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
+    img: 'https://api.builderberu.com/cdn/images/Meri_Portrait_kjowxk.webp',
+    icon: 'https://api.builderberu.com/cdn/images/Meri_Portrait_kjowxk.webp',
     class: 'Infusion',
     grade: 'SSR',
     element: 'Water',
@@ -1992,7 +1992,7 @@ export const characters = {
     buffs: [
       {
         name: 'Water Infusion',
-        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
+        img: 'https://api.builderberu.com/cdn/images/Meri_Portrait_kjowxk.webp',
         duration: 30,
         target: 'shared',
         effects: [

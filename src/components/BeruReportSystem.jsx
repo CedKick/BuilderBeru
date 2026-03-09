@@ -30,7 +30,7 @@ const GoldenPapyrusIcon = ({ onClick, isVisible }) => {
                 {/* Papyrus doré - CHEF-D'ŒUVRE BÉRU */}
                 <div className="relative w-16 h-16 flex items-center justify-center">
                     <img loading="lazy" 
-                        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750507370/papyrusBeru_slxiki.png"
+                        src="https://api.builderberu.com/cdn/images/papyrusBeru_slxiki.webp"
                         alt="Papyrus Béru"
                         className="w-full h-full object-contain drop-shadow-2xl filter brightness-110"
                     />

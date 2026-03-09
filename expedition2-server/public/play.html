@@ -397,22 +397,22 @@ function playTakeDamage() {
 const SPRITES = {};
 function loadSprite(n, u) { const i = new Image(); i.crossOrigin = 'anonymous'; i.src = u; i.onload = () => { SPRITES[n] = i; }; }
 // Boss
-loadSprite('ragnaros', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772905671/Ragnaros_o5ttd1.png');
+loadSprite('ragnaros', 'https://api.builderberu.com/cdn/images/Ragnaros_o5ttd1.webp');
 // Mage / Healer — Frieren sprites
-loadSprite('frieren_down', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772905666/FrierenDown_gxlnxb.png');
-loadSprite('frieren_atk', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772905668/FrierenAtk_v9u7rl.png');
-loadSprite('frieren_walk', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772905666/FrierenWalking_kusmqz.png');
+loadSprite('frieren_down', 'https://api.builderberu.com/cdn/images/FrierenDown_gxlnxb.webp');
+loadSprite('frieren_atk', 'https://api.builderberu.com/cdn/images/FrierenAtk_v9u7rl.webp');
+loadSprite('frieren_walk', 'https://api.builderberu.com/cdn/images/FrierenWalking_kusmqz.webp');
 // Warrior — Sung sprites
-loadSprite('warrior_idle', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771687526/Sung_eztua4.png');
-loadSprite('warrior_atk', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771692299/SungAtk_sq1inu.png');
+loadSprite('warrior_idle', 'https://api.builderberu.com/cdn/images/Sung_eztua4.webp');
+loadSprite('warrior_atk', 'https://api.builderberu.com/cdn/images/SungAtk_sq1inu.webp');
 // Tank sprites
-loadSprite('tank_idle', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771702659/TankPosture_wdom1k.png');
-loadSprite('tank_atk', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771702659/TankAtking_y0awt2.png');
-loadSprite('tank_block', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771702659/TankBlock_zfgfuq.png');
+loadSprite('tank_idle', 'https://api.builderberu.com/cdn/images/TankPosture_wdom1k.webp');
+loadSprite('tank_atk', 'https://api.builderberu.com/cdn/images/TankAtking_y0awt2.webp');
+loadSprite('tank_block', 'https://api.builderberu.com/cdn/images/TankBlock_zfgfuq.webp');
 // Berserker sprites
-loadSprite('bers_idle', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772017150/Berserker_ocle6n.png');
-loadSprite('bers_atk', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772017149/attackAfterChargingBerserker_ftmncy.png');
-loadSprite('bers_whirl', 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772017526/TourbilolBerserk_fgtdmk.png');
+loadSprite('bers_idle', 'https://api.builderberu.com/cdn/images/Berserker_ocle6n.webp');
+loadSprite('bers_atk', 'https://api.builderberu.com/cdn/images/attackAfterChargingBerserker_ftmncy.webp');
+loadSprite('bers_whirl', 'https://api.builderberu.com/cdn/images/TourbilolBerserk_fgtdmk.webp');
 
 // -- State --
 let ws = null, playerId = null, mapData = null, gameState = null, myPlayer = null;

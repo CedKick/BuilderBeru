@@ -36,9 +36,9 @@ const PODScoreCard = ({ showTankMessage, activeAccount, currentBuildStats}) => {
 
   // Map des boss POD avec leurs images
   const bossImages = {
-    'vulcan': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756135602/vulcan_pod.png',
-    'ennio': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968454/ennioimmortal_t86t1w.png',
-    'kamish': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756135602/kamish_pod.png'
+    'vulcan': 'https://api.builderberu.com/cdn/images/vulcan_pod.webp',
+    'ennio': 'https://api.builderberu.com/cdn/images/ennioimmortal_t86t1w.webp',
+    'kamish': 'https://api.builderberu.com/cdn/images/kamish_pod.webp'
   };
 
   const elementColors = {

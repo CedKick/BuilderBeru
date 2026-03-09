@@ -76,8 +76,8 @@ const sprites = {
 };
 
 // Charger les sprites
-sprites.goguneeLeft.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1752179029/gogunee_left_rhsnys.png';
-sprites.goguneeRight.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1752179029/gogunee_right_iihs8y.png';
+sprites.goguneeLeft.src = 'https://api.builderberu.com/cdn/images/gogunee_left_rhsnys.webp';
+sprites.goguneeRight.src = 'https://api.builderberu.com/cdn/images/gogunee_right_iihs8y.webp';
 
 // Types de blocs avec propriétés
 const blockTypes = {

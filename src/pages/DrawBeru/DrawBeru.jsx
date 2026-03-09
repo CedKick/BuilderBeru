@@ -3361,7 +3361,7 @@ const DrawBeruFixed = ({
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 py-3">
                             <img loading="lazy"
-                                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
+                                src="https://api.builderberu.com/cdn/images/DrasBeru_zd8ju5.webp"
                                 alt="DrawBeru logo"
                                 className="w-8 h-8 select-none"
                             />
@@ -4112,8 +4112,8 @@ const DrawBeruFixed = ({
                                 style={{
                                     backgroundImage:
                                         interactionMode === 'draw'
-                                            ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')" // pinceau
-                                            : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760824762/Deplace_v5rkuq.png')", // ✋ en PNG
+                                            ? "url('https://api.builderberu.com/cdn/images/Pinceau_cwjaxh.webp')" // pinceau
+                                            : "url('https://api.builderberu.com/cdn/images/Deplace_v5rkuq.webp')", // ✋ en PNG
                                     backgroundSize: "100% 100%",   // prend toute la largeur et hauteur
                                     backgroundPosition: "center",
                                     backgroundRepeat: "no-repeat",
@@ -4134,8 +4134,8 @@ const DrawBeruFixed = ({
                                 className="w-10 h-10 rounded-lg shadow-md transition-all active:scale-95 backdrop-blur-sm border"
                                 style={{
                                     backgroundImage: showModelOverlay
-                                        ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png')"   // 👁️
-                                        : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760826182/hide_te5av9.png')", // 🙈
+                                        ? "url('https://api.builderberu.com/cdn/images/sungicon_bfndrc.webp')"   // 👁️
+                                        : "url('https://api.builderberu.com/cdn/images/hide_te5av9.webp')", // 🙈
                                     backgroundSize: "100% 100%",
                                     backgroundPosition: "center",
                                     backgroundRepeat: "no-repeat",
@@ -4203,8 +4203,8 @@ const DrawBeruFixed = ({
                                         style={{
                                             backgroundImage:
                                                 currentTool === 'brush'
-                                                    ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')"
-                                                    : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827288/pipette_kqqmzh.png')"
+                                                    ? "url('https://api.builderberu.com/cdn/images/Pinceau_cwjaxh.webp')"
+                                                    : "url('https://api.builderberu.com/cdn/images/pipette_kqqmzh.webp')"
                                         }}
                                     />
 
@@ -4312,7 +4312,7 @@ const DrawBeruFixed = ({
                                 }`}
                             style={{
                                 backgroundImage:
-                                    "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')"
+                                    "url('https://api.builderberu.com/cdn/images/Pinceau_cwjaxh.webp')"
                             }}
                             aria-label="Pinceau"
                         />
@@ -4325,7 +4325,7 @@ const DrawBeruFixed = ({
                                 }`}
                             style={{
                                 backgroundImage:
-                                    "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827288/pipette_kqqmzh.png')"
+                                    "url('https://api.builderberu.com/cdn/images/pipette_kqqmzh.webp')"
                             }}
                             aria-label="Gomme"
                         />
@@ -4337,7 +4337,7 @@ const DrawBeruFixed = ({
                                 }`}
                             style={{
                                 backgroundImage:
-                                    "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827432/pipettevrai_vxsysi.png')"
+                                    "url('https://api.builderberu.com/cdn/images/pipettevrai_vxsysi.webp')"
                             }}
                             aria-label="Pipette"
                         />
@@ -4398,7 +4398,7 @@ const DrawBeruFixed = ({
                             className="w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain bg-purple-800/50 text-purple-200 shrink-0"
                             style={{
                                 backgroundImage:
-                                    "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827803/zoomgrow_hzuucr.png')"
+                                    "url('https://api.builderberu.com/cdn/images/zoomgrow_hzuucr.webp')"
                             }}
                             aria-label="Zoom +"
                         />
@@ -4414,7 +4414,7 @@ const DrawBeruFixed = ({
                             className="w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain bg-purple-800/50 text-purple-200 shrink-0"
                             style={{
                                 backgroundImage:
-                                    "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827864/zoomreduce_lmj2sp.png')"
+                                    "url('https://api.builderberu.com/cdn/images/zoomreduce_lmj2sp.webp')"
                             }}
                             aria-label="Zoom -"
                         />
@@ -4905,7 +4905,7 @@ const DrawBeruFixed = ({
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center gap-3 py-3">
                             <img loading="lazy"
-                                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
+                                src="https://api.builderberu.com/cdn/images/DrasBeru_zd8ju5.webp"
                                 alt="DrawBeru logo"
                                 className="w-8 h-8 select-none"
                             />
@@ -5063,8 +5063,8 @@ const DrawBeruFixed = ({
                                     className="w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 backdrop-blur-sm border"
                                     style={{
                                         backgroundImage: showModelOverlay
-                                            ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png')"
-                                            : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760826182/hide_te5av9.png')",
+                                            ? "url('https://api.builderberu.com/cdn/images/sungicon_bfndrc.webp')"
+                                            : "url('https://api.builderberu.com/cdn/images/hide_te5av9.webp')",
                                         backgroundSize: "100% 100%",
                                         backgroundPosition: "center",
                                         backgroundRepeat: "no-repeat",
@@ -5135,7 +5135,7 @@ const DrawBeruFixed = ({
                                         : 'bg-purple-800/50'
                                     }`}
                                     style={{
-                                        backgroundImage: "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')",
+                                        backgroundImage: "url('https://api.builderberu.com/cdn/images/Pinceau_cwjaxh.webp')",
                                         backgroundSize: "contain",
                                         backgroundPosition: "center",
                                         backgroundRepeat: "no-repeat"
@@ -5150,7 +5150,7 @@ const DrawBeruFixed = ({
                                         : 'bg-purple-800/50'
                                     }`}
                                     style={{
-                                        backgroundImage: "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827288/pipette_kqqmzh.png')",
+                                        backgroundImage: "url('https://api.builderberu.com/cdn/images/pipette_kqqmzh.webp')",
                                         backgroundSize: "contain",
                                         backgroundPosition: "center",
                                         backgroundRepeat: "no-repeat"
@@ -5165,7 +5165,7 @@ const DrawBeruFixed = ({
                                         : 'bg-purple-800/50'
                                     }`}
                                     style={{
-                                        backgroundImage: "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827432/pipettevrai_vxsysi.png')",
+                                        backgroundImage: "url('https://api.builderberu.com/cdn/images/pipettevrai_vxsysi.webp')",
                                         backgroundSize: "contain",
                                         backgroundPosition: "center",
                                         backgroundRepeat: "no-repeat"
@@ -5282,7 +5282,7 @@ const DrawBeruFixed = ({
                                     onClick={() => handleZoom(0.25)}
                                     className="w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 bg-purple-800/50 hover:bg-purple-700/50"
                                     style={{
-                                        backgroundImage: "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827803/zoomgrow_hzuucr.png')",
+                                        backgroundImage: "url('https://api.builderberu.com/cdn/images/zoomgrow_hzuucr.webp')",
                                         backgroundSize: "contain",
                                         backgroundPosition: "center",
                                         backgroundRepeat: "no-repeat"
@@ -5302,7 +5302,7 @@ const DrawBeruFixed = ({
                                     onClick={() => handleZoom(-0.25)}
                                     className="w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 bg-purple-800/50 hover:bg-purple-700/50"
                                     style={{
-                                        backgroundImage: "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827864/zoomreduce_lmj2sp.png')",
+                                        backgroundImage: "url('https://api.builderberu.com/cdn/images/zoomreduce_lmj2sp.webp')",
                                         backgroundSize: "contain",
                                         backgroundPosition: "center",
                                         backgroundRepeat: "no-repeat"
@@ -5355,8 +5355,8 @@ const DrawBeruFixed = ({
                                                     className="w-6 h-6 rounded bg-purple-600/50 shrink-0"
                                                     style={{
                                                         backgroundImage: currentTool === 'brush'
-                                                            ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')"
-                                                            : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827288/pipette_kqqmzh.png')",
+                                                            ? "url('https://api.builderberu.com/cdn/images/Pinceau_cwjaxh.webp')"
+                                                            : "url('https://api.builderberu.com/cdn/images/pipette_kqqmzh.webp')",
                                                         backgroundSize: "contain",
                                                         backgroundPosition: "center",
                                                         backgroundRepeat: "no-repeat"

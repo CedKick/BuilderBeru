@@ -6,20 +6,20 @@ import './IgrisTutorial.css';
 
 // 🖼️ URLs Cloudinary pour Igris
 const IGRIS_IMAGES = {
-  up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570648/igris_up_hfonzn.png',
-  down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png',
-  left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570544/igris_left_cw3w5g.png',
-  right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570506/igris_right_jmyupb.png',
-  icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png'
+  up: 'https://api.builderberu.com/cdn/images/igris_up_hfonzn.webp',
+  down: 'https://api.builderberu.com/cdn/images/igris_face_xj5mqo.webp',
+  left: 'https://api.builderberu.com/cdn/images/igris_left_cw3w5g.webp',
+  right: 'https://api.builderberu.com/cdn/images/igris_right_jmyupb.webp',
+  icon: 'https://api.builderberu.com/cdn/images/igris_face_xj5mqo.webp'
 };
 
 // 🎭 URLs Cloudinary pour Igrisk (Tank déguisé en Igris)
 const IGRISK_IMAGES = {
-  up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_up_dwtvy9.png',
-  down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_face_qpf9mh.png',
-  left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_left_jd9cad.png',
-  right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_right_i4hlil.png',
-  icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_icon_vytfic.png'
+  up: 'https://api.builderberu.com/cdn/images/igrisk_up_dwtvy9.webp',
+  down: 'https://api.builderberu.com/cdn/images/igrisk_face_qpf9mh.webp',
+  left: 'https://api.builderberu.com/cdn/images/igrisk_left_jd9cad.webp',
+  right: 'https://api.builderberu.com/cdn/images/igrisk_right_i4hlil.webp',
+  icon: 'https://api.builderberu.com/cdn/images/igrisk_icon_vytfic.webp'
 };
 
 const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage }) => {

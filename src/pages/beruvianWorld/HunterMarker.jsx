@@ -3,7 +3,7 @@ import React from "react";
 export default function HunterMarker({ x, y, size = 64 }) {
   return (
     <img loading="lazy"
-      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606352/icons/build-31.png"
+      src="https://api.builderberu.com/cdn/images/icons_build-31.webp"
       alt="Hunter"
       style={{
         position: "absolute",

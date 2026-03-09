@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Philosophie existentialiste : conscience, humanité, libre arbitre
 // ═══════════════════════════════════════════════════════════════
 
-const POD_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771604133/Pod042_rlmzhk.png';
+const POD_SPRITE = 'https://api.builderberu.com/cdn/images/Pod042_rlmzhk.webp';
 
 // ─── Pod 042 Modes ──────────────────────────────────────────
 const POD_MODES = ['normal', 'calm', 'hidden'];

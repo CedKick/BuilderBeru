@@ -75,8 +75,8 @@ const DEF_POSITIONS = [
 
 // PVP Arena backgrounds (random per battle)
 const PVP_ARENAS = [
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771328568/pvpArena1_wfxqmk.png',
-  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771328568/pvpArena2_hqeqzb.png',
+  'https://api.builderberu.com/cdn/images/pvpArena1_wfxqmk.webp',
+  'https://api.builderberu.com/cdn/images/pvpArena2_hqeqzb.webp',
 ];
 
 // ═══════════════════════════════════════════════════════════════

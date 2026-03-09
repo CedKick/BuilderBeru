@@ -43,8 +43,8 @@ const ZONE_STYLES = {
 };
 
 const WEAPON_SPRITES = {
-  w_sulfuras: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771443640/WeaponSulfuras_efg3ca.png',
-  w_guldan: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638363/batonGuldan_vuu7ez.png',
+  w_sulfuras: 'https://api.builderberu.com/cdn/images/WeaponSulfuras_efg3ca.webp',
+  w_guldan: 'https://api.builderberu.com/cdn/images/batonGuldan_vuu7ez.webp',
 };
 
 const ELEMENT_CONFIG = {

@@ -127,8 +127,8 @@ const ArtifactCard = ({
   const [localMainStat, setLocalMainStat] = useState((artifactData && artifactData.mainStat) || '');
   const [currentSetIcon, setCurrentSetIcon] = useState(
     (artifactData && artifactData.set)
-      ? getSetIcon(artifactData.set, title) || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
-      : "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
+      ? getSetIcon(artifactData.set, title) || "https://api.builderberu.com/cdn/images/set_a6k4yh.webp"
+      : "https://api.builderberu.com/cdn/images/set_a6k4yh.webp"
   );
   
   const setArtifactsData = (newData) => onArtifactChange(newData);
@@ -263,7 +263,7 @@ const ArtifactCard = ({
       savedArtifactName: undefined
     }));
     
-    setCurrentSetIcon("https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png");
+    setCurrentSetIcon("https://api.builderberu.com/cdn/images/set_a6k4yh.webp");
     showTankMessage && showTankMessage(t('artifact.messages.reset', { slot }), true);
     recalculateStatsFromArtifacts && recalculateStatsFromArtifacts();
   };
@@ -282,7 +282,7 @@ const ArtifactCard = ({
     
     setCurrentSetIcon(
       getSetIcon(selectedArtifact.set, title) || 
-      "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
+      "https://api.builderberu.com/cdn/images/set_a6k4yh.webp"
     );
     
     recalculateStatsFromArtifacts && recalculateStatsFromArtifacts();
@@ -307,10 +307,10 @@ const ArtifactCard = ({
     if (artifactData && artifactData.set) {
       const newIcon = getSetIcon(artifactData.set, title);
       setCurrentSetIcon(
-        newIcon || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
+        newIcon || "https://api.builderberu.com/cdn/images/set_a6k4yh.webp"
       );
     } else {
-      setCurrentSetIcon("https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png");
+      setCurrentSetIcon("https://api.builderberu.com/cdn/images/set_a6k4yh.webp");
     }
   }, [artifactData?.set, title]);
 
@@ -680,7 +680,7 @@ const ArtifactCard = ({
         <h2 className="text-base font-bold">{t(`titleArtifact.${title}`)}</h2>
         <div className="flex items-center gap-1">
           <img loading="lazy"
-            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750335621/chooseSet_fo08yb.png"
+            src="https://api.builderberu.com/cdn/images/chooseSet_fo08yb.webp"
             onClick={() => handleOpenLibrary(title)}
             alt="Charger un set existant"
             className="w-4 h-4 cursor-pointer hover:scale-110 transition"
@@ -696,7 +696,7 @@ const ArtifactCard = ({
           />
 
           <img loading="lazy"
-            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750356736/resetArtifact_eobh2e.png"
+            src="https://api.builderberu.com/cdn/images/resetArtifact_eobh2e.webp"
             onClick={() => handleResetArtifact(title)}
             alt="Reset Artifact"
             title="Reset Artifact"
@@ -705,7 +705,7 @@ const ArtifactCard = ({
 
           {shouldShowSave(artifactData) && (
             <img loading="lazy"
-              src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750335754/saveSet_gp2hfr.png"
+              src="https://api.builderberu.com/cdn/images/saveSet_gp2hfr.webp"
               onClick={() => handleSaveSet(title)}
               alt="Save le set"
               className="w-4 h-4 cursor-pointer hover:scale-110 transition"
@@ -788,13 +788,13 @@ const ArtifactCard = ({
           {subStat && (
             <>
               <img loading="lazy"
-                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748513494/BoutonMoins_zlzwcz.png"
+                src="https://api.builderberu.com/cdn/images/BoutonMoins_zlzwcz.webp"
                 alt="Moins"
                 onClick={() => handleDecreaseSubStat(idx)}
                 className="w-4 h-4 cursor-pointer select-none"
               />
               <img loading="lazy"
-                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748513182/BoutonPlus_zc3k7t.png"
+                src="https://api.builderberu.com/cdn/images/BoutonPlus_zc3k7t.webp"
                 alt="Plus"
                 onClick={() => {
                   if (artifactData.subStatsLevels[idx].level < 4 && totalSubStatLevels < 4) {

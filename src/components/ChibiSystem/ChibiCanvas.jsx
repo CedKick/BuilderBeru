@@ -154,7 +154,7 @@ const ChibiCanvas = ({ worldData, activeChibiEntities = [], onChibiClick }) => {
       {/* Cascade animée */}
       <div className="waterfall-beru-container">
         <img loading="lazy" 
-          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755432424/cascada_lrr6lv.png"
+          src="https://api.builderberu.com/cdn/images/cascada_lrr6lv.webp"
           alt="Cascade"
           className="waterfall-beru-image"
         />

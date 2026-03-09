@@ -22,7 +22,7 @@ const MAIL_TYPES = {
 };
 
 // ── Béru Chibi Dissuasion System ──
-const BERU_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png';
+const BERU_SPRITE = 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp';
 
 const BERU_DISSUASION_LINES = [
   // Phase 1 — Gentle

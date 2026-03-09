@@ -82,9 +82,9 @@ export default function AppLayout({ children }) {
           className="fixed inset-0 z-0 pointer-events-none"
           style={{
             backgroundImage: userFaction === 'vox_cordis'
-              ? 'url(https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771599084/VCBGround_vekobq.jpg)'
+              ? 'url(https://api.builderberu.com/cdn/images/VCBGround_vekobq.webp)'
               : userFaction === 'replicant'
-              ? 'url(https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771599142/RPBground_dgqvzj.jpg)'
+              ? 'url(https://api.builderberu.com/cdn/images/RPBground_dgqvzj.webp)'
               : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center',

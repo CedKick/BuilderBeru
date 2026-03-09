@@ -4,50 +4,50 @@ import { dytextAnimate, DYTEXT_CURSOR_STYLE } from "../useDytext";
 // 🎭 Configuration des entités (centralisé)
 const ENTITY_CONFIG = {
     tank: {
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
+        icon: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp',
         name: 'Tank',
         color: '#4CAF50',
         personality: 'tank',
     },
     beru: {
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
+        icon: 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp',
         name: 'Béru',
         color: '#8A2BE2',
         personality: 'beru',
     },
     beru_papillon: {
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png',
+        icon: 'https://api.builderberu.com/cdn/images/alecto_face_irsy6q.webp',
         name: 'Béru-Papillon',
         color: '#9932CC',
         personality: 'beru_papillon',
     },
     kaisel: {
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
+        icon: 'https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp',
         name: 'Kaisel',
         color: '#00FF41',
         personality: 'kaisel',
     },
     igris: {
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png',
+        icon: 'https://api.builderberu.com/cdn/images/igris_face_xj5mqo.webp',
         name: 'Igris',
         color: '#980808',
         personality: 'igris',
     },
     cerbere: {
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731189/cerbere_icon_dtwfhu.png',
+        icon: 'https://api.builderberu.com/cdn/images/cerbere_icon_dtwfhu.webp',
         name: 'Cerbère',
         color: '#e334ba',
         personality: 'default',
     },
     igrisk: {
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_icon_vytfic.png',
+        icon: 'https://api.builderberu.com/cdn/images/igrisk_icon_vytfic.webp',
         name: 'Igris(?)',
         color: '#FF6B6B',
         personality: 'igrisk',
         special: 'glitch',
     },
     berserker: {
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592473/berserk_up_rqjt0n.png',
+        icon: 'https://api.builderberu.com/cdn/images/berserk_up_rqjt0n.webp',
         name: 'Berserker',
         color: '#8b00ff',
         personality: 'berserker',

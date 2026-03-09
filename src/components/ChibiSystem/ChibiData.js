@@ -5,7 +5,7 @@ export const CHIBI_DATABASE = {
     id: 'chibi_beru_001',
     name: 'Béru Classic',
     rarity: 'Mythique',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
+    sprite: 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp',
     messages: [
       "Kiiiek ! Je suis le plus fort !",
       "Le Monarque est le meilleur !",
@@ -19,7 +19,7 @@ export const CHIBI_DATABASE = {
     id: 'chibi_tank_001', 
     name: 'Tank le Protecteur',
     rarity: 'Légendaire',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
+    sprite: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp',
     messages: [
       "Je protège cet enclos !",
       "Bob m'observe... 😰",
@@ -33,7 +33,7 @@ export const CHIBI_DATABASE = {
     id: 'chibi_kaisel_001',
     name: 'Kaisel Tech',
     rarity: 'Mythique',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
+    sprite: 'https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp',
     messages: [
       "Optimisation en cours...",
       "Ce code peut être amélioré",
@@ -48,7 +48,7 @@ export const CHIBI_DATABASE = {
     id: 'chibi_shadow_001',
     name: 'Ombre Basique',
     rarity: 'Commun',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png', // Temporaire
+    sprite: 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp', // Temporaire
     messages: [
       "...",
       "*suit silencieusement*"
@@ -61,7 +61,7 @@ export const CHIBI_DATABASE = {
     id: 'chibi_knight_001',
     name: 'Chevalier Ombre',
     rarity: 'Rare',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png', // Temporaire
+    sprite: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp', // Temporaire
     messages: [
       "Pour le Monarque !",
       "Ma lame est vôtre."

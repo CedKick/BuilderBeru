@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Mascotte de faction basée sur l'univers de Suzume
 // ═══════════════════════════════════════════════════════════════
 
-const DAIJIN_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771602808/Daijin_p1pvcs.png';
+const DAIJIN_SPRITE = 'https://api.builderberu.com/cdn/images/Daijin_p1pvcs.webp';
 
 // ─── Daijin Modes ──────────────────────────────────────────
 const DAIJIN_MODES = ['normal', 'calm', 'hidden'];

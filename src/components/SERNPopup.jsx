@@ -90,7 +90,7 @@ const SERNPopup = ({
           {/* 🖼️ IMAGE SECTION */}
           <div className="relative p-6 flex justify-center bg-gradient-to-b from-black/80 to-gray-900/80">
             <img loading="lazy"
-              src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
+              src="https://api.builderberu.com/cdn/images/SERN_ab7od6.webp"
               alt="SERN - Sung Bobby Jones"
               className="max-w-full max-h-[300px] object-contain rounded-lg shadow-2xl"
               style={{

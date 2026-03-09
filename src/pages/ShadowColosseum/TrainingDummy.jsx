@@ -527,7 +527,7 @@ export default function TrainingDummy() {
     return {
       id: 'training_dummy',
       name: 'Mannequin d\'Entraînement',
-      sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771614440/dummy_target.png',
+      sprite: 'https://api.builderberu.com/cdn/images/dummy_target.webp',
       element: 'neutral',
       hp: cfg.hp,
       maxHp: cfg.hp,

@@ -33,9 +33,9 @@ const GAME_CONFIG = {
 
 // Sprites Béru-Papillon
 const BERU_SPRITES = {
-    idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749843915/BeruPapillon_w1tpea.png',
-    left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749843915/BeruPapillon_w1tpea.png',
-    right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749843915/BeruPapillon_w1tpea.png',
+    idle: 'https://api.builderberu.com/cdn/images/BeruPapillon_w1tpea.webp',
+    left: 'https://api.builderberu.com/cdn/images/BeruPapillon_w1tpea.webp',
+    right: 'https://api.builderberu.com/cdn/images/BeruPapillon_w1tpea.webp',
 };
 
 const ColoringGame = ({

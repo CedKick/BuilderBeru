@@ -607,7 +607,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-semibold text-purple-300 uppercase">{t('bdg.stats.final')}</h4>
                 <img loading="lazy"
-                  src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png"
+                  src="https://api.builderberu.com/cdn/images/chaelogo_hci0do.webp"
                   alt="Import"
                   className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => importStatsFromBuild('sung')}
@@ -901,7 +901,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
               <div className="flex items-center justify-between mb-1">
                 <h4 className="text-xs font-semibold text-purple-300 uppercase">{t('bdg.stats.final')}</h4>
                 <img loading="lazy"
-                  src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png"
+                  src="https://api.builderberu.com/cdn/images/chaelogo_hci0do.webp"
                   alt="Import"
                   className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => importStatsFromBuild('sung')}
@@ -1151,7 +1151,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-[9px] text-gray-500">{t('bdg.stats.final')}</label>
                       <img loading="lazy"
-  src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png"
+  src="https://api.builderberu.com/cdn/images/beruProst_ymvwos.webp"
   alt="Import"
   className="w-7 h-7 cursor-pointer hover:opacity-80 transition-opacity"
   onClick={() => importStatsFromBuild('hunter', idx)}

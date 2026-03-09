@@ -2,672 +2,672 @@
   "Helmet": [
     {
       "name": "Toughness (Hard Leather Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_toughness_4L_pnbyxv.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_toughness_4L_pnbyxv.webp",
       "description": ""
     },
     {
       "name": "Solid Analysis (New Hunter Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_solidAnalysis_4L_inamfg.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_solidAnalysis_4L_inamfg.webp",
       "description": ""
     },
     {
       "name": "Guardian (Palace Guard Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730695/artifact_guardian_4L_bsxkjl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_guardian_4L_bsxkjl.webp",
       "description": ""
     },
     {
       "name": "Angel in White (Cleric Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_angelInWhite_4L_jet12q.webp",
       "description": ""
     },
     {
       "name": "Noble Sacrifice (Holy Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_nobleISacrifice_4L_eylhm0.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_nobleISacrifice_4L_eylhm0.webp",
       "description": ""
     },
     {
       "name": "One-hit Kill (Almighty Shaman Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_oneHitKill_4L_l4jrpl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_oneHitKill_4L_l4jrpl.webp",
       "description": ""
     },
     {
       "name": "Armed (Black Lion Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730689/artifact_Armed_4L_tt2gbd.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_Armed_4L_tt2gbd.webp",
       "description": ""
     },
     {
       "name": "Solid Foundation (Dragon Knight Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_solidFoundation_4L_o8t6aw.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_solidFoundation_4L_o8t6aw.webp",
       "description": ""
     },
     {
       "name": "Destroyer (High-ranking Demon Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_destroyer_4L_owtfbl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_destroyer_4L_owtfbl.webp",
       "description": ""
     },
     {
       "name": "Warmonger (Crimson Knight Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_warmonger_4L_j7jveq.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_warmonger_4L_j7jveq.webp",
       "description": ""
     },
     {
       "name": "Iron Will",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730695/artifact_ironWill_4L_gczimo.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ironWill_4L_gczimo.webp",
       "description": ""
     },
     {
       "name": "Burning Curse",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp",
       "description": ""
     },
     {
       "name": "Burning Greed",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_burningGreed_8R_oc70gz.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningGreed_8R_oc70gz.webp",
       "description": ""
     },
     {
       "name": "Burning Blessing",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_BurningBlessing_8L_sppyfn.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_BurningBlessing_8L_sppyfn.webp",
       "description": ""
     },
     {
       "name": "Chaotic Infamy",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_ChaoticInfamy_8R_j2zmy5.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ChaoticInfamy_8R_j2zmy5.webp",
       "description": ""
     },
     {
       "name": "Chaotic Desire",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730692/artifact_chaoticDesire_8R_hu0hex.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaoticDesire_8R_hu0hex.webp",
       "description": ""
     },
     {
       "name": "Chaotic Wish",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaosWish_8L_wspayx.webp",
       "description": ""
     }
   ],
   "Chest": [
     {
       "name": "Toughness (Hard Leather Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_toughness_4L_pnbyxv.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_toughness_4L_pnbyxv.webp",
       "description": ""
     },
     {
       "name": "Solid Analysis (New Hunter Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_solidAnalysis_4L_inamfg.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_solidAnalysis_4L_inamfg.webp",
       "description": ""
     },
     {
       "name": "Guardian (Palace Guard Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730695/artifact_guardian_4L_bsxkjl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_guardian_4L_bsxkjl.webp",
       "description": ""
     },
     {
       "name": "Angel in White (Cleric Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_angelInWhite_4L_jet12q.webp",
       "description": ""
     },
     {
       "name": "Noble Sacrifice (Holy Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_nobleISacrifice_4L_eylhm0.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_nobleISacrifice_4L_eylhm0.webp",
       "description": ""
     },
     {
       "name": "One-hit Kill (Almighty Shaman Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_oneHitKill_4L_l4jrpl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_oneHitKill_4L_l4jrpl.webp",
       "description": ""
     },
     {
       "name": "Armed (Black Lion Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730689/artifact_Armed_4L_tt2gbd.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_Armed_4L_tt2gbd.webp",
       "description": ""
     },
     {
       "name": "Solid Foundation (Dragon Knight Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_solidFoundation_4L_o8t6aw.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_solidFoundation_4L_o8t6aw.webp",
       "description": ""
     },
     {
       "name": "Destroyer (High-ranking Demon Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_destroyer_4L_owtfbl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_destroyer_4L_owtfbl.webp",
       "description": ""
     },
     {
       "name": "Warmonger (Crimson Knight Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_warmonger_4L_j7jveq.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_warmonger_4L_j7jveq.webp",
       "description": ""
     },
     {
       "name": "Iron Will",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730695/artifact_ironWill_4L_gczimo.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ironWill_4L_gczimo.webp",
       "description": ""
     },
     {
       "name": "Burning Curse",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp",
       "description": ""
     },
     {
       "name": "Burning Greed",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_burningGreed_8R_oc70gz.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningGreed_8R_oc70gz.webp",
       "description": ""
     },
     {
       "name": "Burning Blessing",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_BurningBlessing_8L_sppyfn.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_BurningBlessing_8L_sppyfn.webp",
       "description": ""
     },
     {
       "name": "Chaotic Infamy",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_ChaoticInfamy_8R_j2zmy5.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ChaoticInfamy_8R_j2zmy5.webp",
       "description": ""
     },
     {
       "name": "Chaotic Desire",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730692/artifact_chaoticDesire_8R_hu0hex.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaoticDesire_8R_hu0hex.webp",
       "description": ""
     },
     {
       "name": "Chaotic Wish",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaosWish_8L_wspayx.webp",
       "description": ""
     }
   ],
   "Gloves": [
     {
       "name": "Toughness (Hard Leather Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_toughness_4L_pnbyxv.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_toughness_4L_pnbyxv.webp",
       "description": ""
     },
     {
       "name": "Solid Analysis (New Hunter Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_solidAnalysis_4L_inamfg.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_solidAnalysis_4L_inamfg.webp",
       "description": ""
     },
     {
       "name": "Guardian (Palace Guard Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730695/artifact_guardian_4L_bsxkjl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_guardian_4L_bsxkjl.webp",
       "description": ""
     },
     {
       "name": "Angel in White (Cleric Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_angelInWhite_4L_jet12q.webp",
       "description": ""
     },
     {
       "name": "Noble Sacrifice (Holy Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_nobleISacrifice_4L_eylhm0.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_nobleISacrifice_4L_eylhm0.webp",
       "description": ""
     },
     {
       "name": "One-hit Kill (Almighty Shaman Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_oneHitKill_4L_l4jrpl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_oneHitKill_4L_l4jrpl.webp",
       "description": ""
     },
     {
       "name": "Armed (Black Lion Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730689/artifact_Armed_4L_tt2gbd.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_Armed_4L_tt2gbd.webp",
       "description": ""
     },
     {
       "name": "Solid Foundation (Dragon Knight Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_solidFoundation_4L_o8t6aw.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_solidFoundation_4L_o8t6aw.webp",
       "description": ""
     },
     {
       "name": "Destroyer (High-ranking Demon Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_destroyer_4L_owtfbl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_destroyer_4L_owtfbl.webp",
       "description": ""
     },
     {
       "name": "Warmonger (Crimson Knight Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_warmonger_4L_j7jveq.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_warmonger_4L_j7jveq.webp",
       "description": ""
     },
     {
       "name": "Iron Will",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730695/artifact_ironWill_4L_gczimo.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ironWill_4L_gczimo.webp",
       "description": ""
     },
     {
       "name": "Burning Curse",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp",
       "description": ""
     },
     {
       "name": "Burning Greed",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_burningGreed_8R_oc70gz.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningGreed_8R_oc70gz.webp",
       "description": ""
     },
     {
       "name": "Burning Blessing",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_BurningBlessing_8L_sppyfn.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_BurningBlessing_8L_sppyfn.webp",
       "description": ""
     },
     {
       "name": "Chaotic Infamy",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_ChaoticInfamy_8R_j2zmy5.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ChaoticInfamy_8R_j2zmy5.webp",
       "description": ""
     },
     {
       "name": "Chaotic Desire",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730692/artifact_chaoticDesire_8R_hu0hex.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaoticDesire_8R_hu0hex.webp",
       "description": ""
     },
     {
       "name": "Chaotic Wish",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaosWish_8L_wspayx.webp",
       "description": ""
     }
   ],
   "Boots": [
     {
       "name": "Toughness (Hard Leather Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_toughness_4L_pnbyxv.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_toughness_4L_pnbyxv.webp",
       "description": ""
     },
     {
       "name": "Solid Analysis (New Hunter Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_solidAnalysis_4L_inamfg.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_solidAnalysis_4L_inamfg.webp",
       "description": ""
     },
     {
       "name": "Guardian (Palace Guard Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730695/artifact_guardian_4L_bsxkjl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_guardian_4L_bsxkjl.webp",
       "description": ""
     },
     {
       "name": "Angel in White (Cleric Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_angelInWhite_4L_jet12q.webp",
       "description": ""
     },
     {
       "name": "Noble Sacrifice (Holy Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_nobleISacrifice_4L_eylhm0.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_nobleISacrifice_4L_eylhm0.webp",
       "description": ""
     },
     {
       "name": "One-hit Kill (Almighty Shaman Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_oneHitKill_4L_l4jrpl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_oneHitKill_4L_l4jrpl.webp",
       "description": ""
     },
     {
       "name": "Armed (Black Lion Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730689/artifact_Armed_4L_tt2gbd.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_Armed_4L_tt2gbd.webp",
       "description": ""
     },
     {
       "name": "Solid Foundation (Dragon Knight Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_solidFoundation_4L_o8t6aw.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_solidFoundation_4L_o8t6aw.webp",
       "description": ""
     },
     {
       "name": "Destroyer (High-ranking Demon Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_destroyer_4L_owtfbl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_destroyer_4L_owtfbl.webp",
       "description": ""
     },
     {
       "name": "Warmonger (Crimson Knight Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_warmonger_4L_j7jveq.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_warmonger_4L_j7jveq.webp",
       "description": ""
     },
     {
       "name": "Iron Will",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730695/artifact_ironWill_4L_gczimo.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ironWill_4L_gczimo.webp",
       "description": ""
     },
     {
       "name": "Burning Curse",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp",
       "description": ""
     },
     {
       "name": "Burning Greed",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_burningGreed_8R_oc70gz.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningGreed_8R_oc70gz.webp",
       "description": ""
     },
     {
       "name": "Burning Blessing",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_BurningBlessing_8L_sppyfn.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_BurningBlessing_8L_sppyfn.webp",
       "description": ""
     },
     {
       "name": "Chaotic Infamy",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_ChaoticInfamy_8R_j2zmy5.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ChaoticInfamy_8R_j2zmy5.webp",
       "description": ""
     },
     {
       "name": "Chaotic Desire",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730692/artifact_chaoticDesire_8R_hu0hex.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaoticDesire_8R_hu0hex.webp",
       "description": ""
     },
     {
       "name": "Chaotic Wish",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaosWish_8L_wspayx.webp",
       "description": ""
     }
   ],
   "Necklace": [
     {
       "name": "Champion on the Field (Red-eyed Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_championOnTheField_4R_wtnphf.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_championOnTheField_4R_wtnphf.webp",
       "description": ""
     },
     {
       "name": "Executioner (Behemoth Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_executionner_4R_c9btj1.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_executionner_4R_c9btj1.webp",
       "description": ""
     },
     {
       "name": "Berserker (Skeleton Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730689/artifact_berseker_4R_dgh2zx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_berseker_4R_dgh2zx.webp",
       "description": ""
     },
     {
       "name": "Outstanding Ability (Obsidian Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_outstandingAbility_4R_rqmjla.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_outstandingAbility_4R_rqmjla.webp",
       "description": ""
     },
     {
       "name": "Expert (Beast Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_Expert_4R_wbxgfe.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_Expert_4R_wbxgfe.webp",
       "description": ""
     },
     {
       "name": "Sylph's Blessing (Peridot Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_sylphSBlessing_4R_nmjkjl.webp",
       "description": ""
     },
     {
       "name": "Outstanding Connection (Aquamarine Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730697/artifact_OuststandingConnection__4R_qm7pjh.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_OuststandingConnection__4R_qm7pjh.webp",
       "description": ""
     },
     {
       "name": "Concentration of Firepower (Viresdescent Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_concentrationOfFirepower_4R_i5iovw.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_concentrationOfFirepower_4R_i5iovw.webp",
       "description": ""
     },
     {
       "name": "Shining Star",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730697/artifact_shiningStar_4R_x3wslj.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_shiningStar_4R_x3wslj.webp",
       "description": ""
     },
     {
       "name": "Destructive Instinct",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_destructiveInstinct_4R_oxto9g.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_destructiveInstinct_4R_oxto9g.webp",
       "description": ""
     },
     {
       "name": "Burning Curse",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp",
       "description": ""
     },
     {
       "name": "Burning Greed",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_burningGreed_8R_oc70gz.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningGreed_8R_oc70gz.webp",
       "description": ""
     },
     {
       "name": "Burning Blessing",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_BurningBlessing_8L_sppyfn.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_BurningBlessing_8L_sppyfn.webp",
       "description": ""
     },
     {
       "name": "Chaotic Infamy",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_ChaoticInfamy_8R_j2zmy5.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ChaoticInfamy_8R_j2zmy5.webp",
       "description": ""
     },
     {
       "name": "Chaotic Desire",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaosWish_8L_wspayx.webp",
       "description": ""
     },
     {
       "name": "Chaotic Wish",
       "icon": "",
-      "description": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png"
+      "description": "https://api.builderberu.com/cdn/images/artifact_chaosWish_8L_wspayx.webp"
     }
   ],
   "Bracelet": [
     {
       "name": "Champion on the Field (Red-eyed Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_championOnTheField_4R_wtnphf.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_championOnTheField_4R_wtnphf.webp",
       "description": ""
     },
     {
       "name": "Executioner (Behemoth Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_executionner_4R_c9btj1.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_executionner_4R_c9btj1.webp",
       "description": ""
     },
     {
       "name": "Berserker (Skeleton Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730689/artifact_berseker_4R_dgh2zx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_berseker_4R_dgh2zx.webp",
       "description": ""
     },
     {
       "name": "Outstanding Ability (Obsidian Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_outstandingAbility_4R_rqmjla.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_outstandingAbility_4R_rqmjla.webp",
       "description": ""
     },
     {
       "name": "Expert (Beast Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_Expert_4R_wbxgfe.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_Expert_4R_wbxgfe.webp",
       "description": ""
     },
     {
       "name": "Sylph's Blessing (Peridot Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_sylphSBlessing_4R_nmjkjl.webp",
       "description": ""
     },
     {
       "name": "Outstanding Connection (Aquamarine Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730697/artifact_OuststandingConnection__4R_qm7pjh.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_OuststandingConnection__4R_qm7pjh.webp",
       "description": ""
     },
     {
       "name": "Concentration of Firepower (Viresdescent Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_concentrationOfFirepower_4R_i5iovw.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_concentrationOfFirepower_4R_i5iovw.webp",
       "description": ""
     },
     {
       "name": "Shining Star",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730697/artifact_shiningStar_4R_x3wslj.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_shiningStar_4R_x3wslj.webp",
       "description": ""
     },
     {
       "name": "Destructive Instinct",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_destructiveInstinct_4R_oxto9g.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_destructiveInstinct_4R_oxto9g.webp",
       "description": ""
     },
     {
       "name": "Burning Curse",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp",
       "description": ""
     },
     {
       "name": "Burning Greed",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_burningGreed_8R_oc70gz.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningGreed_8R_oc70gz.webp",
       "description": ""
     },
     {
       "name": "Burning Blessing",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_BurningBlessing_8L_sppyfn.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_BurningBlessing_8L_sppyfn.webp",
       "description": ""
     },
     {
       "name": "Chaotic Infamy",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_ChaoticInfamy_8R_j2zmy5.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ChaoticInfamy_8R_j2zmy5.webp",
       "description": ""
     },
     {
       "name": "Chaotic Desire",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730692/artifact_chaoticDesire_8L_ghkvum.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaoticDesire_8L_ghkvum.webp",
       "description": ""
     },
     {
       "name": "Chaotic Wish",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaosWish_8L_wspayx.webp",
       "description": ""
     }
   ],
   "Ring": [
     {
       "name": "Executioner (Behemoth Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_executionner_4R_c9btj1.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_executionner_4R_c9btj1.webp",
       "description": ""
     },
     {
       "name": "Berserker (Skeleton Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730689/artifact_berseker_4R_dgh2zx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_berseker_4R_dgh2zx.webp",
       "description": ""
     },
     {
       "name": "Outstanding Ability (Obsidian Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_outstandingAbility_4R_rqmjla.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_outstandingAbility_4R_rqmjla.webp",
       "description": ""
     },
     {
       "name": "Expert (Beast Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_Expert_4R_wbxgfe.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_Expert_4R_wbxgfe.webp",
       "description": ""
     },
     {
       "name": "Sylph's Blessing (Peridot Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_sylphSBlessing_4R_nmjkjl.webp",
       "description": ""
     },
     {
       "name": "Outstanding Connection (Aquamarine Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730697/artifact_OuststandingConnection__4R_qm7pjh.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_OuststandingConnection__4R_qm7pjh.webp",
       "description": ""
     },
     {
       "name": "Concentration of Firepower (Viresdescent Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_concentrationOfFirepower_4R_i5iovw.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_concentrationOfFirepower_4R_i5iovw.webp",
       "description": ""
     },
     {
       "name": "Shining Star",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730697/artifact_shiningStar_4R_x3wslj.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_shiningStar_4R_x3wslj.webp",
       "description": ""
     },
     {
       "name": "Destructive Instinct",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_destructiveInstinct_4R_oxto9g.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_destructiveInstinct_4R_oxto9g.webp",
       "description": ""
     },
     {
       "name": "Burning Curse",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp",
       "description": ""
     },
     {
       "name": "Burning Greed",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_burningGreed_8R_oc70gz.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningGreed_8R_oc70gz.webp",
       "description": ""
     },
     {
       "name": "Burning Blessing",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_BurningBlessing_8L_sppyfn.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_BurningBlessing_8L_sppyfn.webp",
       "description": ""
     },
     {
       "name": "Chaotic Infamy",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_ChaoticInfamy_8R_j2zmy5.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ChaoticInfamy_8R_j2zmy5.webp",
       "description": ""
     },
     {
       "name": "Chaotic Desire",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730692/artifact_chaoticDesire_8L_ghkvum.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaoticDesire_8L_ghkvum.webp",
       "description": ""
     },
     {
       "name": "Chaotic Wish",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaosWish_8L_wspayx.webp",
       "description": ""
     }
   ],
   "Earrings": [
     {
       "name": "Champion on the Field (Red-eyed Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_championOnTheField_4R_wtnphf.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_championOnTheField_4R_wtnphf.webp",
       "description": ""
     },
     {
       "name": "Executioner (Behemoth Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_executionner_4R_c9btj1.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_executionner_4R_c9btj1.webp",
       "description": ""
     },
     {
       "name": "Berserker (Skeleton Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730689/artifact_berseker_4R_dgh2zx.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_berseker_4R_dgh2zx.webp",
       "description": ""
     },
     {
       "name": "Outstanding Ability (Obsidian Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730696/artifact_outstandingAbility_4R_rqmjla.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_outstandingAbility_4R_rqmjla.webp",
       "description": ""
     },
     {
       "name": "Expert (Beast Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730694/artifact_Expert_4R_wbxgfe.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_Expert_4R_wbxgfe.webp",
       "description": ""
     },
     {
       "name": "Sylph's Blessing (Peridot Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_sylphSBlessing_4R_nmjkjl.webp",
       "description": ""
     },
     {
       "name": "Outstanding Connection (Aquamarine Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730697/artifact_OuststandingConnection__4R_qm7pjh.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_OuststandingConnection__4R_qm7pjh.webp",
       "description": ""
     },
     {
       "name": "Concentration of Firepower (Viresdescent Set)",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_concentrationOfFirepower_4R_i5iovw.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_concentrationOfFirepower_4R_i5iovw.webp",
       "description": ""
     },
     {
       "name": "Shining Star",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730697/artifact_shiningStar_4R_x3wslj.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_shiningStar_4R_x3wslj.webp",
       "description": ""
     },
     {
       "name": "Destructive Instinct",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_destructiveInstinct_4R_oxto9g.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_destructiveInstinct_4R_oxto9g.webp",
       "description": ""
     },
     {
       "name": "Burning Curse",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp",
       "description": ""
     },
     {
       "name": "Burning Greed",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_burningGreed_8R_oc70gz.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_burningGreed_8R_oc70gz.webp",
       "description": ""
     },
     {
       "name": "Burning Blessing",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_BurningBlessing_8L_sppyfn.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_BurningBlessing_8L_sppyfn.webp",
       "description": ""
     },
     {
       "name": "Chaotic Infamy",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730693/artifact_ChaoticInfamy_8R_j2zmy5.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_ChaoticInfamy_8R_j2zmy5.webp",
       "description": ""
     },
     {
       "name": "Chaotic Desire",
-      "icon": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730692/artifact_chaoticDesire_8R_hu0hex.png",
+      "icon": "https://api.builderberu.com/cdn/images/artifact_chaoticDesire_8R_hu0hex.webp",
       "description": ""
     },
     {
       "name": "Chaotic Wish",
       "icon": "",
-      "description": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png"
+      "description": "https://api.builderberu.com/cdn/images/artifact_chaosWish_8L_wspayx.webp"
     }
   ]
 }

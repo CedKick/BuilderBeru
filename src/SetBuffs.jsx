@@ -9,7 +9,7 @@ const SetBuffs = ({ equippedSets = [], onClose, onApplyBuffs }) => {
       id: 'burning_2pc',
       name: '2-Piece Burning',
       setName: 'Burning Set',
-      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png',
+      icon: 'https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp',
       description: '+20% Fire Damage',
       requirement: '2 pieces',
       effects: {
@@ -21,7 +21,7 @@ const SetBuffs = ({ equippedSets = [], onClose, onApplyBuffs }) => {
       id: 'burning_4pc',
       name: '4-Piece Burning',
       setName: 'Burning Set',
-      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_BurningBlessing_8L_sppyfn.png',
+      icon: 'https://api.builderberu.com/cdn/images/artifact_BurningBlessing_8L_sppyfn.webp',
       description: '+40% Ultimate Damage on Burning enemies',
       requirement: '4 pieces',
       effects: {
@@ -33,7 +33,7 @@ const SetBuffs = ({ equippedSets = [], onClose, onApplyBuffs }) => {
       id: 'chaos_2pc',
       name: '2-Piece Chaos',
       setName: 'Chaos Set',
-      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png',
+      icon: 'https://api.builderberu.com/cdn/images/artifact_chaosWish_8L_wspayx.webp',
       description: '+15% Critical Rate',
       requirement: '2 pieces',
       effects: {
@@ -44,7 +44,7 @@ const SetBuffs = ({ equippedSets = [], onClose, onApplyBuffs }) => {
       id: 'angel_4pc',
       name: '4-Piece Angel',
       setName: 'Angel White Set',
-      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png',
+      icon: 'https://api.builderberu.com/cdn/images/artifact_angelInWhite_4L_jet12q.webp',
       description: '+30% Healing & +20% Skill Damage',
       requirement: '4 pieces',
       effects: {

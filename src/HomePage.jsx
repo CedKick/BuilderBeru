@@ -122,7 +122,7 @@ export default function HomePage() {
     {
       label: t('home.menu.build'),
       path: "/build",
-      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771071790/LogoBuild128_pf9wkk.png",
+      img: "https://api.builderberu.com/cdn/images/LogoBuild128_pf9wkk.webp",
       glowColor: "rgba(168, 85, 247, 0.5)",
       beruMessage: "Un build en preparation ? Montre-moi ca, chasseur !",
       alt: "Build your Hunter SLA",
@@ -130,7 +130,7 @@ export default function HomePage() {
     {
       label: "Theorycraft",
       path: "/theorycraft",
-      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771074452/LogoTheyroycraft128_maeizs.png",
+      img: "https://api.builderberu.com/cdn/images/LogoTheyroycraft128_maeizs.webp",
       glowColor: "rgba(59, 130, 246, 0.5)",
       isNew: true,
       beruMessage: "Du theorycraft ? L'Ombre calcule deja les synergies...",
@@ -142,7 +142,7 @@ export default function HomePage() {
     {
       label: t('home.menu.drawBeru'),
       path: "/drawberu",
-      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771073331/LogoDrawBERU128-removebg-preview_rhst5w.png",
+      img: "https://api.builderberu.com/cdn/images/LogoDrawBERU128-removebg-preview_rhst5w.webp",
       glowColor: "rgba(236, 72, 153, 0.5)",
       isNew: true,
       beruMessage: "Tu vas me dessiner ? Fais-moi beau cette fois !",
@@ -151,7 +151,7 @@ export default function HomePage() {
     {
       label: "LoreStory",
       path: "/lorestory",
-      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771076750/LogoLoreStory128_mqxibm.png",
+      img: "https://api.builderberu.com/cdn/images/LogoLoreStory128_mqxibm.webp",
       glowColor: "rgba(139, 92, 246, 0.5)",
       isNew: true,
       beruMessage: "Des histoires ? Installe-toi... le Soldat N1 raconte.",
@@ -160,7 +160,7 @@ export default function HomePage() {
     {
       label: "Shadow Colosseum",
       path: "/shadow-colosseum",
-      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771080428/LogoColossum128-removebg-preview_jrzpts.png",
+      img: "https://api.builderberu.com/cdn/images/LogoColossum128-removebg-preview_jrzpts.webp",
       glowColor: "rgba(239, 68, 68, 0.5)",
       isNew: true,
       beruMessage: "Le Colisee des Ombres t'attend... Tes chibis sont prets ?",
@@ -169,7 +169,7 @@ export default function HomePage() {
     {
       label: "Expedition I",
       path: "/expedition",
-      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772942138/GardienDeLaForet_fsymf8.png",
+      img: "https://api.builderberu.com/cdn/images/GardienDeLaForet_fsymf8.webp",
       glowColor: "rgba(245, 158, 11, 0.5)",
       isNew: true,
       beruMessage: "L'Expedition commence ! 5 boss, 30 chasseurs... Qui survivra ?",
@@ -189,11 +189,11 @@ export default function HomePage() {
   }, []);
 
   const langFlags = [
-    { src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png", alt: "Fran\u00e7ais Solo Leveling Arise", lang: 'fr' },
-    { src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png", alt: "English SOLO LEVELING ARISE", lang: 'en' },
-    { src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754778825/ko_flag_zdbhiz.png", alt: "\uD55C\uAD6D\uC5B4", lang: 'ko' },
-    { src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814859/jap_flag_bet2ob.png", alt: "\u65E5\u672C\u8A9E", lang: 'ja' },
-    { src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814970/zh_flag_r9l06y.png", alt: "\u4E2D\u6587", lang: 'zh' },
+    { src: "https://api.builderberu.com/cdn/images/Francia_sboce9.webp", alt: "Fran\u00e7ais Solo Leveling Arise", lang: 'fr' },
+    { src: "https://api.builderberu.com/cdn/images/BritishAirLine_s681io.webp", alt: "English SOLO LEVELING ARISE", lang: 'en' },
+    { src: "https://api.builderberu.com/cdn/images/ko_flag_zdbhiz.webp", alt: "\uD55C\uAD6D\uC5B4", lang: 'ko' },
+    { src: "https://api.builderberu.com/cdn/images/jap_flag_bet2ob.webp", alt: "\u65E5\u672C\u8A9E", lang: 'ja' },
+    { src: "https://api.builderberu.com/cdn/images/zh_flag_r9l06y.webp", alt: "\u4E2D\u6587", lang: 'zh' },
   ];
 
   // 🎯 SEO DATA POUR AFFICHAGE DYNAMIQUE
@@ -231,7 +231,7 @@ export default function HomePage() {
   return (
     <div
       className="min-h-screen bg-[#0f0f1a] text-white flex flex-col items-center py-6 md:py-12 px-3 md:px-4 relative"
-      style={{ backgroundImage: 'url(https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771068462/backgroundVD_ywvghj.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}
+      style={{ backgroundImage: 'url(https://api.builderberu.com/cdn/images/backgroundVD_ywvghj.webp)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}
     >
       <div className="absolute inset-0 bg-[#0f0f1a]/75 pointer-events-none" />
 

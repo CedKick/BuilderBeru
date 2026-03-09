@@ -11,7 +11,7 @@ const ChibiEntity = ({ chibiId, position, onClick }) => {
   // Récupérer les données du chibi
   const chibiData = CHIBI_DATABASE[chibiId] || {
     name: 'Unknown',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
+    sprite: 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp',
     rarity: 'Commun',
     messages: ["..."]
   };

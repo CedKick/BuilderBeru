@@ -24,7 +24,7 @@ const EnhancedChibiWorld = () => {
   
   // 🎮 États principaux
   const [worldData, setWorldData] = useState({
-    background: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755091230/BuilderBeru_enclos_wgtjm5.jpg',
+    background: 'https://api.builderberu.com/cdn/images/BuilderBeru_enclos_wgtjm5.webp',
     name: 'BuilderBeru Sanctuary',
     maxChibis: 5,
     level: 1,

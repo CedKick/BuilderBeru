@@ -219,7 +219,7 @@ const DrawBeruLauncher = () => {
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center gap-4 mb-2">
             <img loading="lazy"
-              src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
+              src="https://api.builderberu.com/cdn/images/DrasBeru_zd8ju5.webp"
               alt="DrawBeru" className="w-12 h-12"
             />
             <div>

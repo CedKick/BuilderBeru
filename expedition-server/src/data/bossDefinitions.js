@@ -583,7 +583,7 @@ export const BOSS_DEFINITIONS = [
     sprite: 'ragnaros',
     enrageTimer: 720,
     anchorCenter: true,
-    mapBg: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1772967337/Paysage5emeBoss_jleab4.jpg',
+    mapBg: 'https://api.builderberu.com/cdn/images/Paysage5emeBoss_jleab4.webp',
     phases: [
       { hpPercent: 100, label: 'Phase 1 - Émergence' },
       { hpPercent: 80, label: 'Phase 2 - Lave' },

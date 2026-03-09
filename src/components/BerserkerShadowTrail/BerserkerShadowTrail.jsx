@@ -10,13 +10,13 @@ import './BerserkerShadowTrail.css';
 
 // 🎨 SPRITES BERSERKER - Arsenal complet du destructeur
 const BERSERKER_SPRITES = {
-  left: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592473/berserk_left_hzlrtv.png",
-  right: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592473/berserk_right_sxv4jj.png", 
-  up: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592473/berserk_up_rqjt0n.png",
-  down: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592472/berserk_down_stk2tc.png",
+  left: "https://api.builderberu.com/cdn/images/berserk_left_hzlrtv.webp",
+  right: "https://api.builderberu.com/cdn/images/berserk_right_sxv4jj.webp", 
+  up: "https://api.builderberu.com/cdn/images/berserk_up_rqjt0n.webp",
+  down: "https://api.builderberu.com/cdn/images/berserk_down_stk2tc.webp",
   // Easter egg sprites
-  chaos: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592473/berserk_up_rqjt0n.png", // Rotate 180
-  glitch: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592472/berserk_down_stk2tc.png" // Invert colors
+  chaos: "https://api.builderberu.com/cdn/images/berserk_up_rqjt0n.webp", // Rotate 180
+  glitch: "https://api.builderberu.com/cdn/images/berserk_down_stk2tc.webp" // Invert colors
 };
 
 // 🎯 CONFIGURATION AVANCÉE - Système adaptatif selon l'engagement

@@ -792,7 +792,7 @@ const KaiselInteractionMenu = ({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <img loading="lazy" 
-                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png"
+                src="https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp"
                 alt="Kaisel"
                 style={{
                   width: '24px',

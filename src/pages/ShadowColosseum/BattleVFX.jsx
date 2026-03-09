@@ -164,7 +164,7 @@ function ScreenFlash({ color, active }) {
 
 const WEAPON_PROJECTILES = {
   shadow_silence: {
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771529868/flecheMurmure_a88leg.png',
+    sprite: 'https://api.builderberu.com/cdn/images/flecheMurmure_a88leg.webp',
     width: 40, height: 40,
     trailColor: 'rgba(168,85,247,0.5)',
     impactColor: 'rgba(168,85,247,0.6)',
@@ -172,7 +172,7 @@ const WEAPON_PROJECTILES = {
     duration: 0.45,
   },
   sulfuras_fury: {
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771531420/braiseSulfuras_i44osa.png',
+    sprite: 'https://api.builderberu.com/cdn/images/braiseSulfuras_i44osa.webp',
     width: 38, height: 38,
     trailColor: 'rgba(239,68,68,0.6)',
     impactColor: 'rgba(249,115,22,0.7)',
@@ -181,7 +181,7 @@ const WEAPON_PROJECTILES = {
     spin: true,
   },
   guldan_halo: {
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638364/projectileGuldan_ii184b.png',
+    sprite: 'https://api.builderberu.com/cdn/images/projectileGuldan_ii184b.webp',
     width: 36, height: 36,
     trailColor: 'rgba(34,197,94,0.5)',
     impactColor: 'rgba(74,222,128,0.6)',
@@ -532,7 +532,7 @@ const CHIBI_POSITIONS = [
   { left: '22%', top: '62%' },
 ];
 
-const MEGUMIN_CAST_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771534768/SkillExplosionMegumin_dio1zw.png';
+const MEGUMIN_CAST_SPRITE = 'https://api.builderberu.com/cdn/images/SkillExplosionMegumin_dio1zw.webp';
 
 function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps, weaponPassive, attackInterval, isCasting }) {
   const hpPct = chibi.maxHp > 0 ? chibi.hp / chibi.maxHp : 0;
@@ -729,8 +729,8 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
   const arenaBgRef = useRef(null);
   if (!arenaBgRef.current) {
     const ARENA_MAPS = [
-      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771328568/pvpArena2_hqeqzb.png',
-      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771328568/pvpArena1_wfxqmk.png',
+      'https://api.builderberu.com/cdn/images/pvpArena2_hqeqzb.webp',
+      'https://api.builderberu.com/cdn/images/pvpArena1_wfxqmk.webp',
     ];
     arenaBgRef.current = ARENA_MAPS[Math.floor(Math.random() * ARENA_MAPS.length)];
   }
@@ -915,7 +915,7 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
             {/* MEGUMIN EXPLOSION on boss */}
             {meguminExplosion && (
               <div className="absolute pointer-events-none flex items-center justify-center" style={{ top: '-60%', left: '-50%', width: '200%', height: '200%', zIndex: 50 }}>
-                <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771534341/Explosion_cbnuhl.png" alt="EXPLOSION"
+                <img loading="lazy" src="https://api.builderberu.com/cdn/images/Explosion_cbnuhl.webp" alt="EXPLOSION"
                   style={{ width: 180, height: 180, animation: 'explosionGrow 1.5s ease-out forwards', imageRendering: 'auto' }} />
               </div>
             )}

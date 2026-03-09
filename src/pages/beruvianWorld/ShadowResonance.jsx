@@ -11,7 +11,7 @@ const SHADOWS = {
     skills: ['Stone Wall', 'Earth Shatter', 'Immovable'],
     resonanceBonus: { defense: 50, hp: 1000, speed: -10 },
     corruptionRate: 0.5,
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606352/shadows/bigrock.png'
+    sprite: 'https://api.builderberu.com/cdn/images/shadows_bigrock.webp'
   },
   BESTE: {
     id: 'beste',
@@ -21,7 +21,7 @@ const SHADOWS = {
     skills: ['Shadow Strike', 'Void Burst', 'Assassinate'],
     resonanceBonus: { attack: 100, critRate: 25, defense: -20 },
     corruptionRate: 1.2,
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606352/shadows/beste.png'
+    sprite: 'https://api.builderberu.com/cdn/images/shadows_beste.webp'
   },
   KAISER: {
     id: 'kaiser',
@@ -31,7 +31,7 @@ const SHADOWS = {
     skills: ['Dark Blessing', 'Corruption Wave', 'Soul Link'],
     resonanceBonus: { healing: 50, mana: 200, attack: 20 },
     corruptionRate: 0.8,
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606352/shadows/kaiser.png'
+    sprite: 'https://api.builderberu.com/cdn/images/shadows_kaiser.webp'
   }
 };
 

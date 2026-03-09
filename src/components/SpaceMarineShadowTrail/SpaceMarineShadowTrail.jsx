@@ -9,10 +9,10 @@ import './SpaceMarineShadowTrail.css';
 
 // 🎨 SPRITES DU SPACE MARINE
 const SPACEMARINE_SPRITES = {
-  down: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756838889/spacemarine_down_ltt8cs.png",
-  left: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756838888/spacemarine_left_ya1o1o.png",
-  right: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756838889/spacemarine_right_iobccn.png",
-  up: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756838888/spacemarine_up_sprcwc.png"
+  down: "https://api.builderberu.com/cdn/images/spacemarine_down_ltt8cs.webp",
+  left: "https://api.builderberu.com/cdn/images/spacemarine_left_ya1o1o.webp",
+  right: "https://api.builderberu.com/cdn/images/spacemarine_right_iobccn.webp",
+  up: "https://api.builderberu.com/cdn/images/spacemarine_up_sprcwc.webp"
 };
 
 // 🎯 CONFIGURATION

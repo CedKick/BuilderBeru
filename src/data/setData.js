@@ -8,7 +8,7 @@ export const ARTIFACT_SETS = {
         name: 'Burning Greed',
         frenchName: 'Avarice Brûlante',
         description: 'Set orienté dégâts critiques - Buffs pour la team',
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png',
+        icon: 'https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp',
         bonuses: {
             '2pc': {
                 critRate: 10,    // +10% TC pour la team
@@ -36,7 +36,7 @@ export const ARTIFACT_SETS = {
         name: 'Burning Curse',
         frenchName: 'Malédiction Brûlante',
         description: 'Set de malédiction et dégâts sur la durée',
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png',
+        icon: 'https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp',
         bonuses: {
             '2pc': {
                 critRate: 0,
@@ -64,7 +64,7 @@ export const ARTIFACT_SETS = {
         name: 'Burning Blessing',
         frenchName: 'Bénédiction Brûlante',
         description: 'Set de soutien et buffs',
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png',
+        icon: 'https://api.builderberu.com/cdn/images/artifact_burningCurse_8L_l98rff.webp',
         bonuses: {
             '2pc': {
                 critRate: 0,
@@ -93,7 +93,7 @@ export const ARTIFACT_SETS = {
         name: 'Armed',
         frenchName: 'Armé',
         description: 'Set d\'attaque pure avec pénétration de défense',
-        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730689/artifact_Armed_4L_tt2gbd.png',
+        icon: 'https://api.builderberu.com/cdn/images/artifact_Armed_4L_tt2gbd.webp',
         bonuses: {
             '2pc': {
                 critRate: 0,

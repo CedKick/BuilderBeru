@@ -10,12 +10,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ════════════════════════════════════════════════════════════
 
 const CHIBIS = [
-  { id: 'beru', name: 'Beru', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png', color: 'text-purple-400' },
-  { id: 'kaisel', name: 'Kaisel', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png', color: 'text-red-400' },
-  { id: 'tank', name: 'Tank', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png', color: 'text-orange-400' },
-  { id: 'okami', name: 'Okami', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png', color: 'text-blue-400' },
-  { id: 'raven', name: 'Raven', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png', color: 'text-gray-400' },
-  { id: 'pingsu', name: 'Pingsu', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png', color: 'text-amber-400' },
+  { id: 'beru', name: 'Beru', sprite: 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp', color: 'text-purple-400' },
+  { id: 'kaisel', name: 'Kaisel', sprite: 'https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp', color: 'text-red-400' },
+  { id: 'tank', name: 'Tank', sprite: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp', color: 'text-orange-400' },
+  { id: 'okami', name: 'Okami', sprite: 'https://api.builderberu.com/cdn/images/Okami_face_qfzt4j.webp', color: 'text-blue-400' },
+  { id: 'raven', name: 'Raven', sprite: 'https://api.builderberu.com/cdn/images/Raven_face_xse2x9.webp', color: 'text-gray-400' },
+  { id: 'pingsu', name: 'Pingsu', sprite: 'https://api.builderberu.com/cdn/images/Pingsu_face_tnilyr.webp', color: 'text-amber-400' },
 ];
 
 const CHIBI_INTERRUPTIONS = {
@@ -353,7 +353,7 @@ export default function LoreStory() {
     return (
       <div
         className="min-h-screen bg-[#0f0f1a] text-white py-6 md:py-12 px-3 md:px-4"
-        style={{ backgroundImage: 'url(https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771068462/backgroundVD_ywvghj.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}
+        style={{ backgroundImage: 'url(https://api.builderberu.com/cdn/images/backgroundVD_ywvghj.webp)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}
       >
         <div className="absolute inset-0 bg-[#0f0f1a]/80 pointer-events-none" style={{ position: 'fixed' }} />
 
@@ -445,7 +445,7 @@ export default function LoreStory() {
       ref={containerRef}
       className="min-h-screen bg-[#0a0a14] text-white flex flex-col items-center justify-center px-4 md:px-8 py-8 relative overflow-hidden cursor-pointer select-none"
       onClick={nextPart}
-      style={{ backgroundImage: 'url(https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771068462/backgroundVD_ywvghj.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}
+      style={{ backgroundImage: 'url(https://api.builderberu.com/cdn/images/backgroundVD_ywvghj.webp)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}
     >
       <div className="absolute inset-0 bg-[#0a0a14]/85 pointer-events-none" />
 

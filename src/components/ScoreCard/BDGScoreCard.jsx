@@ -36,9 +36,9 @@ const BDGScoreCard = ({ showTankMessage, activeAccount, currentBuildStats}) => {
 
   // Map des boss avec leurs images
   const bossImages = {
-    'ant_queen': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968545/antQueen_jzt22r.png',
-    'fatchna': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730842/bdg_fatchna_lf0nij.png',
-    'statue': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756135602/statue_uzsuqr.png'
+    'ant_queen': 'https://api.builderberu.com/cdn/images/antQueen_jzt22r.webp',
+    'fatchna': 'https://api.builderberu.com/cdn/images/bdg_fatchna_lf0nij.webp',
+    'statue': 'https://api.builderberu.com/cdn/images/statue_uzsuqr.webp'
   };
 
   const elementColors = {

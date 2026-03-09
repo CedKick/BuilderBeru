@@ -251,35 +251,35 @@ class ChibiEntity {
     switch(this.type) {
       case 'tank':
         return {
-          idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
-          left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_left_lxr3km.png',
-          right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_right_2_zrf0y1.png',
-          up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png',
-          down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png'
+          idle: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp',
+          left: 'https://api.builderberu.com/cdn/images/tank_run_left_lxr3km.webp',
+          right: 'https://api.builderberu.com/cdn/images/tank_run_right_2_zrf0y1.webp',
+          up: 'https://api.builderberu.com/cdn/images/tank_dos_bk6poi.webp',
+          down: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp'
         };
       case 'beru':
         return {
-          idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
-          left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414823/beru_left_bvtyba.png',
-          right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414822/beru_right_ofwvy5.png',
-          up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414738/beru_dos_dtk5ln.png',
-          down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png'
+          idle: 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp',
+          left: 'https://api.builderberu.com/cdn/images/beru_left_bvtyba.webp',
+          right: 'https://api.builderberu.com/cdn/images/beru_right_ofwvy5.webp',
+          up: 'https://api.builderberu.com/cdn/images/beru_dos_dtk5ln.webp',
+          down: 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp'
         };
       case 'kaisel':
         return {
-          idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
-          left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_left_m8qkyi.png',
-          right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_right_hmgppo.png',
-          up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750772247/Kaisel_dos_dstl0d.png',
-          down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png'
+          idle: 'https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp',
+          left: 'https://api.builderberu.com/cdn/images/Kaisel_left_m8qkyi.webp',
+          right: 'https://api.builderberu.com/cdn/images/Kaisel_right_hmgppo.webp',
+          up: 'https://api.builderberu.com/cdn/images/Kaisel_dos_dstl0d.webp',
+          down: 'https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp'
         };
       case 'bobbyJones':
         return {
-          idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png', // Utilise Tank sprite avec pomme
-          left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_left_lxr3km.png',
-          right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_right_2_zrf0y1.png',
-          up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png',
-          down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png'
+          idle: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp', // Utilise Tank sprite avec pomme
+          left: 'https://api.builderberu.com/cdn/images/tank_run_left_lxr3km.webp',
+          right: 'https://api.builderberu.com/cdn/images/tank_run_right_2_zrf0y1.webp',
+          up: 'https://api.builderberu.com/cdn/images/tank_dos_bk6poi.webp',
+          down: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp'
         };
       default:
         return {};
@@ -833,7 +833,7 @@ useEffect(() => {
         }, 3000);
       }, 2000);
     };
-    mapImage.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1758046144/canvasmap_xdbcyc.png';
+    mapImage.src = 'https://api.builderberu.com/cdn/images/canvasmap_xdbcyc.webp';
     
     // Animation loop avec interactions
     const animate = () => {
@@ -1013,7 +1013,7 @@ useEffect(() => {
       <div 
         className="absolute inset-0 opacity-30"
         style={{
-          backgroundImage: 'url(https://res.cloudinary.com/dbg7m8qjd/image/upload/v1758046144/canvasmap_xdbcyc.png)',
+          backgroundImage: 'url(https://api.builderberu.com/cdn/images/canvasmap_xdbcyc.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           filter: `brightness(${Math.max(0.3, 1 - attempts/5000)}) blur(${Math.min(5, attempts/1000)}px)`
@@ -1260,7 +1260,7 @@ useEffect(() => {
                         <p className="text-xs text-gray-400">Tentatives actuelles</p>
                         <div className="flex items-center gap-1">
                           <img loading="lazy" 
-                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1758047311/hammer_tez64c.png"
+                            src="https://api.builderberu.com/cdn/images/hammer_tez64c.webp"
                             alt="hammer"
                             className="w-4 h-4"
                           />

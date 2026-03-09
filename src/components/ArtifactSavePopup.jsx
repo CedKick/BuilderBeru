@@ -123,7 +123,7 @@ const ArtifactSavePopup = ({
           {artifactData.set && (
             <div className="flex items-center gap-2 mb-3 p-2 bg-[#1a1a2e] rounded">
               <img loading="lazy" 
-                src={getSetIcon(artifactData.set, slot) || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"}
+                src={getSetIcon(artifactData.set, slot) || "https://api.builderberu.com/cdn/images/set_a6k4yh.webp"}
                 className="w-6 h-6"
                 alt={artifactData.set}
               />

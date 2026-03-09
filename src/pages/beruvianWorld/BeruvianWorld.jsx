@@ -848,7 +848,7 @@ function HunterMarker({ x, y, faction }) {
       style={{ left: x, top: y, zIndex: 100 }}
     >
       <img loading="lazy"
-        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606352/icons/build-31.png"
+        src="https://api.builderberu.com/cdn/images/icons_build-31.webp"
         alt="Hunter"
         className={`border-2 rounded-full ${factionColors[faction]} shadow-lg`}
         style={{ 

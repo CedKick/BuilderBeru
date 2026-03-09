@@ -1281,7 +1281,7 @@ const Theorycraft = () => {
             <div
                 className="fixed inset-0 z-0"
                 style={{
-                    backgroundImage: 'url(https://res.cloudinary.com/dbg7m8qjd/image/upload/v1768608582/BackgroundScreen-Theorycraft_opfviw.png)',
+                    backgroundImage: 'url(https://api.builderberu.com/cdn/images/BackgroundScreen-Theorycraft_opfviw.webp)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundAttachment: 'fixed',

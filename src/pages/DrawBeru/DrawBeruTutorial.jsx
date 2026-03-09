@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const IGRIS_IMAGES = {
-  up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570648/igris_up_hfonzn.png',
-  down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png',
-  left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570544/igris_left_cw3w5g.png',
-  right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570506/igris_right_jmyupb.png',
+  up: 'https://api.builderberu.com/cdn/images/igris_up_hfonzn.webp',
+  down: 'https://api.builderberu.com/cdn/images/igris_face_xj5mqo.webp',
+  left: 'https://api.builderberu.com/cdn/images/igris_left_cw3w5g.webp',
+  right: 'https://api.builderberu.com/cdn/images/igris_right_jmyupb.webp',
 };
 
 const STEPS = [

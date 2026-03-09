@@ -42,8 +42,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Mountains",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806322/pays1_uncolor_vbawg2.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806323/pays1_color_li1nz4.png",
+        reference: "https://api.builderberu.com/cdn/images/pays1_uncolor_vbawg2.webp",
+        template: "https://api.builderberu.com/cdn/images/pays1_color_li1nz4.webp",
         canvasSize: { width: 600, height: 600 },
         palette: {
           "1": "#192004",
@@ -65,8 +65,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Chrismas",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806336/pays2_orig_h4inrm.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806336/pays2_uncolor_blvzlg.png",
+        reference: "https://api.builderberu.com/cdn/images/pays2_orig_h4inrm.webp",
+        template: "https://api.builderberu.com/cdn/images/pays2_uncolor_blvzlg.webp",
         canvasSize: { width: 1200, height: 800 },
         palette: {
           "1": "#1C2940",
@@ -88,8 +88,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Guts",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806366/berserk2_orig_a3nlvr.jpg",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806410/berserk2_uncolor_mwaxpw.png",
+        reference: "https://api.builderberu.com/cdn/images/berserk2_orig_a3nlvr.webp",
+        template: "https://api.builderberu.com/cdn/images/berserk2_uncolor_mwaxpw.webp",
         canvasSize: { width: 800, height: 1200 },
         palette: {
           "1": "#141415",
@@ -105,8 +105,8 @@ export const drawBeruModels = {
       second: {
         id: "default",
         name: "Guts second",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806349/berserk1_orig_u10357.jpg",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806349/berserk1_uncolor_jaiyjd.png",
+        reference: "https://api.builderberu.com/cdn/images/berserk1_orig_u10357.webp",
+        template: "https://api.builderberu.com/cdn/images/berserk1_uncolor_jaiyjd.webp",
         canvasSize: { width: 800, height: 1200 },
         palette: {
           "1": "#151515",
@@ -128,8 +128,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Brunette",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806377/mang3_orig_h4vmdq.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806376/mang3__uncolor_sjl4gi.png",
+        reference: "https://api.builderberu.com/cdn/images/mang3_orig_h4vmdq.webp",
+        template: "https://api.builderberu.com/cdn/images/mang3__uncolor_sjl4gi.webp",
         canvasSize: { width: 800, height: 1200 },
         palette: {
           "1": "#21140E",
@@ -151,8 +151,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Shinjuku",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806428/mang5_orig_dznnxy.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806427/mang5_uncolor_frxdrq.png",
+        reference: "https://api.builderberu.com/cdn/images/mang5_orig_dznnxy.webp",
+        template: "https://api.builderberu.com/cdn/images/mang5_uncolor_frxdrq.webp",
         canvasSize: { width: 800, height: 1200 },
         palette: {
           "1": "#163D63",
@@ -174,8 +174,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Cycling in Japan",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806441/mang7_orig_nuff0y.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806436/mang7_uncolor_dv8kql.png",
+        reference: "https://api.builderberu.com/cdn/images/mang7_orig_nuff0y.webp",
+        template: "https://api.builderberu.com/cdn/images/mang7_uncolor_dv8kql.webp",
         canvasSize: { width: 800, height: 1200 },
         palette: {
           "1": "#1A1511",
@@ -197,8 +197,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Annapurna",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806440/mang6_orig_n4jetc.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806439/mang6_uncolor_kjtgmd.png",
+        reference: "https://api.builderberu.com/cdn/images/mang6_orig_n4jetc.webp",
+        template: "https://api.builderberu.com/cdn/images/mang6_uncolor_kjtgmd.webp",
         canvasSize: { width: 800, height: 1200 },
         palette: {
           "1": "#2B140B",
@@ -220,8 +220,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "GreenPark",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806442/mang9_orig_y8th46.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806431/mang9_uncolor_seoglc.png",
+        reference: "https://api.builderberu.com/cdn/images/mang9_orig_y8th46.webp",
+        template: "https://api.builderberu.com/cdn/images/mang9_uncolor_seoglc.webp",
         canvasSize: { width: 800, height: 1200 },
         palette: {
           "1": "#1C150C",
@@ -243,8 +243,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "PeaceAndLove",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806446/mang8_orig_xgrugz.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806435/mang8_uncolor_zt52od.png",
+        reference: "https://api.builderberu.com/cdn/images/mang8_orig_xgrugz.webp",
+        template: "https://api.builderberu.com/cdn/images/mang8_uncolor_zt52od.webp",
         canvasSize: { width: 1200, height: 800 },
         palette: {
           "1": "#222209",
@@ -266,8 +266,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Meet Cat",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806447/mang10_orig_aiybao.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806432/mang10_uncolor_u245ry.png",
+        reference: "https://api.builderberu.com/cdn/images/mang10_orig_aiybao.webp",
+        template: "https://api.builderberu.com/cdn/images/mang10_uncolor_u245ry.webp",
         canvasSize: { width: 1200, height: 800 },
         palette: {
           "1": "#171610",
@@ -290,8 +290,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "USagi Tsukino",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765491848/UsagiTsukino_orig_zi97t6.jpg",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765491848/UsagiTsukino_colored_ounqtz.png",
+        reference: "https://api.builderberu.com/cdn/images/UsagiTsukino_orig_zi97t6.webp",
+        template: "https://api.builderberu.com/cdn/images/UsagiTsukino_colored_ounqtz.webp",
         canvasSize: { width: 893, height: 1576 },
         palette: {
           "1": "#171b2f",
@@ -314,8 +314,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Juhee",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071898/Juhee_orig_axshu2.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071897/Juhee_uncoloried_enpxch.png",
+        reference: "https://api.builderberu.com/cdn/images/Juhee_orig_axshu2.webp",
+        template: "https://api.builderberu.com/cdn/images/Juhee_uncoloried_enpxch.webp",
         canvasSize: { width: 900, height: 600 },
         palette: {
           "1": "#778297",
@@ -338,8 +338,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Ilhwan Classique",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759920073/ilhwan_orig_fm4l2o.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png",
+        reference: "https://api.builderberu.com/cdn/images/ilhwan_orig_fm4l2o.webp",
+        template: "https://api.builderberu.com/cdn/images/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.webp",
         canvasSize: { width: 450, height: 675 },
         palette: {
           "1": "#F5DEB3",
@@ -362,8 +362,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Yuqi Classique",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759927874/yuki_origi_m4l9h6.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951570/yuki_uncoloried_nyhkmc-removebg-preview_cs9qe5.png",
+        reference: "https://api.builderberu.com/cdn/images/yuki_origi_m4l9h6.webp",
+        template: "https://api.builderberu.com/cdn/images/yuki_uncoloried_nyhkmc-removebg-preview_cs9qe5.webp",
         canvasSize: { width: 300, height: 450 },
         palette: {
           "1": "#3c3331",
@@ -386,8 +386,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Minnie Classique",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759937740/Minnie_origi_afqdqa.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759949543/Minnie_uncoloried_test_h6erxt.png",
+        reference: "https://api.builderberu.com/cdn/images/Minnie_origi_afqdqa.webp",
+        template: "https://api.builderberu.com/cdn/images/Minnie_uncoloried_test_h6erxt.webp",
         canvasSize: { width: 300, height: 450 },
         palette: {
           "1": "#3c3331",
@@ -410,8 +410,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Kanae What",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759942372/kanaeWha_origi_rpqlgt.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759950925/kanaeWhat_uncoloried_qd0yb0-removebg-preview_uqzupl.png",
+        reference: "https://api.builderberu.com/cdn/images/kanaeWha_origi_rpqlgt.webp",
+        template: "https://api.builderberu.com/cdn/images/kanaeWhat_uncoloried_qd0yb0-removebg-preview_uqzupl.webp",
         canvasSize: { width: 1024, height: 1536 },
         palette: {
           "1": "#f9dcbf",
@@ -427,8 +427,8 @@ export const drawBeruModels = {
       second: {
         id: "second",
         name: "Kanae Pyjama",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759944854/kanaePyj_origi_lbe1co.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951683/kanaePyj_uncoloried_skpopk-removebg-preview_j44vcy.png",
+        reference: "https://api.builderberu.com/cdn/images/kanaePyj_origi_lbe1co.webp",
+        template: "https://api.builderberu.com/cdn/images/kanaePyj_uncoloried_skpopk-removebg-preview_j44vcy.webp",
         canvasSize: { width: 600, height: 760 },
         palette: {
           "1": "#9e948f",
@@ -451,8 +451,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Seorin pyjama",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759944005/seorin_origi_cnjynr.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951097/seorin_uncoloried_ymcwro-removebg-preview_zq2nyf.png",
+        reference: "https://api.builderberu.com/cdn/images/seorin_origi_cnjynr.webp",
+        template: "https://api.builderberu.com/cdn/images/seorin_uncoloried_ymcwro-removebg-preview_zq2nyf.webp",
         canvasSize: { width: 408, height: 612 },
         palette: {
           "1": "#9e948f",
@@ -475,8 +475,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Frieren",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760095328/frieren_origi_ppc90f.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760095322/frieren_uncolored_ryjru0.png",
+        reference: "https://api.builderberu.com/cdn/images/frieren_origi_ppc90f.webp",
+        template: "https://api.builderberu.com/cdn/images/frieren_uncolored_ryjru0.webp",
         canvasSize: { width: 600, height: 600 },
         palette: {
           "1": "#778297",
@@ -492,8 +492,8 @@ export const drawBeruModels = {
       second: {
         id: "second",
         name: "Frieren Art",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760099999/frifriArt_origi_lo50zj.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760099999/frifriArt_uncolored_edpz7k.png",
+        reference: "https://api.builderberu.com/cdn/images/frifriArt_origi_lo50zj.webp",
+        template: "https://api.builderberu.com/cdn/images/frifriArt_uncolored_edpz7k.webp",
         canvasSize: { width: 600, height: 600 },
         palette: {
           "1": "#58b3df",
@@ -518,8 +518,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "AYAAA",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761126693/mousdraw_orig_kumr1q.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761126692/mousudraw_uncoloried_wkwiy1.png",
+        reference: "https://api.builderberu.com/cdn/images/mousdraw_orig_kumr1q.webp",
+        template: "https://api.builderberu.com/cdn/images/mousudraw_uncoloried_wkwiy1.webp",
         canvasSize: { width: 900, height: 600 },
         palette: {
           "1": "#f8e8df",
@@ -542,8 +542,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Princesse Sarah",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760092206/sarah_origi_abtdsa.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760092204/sarah_uncoloried_eq63mh.png",
+        reference: "https://api.builderberu.com/cdn/images/sarah_origi_abtdsa.webp",
+        template: "https://api.builderberu.com/cdn/images/sarah_uncoloried_eq63mh.webp",
         canvasSize: { width: 345, height: 391 },
         palette: {
           "1": "#778297",
@@ -566,8 +566,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Cha Hae-In",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071898/chae_orig_kdpdml.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071896/chae_uncoloried_eew8ey.png",
+        reference: "https://api.builderberu.com/cdn/images/chae_orig_kdpdml.webp",
+        template: "https://api.builderberu.com/cdn/images/chae_uncoloried_eew8ey.webp",
         canvasSize: { width: 600, height: 900 },
         palette: {
           "1": "#778297",
@@ -590,8 +590,8 @@ export const drawBeruModels = {
       default: {
         id: "default",
         name: "Luffy",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761329588/luffyr_original_nkgvf8.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761329579/luffy_coloring_lnwpfn.png",
+        reference: "https://api.builderberu.com/cdn/images/luffyr_original_nkgvf8.webp",
+        template: "https://api.builderberu.com/cdn/images/luffy_coloring_lnwpfn.webp",
         canvasSize: { width: 600, height: 900 },
         palette: {
           "1": "#b1cfde",

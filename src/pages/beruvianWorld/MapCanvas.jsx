@@ -18,9 +18,9 @@ const columns = 5; // Grille 5x5
 // 🖼️ DICTIONNAIRE DES IMAGES TEMPORAIRES
 const zoneImages = {
   // ShadowLand (existantes)
-  "shadow_01": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751283779/shadowland_01_bxz7rw.png",
-  "shadow_02": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751283779/shadowland_02_mqrvow.png",
-  "shadow_03": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751283779/shadowland_03_kcip6h.png",
+  "shadow_01": "https://api.builderberu.com/cdn/images/shadowland_01_bxz7rw.webp",
+  "shadow_02": "https://api.builderberu.com/cdn/images/shadowland_02_mqrvow.webp",
+  "shadow_03": "https://api.builderberu.com/cdn/images/shadowland_03_kcip6h.webp",
   
   // PLACEHOLDERS TEMPORAIRES (à remplacer par tes vraies images)
   "light_01": "https://via.placeholder.com/1024/FFD700/000000?text=Lightborne+1",

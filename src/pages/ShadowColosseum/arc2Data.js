@@ -50,33 +50,33 @@ export const ARC2_TIER_COOLDOWN_MIN = { 1: 30, 2: 45, 3: 60, 4: 90, 5: 120, 6: 1
 export const ARC2_STAGES = [
   // ═══ Tier 1 — Usine Desaffectee ═══
   { id: 'a2_drone', name: 'Drone de Combat', arc: 2, tier: 1, element: 'wind', emoji: '\uD83E\uDD16',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771504806/dronesCombat_rucjlg.png',
+    sprite: 'https://api.builderberu.com/cdn/images/dronesCombat_rucjlg.webp',
     hp: 130000, atk: 1375, def: 200, spd: 45, crit: 12, res: 11, xp: 400, coins: 600,
     skills: [{ name: 'Tir Laser', power: 110, cdMax: 0 }, { name: 'Salve de Missiles', power: 200, cdMax: 3, debuffSpd: 15, debuffDur: 2 }] },
   { id: 'a2_goliath_petit', name: 'Petit Goliath', arc: 2, tier: 1, element: 'earth', emoji: '\uD83E\uDD16',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771506560/MiniGoliath_betej3.png',
+    sprite: 'https://api.builderberu.com/cdn/images/MiniGoliath_betej3.webp',
     hp: 182000, atk: 1514, def: 350, spd: 20, crit: 5, res: 21, xp: 450, coins: 650,
     skills: [{ name: 'Poing Hydraulique', power: 105, cdMax: 0 }, { name: 'Seisme Mecanique', power: 190, cdMax: 3 }, { name: 'Reparation', power: 0, cdMax: 4, healAlly: 20, buffDur: 2 }] },
   { id: 'a2_machine_folle', name: 'Machine Folle', arc: 2, tier: 1, element: 'fire', emoji: '\uD83E\uDD16',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771509138/MachineFolle_fge0pn.png',
+    sprite: 'https://api.builderberu.com/cdn/images/MachineFolle_fge0pn.webp',
     hp: 143000, atk: 1650, def: 180, spd: 55, crit: 20, res: 7, xp: 420, coins: 620,
     skills: [{ name: 'Autodestruction', power: 130, cdMax: 0, poison: 3, poisonDur: 2 }, { name: 'Surchauffe', power: 250, cdMax: 3, buffAtk: 40, buffDur: 2 }] },
   { id: 'a2_gardien_usine', name: "Gardien de l'Usine", arc: 2, tier: 1, element: 'shadow', emoji: '\uD83E\uDD16', isBoss: true,
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771509800/GardienDesMachines_sfixar.png',
+    sprite: 'https://api.builderberu.com/cdn/images/GardienDesMachines_sfixar.webp',
     hp: 227500, atk: 1789, def: 300, spd: 30, crit: 10, res: 17, xp: 800, coins: 1200,
     skills: [{ name: 'Frappe Industrielle', power: 110, cdMax: 0, debuffAtk: 15, debuffDur: 2 }, { name: 'Bouclier d\'Acier', power: 0, cdMax: 3, buffDef: 80, buffDur: 3 }, { name: 'Protocole d\'Elimination', power: 280, cdMax: 5 }] },
 
   // ═══ Tier 2 — Foret des Machines ═══
   { id: 'a2_machine_lierre', name: 'Machine-Lierre', arc: 2, tier: 2, element: 'earth', emoji: '\uD83C\uDF3F',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771511204/LierreMachine_f2p5bd.png',
+    sprite: 'https://api.builderberu.com/cdn/images/LierreMachine_f2p5bd.webp',
     hp: 195000, atk: 1595, def: 280, spd: 30, crit: 8, res: 25, xp: 550, coins: 800,
     skills: [{ name: 'Racine Mecanique', power: 105, cdMax: 0 }, { name: 'Etreinte Vegetale', power: 0, cdMax: 3, debuffDef: 40, debuffDur: 2 }, { name: 'Seve Parasitaire', power: 80, cdMax: 4, antiHeal: true, antiHealDur: 2 }] },
   { id: 'a2_cerf_machine', name: 'Cerf-Machine', arc: 2, tier: 2, element: 'wind', emoji: '\uD83E\uDD8C',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771510859/CerfMachine_nuodo5.png',
+    sprite: 'https://api.builderberu.com/cdn/images/CerfMachine_nuodo5.webp',
     hp: 169000, atk: 1705, def: 220, spd: 60, crit: 18, res: 11, xp: 580, coins: 850,
     skills: [{ name: 'Charge Eclair', power: 115, cdMax: 0 }, { name: 'Ruade Sonique', power: 220, cdMax: 2 }] },
   { id: 'a2_champignon', name: 'Champignon Sentient', arc: 2, tier: 2, element: 'shadow', emoji: '\uD83C\uDF44',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771512275/ChampignonSentient_mzylvl.png',
+    sprite: 'https://api.builderberu.com/cdn/images/ChampignonSentient_mzylvl.webp',
     hp: 208000, atk: 1485, def: 250, spd: 25, crit: 10, res: 31, xp: 560, coins: 820,
     skills: [{ name: 'Spore Toxique', power: 100, cdMax: 0, poison: 4, poisonDur: 3 }, { name: 'Brouillard Mortel', power: 180, cdMax: 3, debuffDef: 30, debuffDur: 3 }] },
   { id: 'a2_roi_foret', name: 'Roi de la Foret', arc: 2, tier: 2, element: 'earth', emoji: '\uD83C\uDF33', isBoss: true,
@@ -271,7 +271,7 @@ export const ARC2_STORIES = {
       //  lumieres rouges clignotantes au loin, brouillard epais au sol. Atmosphere sombre et
       //  mysterieuse. Vue de loin, silhouette de l'usine contre un ciel etoile violet/rouge.
       //  Style anime/manga, dark fantasy. 16:9 landscape."
-      { type: 'image', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771349152/Story1IMG1_dbt6gx.png', alt: "L'Usine Desaffectee — une silhouette industrielle lugubre sous un ciel etoile" },
+      { type: 'image', src: 'https://api.builderberu.com/cdn/images/Story1IMG1_dbt6gx.webp', alt: "L'Usine Desaffectee — une silhouette industrielle lugubre sous un ciel etoile" },
 
       // --- Scene 5: Girl veut y aller tout de suite ---
       { type: 'dialogue', speaker: 'bebe_girl',
@@ -291,7 +291,7 @@ export const ARC2_STORIES = {
       //  La fille robot a des yeux brillants bleus pleins d'espoir, le garcon robot a les poings leves
       //  en mode combat. Beru a l'air stresse/depasse entre les deux. Fond sombre avec des
       //  etincelles/particules. Style anime chibi, emotionnel. 16:9 landscape."
-      { type: 'image', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771350321/STORY1IMG2_mycwo7.png', alt: "Bebe Machine Girl et Boy implorent Beru de partir a la recherche de Pascal" },
+      { type: 'image', src: 'https://api.builderberu.com/cdn/images/STORY1IMG2_mycwo7.webp', alt: "Bebe Machine Girl et Boy implorent Beru de partir a la recherche de Pascal" },
 
       // --- Scene 8: Girl implore ---
       { type: 'dialogue', speaker: 'bebe_girl',
@@ -322,13 +322,13 @@ export const ARC2_STORIES = {
       //  dans l'obscurite — c'est le signal de Pascal. Machines cassees au sol, fils electriques
       //  qui pendent, rouille partout. Un chemin etroit mene vers la lumiere. Atmosphere
       //  d'espoir dans les tenebres. Style Nier Automata, anime, dark but hopeful. 16:9 landscape."
-      { type: 'image', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771350874/STORY1IMG3_mlwzgo.png', alt: "Au fond de l'usine, une lumiere verte pulse dans les tenebres — le signal de Pascal" },
+      { type: 'image', src: 'https://api.builderberu.com/cdn/images/STORY1IMG3_mlwzgo.webp', alt: "Au fond de l'usine, une lumiere verte pulse dans les tenebres — le signal de Pascal" },
 
       // --- Scene finale: Beru au joueur ---
       { type: 'dialogue', speaker: 'beru',
         text: "Bon joueur... c'est a toi. On compte sur toi. Ces deux-la comptent sur toi. Pascal... compte sur toi. Choisis ton equipe de 3. Ca va pas etre une promenade de sante." },
     ],
-    music: 'https://res.cloudinary.com/dbg7m8qjd/video/upload/v1771499910/OSTReplicant_jfru6g.mp3',
+    music: 'https://api.builderberu.com/cdn/audio/OSTReplicant_jfru6g.mp3',
   },
   2: {
     title: 'Chapitre 2 : La Foret Silencieuse',

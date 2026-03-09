@@ -23,10 +23,10 @@ const TVDialogueSystem = React.memo(({
   const dialoguesRef = useRef([]);
 
   const tvImages = [
-    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751991421/Reaction01_WOW_szyn6y_ptzvck.png',
-    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751991421/Reaction_Shuhua_WOW_lrxqg0_mlinav.png',
-    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751991420/Reaction_Juwee_WOW_qbkldi_erit0u.png',
-    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751991420/Reaction_Chae_EMUE_ciljid_rczfmq.png'
+    'https://api.builderberu.com/cdn/images/Reaction01_WOW_szyn6y_ptzvck.webp',
+    'https://api.builderberu.com/cdn/images/Reaction_Shuhua_WOW_lrxqg0_mlinav.webp',
+    'https://api.builderberu.com/cdn/images/Reaction_Juwee_WOW_qbkldi_erit0u.webp',
+    'https://api.builderberu.com/cdn/images/Reaction_Chae_EMUE_ciljid_rczfmq.webp'
   ];
 
   // 🔥 Récupération des dialogues depuis i18n

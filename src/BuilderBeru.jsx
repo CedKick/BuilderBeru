@@ -36,7 +36,7 @@ import HallOfFlamePage from './components/HallOfFlamePage';
 import AdminValidationPage from './components/AdminValidationPage';
 import TVDialogueSystem from './components/TVDialogueSystem';
 
-const IGRIS_ICON_URL = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754571314/icon_guide_qee4rz.png';
+const IGRIS_ICON_URL = 'https://api.builderberu.com/cdn/images/icon_guide_qee4rz.webp';
 
 let tank = {
   x: 0,
@@ -596,11 +596,11 @@ const BuilderBeru = () => {
       moveSpeed: 0.8,
       messageInterval: 30000,
       sprites: {
-        idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
-        left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_left_lxr3km.png',
-        right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_right_2_zrf0y1.png',
-        up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png',
-        down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png'
+        idle: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp',
+        left: 'https://api.builderberu.com/cdn/images/tank_run_left_lxr3km.webp',
+        right: 'https://api.builderberu.com/cdn/images/tank_run_right_2_zrf0y1.webp',
+        up: 'https://api.builderberu.com/cdn/images/tank_dos_bk6poi.webp',
+        down: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp'
       },
       phrases: t('shadowEntities.tank.automaticPhrases', { returnObjects: true })
     },
@@ -612,12 +612,12 @@ const BuilderBeru = () => {
       moveSpeed: 0.6,
       messageInterval: 45000,
       sprites: {
-        idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png', // À créer
-        left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414823/beru_left_bvtyba.png',
-        right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414822/beru_right_ofwvy5.png',
-        up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414738/beru_dos_dtk5ln.png',
-        down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
-        analyzing: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/beru_thinking.png'
+        idle: 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp', // À créer
+        left: 'https://api.builderberu.com/cdn/images/beru_left_bvtyba.webp',
+        right: 'https://api.builderberu.com/cdn/images/beru_right_ofwvy5.webp',
+        up: 'https://api.builderberu.com/cdn/images/beru_dos_dtk5ln.webp',
+        down: 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp',
+        analyzing: 'https://api.builderberu.com/cdn/images/beru_thinking.webp'
       },
       phrases: t('shadowEntities.beru.automaticPhrases', { returnObjects: true })
     },
@@ -629,14 +629,14 @@ const BuilderBeru = () => {
       moveSpeed: 1.2,
       messageInterval: 60000,
       sprites: {
-        idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
-        left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_left_m8qkyi.png',
-        right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_right_hmgppo.png',
-        up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750772247/Kaisel_dos_dstl0d.png',
-        down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
+        idle: 'https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp',
+        left: 'https://api.builderberu.com/cdn/images/Kaisel_left_m8qkyi.webp',
+        right: 'https://api.builderberu.com/cdn/images/Kaisel_right_hmgppo.webp',
+        up: 'https://api.builderberu.com/cdn/images/Kaisel_dos_dstl0d.webp',
+        down: 'https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp',
         // 🔥 NOUVEAUX ÉTATS POUR MES FONCTIONS
-        scanning: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
-        debugging: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_hmgppo.png'
+        scanning: 'https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp',
+        debugging: 'https://api.builderberu.com/cdn/images/Kaisel_face_hmgppo.webp'
       },
       phrases: [
         "Console.log: Performance optimized. ✅",
@@ -741,9 +741,9 @@ const BuilderBeru = () => {
 
       // Backgrounds
       this.backgrounds = {
-        'canvas-left': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604093/neige_onpilk.png',
-        'canvas-center': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/sanctuaire_rfcze5.png',
-        'canvas-right': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/greenland_cb4caw.png'
+        'canvas-left': 'https://api.builderberu.com/cdn/images/neige_onpilk.webp',
+        'canvas-center': 'https://api.builderberu.com/cdn/images/sanctuaire_rfcze5.webp',
+        'canvas-right': 'https://api.builderberu.com/cdn/images/greenland_cb4caw.webp'
       };
     }
 
@@ -2940,11 +2940,11 @@ useEffect(() => {
   //   const narrativeText = `
   // Chargement du rapport Kanae...
 
-  // {sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747685476/Sad_Anime_Ost_Believe_Me_udqopx.mp3}
+  // {sound:https://api.builderberu.com/cdn/audio/Sad_Anime_Ost_Believe_Me_udqopx.mp3}
 
   // Kanae observe silencieusement. Le jugement approche.
 
-  // {img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png ref=mainImage class=fade-in size=320}
+  // {img:https://api.builderberu.com/cdn/images/SERN_ab7od6.webp ref=mainImage class=fade-in size=320}
 
   // "Pourquoi tant de sauvegardes... pour si peu de builds ?"
 
@@ -2956,7 +2956,7 @@ useEffect(() => {
   // `;
 
   const mobileNarrativeTextEn = `
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruUnderConstruction_ew2r81.png}
+{img:https://api.builderberu.com/cdn/images/BuilderBeruUnderConstruction_ew2r81.webp}
 
 {delay=1000}
 
@@ -2970,12 +2970,12 @@ Tank turns to Béru, holding his phone firmly in one hand, an apple in the other
 
 "Béru... I’ve got bad news."
 
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747831216/sigh_confused_ctuchy.mp3}
+{sound:https://api.builderberu.com/cdn/audio/sigh_confused_ctuchy.mp3}
 {delay=1000}
 
 "The mobile site... BuilderBeru... is down."
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/SernHacking_ymkjgg.png}
+{img:https://api.builderberu.com/cdn/images/SernHacking_ymkjgg.webp}
 
 "The SERN... took control of the domain."
 
@@ -2983,20 +2983,20 @@ Tank turns to Béru, holding his phone firmly in one hand, an apple in the other
 
 Béru frowns. Kanae, a bit further away, is still playing on her phone, unaware of the growing threat.
 
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747832147/Gong_Sound_Effect_k85f8f.mp3}
+{sound:https://api.builderberu.com/cdn/audio/Gong_Sound_Effect_k85f8f.mp3}
 {delay=1000}
 
 Tank slowly places his phone on the ground. The construction lights flicker behind them. The “Under Construction” sign isn’t a joke… it’s a declaration of war.
 
 "What if we took back control... together?"
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruWorking_ucfvoo.png}
+{img:https://api.builderberu.com/cdn/images/BuilderBeruWorking_ucfvoo.webp}
 
 The team gathers in the IT room. Kly, eyes locked on lines of code, tries to find the bug’s origin. Béru remains silent. Kanae starts to worry. Tank… bites into his apple.
 
 "I don’t get it… everything looks fine..."
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482409/fromobile_pdlnzr.png}
+{img:https://api.builderberu.com/cdn/images/fromobile_pdlnzr.webp}
 
 Tank, deep in thought, looks at Kanae.
 
@@ -3005,11 +3005,11 @@ Caught off guard, Kanae complies without question.
 
 Tank tries another idea…
 {delay=1000}
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruWorking_ucfvoo.png}
+{img:https://api.builderberu.com/cdn/images/BuilderBeruWorking_ucfvoo.webp}
 {delay=1000}
 "What if we deleted… the bug? Like… Béru?"
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482386/BeruAngry_zkblsv.png}
+{img:https://api.builderberu.com/cdn/images/BeruAngry_zkblsv.webp}
 
 Béru explodes:  
 "YOU WANNA END UP IN MY ANTHILL, TANK?  
@@ -3019,13 +3019,13 @@ We’ll give you a GREAT welcome 😡😡😠"
 
 Kly suddenly sits up.
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482388/Eureka_i5dii3.png}
+{img:https://api.builderberu.com/cdn/images/Eureka_i5dii3.webp}
 
 "EUREKA! We’ll bypass it. The PC version is already live!"
 
 The team lights up. The plan is simple. Kanae, dressed as a schoolteacher, will teach users how to copy their artefacts manually while they wait for more.
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482388/ExempleCopyPasta_xljgbr.png}
+{img:https://api.builderberu.com/cdn/images/ExempleCopyPasta_xljgbr.webp}
 
 Kanae beams.
 
@@ -3045,7 +3045,7 @@ If the SERN doesn’t block us. And if Tank doesn’t delete Béru. 😠
 
 {delay=1000}
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748485272/waitforyou_sspf8i.png}
+{img:https://api.builderberu.com/cdn/images/waitforyou_sspf8i.webp}
 
 We’re waiting for you on BuilderBeru.com...  
 Thank you all!
@@ -3073,7 +3073,7 @@ BobbyJones:
 
 
   const mobileNarrativeTextFr = `
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruUnderConstruction_ew2r81.png}
+{img:https://api.builderberu.com/cdn/images/BuilderBeruUnderConstruction_ew2r81.webp}
 
 {delay=1000}
 
@@ -3087,12 +3087,12 @@ Tank se tourne vers Béru, tenant fermement son téléphone dans une main, une p
 
 "Béru... j’ai une mauvaise nouvelle."
 
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747831216/sigh_confused_ctuchy.mp3}
+{sound:https://api.builderberu.com/cdn/audio/sigh_confused_ctuchy.mp3}
 {delay=1000}
 
 "Le site mobile... BuilderBeru... est en panne."
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/SernHacking_ymkjgg.png}
+{img:https://api.builderberu.com/cdn/images/SernHacking_ymkjgg.webp}
 
 "Le SERN... a pris le contrôle du domaine."
 
@@ -3100,20 +3100,20 @@ Tank se tourne vers Béru, tenant fermement son téléphone dans une main, une p
 
 Béru fronce les sourcils. Kanae, un peu plus loin, s’amuse avec son propre téléphone, ignorant encore la gravité de la situation.
 
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747832147/Gong_Sound_Effect_k85f8f.mp3}
+{sound:https://api.builderberu.com/cdn/audio/Gong_Sound_Effect_k85f8f.mp3}
 {delay=1000}
 
 Tank pose lentement son téléphone au sol. La lumière des chantiers clignote derrière eux. Le panneau "Under Construction" n’est pas un mensonge... c’est un signal de guerre.
 
 "Et si on reprenait le contrôle... ensemble ?"
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruWorking_ucfvoo.png}
+{img:https://api.builderberu.com/cdn/images/BuilderBeruWorking_ucfvoo.webp}
 
 L’équipe se réunit dans la salle informatique. Kly, les yeux rivés sur les lignes de code, tente de comprendre l’origine du bug. Béru reste silencieux. Kanae commence à s’inquiéter. Tank... croque dans sa pomme.
 
 "Je comprends pas... tout semble correct..."
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482409/fromobile_pdlnzr.png}
+{img:https://api.builderberu.com/cdn/images/fromobile_pdlnzr.webp}
 
 Tank, pensif, regarde Kanae.
 
@@ -3121,11 +3121,11 @@ Tank, pensif, regarde Kanae.
 
 Tank tente une nouvelle proposition...
 {delay=1000}
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruWorking_ucfvoo.png}
+{img:https://api.builderberu.com/cdn/images/BuilderBeruWorking_ucfvoo.webp}
 {delay=1000}
 "Et si on supprimait... le bug ? Genre... Béru ?"
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482386/BeruAngry_zkblsv.png}
+{img:https://api.builderberu.com/cdn/images/BeruAngry_zkblsv.webp}
 
 Béru explose : "TU VEUX FINIR DANS MA FOURMILLÈRE, TANK ? On va BIEN t'accueillir 😡😡😠"
 
@@ -3133,13 +3133,13 @@ Béru explose : "TU VEUX FINIR DANS MA FOURMILLÈRE, TANK ? On va BIEN t'accueil
 
 Kly se redresse soudainement.
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482388/Eureka_i5dii3.png}
+{img:https://api.builderberu.com/cdn/images/Eureka_i5dii3.webp}
 
 "EUREKA ! On va contourner. Une version PC est déjà en ligne !"
 
 L’équipe s’illumine. Le plan est simple. Kanae, en professeure écolière, va enseigner aux utilisateurs comment copier leurs artefacts manuellement, en attendant mieux.
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482388/ExempleCopyPasta_xljgbr.png}
+{img:https://api.builderberu.com/cdn/images/ExempleCopyPasta_xljgbr.webp}
 
 Kanae rayonne.
 
@@ -3157,7 +3157,7 @@ Version mobile allégée prévue fin Juin 2025... si le SERN ne nous bloque pas.
 
 {delay=1000}
 
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748485272/waitforyou_sspf8i.png}
+{img:https://api.builderberu.com/cdn/images/waitforyou_sspf8i.webp}
 
 Nous vous attendons sur BuilderBeru.com... Merci à vous !
 
@@ -3482,12 +3482,12 @@ BobbyJones : "Allez l'Inter !"
   }, [jinwooStrength]); // Se déclenche quand jinwooStrength change
 
   const languages = [
-    { code: 'fr', name: 'Français', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png' },
-    { code: 'en', name: 'English', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png' },
+    { code: 'fr', name: 'Français', flag: 'https://api.builderberu.com/cdn/images/Francia_sboce9.webp' },
+    { code: 'en', name: 'English', flag: 'https://api.builderberu.com/cdn/images/BritishAirLine_s681io.webp' },
     // Langues additionnelles (prêtes pour plus tard)
-    { code: 'ko', name: '한국어', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754778825/ko_flag_zdbhiz.png' },
-    { code: 'ja', name: '日本語', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814859/jap_flag_bet2ob.png' },
-    { code: 'zh', name: '中文', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814970/zh_flag_r9l06y.png' },
+    { code: 'ko', name: '한국어', flag: 'https://api.builderberu.com/cdn/images/ko_flag_zdbhiz.webp' },
+    { code: 'ja', name: '日本語', flag: 'https://api.builderberu.com/cdn/images/jap_flag_bet2ob.webp' },
+    { code: 'zh', name: '中文', flag: 'https://api.builderberu.com/cdn/images/zh_flag_r9l06y.webp' },
   ];
 
   const currentLang = languages.find(lang => lang.code === i18n.language) || languages[0];
@@ -4373,7 +4373,7 @@ BobbyJones : "Allez l'Inter !"
     }
   };
   useEffect(() => {
-    darkAriaAudioRef.current = new Audio('https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747651426/sla_darkAria_udsn6t.mp3');
+    darkAriaAudioRef.current = new Audio('https://api.builderberu.com/cdn/audio/sla_darkAria_udsn6t.mp3');
   }, []);
 
 
@@ -5394,7 +5394,7 @@ BobbyJones : "Allez l'Inter !"
           setTimeout(() => {
             tankIsWandering = false;
             tankDirection = null;
-            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
+            tank.img.src = 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp';
           }, returnDuration);
         }, wanderDuration);
       }
@@ -6111,7 +6111,7 @@ BobbyJones : "Allez l'Inter !"
       </>
     ) : (
       <img loading="lazy"
-        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
+        src="https://api.builderberu.com/cdn/images/beru_select_Char_d7u6mh.webp"
         className="max-w-full max-h-full object-contain relative z-10"
         id="targetToDestroy"
       />
@@ -6803,7 +6803,7 @@ BobbyJones : "Allez l'Inter !"
                         {/* 🖼️ IMAGE SECTION */}
                         <div className="relative p-6 flex justify-center bg-gradient-to-b from-black/80 to-gray-900/80">
                           <img loading="lazy"
-                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
+                            src="https://api.builderberu.com/cdn/images/SERN_ab7od6.webp"
                             alt="SERN - Sung Bobby Jones"
                             className="max-w-full max-h-[300px] object-contain rounded-lg shadow-2xl"
                             style={{
@@ -8103,7 +8103,7 @@ BobbyJones : "Allez l'Inter !"
                           {/* 🖼️ IMAGE SECTION */}
                           <div className="relative p-6 flex justify-center bg-gradient-to-b from-black/80 to-gray-900/80">
                             <img loading="lazy"
-                              src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
+                              src="https://api.builderberu.com/cdn/images/SERN_ab7od6.webp"
                               alt="SERN - Sung Bobby Jones"
                               className="max-w-full max-h-[300px] object-contain rounded-lg shadow-2xl"
                               style={{
@@ -8477,7 +8477,7 @@ BobbyJones : "Allez l'Inter !"
       </>
     ) : (
       <img loading="lazy"
-        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
+        src="https://api.builderberu.com/cdn/images/beru_select_Char_d7u6mh.webp"
         className="max-w-full max-h-full object-contain relative z-10"
         id="targetToDestroy"
       />

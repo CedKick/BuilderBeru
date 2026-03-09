@@ -63,8 +63,8 @@ export default function FactionHub() {
       gradient: 'from-blue-600 to-blue-800',
       icon: '💙',
       mascot: '🛡️', // Placeholder until chibi ready
-      bgImage: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771599084/VCBGround_vekobq.jpg',
-      music: 'https://res.cloudinary.com/dbg7m8qjd/video/upload/v1771600792/Suzume_a8mpy1.mp3',
+      bgImage: 'https://api.builderberu.com/cdn/images/VCBGround_vekobq.webp',
+      music: 'https://api.builderberu.com/cdn/audio/Suzume_a8mpy1.mp3',
       motto: '"Le cœur entend ce que l\'univers murmure."',
       lore: [
         {
@@ -110,8 +110,8 @@ export default function FactionHub() {
       gradient: 'from-red-600 to-red-800',
       icon: '🔴',
       mascot: '⚔️', // Placeholder until chibi ready
-      bgImage: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771599142/RPBground_dgqvzj.jpg',
-      music: 'https://res.cloudinary.com/dbg7m8qjd/video/upload/v1771499910/OSTReplicant_jfru6g.mp3',
+      bgImage: 'https://api.builderberu.com/cdn/images/RPBground_dgqvzj.webp',
+      music: 'https://api.builderberu.com/cdn/audio/OSTReplicant_jfru6g.mp3',
       motto: '"Nous ne sommes pas nés. Nous avons continué."',
       lore: [
         {

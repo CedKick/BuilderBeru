@@ -41,12 +41,12 @@ export const CHIBI_DATABASE = {
       speed: 25
     },
     sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png',
-      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423128/alecto_left_o1u0jo.png',
-      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422934/alecto_right_ehb5xr.png',
-      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422906/alecto_up_dwahgh.png',
-      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png',
-      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png'
+      idle: 'https://api.builderberu.com/cdn/images/alecto_face_irsy6q.webp',
+      left: 'https://api.builderberu.com/cdn/images/alecto_left_o1u0jo.webp',
+      right: 'https://api.builderberu.com/cdn/images/alecto_right_ehb5xr.webp',
+      up: 'https://api.builderberu.com/cdn/images/alecto_up_dwahgh.webp',
+      down: 'https://api.builderberu.com/cdn/images/alecto_face_irsy6q.webp',
+      special: 'https://api.builderberu.com/cdn/images/alecto_face_irsy6q.webp'
     }
   },
 
@@ -201,7 +201,7 @@ export const CHIBI_DATABASE = {
       speed: 35
     },
     sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
+      idle: 'https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp',
       left: null,
       right: null,
       up: null,
@@ -241,7 +241,7 @@ export const CHIBI_DATABASE = {
       speed: 25
     },
     sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
+      idle: 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp',
       left: null,
       right: null,
       up: null,
@@ -282,7 +282,7 @@ export const CHIBI_DATABASE = {
       speed: 10
     },
     sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
+      idle: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp',
       left: null,
       right: null,
       up: null,
@@ -362,12 +362,12 @@ export const CHIBI_DATABASE = {
       speed: 15
     },
     sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png',
-      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505829/Nyarthulu_left_ymremf.png',
-      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505834/Nyarthulu_right_hvlgal.png',
-      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_up_k1tayd.png',
-      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png',
-      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png'
+      idle: 'https://api.builderberu.com/cdn/images/Nyarthulu_face_vawrrz.webp',
+      left: 'https://api.builderberu.com/cdn/images/Nyarthulu_left_ymremf.webp',
+      right: 'https://api.builderberu.com/cdn/images/Nyarthulu_right_hvlgal.webp',
+      up: 'https://api.builderberu.com/cdn/images/Nyarthulu_up_k1tayd.webp',
+      down: 'https://api.builderberu.com/cdn/images/Nyarthulu_face_vawrrz.webp',
+      special: 'https://api.builderberu.com/cdn/images/Nyarthulu_face_vawrrz.webp'
     }
   },
 
@@ -450,12 +450,12 @@ export const CHIBI_DATABASE = {
       speed: 35
     },
     sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png',
-      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422542/Raven_left_npo61o.png',
-      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422543/Raven_right_btxwos.png',
-      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422544/Raven_up_binfar.png',
-      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png',
-      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png'
+      idle: 'https://api.builderberu.com/cdn/images/Raven_face_xse2x9.webp',
+      left: 'https://api.builderberu.com/cdn/images/Raven_left_npo61o.webp',
+      right: 'https://api.builderberu.com/cdn/images/Raven_right_btxwos.webp',
+      up: 'https://api.builderberu.com/cdn/images/Raven_up_binfar.webp',
+      down: 'https://api.builderberu.com/cdn/images/Raven_face_xse2x9.webp',
+      special: 'https://api.builderberu.com/cdn/images/Raven_face_xse2x9.webp'
     }
   },
 
@@ -493,12 +493,12 @@ export const CHIBI_DATABASE = {
       speed: 30
     },
     sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png',
-      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_left_otwk5g.png',
-      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422082/lil_right_sgueer.png',
-      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422082/lil_up_ibp5cz.png',
-      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png',
-      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png'
+      idle: 'https://api.builderberu.com/cdn/images/lil_face_vyjvxz.webp',
+      left: 'https://api.builderberu.com/cdn/images/lil_left_otwk5g.webp',
+      right: 'https://api.builderberu.com/cdn/images/lil_right_sgueer.webp',
+      up: 'https://api.builderberu.com/cdn/images/lil_up_ibp5cz.webp',
+      down: 'https://api.builderberu.com/cdn/images/lil_face_vyjvxz.webp',
+      special: 'https://api.builderberu.com/cdn/images/lil_face_vyjvxz.webp'
     }
   },
 
@@ -614,12 +614,12 @@ export const CHIBI_DATABASE = {
       speed: 15
     },
     sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png',
-      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_left_zwrwj9.png',
-      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_right_opxwxq.png',
-      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505262/Pingsu_up_v64nra.png',
-      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png',
-      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png'
+      idle: 'https://api.builderberu.com/cdn/images/Pingsu_face_tnilyr.webp',
+      left: 'https://api.builderberu.com/cdn/images/Pingsu_left_zwrwj9.webp',
+      right: 'https://api.builderberu.com/cdn/images/Pingsu_right_opxwxq.webp',
+      up: 'https://api.builderberu.com/cdn/images/Pingsu_up_v64nra.webp',
+      down: 'https://api.builderberu.com/cdn/images/Pingsu_face_tnilyr.webp',
+      special: 'https://api.builderberu.com/cdn/images/Pingsu_face_tnilyr.webp'
     }
   },
 
@@ -735,12 +735,12 @@ export const CHIBI_DATABASE = {
       speed: 10
     },
     sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png',
-      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422301/Okami_left_rnjuja.png',
-      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_right_jutwqc.png',
-      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422299/Okami_up_a5gewa.png',
-      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png',
-      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png'
+      idle: 'https://api.builderberu.com/cdn/images/Okami_face_qfzt4j.webp',
+      left: 'https://api.builderberu.com/cdn/images/Okami_left_rnjuja.webp',
+      right: 'https://api.builderberu.com/cdn/images/Okami_right_jutwqc.webp',
+      up: 'https://api.builderberu.com/cdn/images/Okami_up_a5gewa.webp',
+      down: 'https://api.builderberu.com/cdn/images/Okami_face_qfzt4j.webp',
+      special: 'https://api.builderberu.com/cdn/images/Okami_face_qfzt4j.webp'
     }
   },
 

@@ -231,7 +231,7 @@ const ArtifactLibrary = ({
                   {/* 🎨 Card compacte */}
                   <div className="flex items-center gap-2 mb-2">
                     <img loading="lazy" 
-                      src={getSetIcon(artifact.set, slot) || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"}
+                      src={getSetIcon(artifact.set, slot) || "https://api.builderberu.com/cdn/images/set_a6k4yh.webp"}
                       className="w-8 h-8 flex-shrink-0"
                       alt={artifact.set}
                     />

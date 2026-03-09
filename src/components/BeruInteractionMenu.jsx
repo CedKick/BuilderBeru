@@ -393,7 +393,7 @@ const BeruInteractionMenu = ({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <img loading="lazy" 
-                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png"
+                src="https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp"
                 alt="Béru"
                 style={{
                   width: '24px',

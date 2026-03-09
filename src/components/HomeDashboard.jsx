@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AchievementBadges from './AchievementBadges';
 import shadowCoinManager from './ChibiSystem/ShadowCoinManager';
 
-const BERU_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png';
+const BERU_SPRITE = 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp';
 
 // ============================================================
 // DONNEES

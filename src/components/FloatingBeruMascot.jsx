@@ -10,7 +10,7 @@ import { API_URL } from '../utils/api.js';
 // Beru se balade librement, reagit, dort, a des easter eggs.
 // ═══════════════════════════════════════════════════════════════
 
-const BERU_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png';
+const BERU_SPRITE = 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp';
 
 // ─── Messages ───────────────────────────────────────────────
 
@@ -428,15 +428,15 @@ const getTimeOfDay = () => {
 // ─── Wandering Chibis (apparitions aleatoires) ──────────────
 
 const WANDERING_CHIBIS = [
-  { id: 'kaisel', name: 'Kaisel', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png', rarity: 'mythique', messages: ["...", "Le ciel m'appelle.", "Vole, chasseur !", "*plane en silence*", "Le vent est bon aujourd'hui.", "Monture royale en service."] },
-  { id: 'tank', name: 'Tank', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png', rarity: 'legendaire', messages: ["TANK PROTEGE.", "Rien ne passe.", "*bouclier leve*", "*grogne protectivement*", "Le mur c'est MOI.", "Essaie de passer. J'attends."] },
-  { id: 'nyarthulu', name: 'Nyarthulu', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png', rarity: 'legendaire', messages: ["Ph'nglui...", "*tentacules*", "Les abysses appellent.", "*murmures cosmiques*", "Tu ne peux pas comprendre...", "L'ombre a des profondeurs infinies."] },
-  { id: 'raven', name: 'Shadow-Raven', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png', rarity: 'rare', messages: ["Croa !", "*survole*", "L'ombre plane.", "*observe depuis le ciel*", "Croa croa... message recu.", "Les ailes noires voient tout."] },
-  { id: 'lil_kaisel', name: "Lil' Kaisel", sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png', rarity: 'rare', messages: ["Mini mais fier !", "*bat des ailes*", "Kiiii !", "Un jour je serai GRAND Kaisel !", "*vole en cercle*", "Petit gabarit, grand coeur !"] },
-  { id: 'pingsu', name: 'Pingsu', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png', rarity: 'rare', messages: ["Un artefact a forger ?", "*tape sur l'enclume*", "Qualite Pingsu !", "Le marteau ne ment jamais.", "*inspecte un minerai*", "Forge... frappe... perfection."] },
-  { id: 'okami', name: 'Okami', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png', rarity: 'mythique', messages: ["Awoooo !", "*flair le vent*", "La meute approche.", "*yeux brillants dans le noir*", "Le loup ne chasse jamais seul.", "L'instinct ne trompe pas."] },
-  { id: 'alecto', name: 'Alecto', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png', rarity: 'mythique', messages: ["*ailes deployees*", "La metamorphose...", "Beru... evolue.", "*emane une aura sombre*", "L'evolution ultime approche.", "Les ailes de l'ombre sont infinies."] },
-  { id: 'bebe_machine', name: 'Bebe Machine', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771249690/girlyBabyMachine_v22p6z.png', rarity: 'legendaire', spawnWeight: 0.08, collectOnly: true, babyMachine: true, messages: [
+  { id: 'kaisel', name: 'Kaisel', sprite: 'https://api.builderberu.com/cdn/images/Kaisel_face_dm9394.webp', rarity: 'mythique', messages: ["...", "Le ciel m'appelle.", "Vole, chasseur !", "*plane en silence*", "Le vent est bon aujourd'hui.", "Monture royale en service."] },
+  { id: 'tank', name: 'Tank', sprite: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp', rarity: 'legendaire', messages: ["TANK PROTEGE.", "Rien ne passe.", "*bouclier leve*", "*grogne protectivement*", "Le mur c'est MOI.", "Essaie de passer. J'attends."] },
+  { id: 'nyarthulu', name: 'Nyarthulu', sprite: 'https://api.builderberu.com/cdn/images/Nyarthulu_face_vawrrz.webp', rarity: 'legendaire', messages: ["Ph'nglui...", "*tentacules*", "Les abysses appellent.", "*murmures cosmiques*", "Tu ne peux pas comprendre...", "L'ombre a des profondeurs infinies."] },
+  { id: 'raven', name: 'Shadow-Raven', sprite: 'https://api.builderberu.com/cdn/images/Raven_face_xse2x9.webp', rarity: 'rare', messages: ["Croa !", "*survole*", "L'ombre plane.", "*observe depuis le ciel*", "Croa croa... message recu.", "Les ailes noires voient tout."] },
+  { id: 'lil_kaisel', name: "Lil' Kaisel", sprite: 'https://api.builderberu.com/cdn/images/lil_face_vyjvxz.webp', rarity: 'rare', messages: ["Mini mais fier !", "*bat des ailes*", "Kiiii !", "Un jour je serai GRAND Kaisel !", "*vole en cercle*", "Petit gabarit, grand coeur !"] },
+  { id: 'pingsu', name: 'Pingsu', sprite: 'https://api.builderberu.com/cdn/images/Pingsu_face_tnilyr.webp', rarity: 'rare', messages: ["Un artefact a forger ?", "*tape sur l'enclume*", "Qualite Pingsu !", "Le marteau ne ment jamais.", "*inspecte un minerai*", "Forge... frappe... perfection."] },
+  { id: 'okami', name: 'Okami', sprite: 'https://api.builderberu.com/cdn/images/Okami_face_qfzt4j.webp', rarity: 'mythique', messages: ["Awoooo !", "*flair le vent*", "La meute approche.", "*yeux brillants dans le noir*", "Le loup ne chasse jamais seul.", "L'instinct ne trompe pas."] },
+  { id: 'alecto', name: 'Alecto', sprite: 'https://api.builderberu.com/cdn/images/alecto_face_irsy6q.webp', rarity: 'mythique', messages: ["*ailes deployees*", "La metamorphose...", "Beru... evolue.", "*emane une aura sombre*", "L'evolution ultime approche.", "Les ailes de l'ombre sont infinies."] },
+  { id: 'bebe_machine', name: 'Bebe Machine', sprite: 'https://api.builderberu.com/cdn/images/girlyBabyMachine_v22p6z.webp', rarity: 'legendaire', spawnWeight: 0.08, collectOnly: true, babyMachine: true, messages: [
     "Beru j'ai besoin toilettes emotionnelles. Ou vider sentiments ?",
     "Si je mets ruban sur antenne je deviens princesse wifi ?",
     "Pourquoi humains font bisous au lieu d'echanger donnees ?",
@@ -453,7 +453,7 @@ const WANDERING_CHIBIS = [
     "J'ai essaye d'etre serieuse. Ca gratte cerveau.",
     "Beru... promets tu me desinstalles jamais ?",
   ]},
-  { id: 'bebe_machine_boy', name: 'Bebe Machine Boy', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771250012/bebeMachine_dpzlzp.png', rarity: 'legendaire', spawnWeight: 0.08, collectOnly: true, babyMachine: true, messages: [
+  { id: 'bebe_machine_boy', name: 'Bebe Machine Boy', sprite: 'https://api.builderberu.com/cdn/images/bebeMachine_dpzlzp.webp', rarity: 'legendaire', spawnWeight: 0.08, collectOnly: true, babyMachine: true, messages: [
     "Beru... pourquoi toi pas toilettes ? Ombres font pipi ou ?",
     "J'ai appuye sur bouton rouge. C'etait pas bouton rouge ?",
     "Si je demonte moi-meme je meurs ou je decouvre surprise ?",
@@ -1793,7 +1793,7 @@ const FloatingBeruMascot = () => {
       spawnParticles('🙏', 6);
       showBubble("Salut le moine 🙏", 6000);
       setBubbleImage({
-        src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771440948/moine_eaz9jf.png',
+        src: 'https://api.builderberu.com/cdn/images/moine_eaz9jf.webp',
         duration: 7000,
       });
       setTimeout(() => setBubbleImage(null), 7000);

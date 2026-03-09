@@ -107,8 +107,8 @@ export const CHIBI_PAINTERS = {
         name: 'B\u00e9ru-Papillon',
         entityType: 'beru',
         sprites: {
-            back: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422906/alecto_up_dwahgh.png',
-            front: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png'
+            back: 'https://api.builderberu.com/cdn/images/alecto_up_dwahgh.webp',
+            front: 'https://api.builderberu.com/cdn/images/alecto_face_irsy6q.webp'
         },
         stats: {
             endurance: 80,
@@ -146,8 +146,8 @@ export const CHIBI_PAINTERS = {
         name: 'Tank',
         entityType: 'tank',
         sprites: {
-            back: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png',
-            front: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png'
+            back: 'https://api.builderberu.com/cdn/images/tank_dos_bk6poi.webp',
+            front: 'https://api.builderberu.com/cdn/images/tank_face_n9kxrh.webp'
         },
         stats: {
             endurance: 50,
