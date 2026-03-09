@@ -5,7 +5,7 @@
       "previews": false
     }
   },
-  "ignoreCommand": "git diff --quiet HEAD~1 HEAD -- src/ api/ index.html package.json vite.config.js public/",
+  "ignoreCommand": "git diff --quiet HEAD~1 HEAD -- src/ api/ index.html package.json vite.config.js vercel.json public/",
   "crons": [
     {
       "path": "/api/cron/vacuum",
