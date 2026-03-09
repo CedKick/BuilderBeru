@@ -3,35 +3,37 @@ import { extractUser } from '../_utils/auth.js';
 
 // Sub-stat pool (must match src/pages/ShadowColosseum/equipmentData.js exactly)
 const SUB_STAT_POOL = [
-  { id: 'hp_flat',          range: [15, 40] },
-  { id: 'atk_flat',         range: [2, 6] },
-  { id: 'def_flat',         range: [2, 5] },
+  { id: 'hp_flat',          range: [225, 500] },
+  { id: 'atk_flat',         range: [90, 200] },
+  { id: 'def_flat',         range: [90, 200] },
   { id: 'spd_flat',         range: [1, 4] },
   { id: 'crit_rate',        range: [1, 4] },
   { id: 'crit_dmg',         range: [2, 6] },
-  { id: 'res_flat',         range: [1, 3] },
+  { id: 'res_flat',         range: [30, 50] },
   { id: 'hp_pct',           range: [2, 5] },
   { id: 'atk_pct',          range: [2, 5] },
   { id: 'def_pct',          range: [2, 5] },
-  { id: 'int_flat',         range: [1, 4] },
+  { id: 'int_flat',         range: [90, 200] },
   { id: 'int_pct',          range: [2, 5] },
-  { id: 'fire_dmg_flat',    range: [1, 3] },
+  { id: 'fire_dmg_flat',    range: [90, 200] },
   { id: 'fire_dmg_pct',     range: [2, 5] },
-  { id: 'water_dmg_flat',   range: [1, 3] },
+  { id: 'water_dmg_flat',   range: [90, 200] },
   { id: 'water_dmg_pct',    range: [2, 5] },
-  { id: 'shadow_dmg_flat',  range: [1, 3] },
+  { id: 'shadow_dmg_flat',  range: [90, 200] },
   { id: 'shadow_dmg_pct',   range: [2, 5] },
-  { id: 'light_dmg_flat',   range: [1, 3] },
+  { id: 'light_dmg_flat',   range: [90, 200] },
   { id: 'light_dmg_pct',    range: [2, 5] },
-  { id: 'earth_dmg_flat',   range: [1, 3] },
+  { id: 'earth_dmg_flat',   range: [90, 200] },
   { id: 'earth_dmg_pct',    range: [2, 5] },
 ];
 
 const MAIN_STAT_BASE = {
-  hp_flat: 50, hp_pct: 5, atk_flat: 5, atk_pct: 5,
-  def_flat: 3, def_pct: 5, spd_flat: 3, crit_rate: 3, crit_dmg: 5, res_flat: 3,
-  int_flat: 3, int_pct: 3,
-  fire_dmg_pct: 3, water_dmg_pct: 3, shadow_dmg_pct: 3, light_dmg_pct: 3, earth_dmg_pct: 3,
+  hp_flat: 225, hp_pct: 5, atk_flat: 90, atk_pct: 5,
+  def_flat: 90, def_pct: 5, spd_flat: 3, crit_rate: 3, crit_dmg: 5, res_flat: 30,
+  int_flat: 90, int_pct: 3,
+  fire_dmg_flat: 90, fire_dmg_pct: 3, water_dmg_flat: 90, water_dmg_pct: 3,
+  shadow_dmg_flat: 90, shadow_dmg_pct: 3, light_dmg_flat: 90, light_dmg_pct: 3,
+  earth_dmg_flat: 90, earth_dmg_pct: 3,
 };
 
 // Slot-specific main stat pools (mirrors ARTIFACT_SLOTS in equipmentData.js)

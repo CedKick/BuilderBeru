@@ -5725,11 +5725,11 @@ export default function ShadowColosseum() {
                               <span className="hidden sm:inline text-amber-400 font-bold ml-auto text-normal-responsive" title={`iLevel: ${fmtExact(iLvl)}`}>iLv{fmtStat(iLvl)}</span>
                             </div>
                           </div>
-                          <button onClick={(e) => toggleFav(id, e)}
-                            className={`shrink-0 text-sm transition-all ${isFav(id) ? 'text-yellow-400 scale-110' : 'text-gray-600 hover:text-yellow-400/60'}`}
+                          <span role="button" onClick={(e) => toggleFav(id, e)}
+                            className={`shrink-0 text-sm transition-all cursor-pointer ${isFav(id) ? 'text-yellow-400 scale-110' : 'text-gray-600 hover:text-yellow-400/60'}`}
                             title={isFav(id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}>
                             {isFav(id) ? '\u2605' : '\u2606'}
-                          </button>
+                          </span>
                           {_weapon && (
                             <div className="flex flex-col items-center gap-0.5 shrink-0">
                               {_weapon.sprite ? (
@@ -5863,11 +5863,11 @@ export default function ShadowColosseum() {
                               </div>
                             )}
                           </div>
-                          <button onClick={(e) => toggleFav(id, e)}
-                            className={`shrink-0 text-sm transition-all ${isFav(id) ? 'text-yellow-400 scale-110' : 'text-gray-600 hover:text-yellow-400/60'}`}
+                          <span role="button" onClick={(e) => toggleFav(id, e)}
+                            className={`shrink-0 text-sm transition-all cursor-pointer ${isFav(id) ? 'text-yellow-400 scale-110' : 'text-gray-600 hover:text-yellow-400/60'}`}
                             title={isFav(id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}>
                             {isFav(id) ? '\u2605' : '\u2606'}
-                          </button>
+                          </span>
                           {_weapon && (
                             <div className="flex flex-col items-center gap-0.5 shrink-0">
                               {_weapon.sprite ? (
@@ -9290,7 +9290,7 @@ export default function ShadowColosseum() {
                       {/* Stats + Enchant */}
                       <div className="mb-2 p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
                         {(() => {
-                          const nextVal = eqArt.level < MAX_ARTIFACT_LEVEL ? +(eqMainDef.base + eqMainDef.perLevel * (eqArt.level + 1)).toFixed(1) : eqArt.mainValue;
+                          const nextVal = eqArt.level < MAX_ARTIFACT_LEVEL && eqMainDef ? +(eqMainDef.base + eqMainDef.perLevel * (eqArt.level + 1)).toFixed(1) : eqArt.mainValue;
                           const mainEnchant = eqArt.enchants?.main || 0;
                           const canEnchantMain = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
                           const mainLocked = eqStatLocks.main;
@@ -11067,7 +11067,7 @@ export default function ShadowColosseum() {
             <div className="mb-2 p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
               {(() => {
                 const mainDef = MAIN_STAT_VALUES[selArt.mainStat];
-                const nextVal = selArt.level < MAX_ARTIFACT_LEVEL ? +(mainDef.base + mainDef.perLevel * (selArt.level + 1)).toFixed(1) : selArt.mainValue;
+                const nextVal = selArt.level < MAX_ARTIFACT_LEVEL && mainDef ? +(mainDef.base + mainDef.perLevel * (selArt.level + 1)).toFixed(1) : selArt.mainValue;
                 const mainEnchant = selArt.enchants?.main || 0;
                 const canEnchantMain = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
                 return (

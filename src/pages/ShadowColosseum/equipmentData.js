@@ -259,52 +259,52 @@ export const SLOT_ORDER = ['casque', 'plastron', 'gants', 'bottes', 'collier', '
 // ═══════════════════════════════════════════════════════════════
 
 export const MAIN_STAT_VALUES = {
-  hp_flat:   { name: 'PV',        base: 50,  perLevel: 30,  icon: '\u2764\uFE0F' },
-  hp_pct:    { name: 'PV%',       base: 5,   perLevel: 2.5, icon: '\u2764\uFE0F' },
-  atk_flat:  { name: 'ATK',       base: 5,   perLevel: 3,   icon: '\u2694\uFE0F' },
-  atk_pct:   { name: 'ATK%',      base: 5,   perLevel: 2.5, icon: '\u2694\uFE0F' },
-  def_pct:   { name: 'DEF%',      base: 5,   perLevel: 2.5, icon: '\uD83D\uDEE1\uFE0F' },
-  spd_flat:  { name: 'SPD',       base: 3,   perLevel: 1.5, icon: '\uD83D\uDCA8' },
-  crit_rate: { name: 'CRIT%',     base: 3,   perLevel: 1.5, icon: '\uD83C\uDFAF' },
-  crit_dmg:  { name: 'CRIT DMG%', base: 5,   perLevel: 3,   icon: '\uD83D\uDCA5' },
-  res_flat:  { name: 'RES',       base: 3,   perLevel: 1.5, icon: '\uD83D\uDEE1\uFE0F' },
-  def_flat:  { name: 'DEF',       base: 3,   perLevel: 1.5, icon: '\uD83D\uDEE1\uFE0F' },
-  int_flat:  { name: 'INT',       base: 3,   perLevel: 2,   icon: '\uD83E\uDDE0' },
-  int_pct:   { name: 'INT%',      base: 3,   perLevel: 2,   icon: '\uD83E\uDDE0' },
-  fire_dmg_flat:   { name: 'DMG Feu',      base: 3,  perLevel: 2,   icon: '\uD83D\uDD25' },
-  fire_dmg_pct:    { name: 'DMG Feu%',     base: 3,  perLevel: 1.5, icon: '\uD83D\uDD25' },
-  water_dmg_flat:  { name: 'DMG Eau',      base: 3,  perLevel: 2,   icon: '\uD83D\uDCA7' },
-  water_dmg_pct:   { name: 'DMG Eau%',     base: 3,  perLevel: 1.5, icon: '\uD83D\uDCA7' },
-  shadow_dmg_flat: { name: 'DMG Ombre',    base: 3,  perLevel: 2,   icon: '\uD83C\uDF11' },
-  shadow_dmg_pct:  { name: 'DMG Ombre%',   base: 3,  perLevel: 1.5, icon: '\uD83C\uDF11' },
-  light_dmg_flat:  { name: 'DMG Lumiere',  base: 3,  perLevel: 2,   icon: '\u2728' },
-  light_dmg_pct:   { name: 'DMG Lumiere%', base: 3,  perLevel: 1.5, icon: '\u2728' },
-  earth_dmg_flat:  { name: 'DMG Terre',    base: 3,  perLevel: 2,   icon: '\uD83E\uDEA8' },
-  earth_dmg_pct:   { name: 'DMG Terre%',   base: 3,  perLevel: 1.5, icon: '\uD83E\uDEA8' },
+  hp_flat:   { name: 'PV',        base: 225, perLevel: 12.5, icon: '\u2764\uFE0F' },
+  hp_pct:    { name: 'PV%',       base: 5,   perLevel: 2.5,  icon: '\u2764\uFE0F' },
+  atk_flat:  { name: 'ATK',       base: 90,  perLevel: 5,    icon: '\u2694\uFE0F' },
+  atk_pct:   { name: 'ATK%',      base: 5,   perLevel: 2.5,  icon: '\u2694\uFE0F' },
+  def_pct:   { name: 'DEF%',      base: 5,   perLevel: 2.5,  icon: '\uD83D\uDEE1\uFE0F' },
+  spd_flat:  { name: 'SPD',       base: 3,   perLevel: 1.5,  icon: '\uD83D\uDCA8' },
+  crit_rate: { name: 'CRIT%',     base: 3,   perLevel: 1.5,  icon: '\uD83C\uDFAF' },
+  crit_dmg:  { name: 'CRIT DMG%', base: 5,   perLevel: 3,    icon: '\uD83D\uDCA5' },
+  res_flat:  { name: 'RES',       base: 30,  perLevel: 1,    icon: '\uD83D\uDEE1\uFE0F' },
+  def_flat:  { name: 'DEF',       base: 90,  perLevel: 5,    icon: '\uD83D\uDEE1\uFE0F' },
+  int_flat:  { name: 'INT',       base: 90,  perLevel: 5,    icon: '\uD83E\uDDE0' },
+  int_pct:   { name: 'INT%',      base: 3,   perLevel: 2,    icon: '\uD83E\uDDE0' },
+  fire_dmg_flat:   { name: 'DMG Feu',      base: 90,  perLevel: 5,   icon: '\uD83D\uDD25' },
+  fire_dmg_pct:    { name: 'DMG Feu%',     base: 3,   perLevel: 1.5, icon: '\uD83D\uDD25' },
+  water_dmg_flat:  { name: 'DMG Eau',      base: 90,  perLevel: 5,   icon: '\uD83D\uDCA7' },
+  water_dmg_pct:   { name: 'DMG Eau%',     base: 3,   perLevel: 1.5, icon: '\uD83D\uDCA7' },
+  shadow_dmg_flat: { name: 'DMG Ombre',    base: 90,  perLevel: 5,   icon: '\uD83C\uDF11' },
+  shadow_dmg_pct:  { name: 'DMG Ombre%',   base: 3,   perLevel: 1.5, icon: '\uD83C\uDF11' },
+  light_dmg_flat:  { name: 'DMG Lumiere',  base: 90,  perLevel: 5,   icon: '\u2728' },
+  light_dmg_pct:   { name: 'DMG Lumiere%', base: 3,   perLevel: 1.5, icon: '\u2728' },
+  earth_dmg_flat:  { name: 'DMG Terre',    base: 90,  perLevel: 5,   icon: '\uD83E\uDEA8' },
+  earth_dmg_pct:   { name: 'DMG Terre%',   base: 3,   perLevel: 1.5, icon: '\uD83E\uDEA8' },
 };
 
 export const SUB_STAT_POOL = [
-  { id: 'hp_flat',   name: 'PV',       range: [15, 40] },
-  { id: 'atk_flat',  name: 'ATK',      range: [2, 6] },
-  { id: 'def_flat',  name: 'DEF',      range: [2, 5] },
+  { id: 'hp_flat',   name: 'PV',       range: [225, 500], procRange: [8, 15] },
+  { id: 'atk_flat',  name: 'ATK',      range: [90, 200],  procRange: [3, 7] },
+  { id: 'def_flat',  name: 'DEF',      range: [90, 200],  procRange: [3, 7] },
   { id: 'spd_flat',  name: 'SPD',      range: [1, 4] },
   { id: 'crit_rate', name: 'CRIT%',    range: [1, 4] },
   { id: 'crit_dmg',  name: 'CRIT DMG%', range: [2, 6] },
-  { id: 'res_flat',  name: 'RES',      range: [1, 3] },
+  { id: 'res_flat',  name: 'RES',      range: [30, 50],   procRange: [1, 3] },
   { id: 'hp_pct',    name: 'PV%',      range: [2, 5] },
   { id: 'atk_pct',   name: 'ATK%',     range: [2, 5] },
   { id: 'def_pct',   name: 'DEF%',     range: [2, 5] },
-  { id: 'int_flat',  name: 'INT',      range: [1, 4] },
+  { id: 'int_flat',  name: 'INT',      range: [90, 200],  procRange: [3, 7] },
   { id: 'int_pct',   name: 'INT%',     range: [2, 5] },
-  { id: 'fire_dmg_flat',   name: 'DMG Feu',      range: [1, 3] },
+  { id: 'fire_dmg_flat',   name: 'DMG Feu',      range: [90, 200],  procRange: [3, 7] },
   { id: 'fire_dmg_pct',    name: 'DMG Feu%',     range: [2, 5] },
-  { id: 'water_dmg_flat',  name: 'DMG Eau',      range: [1, 3] },
+  { id: 'water_dmg_flat',  name: 'DMG Eau',      range: [90, 200],  procRange: [3, 7] },
   { id: 'water_dmg_pct',   name: 'DMG Eau%',     range: [2, 5] },
-  { id: 'shadow_dmg_flat', name: 'DMG Ombre',    range: [1, 3] },
+  { id: 'shadow_dmg_flat', name: 'DMG Ombre',    range: [90, 200],  procRange: [3, 7] },
   { id: 'shadow_dmg_pct',  name: 'DMG Ombre%',   range: [2, 5] },
-  { id: 'light_dmg_flat',  name: 'DMG Lumiere',  range: [1, 3] },
+  { id: 'light_dmg_flat',  name: 'DMG Lumiere',  range: [90, 200],  procRange: [3, 7] },
   { id: 'light_dmg_pct',   name: 'DMG Lumiere%', range: [2, 5] },
-  { id: 'earth_dmg_flat',  name: 'DMG Terre',    range: [1, 3] },
+  { id: 'earth_dmg_flat',  name: 'DMG Terre',    range: [90, 200],  procRange: [3, 7] },
   { id: 'earth_dmg_pct',   name: 'DMG Terre%',   range: [2, 5] },
 ];
 
@@ -461,7 +461,8 @@ export function enhanceArtifact(artifact) {
     if (subDef) {
       const milestone = Math.floor(newLevel / 5); // 1, 2, 3, 4
       const bonusMult = 1 + (milestone - 1) * 0.25; // 1x, 1.25x, 1.5x, 1.75x
-      const baseRoll = subDef.range[0] + Math.floor(Math.random() * (subDef.range[1] - subDef.range[0] + 1));
+      const r = subDef.procRange || subDef.range;
+      const baseRoll = r[0] + Math.floor(Math.random() * (r[1] - r[0] + 1));
       const roll = Math.ceil(baseRoll * bonusMult * expMult);
       newSubs[idx] = { ...newSubs[idx], value: newSubs[idx].value + roll };
     }
