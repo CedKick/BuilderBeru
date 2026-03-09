@@ -64,6 +64,7 @@ export class Hunter {
       sets: equippedSets || {},    // { setId: pieceCount } from colosseum artifacts
       weaponId: weaponId || null,  // Expedition weapon ID (if any)
     };
+    this.scWeaponId = weaponId || null;             // Weapon ID (e.g., 'tacos_eternel')
     this.scWeaponPassive = weaponPassive || null;  // SC weapon passive (sulfuras_fury, katana_v_chaos, etc.)
     this.forgePassives = forgePassives || null;    // Community weapon forge passives [{id, params}]
 

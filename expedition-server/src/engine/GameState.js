@@ -140,6 +140,8 @@ export class GameState {
         activeBuffs: (this.boss.activeBuffs || []).map(b => ({
           id: b.id, name: b.name, stacks: b.stacks, duration: Math.round(b.duration * 10) / 10, color: b.color,
         })),
+        targetId: this.boss.targetId || null,
+        tauntedBy: this.boss.tauntedBy || null,
         casting: this.boss.casting,
         telegraph: this.boss.currentPattern && this.boss.currentPattern.state === 'telegraph' ? {
           type: this.boss.currentPattern.pattern.type,
@@ -176,6 +178,11 @@ export class GameState {
         dodgeCd: Math.round((h.dodgeCooldown || 0) * 10) / 10,
         blocking: h.blocking,
         casting: h.casting ? { skill: h.casting.skill, type: h.casting.type, progress: h.casting.duration > 0 ? h.casting.timer / h.casting.duration : 0, targetId: h.casting.targetId } : null,
+        charging: h.charging ? {
+          progress: Math.min(1, (Date.now() - h.charging.startTime) / 1000 / (h.charging.maxChargeTime || 4)),
+          level: Math.min((h.skills?.[h.charging.skill]?.chargeLevels || 4) - 1,
+            Math.floor(Math.min((Date.now() - h.charging.startTime) / 1000, h.charging.maxChargeTime || 4) / (h.charging.maxChargeTime || 4) * (h.skills?.[h.charging.skill]?.chargeLevels || 4))),
+        } : null,
         comboStep: h.comboStep || 0,
         aimAngle: h.aimAngle != null ? Math.round(h.aimAngle * 100) / 100 : 0,
         isControlled: h.isControlled,
@@ -212,8 +219,18 @@ export class GameState {
           manaScaling: s.manaScaling || 0,
           selfDamage: s.selfDamage || 0,
         })),
+        // Active buffs/debuffs
+        activeBuffs: (h.buffs || []).map(b => ({
+          type: b.type,
+          stacks: b.stacks || 1,
+          dur: Math.round((b.dur || 0) * 10) / 10,
+          maxDur: b.maxDur || 0,
+          value: b.value || 0,
+          source: b.source || '',
+        })),
         // Equipment info for detail panel
         equippedSets: h.expeditionGear?.sets || {},
+        weaponId: h.scWeaponId || h.expeditionGear?.weaponId || null,
         weaponPassive: h.scWeaponPassive || null,
         inscriptionMana: h.inscriptionMana || 0,
       })),

@@ -7,7 +7,7 @@ export const CLASS_STATS = {
   tank: {
     label: 'Tank',
     hp: 25000, mana: 400, atk: 4200, def: 300, spd: 160, crit: 10, res: 50,
-    aggroMult: 3.0, color: '#3b82f6',
+    aggroMult: 30.0, color: '#3b82f6',
   },
   healer: {
     label: 'Healer',

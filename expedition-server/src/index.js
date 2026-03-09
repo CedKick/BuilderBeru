@@ -107,6 +107,55 @@ async function copyAutoRegistrations(newExpeditionId) {
 
 ensureExpeditionExists().catch(err => console.error('[Expedition v2] DB init error:', err));
 
+// ─── Auto-reset: when expedition ends (wipe/finish), create next one after 60s ───
+const AUTO_RESET_DELAY_MS = 60_000; // 1 minute
+
+engine.onEnd = async (victory, expeditionId) => {
+  const status = victory ? 'finished' : 'wiped';
+  console.log(`[Expedition v2] Expedition #${expeditionId} ended (${status}). Auto-reset in ${AUTO_RESET_DELAY_MS / 1000}s...`);
+
+  try {
+    // Mark current expedition as finished/wiped in DB
+    await db.updateExpeditionStatus(expeditionId, status, { endedAt: new Date() });
+  } catch (err) {
+    console.error('[Expedition v2] Failed to update expedition status:', err.message);
+  }
+
+  setTimeout(async () => {
+    try {
+      // Skip if a manual reset already happened
+      if (engine._resetted) {
+        console.log('[Expedition v2] Skipping auto-reset (manual reset already done)');
+        engine._resetted = false;
+        return;
+      }
+
+      // Grab auto-register entries from the ended expedition
+      const autoEntries = await db.getAutoRegisterEntries(expeditionId);
+
+      // Reset engine
+      engine.reset();
+
+      // Create new expedition in registration mode
+      const newExp = await db.createExpedition('Expédition II', new Date());
+      await db.updateExpeditionStatus(newExp.id, 'registration');
+      console.log(`[Expedition v2] Auto-created expedition #${newExp.id} in registration mode`);
+
+      // Copy auto-register entries
+      for (const e of autoEntries) {
+        try {
+          await db.registerPlayer(newExp.id, e.username, e.device_id, e.character_ids, e.character_data, e.sr_items, true);
+        } catch {}
+      }
+      if (autoEntries.length > 0) {
+        console.log(`[Expedition v2] Auto-registered ${autoEntries.length} players for expedition #${newExp.id}`);
+      }
+    } catch (err) {
+      console.error('[Expedition v2] Auto-reset failed:', err.message);
+    }
+  }, AUTO_RESET_DELAY_MS);
+};
+
 // Auto-launch check every 30s: if 19h Paris and expedition is in registration, start it
 setInterval(async () => {
   try {
@@ -120,7 +169,17 @@ setInterval(async () => {
     const h = paris.getHours();
     const m = paris.getMinutes();
 
-    // Launch at 19h00 Paris (or later if server was down)
+    // Launch at 19h00 Paris — but only if no expedition already ran today
+    const prev = await db.getPreviousExpedition();
+    if (prev && prev.ended_at) {
+      const prevEnd = new Date(prev.ended_at);
+      const prevEndParis = new Date(prevEnd.toLocaleString('en-US', { timeZone: EXPEDITION.TIMEZONE }));
+      if (prevEndParis.toDateString() === paris.toDateString()) {
+        // Already had an expedition today — wait for tomorrow
+        return;
+      }
+    }
+
     if (h >= EXPEDITION.LAUNCH_HOUR) {
       const entries = await db.getEntries(expedition.id);
       if (entries.length === 0) {

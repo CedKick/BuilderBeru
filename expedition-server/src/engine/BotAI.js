@@ -682,8 +682,11 @@ export class BotAI {
     }
 
     // ── PRIORITY 2: Resurrect dead ally (channeled 4s — must stop moving first) ──
+    // Skip if another healer is already channeling resurrect on someone
     if (player.cooldowns.ultimate <= 0 && player.mana >= 100) {
-      const deadAlly = gs.players.find(p => p.id !== player.id && !p.alive && p.connected !== false);
+      const healersRezzing = gs.players.filter(p => p.id !== player.id && p.alive && p.casting?.type === 'resurrect');
+      const rezzTargetIds = new Set(healersRezzing.map(h => h.casting?.targetId).filter(Boolean));
+      const deadAlly = gs.players.find(p => p.id !== player.id && !p.alive && p.connected !== false && !rezzTargetIds.has(p.id));
       if (deadAlly) {
         const distToDead = this._dist(player, deadAlly);
         const angleToDeadAlly = Math.atan2(deadAlly.y - player.y, deadAlly.x - player.x);
@@ -718,13 +721,16 @@ export class BotAI {
     }
 
     // ── Purification (skillB) — cleanse player debuffs + gives crit/speed buff ──
+    // Also cleanses burn, bleed, and any negative debuff
     if (player.cooldowns.skillB <= 0 && player.mana >= 40) {
       const debuffedAlly = allies.find(p => p.buffs.some(b =>
         b.type && (b.type === 'poison' || b.type === 'speed_down' || b.type === 'weak' ||
+        b.type === 'burn' || b.type === 'bleed' || b.type === 'def_down' ||
         b.type.startsWith('manaya_mark_'))
       ));
       if (debuffedAlly) {
-        inputs.push({ type: 'skill', skill: 'skillB', angle: angleToBoss });
+        const angleToAlly = Math.atan2(debuffedAlly.y - player.y, debuffedAlly.x - player.x);
+        inputs.push({ type: 'skill', skill: 'skillB', angle: angleToAlly });
       }
     }
 
@@ -826,12 +832,13 @@ export class BotAI {
     }
   }
 
-  // ── BERSERKER AI ──
+  // ── BERSERKER AI — Full aggro DPS machine ──
+  // Priority: Rage buff (A) → Whirlwind (R) → Charged E + auto weave → never block unless about to die
   _thinkBerserker(inputs, player, gs, boss, distToBoss, angleToBoss) {
-    // Position: melee (60-100px)
-    if (distToBoss > 110) {
+    // Position: glued to boss, aggressive positioning
+    if (distToBoss > 100) {
       inputs.push(this._moveToward(player, boss));
-    } else if (distToBoss < 40) {
+    } else if (distToBoss < 35) {
       inputs.push(this._moveAway(player, boss));
     } else {
       inputs.push({ type: 'stop' });
@@ -839,49 +846,56 @@ export class BotAI {
 
     inputs.push({ type: 'aim', angle: angleToBoss });
 
-    // Berserker Rage buff (skillA) — +80% ATK
+    // ── 1. Rage buff (A) — ALWAYS keep up, +80% ATK +20% SPD, free mana cost ──
     const hasRageBuff = player.buffs.some(b => b.type === 'atk_up');
     if (player.cooldowns.skillA <= 0 && !hasRageBuff) {
       inputs.push({ type: 'skill', skill: 'skillA', angle: angleToBoss });
     }
 
-    // Whirlwind (ultimate) — big AoE channel
-    if (player.cooldowns.ultimate <= 0 && player.mana >= 90 && distToBoss < 150 && !this._nearbyDanger(player, gs)) {
+    // ── 2. Whirlwind (R) — use ASAP when in range, 1500 power × 8 hits ──
+    // Don't wait for "safe" moment — berserkers commit to the damage
+    if (player.cooldowns.ultimate <= 0 && player.mana >= 90 && distToBoss < 160) {
       inputs.push({ type: 'skill', skill: 'ultimate', angle: angleToBoss });
-      return;
+      return; // Channeling whirlwind, don't do anything else
     }
 
-    // Charged Attack (skillB) — hold and release
-    // "Glitch": can spam auto-attack AND ultimate while charging E
-    if (player.cooldowns.skillB <= 0 && distToBoss < 100) {
+    // ── 3. Charged Attack (E) — start charging, release at level 2+ (700+ power) ──
+    // Can auto-attack AND whirlwind while charging (the "glitch" combo)
+    if (player.cooldowns.skillB <= 0 && distToBoss < 110) {
       if (!player.charging) {
         inputs.push({ type: 'charge_start', skill: 'skillB', angle: angleToBoss });
       } else {
-        const chargeTime = player.charging ? (Date.now() - player.charging.startTime) / 1000 : 0;
-        if (chargeTime >= 2.0 || this._nearbyDanger(player, gs)) {
+        const chargeTime = (Date.now() - player.charging.startTime) / 1000;
+        // Release at 2s (level 2 = 700 power) or if danger forces it
+        if (chargeTime >= 2.0) {
           inputs.push({ type: 'charge_release', angle: angleToBoss });
         }
       }
-      // NO return — fall through to auto-attack while charging
+      // Fall through — keep auto-attacking while charging
     }
 
-    // Block (secondary) — when boss casts at us and NOT charging
+    // ── 4. Block — LAST RESORT only: boss targeting us with one-shot AND we're low HP ──
+    // Berserkers almost never block — they dodge or die
     const isTarget = this._isBossTarget(player, gs);
-    if (!player.charging && isTarget && boss.casting && !this.blocking && player.mana >= 20) {
-      inputs.push({ type: 'attack_secondary', angle: angleToBoss });
-      this.blocking = true;
-    } else if (this.blocking && (!boss.casting || !isTarget)) {
+    if (this.blocking) {
+      // Release block ASAP
       inputs.push({ type: 'stop_secondary' });
       this.blocking = false;
+    } else if (!player.charging && isTarget && player.hp / player.maxHp < 0.25
+      && boss.casting && boss.currentPattern?.pattern?.type === 'percent_hp_attack'
+      && player.dodgeCooldown > 0) {
+      // Only block if: below 25% HP, boss doing % HP attack, dodge on cooldown
+      inputs.push({ type: 'attack_secondary', angle: angleToBoss });
+      this.blocking = true;
     }
 
-    // Basic attack — spam even while charging E (the "glitch")
-    if (!this.blocking && distToBoss < 100) {
+    // ── 5. Auto-attack — ALWAYS when in range ──
+    if (distToBoss < 110) {
       inputs.push({ type: 'start_basic', angle: angleToBoss });
     }
 
-    // Ultimate while charging too — max DPS combo
-    if (player.charging && player.cooldowns.ultimate <= 0 && player.mana >= 90 && distToBoss < 150) {
+    // ── 6. Whirlwind while charging E — max DPS overlap ──
+    if (player.charging && player.cooldowns.ultimate <= 0 && player.mana >= 90 && distToBoss < 160) {
       inputs.push({ type: 'skill', skill: 'ultimate', angle: angleToBoss });
     }
   }

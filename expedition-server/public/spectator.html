@@ -368,6 +368,46 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
 .fp-stat-label { color: #94a3b8; }
 .fp-stat-val { font-weight: 600; font-variant-numeric: tabular-nums; }
 
+/* Equipment section */
+.fp-equip {
+  padding: 4px 10px; border-bottom: 1px solid #1e1e3a; flex-shrink: 0;
+}
+.fp-equip-item {
+  display: flex; align-items: center; gap: 4px; font-size: 9px; color: #e2e8f0;
+  padding: 2px 4px; border-radius: 3px; cursor: default; position: relative;
+}
+.fp-equip-item:hover .fp-tooltip { display: block; }
+.fp-set-line { font-size: 8px; color: #94a3b8; padding: 1px 4px; }
+.fp-set-line.active { color: #4ade80; }
+.fp-tooltip {
+  display: none; position: absolute; left: 100%; top: -4px; margin-left: 6px;
+  background: #0f0f1a; border: 1px solid #4c1d95; border-radius: 6px;
+  padding: 6px 10px; min-width: 180px; z-index: 100; font-size: 9px;
+  color: #e2e8f0; white-space: pre-wrap; pointer-events: none;
+}
+/* Buffs/debuffs section */
+.fp-buffs {
+  padding: 4px 10px; border-bottom: 1px solid #1e1e3a; flex-shrink: 0;
+  display: flex; flex-wrap: wrap; gap: 3px; min-height: 0;
+}
+.fp-buff {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 5px; border-radius: 4px; font-size: 8px; font-weight: 600;
+  cursor: default; position: relative; border: 1px solid;
+}
+.fp-buff.buff { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+.fp-buff.debuff { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+.fp-buff:hover .fp-tooltip { display: block; }
+/* HP/Mana bars above skills */
+.fp-bars {
+  padding: 4px 10px 2px; flex-shrink: 0;
+}
+.fp-bar-row { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
+.fp-bar-label { font-size: 8px; font-weight: 700; width: 28px; text-align: right; flex-shrink: 0; }
+.fp-bar-track { flex: 1; height: 10px; background: #1a1a2e; border-radius: 3px; overflow: hidden; position: relative; }
+.fp-bar-fill { height: 100%; border-radius: 3px; transition: width 0.15s ease; }
+.fp-bar-text { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 700; color: #fff; text-shadow: 0 0 3px #000; }
+
 /* Skills panel */
 .fp-skills-title {
   font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;
@@ -488,6 +528,7 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
     <div>
       <span class="boss-name" id="boss-name">Boss</span>
       <span class="boss-phase" id="boss-phase"></span>
+      <span id="boss-aggro" style="font-size:11px;margin-left:12px;color:#fbbf24;font-weight:600;"></span>
     </div>
     <div class="boss-hp-bar">
       <div class="boss-hp-fill" id="boss-hp-fill" style="width:100%"></div>
@@ -517,6 +558,9 @@ body { background: #0a0a1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif;
     <div class="fp-close" onclick="unfocusHunter()">&times;</div>
   </div>
   <div class="fp-stats" id="fp-stats"></div>
+  <div class="fp-equip" id="fp-equip"></div>
+  <div class="fp-buffs" id="fp-buffs"></div>
+  <div class="fp-bars" id="fp-bars"></div>
   <div class="fp-skills-title">Skills</div>
   <div class="fp-skills" id="fp-skills"></div>
   <div class="fp-log-title">Combat Log</div>
@@ -680,6 +724,83 @@ const CLASS_LABELS = {
 };
 const ELEMENT_COLORS = {
   fire: '#ff6b35', water: '#4fc3f7', shadow: '#b388ff', light: '#fff176',
+};
+
+// Equipment lookup tables (weapon names + set names/descs)
+const WEAPON_NAMES = {
+  w_lame_inferno:"Lame Inferno",w_hache_volcanique:"Hache Volcanique",w_arc_braise:"Arc Braise",w_dague_pyrite:"Dague Pyrite",w_marteau_forge:"Marteau Forge",
+  w_trident_abyssal:"Trident Abyssal",w_epee_glaciale:"Epee Glaciale",w_arc_tsunami:"Arc Tsunami",w_lance_corail:"Lance Corail",w_baton_brume:"Baton Brume",
+  w_faux_monarque:"Faux du Monarque",w_katana_void:"Katana Void",w_griffe_nuit:"Griffe Nuit",w_masse_tenebres:"Masse Tenebres",w_dague_ombre:"Dague Ombre",
+  w_epee_ancienne:"Epee Ancienne",w_baguette_sage:"Baguette Sage",w_bouclier_hero:"Bouclier Heros",
+  w_lame_eternite:"Lame Eternite",w_trident_abysses:"Trident Abysses",w_arc_celeste:"Arc Celeste",w_hache_ragnarok:"Hache Ragnarok",
+  w_lance_tempete:"Lance Tempete",w_katana_murasame:"Murasame",w_marteau_titan:"Marteau Titan",w_dague_assassin:"Dague Assassin",
+  w_baton_supreme:"Baton Supreme",w_epee_monarque:"Epee du Monarque",w_sulfuras:"Sulfuras",w_raeshalare:"Rae'shalare",
+  w_katana_z:"Katana Z",w_katana_v:"Katana V",w_guldan:"Baton Gul'dan",
+  excalibur:"Excalibur",mjolnir:"Mjolnir",muramasa:"Muramasa",yggdrasil:"Yggdrasil",gungnir:"Gungnir",
+  nidhogg:"Nidhogg",aegis_weapon:"Aegis",caladbolg:"Caladbolg",thyrsus:"Thyrsus",gram:"Gram",
+  ragnarok:"Ragnarok",kusanagi:"Kusanagi",gae_bolg:"Gae Bolg",masamune:"Masamune",longinus:"Lance Longinus",
+  tyrfing:"Tyrfing",ea_staff:"Ea Staff",fragarach:"Fragarach",tacos_eternel:"Tacos Eternel",amenonuhoko:"Ame-no-nuhoko",
+};
+const WEAPON_DESCS = {
+  w_sulfuras:"Fury of the Eternal Flame",w_raeshalare:"Shadow Silence",w_katana_z:"+5% ATK, 50% counter",
+  w_katana_v:"Chaos, scales INT, poison/buff",w_guldan:"Eternal Halo protection",
+  excalibur:"HP>80%: DMG+25%, heal, absorb mortel",mjolnir:"30% chain 2 ennemis, stun",muramasa:"Crit:+3%ATK(max30%), x3",
+  yggdrasil:"Soins+35%, overheals bouclier",gungnir:"1ere x2, crit garanti, pierce",nidhogg:"Kill:+5%ATK,+3%lifesteal",
+  aegis_weapon:"-25% degats, ally mort buff",caladbolg:"Crits enflamment, ATK+15-25%",thyrsus:"20% sort gratuit, mana",
+  gram:"5 coups AoE 250%, stack infini",ragnarok:"3 coups AoE 400%, -20%DEF",kusanagi:"Crits:+5%ATK(max50%), ignore DEF",
+  gae_bolg:"Pierce, 1ere x3, dash AoE",masamune:"HP>50%: +35%DMG, absorb 2",longinus:"Ignore 30%DEF, crits onde",
+  tyrfing:"Kill:+8%ATK, <30%HP: ATKx2",ea_staff:"30% gratuit, mana>90%: +40%",fragarach:"Esquive+15%, contre-attaque",
+  tacos_eternel:"Confusion, kill+10% stats, kebab",amenonuhoko:"Soins+50%, resurrect, buff allies",
+};
+const SET_NAMES = {
+  infamie_chaotique:"Infamie Chaotique",volonte_de_fer:"Volonte de Fer",flamme_maudite:"Flamme Maudite",
+  maree_eternelle:"Maree Eternelle",ombre_souveraine:"Ombre Souveraine",benediction_celeste:"Benediction Celeste",
+  expertise_bestiale:"Expertise Bestiale",eclat_angelique:"Eclat Angelique",
+  sacrifice_martyr:"Sacrifice Martyr",fureur_desespoir:"Fureur Desespoir",chaines_destin:"Chaines Destin",
+  echo_temporel:"Echo Temporel",aura_commandeur:"Aura Commandeur",voile_ombre:"Voile Ombre",
+  source_arcanique:"Source Arcanique",flamme_interieure:"Flamme Interieure",
+  rage_eternelle:"Rage Eternelle",gardien_celeste:"Gardien Celeste",siphon_vital:"Siphon Vital",
+  tempete_arcane:"Tempete Arcane",equilibre_supreme:"Equilibre Supreme",pacte_ombres:"Pacte Ombres",
+  esprit_transcendant:"Esprit Transcendant",resonance_arcanique:"Resonance Arcanique",
+  fureur_titan:"Fureur Titan",lame_fantome:"Lame Fantome",aegis_gardien:"Aegis Gardien",
+  souffle_vital:"Souffle Vital",tempete_acier:"Tempete Acier",voix_neant:"Voix Neant",
+  pacte_sang:"Pacte Sang",bastion_eternel:"Bastion Eternel",harmonie_celeste:"Harmonie Celeste",nova_arcanique:"Nova Arcanique",
+  ecailles_drake:"Ecailles Drake",crocs_loup:"Crocs Loup",plumes_phenix:"Plumes Phenix",griffes_wyverne:"Griffes Wyverne",
+  ronce_vivante:"Ronce Vivante",souffle_glacial:"Souffle Glacial",cendres_ardentes:"Cendres Ardentes",
+  murmure_ombre:"Murmure Ombre",lumiere_sacree:"Lumiere Sacree",cuirasse_fer:"Cuirasse Fer",
+  ailes_vent:"Ailes Vent",sang_guerrier:"Sang Guerrier",totem_ancestral:"Totem Ancestral",brume_mystique:"Brume Mystique",lien_meute:"Lien Meute",
+};
+const SET_DESCS = {
+  infamie_chaotique:{'2p':'ATK +12%','4p':'CRIT DMG +25%'},volonte_de_fer:{'2p':'DEF +15%','4p':'PV +20%'},
+  flamme_maudite:{'2p':'CRIT +8%','4p':'DMG Feu +20%'},maree_eternelle:{'2p':'RES +10%','4p':'DMG Eau +20%'},
+  ombre_souveraine:{'2p':'ATK +8%','4p':'DMG Ombre +25%'},benediction_celeste:{'2p':'PV +12%','4p':'Soins +30%'},
+  expertise_bestiale:{'2p':'SPD +10%','4p':'Tous DMG +12%'},eclat_angelique:{'2p':'RES +8%','4p':'DEF PEN +15%'},
+  sacrifice_martyr:{'2p':'ATK -30%, allies +15%','4p':'Allie <30%: soin 20%'},
+  fureur_desespoir:{'2p':'+0.8% DMG/1% HP perdu','4p':'<25% HP: crits + ignore DEF'},
+  chaines_destin:{'2p':'15% vol 12% degats','4p':'Soins +30%, 10% crit x2'},
+  echo_temporel:{'2p':'20% -1 CD apres attaque','4p':'Tous 3 tours sort gratuit'},
+  aura_commandeur:{'2p':'+10% DEF allies','4p':'Debut: allies +20% CRIT'},
+  voile_ombre:{'2p':'12% esquive','4p':'Esquive: contre-attaque 80%'},
+  source_arcanique:{'2p':'Mana +30%','4p':'Regen +50%, cout -20%'},
+  flamme_interieure:{'2p':'+3% DMG/attaque (max 10)','4p':'10 stacks: crit +50%'},
+  rage_eternelle:{'2p':'ATK +12%, stack +1%/coup','4p':'15 stacks: crit + DMG +40%'},
+  gardien_celeste:{'2p':'DEF +15%, HP +10%, shield','4p':'Shield: DMG +25%'},
+  siphon_vital:{'2p':'25% vol 15% DMG','4p':'HP >80%: DMG +30%'},
+  tempete_arcane:{'2p':'Mana +40%, cout -15%','4p':'Mana plein: sort x2'},
+  equilibre_supreme:{'2p':'ATK/DEF/HP +8%, CRIT +5%','4p':'Stat bas +25%, tous +10%'},
+  pacte_ombres:{'2p':'Self ATK -50%, allies +150%','4p':'Raid DMG +25%'},
+  esprit_transcendant:{'2p':'INT +30%, regen +25%','4p':'10 stacks: ignore DEF x1.5'},
+  resonance_arcanique:{'2p':'INT +20%, cout -25%','4p':'Mana>60%: crit, <30%: regen x3'},
+  fureur_titan:{'2p':'ATK +15%','4p':'ATK +2%/coup, 20: crits'},
+  lame_fantome:{'2p':'CRIT +12%','4p':'Crit: ignore DEF, double'},
+  aegis_gardien:{'2p':'DEF +20%, aggro +25%','4p':'Absorbe degats allies'},
+  souffle_vital:{'2p':'Soins +25%','4p':'Shield, auto-heal, crit x2'},
+  tempete_acier:{'2p':'SPD +15%','4p':'5e coup: 200%, +5% SPD kill'},
+  voix_neant:{'2p':'DMG mag +15%','4p':'DoT +25% degats'},
+  pacte_sang:{'2p':'Vol vie +10%','4p':'<50%: ATK+30%, <15%: invincible'},
+  bastion_eternel:{'2p':'HP +25%','4p':'Rez 30%, shield allies'},
+  harmonie_celeste:{'2p':'Mana regen +50%','4p':'Buffs +50%, allies +ATK'},
+  nova_arcanique:{'2p':'Mana +30%','4p':'3 sorts: 4e x2, kill -2s CD'},
 };
 const ELEMENT_GLOW = {
   fire: '#ff4400', water: '#0288d1', shadow: '#7c4dff', light: '#fdd835',
@@ -2041,6 +2162,69 @@ function updateFocusPanel(hunters) {
     '<div class="fp-stat"><span class="fp-stat-label">Heal</span><span class="fp-stat-val" style="color:#10b981">' + fmtNum(h.healingDone || 0) + '</span></div>' +
     '<div class="fp-stat"><span class="fp-stat-label">Subi</span><span class="fp-stat-val" style="color:#ef4444">' + fmtNum(h.damageTaken || 0) + '</span></div>';
 
+  // Render equipment (weapon + sets)
+  const equipEl = document.getElementById('fp-equip');
+  let equipHtml = '';
+  if (h.weaponId) {
+    const wName = WEAPON_NAMES[h.weaponId] || h.weaponId;
+    const wDesc = WEAPON_DESCS[h.weaponId] || '';
+    equipHtml += '<div class="fp-equip-item" style="color:#fbbf24;font-weight:700">⚔ ' + wName +
+      (wDesc ? '<div class="fp-tooltip"><b>' + wName + '</b><br>' + wDesc + '</div>' : '') + '</div>';
+  }
+  if (h.equippedSets && Object.keys(h.equippedSets).length > 0) {
+    for (const [setId, count] of Object.entries(h.equippedSets)) {
+      const sName = SET_NAMES[setId] || setId;
+      const sDesc = SET_DESCS[setId] || {};
+      const c2 = count >= 2 ? 'active' : '';
+      const c4 = count >= 4 ? 'active' : '';
+      equipHtml += '<div class="fp-equip-item"><span style="color:#a78bfa">♦</span> ' + sName + ' (' + count + 'p)' +
+        '<div class="fp-tooltip"><b>' + sName + '</b>' +
+        (sDesc['2p'] ? '<br><span style="color:' + (count >= 2 ? '#4ade80' : '#64748b') + '">(2p) ' + sDesc['2p'] + '</span>' : '') +
+        (sDesc['4p'] ? '<br><span style="color:' + (count >= 4 ? '#4ade80' : '#64748b') + '">(4p) ' + sDesc['4p'] + '</span>' : '') +
+        '</div></div>';
+    }
+  }
+  equipEl.innerHTML = equipHtml || '<div style="color:#4b5563;font-size:8px;padding:2px">Aucun équipement</div>';
+
+  // Render active buffs/debuffs
+  const buffsEl = document.getElementById('fp-buffs');
+  const BUFF_INFO = {
+    atk_up:    { name: 'ATK Up', icon: '⬆', isBuff: true },
+    speed_up:  { name: 'SPD Up', icon: '⬆', isBuff: true },
+    crit_up:   { name: 'CRIT Up', icon: '⬆', isBuff: true },
+    def_up:    { name: 'DEF Up', icon: '🛡', isBuff: true },
+    speed_down:{ name: 'Slow', icon: '⬇', isBuff: false },
+    poison:    { name: 'Poison', icon: '☠', isBuff: false },
+    debuff_def:{ name: 'DEF Down', icon: '⬇', isBuff: false },
+    burn:      { name: 'Brûlure', icon: '🔥', isBuff: false },
+    bleed:     { name: 'Saignement', icon: '🩸', isBuff: false },
+    def_down:  { name: 'DEF Down', icon: '⬇', isBuff: false },
+  };
+  if (h.activeBuffs && h.activeBuffs.length > 0) {
+    buffsEl.innerHTML = h.activeBuffs.map(b => {
+      const info = BUFF_INFO[b.type] || { name: b.type, icon: b.type.startsWith('debuff') ? '⬇' : '⬆', isBuff: !b.type.startsWith('debuff') && !b.type.includes('down') && b.type !== 'poison' && b.type !== 'burn' && b.type !== 'bleed' };
+      const cls = info.isBuff ? 'buff' : 'debuff';
+      const valTxt = b.value ? ' ' + (b.value > 0 && b.value < 1 ? '+' + Math.round(b.value * 100) + '%' : (b.value >= 1 ? '+' + Math.round(b.value) : Math.round(b.value * 100) + '%')) : '';
+      const stackTxt = b.stacks > 1 ? ' x' + b.stacks : '';
+      return '<div class="fp-buff ' + cls + '">' + info.icon + ' ' + info.name + valTxt + stackTxt + ' (' + b.dur + 's)' +
+        '<div class="fp-tooltip">' + info.name + valTxt + stackTxt + '<br>Durée: ' + b.dur + 's / ' + b.maxDur + 's' +
+        (b.source ? '<br>Source: ' + b.source : '') + '</div></div>';
+    }).join('');
+  } else {
+    buffsEl.innerHTML = '';
+  }
+
+  // Render HP/Mana bars above skills
+  const barsEl = document.getElementById('fp-bars');
+  const hpColor = h.hp / h.maxHp > 0.5 ? '#10b981' : h.hp / h.maxHp > 0.25 ? '#f59e0b' : '#ef4444';
+  barsEl.innerHTML =
+    '<div class="fp-bar-row"><span class="fp-bar-label" style="color:' + hpColor + '">HP</span>' +
+    '<div class="fp-bar-track"><div class="fp-bar-fill" style="width:' + hpPct + '%;background:' + hpColor + '"></div>' +
+    '<div class="fp-bar-text">' + fmtNum(Math.round(h.hp)) + ' / ' + fmtNum(h.maxHp) + ' (' + hpPct + '%)</div></div></div>' +
+    '<div class="fp-bar-row"><span class="fp-bar-label" style="color:#6366f1">MP</span>' +
+    '<div class="fp-bar-track"><div class="fp-bar-fill" style="width:' + manaPct + '%;background:#6366f1"></div>' +
+    '<div class="fp-bar-text">' + Math.round(h.mana) + ' / ' + h.maxMana + ' (' + manaPct + '%)</div></div></div>';
+
   // Render skills with cooldowns
   const skillsEl = document.getElementById('fp-skills');
   if (h.skills) {
@@ -2295,6 +2479,20 @@ function updateUI(s) {
     document.getElementById('boss-name').textContent = b.name + (b.enraged ? ' [ENRAGE]' : '');
     document.getElementById('boss-name').style.color = b.enraged ? '#fbbf24' : '#f87171';
     document.getElementById('boss-phase').textContent = b.phase > 0 ? 'Phase ' + (b.phase + 1) : '';
+    // Show aggro target
+    const aggroEl = document.getElementById('boss-aggro');
+    if (b.targetId && s.combat.hunters) {
+      const target = s.combat.hunters.find(h => h.id === b.targetId);
+      if (target) {
+        const isTaunted = !!b.tauntedBy;
+        aggroEl.textContent = '🎯 ' + target.hunterName + ' (' + target.username + ')' + (isTaunted ? ' [TAUNT]' : '');
+        aggroEl.style.color = isTaunted ? '#c084fc' : '#fbbf24';
+      } else {
+        aggroEl.textContent = '';
+      }
+    } else {
+      aggroEl.textContent = '';
+    }
     const pct = b.maxHp > 0 ? (b.hp / b.maxHp * 100) : 0;
 
     // Multi-bar HP system (like Manaya)
@@ -3393,6 +3591,26 @@ function render() {
     ctx.fillStyle = hpRatio < 0.3 ? '#ef4444' : hpRatio < 0.6 ? '#f59e0b' : '#10b981';
     ctx.fillRect(barX, barY, barW * hpRatio, barH);
     ctx.globalAlpha = 1;
+
+    // ── Charge bar (berserker skillB) ──
+    if (h.charging) {
+      const chgY = barY + barH + 3;
+      const chgH = Math.max(2, ts(isFocused ? 3 : 2));
+      const prog = h.charging.progress || 0;
+      const lvl = h.charging.level || 0;
+      // Background
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(barX - 1, chgY - 1, barW + 2, chgH + 2);
+      // Fill — color based on charge level (yellow → orange → red → purple)
+      const chgColors = ['#facc15', '#f97316', '#ef4444', '#a855f7'];
+      ctx.fillStyle = chgColors[Math.min(lvl, chgColors.length - 1)];
+      ctx.fillRect(barX, chgY, barW * prog, chgH);
+      // Level markers (vertical ticks at 25%, 50%, 75%)
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      for (let i = 1; i < 4; i++) {
+        ctx.fillRect(barX + barW * (i / 4) - 0.5, chgY, 1, chgH);
+      }
+    }
   }
 
   // ── Arrow indicator pointing to focused hunter (when off-screen or hard to find) ──

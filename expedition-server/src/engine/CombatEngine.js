@@ -716,8 +716,14 @@ export class CombatEngine {
 
   _taunt(player, skill) {
     // Force boss to target this player
-    this.gs.addAggro(player.id, AGGRO.TAUNT_AGGRO);
-    if (this.gs.boss) this.gs.boss.targetId = player.id;
+    // Use skill's aggroFlat if defined, otherwise fallback to config
+    const aggroAmount = (skill.aggroFlat || AGGRO.TAUNT_AGGRO) * player.aggroMult;
+    this.gs.addAggro(player.id, aggroAmount);
+    if (this.gs.boss) {
+      this.gs.boss.targetId = player.id;
+      this.gs.boss.tauntedBy = player.id;
+      this.gs.boss.tauntTimer = skill.duration || 5;
+    }
 
     this.gs.addEvent({
       type: 'skill_used',

@@ -817,6 +817,22 @@ export default function ShadowColosseum() {
   const [searchQuery, setSearchQuery] = useState(''); // search filter by name
   const [rosterFilterClass, setRosterFilterClass] = useState(null); // class id or null
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [favFilterActive, setFavFilterActive] = useState(() => JSON.parse(localStorage.getItem('sc_fav_filter') || 'false'));
+  const favHunters = data.favoriteHunters || [];
+  const isFav = (id) => favHunters.includes(id);
+  const toggleFav = (id, e) => {
+    e.stopPropagation();
+    setData(prev => {
+      const favs = prev.favoriteHunters || [];
+      const next = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
+      return { ...prev, favoriteHunters: next };
+    });
+  };
+  const toggleFavFilter = () => {
+    const next = !favFilterActive;
+    setFavFilterActive(next);
+    localStorage.setItem('sc_fav_filter', JSON.stringify(next));
+  };
   const [chibisCollapsed, setChibisCollapsed] = useState(false);
   const [huntersCollapsed, setHuntersCollapsed] = useState(false);
   const [scrollAtTop, setScrollAtTop] = useState(true);
@@ -5604,6 +5620,10 @@ export default function ShadowColosseum() {
                       rosterSort === s.key ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
                     }`}>{s.icon} {s.label}</button>
                 ))}
+                <button onClick={toggleFavFilter}
+                  className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
+                    favFilterActive ? 'bg-yellow-500/30 text-yellow-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                  }`} title="Filtrer les favoris">{'\u2B50'}</button>
                 <button onClick={() => setFiltersExpanded(!filtersExpanded)}
                   className={`ml-auto px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
                     filtersExpanded || rosterFilterElem || rosterFilterClass ? 'bg-purple-500/30 text-purple-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
@@ -5646,13 +5666,18 @@ export default function ShadowColosseum() {
               .filter(id => {
                 const c = getChibiData(id);
                 if (!c) return false;
+                if (favFilterActive && !isFav(id)) return false;
                 if (rosterFilterElem && c.element !== rosterFilterElem) return false;
                 if (rosterFilterClass) return false; // chibis don't have classes
                 if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
                 return true;
               })
               .map(id => ({ id, iLvl: getChibiILevel(id), level: (getChibiLevel(id)).level, name: getChibiData(id)?.name || '' }))
-              .sort((a, b) => rosterSort === 'ilevel' ? b.iLvl - a.iLvl : rosterSort === 'level' ? b.level - a.level : a.name.localeCompare(b.name));
+              .sort((a, b) => {
+                const fa = isFav(a.id) ? 1 : 0, fb = isFav(b.id) ? 1 : 0;
+                if (fb !== fa) return fb - fa;
+                return rosterSort === 'ilevel' ? b.iLvl - a.iLvl : rosterSort === 'level' ? b.level - a.level : a.name.localeCompare(b.name);
+              });
             if (sortedChibis.length === 0) return null;
             return (
             <>
@@ -5700,6 +5725,11 @@ export default function ShadowColosseum() {
                               <span className="hidden sm:inline text-amber-400 font-bold ml-auto text-normal-responsive" title={`iLevel: ${fmtExact(iLvl)}`}>iLv{fmtStat(iLvl)}</span>
                             </div>
                           </div>
+                          <button onClick={(e) => toggleFav(id, e)}
+                            className={`shrink-0 text-sm transition-all ${isFav(id) ? 'text-yellow-400 scale-110' : 'text-gray-600 hover:text-yellow-400/60'}`}
+                            title={isFav(id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}>
+                            {isFav(id) ? '\u2605' : '\u2606'}
+                          </button>
                           {_weapon && (
                             <div className="flex flex-col items-center gap-0.5 shrink-0">
                               {_weapon.sprite ? (
@@ -5761,13 +5791,18 @@ export default function ShadowColosseum() {
               .filter(id => {
                 const c = getChibiData(id);
                 if (!c) return false;
+                if (favFilterActive && !isFav(id)) return false;
                 if (rosterFilterElem && c.element !== rosterFilterElem) return false;
                 if (rosterFilterClass && c.class !== rosterFilterClass) return false;
                 if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
                 return true;
               })
               .map(id => ({ id, iLvl: getChibiILevel(id), level: (getChibiLevel(id)).level, name: getChibiData(id)?.name || '' }))
-              .sort((a, b) => rosterSort === 'ilevel' ? b.iLvl - a.iLvl : rosterSort === 'level' ? b.level - a.level : a.name.localeCompare(b.name));
+              .sort((a, b) => {
+                const fa = isFav(a.id) ? 1 : 0, fb = isFav(b.id) ? 1 : 0;
+                if (fb !== fa) return fb - fa;
+                return rosterSort === 'ilevel' ? b.iLvl - a.iLvl : rosterSort === 'level' ? b.level - a.level : a.name.localeCompare(b.name);
+              });
             if (sortedHunters.length === 0) return null;
             return (
             <>
@@ -5828,6 +5863,11 @@ export default function ShadowColosseum() {
                               </div>
                             )}
                           </div>
+                          <button onClick={(e) => toggleFav(id, e)}
+                            className={`shrink-0 text-sm transition-all ${isFav(id) ? 'text-yellow-400 scale-110' : 'text-gray-600 hover:text-yellow-400/60'}`}
+                            title={isFav(id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}>
+                            {isFav(id) ? '\u2605' : '\u2606'}
+                          </button>
                           {_weapon && (
                             <div className="flex flex-col items-center gap-0.5 shrink-0">
                               {_weapon.sprite ? (

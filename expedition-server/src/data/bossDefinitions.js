@@ -574,7 +574,7 @@ export const BOSS_DEFINITIONS = [
     id: 'ragnaros',
     name: 'Ragnaros',
     index: 4,
-    hp: 18_200_000_000,
+    hp: 9_100_000_000,
     atk: 35000,
     def: 500,
     spd: 50,

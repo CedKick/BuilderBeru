@@ -265,17 +265,29 @@ export class ExpeditionBoss {
     // Phase check
     this._checkPhaseTransition(gameState);
 
-    // Update targeting (highest aggro)
-    const aggroTarget = gameState.getHighestAggroTarget();
-    if (aggroTarget) this.targetId = aggroTarget.id;
+    // Update targeting — taunt lock takes priority
+    if (this.tauntTimer > 0) {
+      this.tauntTimer -= dt;
+      const taunter = this.tauntedBy ? gameState.getHunterById(this.tauntedBy) : null;
+      if (!taunter || !taunter.alive) {
+        this.tauntTimer = 0;
+        this.tauntedBy = null;
+      }
+      // Keep targeting taunter, skip aggro/random switch
+    } else {
+      this.tauntedBy = null;
+      // Normal aggro targeting
+      const aggroTarget = gameState.getHighestAggroTarget();
+      if (aggroTarget) this.targetId = aggroTarget.id;
 
-    // Random aggro switch
-    this._aggroSwitchTimer += dt;
-    if (this._aggroSwitchTimer >= this._aggroSwitchCooldown && !this.currentPattern && this.phase >= 1) {
-      const switchChance = 0.01 * (this.phase + 1);
-      if (Math.random() < switchChance) {
-        this._tryRandomAggroSwitch(gameState);
-        this._aggroSwitchTimer = 0;
+      // Random aggro switch
+      this._aggroSwitchTimer += dt;
+      if (this._aggroSwitchTimer >= this._aggroSwitchCooldown && !this.currentPattern && this.phase >= 1) {
+        const switchChance = 0.01 * (this.phase + 1);
+        if (Math.random() < switchChance) {
+          this._tryRandomAggroSwitch(gameState);
+          this._aggroSwitchTimer = 0;
+        }
       }
     }
 

@@ -20,7 +20,7 @@ export const CLASS_STAT_MULTS = {
     crit: 0.3,
     res: 2.0,
     mana: 400,       // Fixed mana pool
-    aggroMult: 3.0,
+    aggroMult: 30.0,
     color: '#3b82f6',
   },
   healer: {

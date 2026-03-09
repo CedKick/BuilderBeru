@@ -769,6 +769,11 @@ export default function Expedition() {
               </ol>
             </div>
 
+            <div className="bg-orange-900/20 border border-orange-500/20 rounded-lg p-3">
+              <h3 className="text-orange-300 font-semibold mb-1">Conseils de build</h3>
+              <p className="text-xs">Ne negligez pas la DEF ! Les mages et DPS fragiles qui full INT/ATK meurent en boucle et perdent du DPS au final. Visez au minimum ~550+ DEF en inscription pour survivre aux AoE des boss. Un hunter vivant fait plus de degats qu'un hunter mort.</p>
+            </div>
+
             <div className="bg-red-900/20 border border-red-500/20 rounded-lg p-3">
               <h3 className="text-red-300 font-semibold mb-1">Soft Reserve (SR)</h3>
               <p className="text-xs">Choisis jusqu'a 5 items que tu veux en priorite. Si un item SR drop et que tu es le seul a l'avoir SR, tu le recois automatiquement. Si plusieurs joueurs SR le meme item, un roll decide.</p>

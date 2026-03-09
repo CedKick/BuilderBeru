@@ -14,12 +14,14 @@ import { Hunter } from '../entities/Hunter.js';
 import { HUNTERS } from '../data/hunterData.js';
 import { getBossDefinition } from '../data/bossDefinitions.js';
 import { LootEngine } from './LootEngine.js';
+import { query as dbQuery } from '../db/pool.js';
 
 export class ExpeditionEngine {
   constructor() {
     // Expedition state
     this.state = 'idle'; // idle | registration | march | mob_wave | combat | campfire | loot | finished | wiped
     this.expeditionId = null;
+    this.onEnd = null; // callback(victory, expeditionId) — called when expedition finishes/wipes
 
     // Players & hunters
     this.players = new Map();     // playerId -> { username, hunterEntries }
@@ -360,6 +362,13 @@ export class ExpeditionEngine {
     for (const s of sorted.slice(0, 15)) {
       console.log(`  ${s.class.padEnd(10)} ${(s.hunterName || '').padEnd(18)} (${(s.username || '').padEnd(8)}) | DMG: ${(s.totalDamage / 1e6).toFixed(1)}M | Heal: ${(s.totalHealing / 1e6).toFixed(1)}M | Deaths: ${s.totalDeaths}`);
     }
+
+    // Notify listener (index.js) so it can auto-create next expedition
+    if (this.onEnd) {
+      try { this.onEnd(victory, this.expeditionId); } catch (err) {
+        console.error('[Expedition] onEnd callback error:', err.message);
+      }
+    }
   }
 
   // --- Sync hunters from combat back to main state ---
@@ -562,6 +571,58 @@ export class ExpeditionEngine {
     this._addFeed(`Total: ${results.filter(r => !r.stolen).length} items (${summary})`, 'loot_summary');
 
     console.log(`[Expedition] Loot: ${results.length} drops, ${results.filter(r => r.stolen).length} stolen`);
+
+    // Auto-send loot mails to players
+    this._sendLootMails(results, bossIndex).catch(err =>
+      console.error('[Expedition] Failed to send loot mails:', err.message)
+    );
+  }
+
+  // --- Send loot as in-game mail ---
+
+  async _sendLootMails(results, bossIndex) {
+    const bossDef = getBossDefinition(bossIndex);
+    const bossName = bossDef?.name || `Boss ${bossIndex + 1}`;
+
+    // Group results by winner
+    const byPlayer = {};
+    for (const r of results) {
+      if (r.stolen || !r.winnerUsername) continue;
+      if (!byPlayer[r.winnerUsername]) byPlayer[r.winnerUsername] = [];
+      byPlayer[r.winnerUsername].push(r);
+    }
+
+    let mailCount = 0;
+    for (const [username, loot] of Object.entries(byPlayer)) {
+      if (loot.length === 0) continue;
+
+      const itemList = loot.map(l =>
+        `• ${l.itemName} (${l.rarity}) — roll ${l.winnerRoll}/100`
+      ).join('\n');
+      const message = `Butin du ${bossName}:\n${itemList}`;
+
+      const rewards = {
+        expeditionItems: loot.map(l => ({
+          itemId: l.itemId,
+          itemName: l.itemName,
+          rarity: l.rarity,
+          type: l.type,
+          slot: l.slot,
+          stats: l.stats,
+          setId: l.setId || null,
+          weaponId: l.weaponId || null,
+          binding: l.binding,
+        }))
+      };
+
+      await dbQuery(
+        `INSERT INTO player_mail (recipient_username, sender, subject, message, mail_type, rewards)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [username, 'Expédition', `Butin: ${bossName}`, message, 'reward', JSON.stringify(rewards)]
+      );
+      mailCount++;
+    }
+    console.log(`[Expedition] Loot mails sent: ${mailCount} players for ${bossName}`);
   }
 
   // --- Banter / Chamailleries ---
@@ -777,6 +838,7 @@ export class ExpeditionEngine {
   reset() {
     this.destroy();
     this.state = 'idle';
+    this._resetted = true; // Flag to prevent auto-reset from creating duplicate
     this.expeditionId = null;
     this.players.clear();
     this.hunters = [];
