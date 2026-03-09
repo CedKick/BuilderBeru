@@ -277,7 +277,7 @@ async function handleCreate(req, res) {
   // ── Cooldown check ──
   const lastWeapon = await query(
     'SELECT created_at FROM community_weapons WHERE creator_device_id = $1 ORDER BY created_at DESC LIMIT 1',
-    [user.device_id]
+    [user.deviceId]
   );
   if (lastWeapon.rows.length > 0) {
     const lastTime = new Date(lastWeapon.rows[0].created_at).getTime();
@@ -291,7 +291,7 @@ async function handleCreate(req, res) {
   // ── Max weapons check ──
   const countResult = await query(
     'SELECT COUNT(*) as cnt FROM community_weapons WHERE creator_device_id = $1',
-    [user.device_id]
+    [user.deviceId]
   );
   if (parseInt(countResult.rows[0].cnt) >= MAX_WEAPONS_PER_USER) {
     return res.status(400).json({ error: `Maximum ${MAX_WEAPONS_PER_USER} armes par joueur.` });
@@ -323,7 +323,7 @@ async function handleCreate(req, res) {
          passive_template_id, passive_params, power_score, drop_rate, awakening_passives, passives)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
       [
-        weaponId, user.username, user.device_id,
+        weaponId, user.username, user.deviceId,
         name.trim(), element || null, weaponType, rarity,
         spriteUrl || null, icon || '⚔️', safeDesc,
         clampedAtk, bonusStat || null, clampedBonusValue, scalingStat || null,
@@ -381,7 +381,7 @@ async function handleMyWeapons(req, res) {
      FROM community_weapons
      WHERE creator_device_id = $1 AND status = 'active'
      ORDER BY created_at DESC`,
-    [user.device_id]
+    [user.deviceId]
   );
 
   // Cooldown info
@@ -409,7 +409,7 @@ async function handleDelete(req, res) {
     `UPDATE community_weapons SET status = 'disabled', updated_at = NOW()
      WHERE weapon_id = $1 AND creator_device_id = $2 AND status = 'active'
      RETURNING weapon_id`,
-    [weaponId, user.device_id]
+    [weaponId, user.deviceId]
   );
 
   if (result.rowCount === 0) {
