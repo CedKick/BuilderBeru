@@ -675,6 +675,12 @@ export default function ShadowColosseum() {
   const skipSaveRef = useRef(isLoggedIn()); // Prevent save during cloud load (race condition)
   const [syncStatus, setSyncStatus] = useState('synced');
 
+  // Custom boss selection for Multi PVE
+  const [customBossList, setCustomBossList] = useState(null); // null = not loaded, [] = empty
+  const [customBossLoading, setCustomBossLoading] = useState(false);
+  const [selectedCustomBoss, setSelectedCustomBoss] = useState(null); // { boss_id, name, creator_username, ... }
+  const [showCustomBossPicker, setShowCustomBossPicker] = useState(false);
+
   // Cloud-first load: wait for initialSync to merge cloud↔localStorage, then re-read
   // initialSync() already fetches all cloud data, merges with localStorage, and handles
   // login-pending (cloud wins) + corruption detection. A second loadCloud() is redundant
@@ -4805,6 +4811,119 @@ export default function ShadowColosseum() {
                 <div className="text-gray-500 group-hover:text-orange-400 text-xl transition-colors">{'\u2192'}</div>
               </div>
             </Link>
+
+            {/* Boss Custom — Community bosses */}
+            <div className="relative">
+              <button
+                onClick={async () => {
+                  setShowCustomBossPicker(!showCustomBossPicker);
+                  if (!customBossList && !customBossLoading) {
+                    setCustomBossLoading(true);
+                    try {
+                      const resp = await fetch(`${API_URL}/boss-editor?action=list&status=published&limit=20`);
+                      const json = await resp.json();
+                      setCustomBossList(json.success ? json.bosses : []);
+                    } catch { setCustomBossList([]); }
+                    setCustomBossLoading(false);
+                  }
+                }}
+                className="w-full text-left p-4 rounded-xl border border-violet-500/30 bg-gradient-to-r from-violet-900/20 to-fuchsia-900/20 hover:from-violet-900/40 hover:to-fuchsia-900/40 transition-all group cursor-pointer"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-violet-900/40 to-fuchsia-900/40 border border-violet-500/30 flex items-center justify-center text-3xl flex-shrink-0">
+                    {'\u2728'}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-violet-400 text-base group-hover:text-violet-300">Boss Custom</span>
+                      <span className="text-small-responsive px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-400 border border-violet-500/30 font-bold">BETA</span>
+                    </div>
+                    {selectedCustomBoss ? (
+                      <p className="text-xs text-violet-300 mt-1">
+                        {selectedCustomBoss.name} <span className="text-gray-500">par {selectedCustomBoss.creator_username}</span>
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-1">Combats un boss cree par la communaute !</p>
+                    )}
+                    <div className="flex gap-2 mt-2">
+                      <span className="text-small-responsive px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-400 border border-violet-500/20">Communautaire</span>
+                      <span className="text-small-responsive px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/20">3-5 joueurs</span>
+                    </div>
+                  </div>
+                  <div className="text-gray-500 group-hover:text-violet-400 text-xl transition-colors">
+                    {showCustomBossPicker ? '\u25B2' : '\u25BC'}
+                  </div>
+                </div>
+              </button>
+
+              {/* Custom Boss Picker Panel */}
+              {showCustomBossPicker && (
+                <div className="mt-2 rounded-xl border border-violet-500/20 bg-[#12121f] overflow-hidden">
+                  {customBossLoading && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+                      <span className="ml-3 text-gray-400 text-sm">Chargement...</span>
+                    </div>
+                  )}
+                  {!customBossLoading && customBossList && customBossList.length === 0 && (
+                    <div className="py-8 text-center">
+                      <p className="text-gray-500 text-sm">Aucun boss publie pour le moment.</p>
+                      <p className="text-gray-600 text-xs mt-1">Cree le tien dans la Forge !</p>
+                    </div>
+                  )}
+                  {!customBossLoading && customBossList && customBossList.length > 0 && (
+                    <div className="max-h-64 overflow-y-auto divide-y divide-violet-500/10">
+                      {customBossList.map(boss => (
+                        <button
+                          key={boss.boss_id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCustomBoss(boss);
+                            setShowCustomBossPicker(false);
+                          }}
+                          className={`w-full text-left px-4 py-3 hover:bg-violet-500/10 transition-colors flex items-center gap-3 ${
+                            selectedCustomBoss?.boss_id === boss.boss_id ? 'bg-violet-500/15' : ''
+                          }`}
+                        >
+                          <div
+                            className="w-10 h-10 rounded-lg border border-violet-500/30 flex items-center justify-center text-lg flex-shrink-0"
+                            style={{ backgroundColor: (boss.color || '#7c3aed') + '30' }}
+                          >
+                            {'\u2694\uFE0F'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white text-sm truncate">{boss.name}</span>
+                              {selectedCustomBoss?.boss_id === boss.boss_id && (
+                                <span className="text-small-responsive px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30">{'\u2713'}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5">
+                              <span>par {boss.creator_username}</span>
+                              <span>{'\u00B7'}</span>
+                              <span>{boss.pattern_count || 0} patterns</span>
+                              <span>{'\u00B7'}</span>
+                              <span>{boss.phase_count || 0} phases</span>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {/* Play button */}
+                  {selectedCustomBoss && (
+                    <div className="p-3 border-t border-violet-500/20 bg-[#0e0e1a]">
+                      <Link
+                        to={`/shadow-colosseum/custom-boss?bossId=${encodeURIComponent(selectedCustomBoss.boss_id)}&name=${encodeURIComponent(selectedCustomBoss.name)}`}
+                        className="block w-full text-center py-2.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold text-sm transition-all"
+                      >
+                        Jouer contre {selectedCustomBoss.name}
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* ═══ CHARACTER SHEET ═══ */}

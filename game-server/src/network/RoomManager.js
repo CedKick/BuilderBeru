@@ -1,6 +1,7 @@
 import { ROOM, DIFFICULTY } from '../config.js';
 import { GameLoop } from '../game/GameLoop.js';
 import { generateBotId, pickBotClasses, pickBotName } from '../game/BotAI.js';
+import { preloadCustomBoss } from '../bosses/BossFactory.js';
 
 export class RoomManager {
   constructor(wsServer) {
@@ -223,6 +224,24 @@ export class RoomManager {
     });
   }
 
+  selectBoss(ws, client, msg) {
+    const room = this._getRoom(client);
+    if (!room || room.state !== 'waiting') return;
+    if (room.host !== client.id) {
+      this._send(ws, { type: 'error', message: 'Only host can select boss' });
+      return;
+    }
+
+    const bossId = msg.bossId || 'manaya';
+    room.selectedBossId = bossId;
+    this.wsServer.broadcast(room.code, {
+      type: 'boss_selected',
+      bossId,
+      room: this._serializeRoom(room),
+    });
+    console.log(`[Room] ${room.code} boss selected: ${bossId}`);
+  }
+
   setSimulation(ws, client, msg) {
     const room = this._getRoom(client);
     if (!room || room.state !== 'waiting') return;
@@ -341,6 +360,12 @@ export class RoomManager {
     room.state = 'countdown';
     let countdown = ROOM.READY_COUNTDOWN;
 
+    // Pre-load custom boss config during countdown (async, non-blocking)
+    const bossId = room.selectedBossId || 'manaya';
+    if (bossId !== 'manaya') {
+      preloadCustomBoss(bossId).catch(err => console.warn('[Room] Boss preload error:', err.message));
+    }
+
     this.wsServer.broadcast(room.code, {
       type: 'countdown_start',
       seconds: countdown,
@@ -393,7 +418,8 @@ export class RoomManager {
       };
     });
 
-    room.gameLoop = new GameLoop(room.code, players, room.difficulty, this.wsServer, room.simulation);
+    const bossId = room.selectedBossId || 'manaya';
+    room.gameLoop = new GameLoop(room.code, players, room.difficulty, this.wsServer, room.simulation, bossId);
     room.gameLoop.onEnd = (result) => this._onGameEnd(room, result);
     room.gameLoop.start();
 
@@ -401,6 +427,7 @@ export class RoomManager {
       type: 'game_start',
       players,
       difficulty: room.difficulty,
+      bossId,
     });
 
     console.log(`[Room] ${room.code} game started! ${players.length} players, ${room.difficulty}`);
@@ -507,6 +534,7 @@ export class RoomManager {
       host: room.host,
       difficulty: room.difficulty,
       simulation: room.simulation || false,
+      selectedBossId: room.selectedBossId || 'manaya',
       state: room.state,
       players: [...room.players.values()].map(p => ({
         id: p.id,
@@ -678,7 +706,8 @@ export class RoomManager {
       colosseumData: null,
     }));
 
-    room.gameLoop = new GameLoop(room.code, players, room.difficulty, this.wsServer, false);
+    const bossId = room.selectedBossId || 'manaya';
+    room.gameLoop = new GameLoop(room.code, players, room.difficulty, this.wsServer, false, bossId);
     room.gameLoop.onEnd = (result) => this._onSpectatorGameEnd(room, result);
     room.gameLoop.start();
 

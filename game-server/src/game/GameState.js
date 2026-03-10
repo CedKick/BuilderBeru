@@ -3,7 +3,7 @@ import { Player } from '../entities/Player.js';
 import { createBoss } from '../bosses/BossFactory.js';
 
 export class GameState {
-  constructor(playerDefs, difficulty, simulation = false) {
+  constructor(playerDefs, difficulty, simulation = false, bossId = 'manaya') {
     this.difficulty = difficulty;
     this.playerCount = playerDefs.length;
     this.timer = BOSS_CFG.ENRAGE_TIMER; // 10 min countdown
@@ -18,7 +18,7 @@ export class GameState {
     });
 
     // Boss spawns center-top of arena
-    this.boss = createBoss('manaya', difficulty, ARENA.WIDTH / 2, ARENA.HEIGHT / 2 - 150);
+    this.boss = createBoss(bossId, difficulty, ARENA.WIDTH / 2, ARENA.HEIGHT / 2 - 150);
 
     // Scale boss HP by player count
     const scale = BOSS_CFG.PLAYER_SCALE[Math.min(this.playerCount, 5)] || 1.0;

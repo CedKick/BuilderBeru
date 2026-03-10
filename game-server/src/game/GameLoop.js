@@ -7,10 +7,10 @@ import { calculateXpReward } from '../data/playerProfile.js';
 import { generateRaidArtifact, generateRaidWeaponDrop, FEATHER_DROP_RATES, calculateAlkahestReward, rollHunterDrops, rollSetUltimeDrops } from '../data/raidGearData.js';
 
 export class GameLoop {
-  constructor(roomCode, players, difficulty, wsServer, simulation = false) {
+  constructor(roomCode, players, difficulty, wsServer, simulation = false, bossId = 'manaya') {
     this.roomCode = roomCode;
     this.wsServer = wsServer;
-    this.state = new GameState(players, difficulty, simulation);
+    this.state = new GameState(players, difficulty, simulation, bossId);
     this.simulation = simulation;
     this.combat = new CombatEngine(this.state);
     this.physics = new PhysicsEngine(this.state);
@@ -154,7 +154,7 @@ export class GameLoop {
         gs.boss._enrageFreeze = 5.0;
         gs.boss._enrageFreezeTriggered = false;
         this._broadcastEvent({ type: 'boss_enrage' });
-        this._broadcastEvent({ type: 'boss_message', text: '💀 MANAYA S\'ENRAGE — 5 secondes...' });
+        this._broadcastEvent({ type: 'boss_message', text: `💀 ${gs.boss.name || 'BOSS'} S'ENRAGE — 5 secondes...` });
       }
     }
     // Enrage freeze countdown → force Trinité des Marques
@@ -507,6 +507,10 @@ export class GameLoop {
         bursting: gs.boss._burstActive || false,
         leaping: gs.boss._moveState === 'leaping',
         moveState: gs.boss._moveState || 'idle',
+        // Custom boss visual info
+        name: gs.boss.name,
+        color: gs.boss.color || undefined,
+        radius: gs.boss.radius,
       },
       simulation: gs.simulation,
       adds: gs.adds.filter(a => a.alive).map(a => ({

@@ -693,22 +693,22 @@ export default function PvpMode() {
     // ULTIME artifact passives: onBattleStart
     units.forEach(c => {
       const ap = c.passives || [];
-      ap.forEach(p => {
+      ap.forEach(passive => {
         // Celestial Shield: 20% max HP shield — individual
-        if (p.type === 'celestialShield' && c.passiveState) {
-          c.passiveState.celestialShield = Math.floor(c.maxHp * (p.shieldPct || 0.20));
+        if (passive.type === 'celestialShield' && c.passiveState) {
+          c.passiveState.celestialShield = Math.floor(c.maxHp * (passive.shieldPct || 0.20));
         }
         // Equilibre Supreme: boost lowest stat +25% — individual
-        if (p.type === 'supremeBalance' && c.passiveState) {
+        if (passive.type === 'supremeBalance' && c.passiveState) {
           const stats = { atk: c.atk, def: c.def, spd: c.spd };
           const lowest = Object.entries(stats).sort((a, b) => a[1] - b[1])[0];
-          if (lowest) c[lowest[0]] += Math.floor(lowest[1] * (p.lowestStatBonus || 0.25));
-          c.passiveState.supremeAllStatsInterval = p.allStatsInterval || 5;
-          c.passiveState.supremeAllStatsBonus = p.allStatsBonus || 0.10;
+          if (lowest) c[lowest[0]] += Math.floor(lowest[1] * (passive.lowestStatBonus || 0.25));
+          c.passiveState.supremeAllStatsInterval = passive.allStatsInterval || 5;
+          c.passiveState.supremeAllStatsBonus = passive.allStatsBonus || 0.10;
         }
         // Shadow Pact Raid: +25% DMG for all units — RAID/TEAM-wide
-        if (p.type === 'shadowPactRaid') {
-          units.forEach(ally => { ally.passiveState.shadowPactRaidBoost = (ally.passiveState?.shadowPactRaidBoost || 0) + (p.raidDmgBoost || 0.25); });
+        if (passive.type === 'shadowPactRaid') {
+          units.forEach(ally => { if (ally.passiveState) ally.passiveState.shadowPactRaidBoost = (ally.passiveState.shadowPactRaidBoost || 0) + (passive.raidDmgBoost || 0.25); });
         }
       });
     });

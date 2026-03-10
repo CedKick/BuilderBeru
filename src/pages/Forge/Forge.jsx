@@ -1,7 +1,9 @@
 // src/pages/Forge/Forge.jsx — La Forge du Monarque (Community Weapon Creator)
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const BossEditor = lazy(() => import('./BossEditor.jsx'));
 import {
   Hammer, Sword, Shield, Zap, Flame, Droplets, Eye, Wind, Mountain,
   Sparkles, ArrowLeft, AlertTriangle, Check, Trash2, Clock, Info,
@@ -524,19 +526,28 @@ export default function Forge() {
         >
           <span className="flex items-center gap-2"><Sword size={18} /> Forger une Arme</span>
         </button>
-        <div
-          className="px-6 py-3 rounded-xl text-sm font-bold border border-gray-700/50 bg-gray-800/50 text-gray-600 cursor-not-allowed relative group"
-          title="En construction"
+        <button
+          onClick={() => setForgeSection('boss')}
+          className={`px-6 py-3 rounded-xl text-sm font-bold transition-all border relative ${
+            forgeSection === 'boss'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500 shadow-lg shadow-purple-600/30'
+              : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'
+          }`}
         >
-          <span className="flex items-center gap-2 grayscale"><Shield size={18} /> Forger un Boss</span>
-          <span className="absolute -top-2 -right-2 bg-yellow-600 text-[10px] text-white px-1.5 py-0.5 rounded-full font-bold">SOON</span>
-          <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-gray-900 border border-gray-600 text-xs text-gray-300 px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-            En construction
-          </div>
-        </div>
+          <span className="flex items-center gap-2"><Shield size={18} /> Forger un Boss</span>
+          <span className="absolute -top-2 -right-2 bg-purple-500 text-[10px] text-white px-1.5 py-0.5 rounded-full font-bold">NEW</span>
+        </button>
       </div>
 
-      {/* Tabs */}
+      {/* Boss Editor mode */}
+      {forgeSection === 'boss' && (
+        <Suspense fallback={<div className="text-center py-12 text-gray-500">Chargement...</div>}>
+          <BossEditor onBack={() => setForgeSection('weapon')} />
+        </Suspense>
+      )}
+
+      {/* Weapon mode — Tabs + Content */}
+      {forgeSection === 'weapon' && <>
       <div className="flex gap-2 justify-center mb-6">
         {[
           { key: 'create', label: '🔨 Forger', icon: Hammer },
@@ -900,6 +911,7 @@ export default function Forge() {
           </motion.div>
         )}
       </AnimatePresence>
+      </>}
     </div>
   );
 }

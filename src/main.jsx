@@ -98,6 +98,7 @@ const PvpLive = React.lazy(() => import('./pages/ShadowColosseum/PvpLive.jsx'));
 const TrainingDummy = React.lazy(() => import('./pages/ShadowColosseum/TrainingDummy.jsx'));
 const MultiPve = React.lazy(() => import('./pages/ShadowColosseum/MultiPve.jsx'));
 const RagnarosPve = React.lazy(() => import('./pages/ShadowColosseum/RagnarosPve.jsx'));
+const CustomBossPve = React.lazy(() => import('./pages/ShadowColosseum/CustomBossPve.jsx'));
 const Codex = React.lazy(() => import('./pages/Codex/Codex.jsx'));
 const MailInbox = React.lazy(() => import('./pages/MailInbox.jsx'));
 const AdminMailSender = React.lazy(() => import('./pages/AdminMailSender.jsx'));
@@ -146,6 +147,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/shadow-colosseum/pvp-live" element={<PvpLive />} />
               <Route path="/shadow-colosseum/multi-pve" element={<MultiPve />} />
               <Route path="/shadow-colosseum/ragnaros" element={<RagnarosPve />} />
+              <Route path="/shadow-colosseum/custom-boss" element={<CustomBossPve />} />
               <Route path="/codex" element={<Codex />} />
               <Route path="/mail" element={<MailInbox />} />
               <Route path="/admin/mail" element={<AdminMailSender />} />

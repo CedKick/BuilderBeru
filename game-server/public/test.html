@@ -922,6 +922,7 @@
     // ── Auto-login from URL params ──
     const urlParams = new URLSearchParams(window.location.search);
     const autoUser = urlParams.get('user');
+    const customBossId = urlParams.get('bossId') || null; // Custom boss ID from BossEditor
     if (autoUser) {
       document.getElementById('username').value = autoUser;
       document.getElementById('usernameVisible').value = autoUser;
@@ -1867,10 +1868,15 @@
         case 'connected': myId = msg.id; log('ID: ' + myId, 'info'); break;
         case 'room_created':
           roomInfo = msg.room; document.getElementById('roomCode').value = msg.code;
-          log('Room: ' + msg.code, 'info'); onJoinedRoom(); updateRoomDisplay(); break;
+          log('Room: ' + msg.code, 'info'); onJoinedRoom(); updateRoomDisplay();
+          // Auto-select custom boss if bossId was passed via URL
+          if (customBossId) { send({ type: 'select_boss', bossId: customBossId }); log('Custom boss: ' + customBossId, 'info'); }
+          break;
         case 'room_joined':
           roomInfo = msg.room; document.getElementById('roomCode').value = msg.room.code;
           log('Joined: ' + msg.room.code, 'info'); onJoinedRoom(); updateRoomDisplay(); break;
+        case 'boss_selected':
+          roomInfo = msg.room; log('Boss: ' + msg.bossId, 'info'); updateRoomDisplay(); break;
         case 'player_joined': log(msg.player.username + ' joined', 'info'); roomInfo = msg.room; updateRoomDisplay(); break;
         case 'player_left': log('Player left', 'info'); roomInfo = msg.room; updateRoomDisplay(); break;
         case 'class_selected': case 'difficulty_changed': case 'ready_changed': case 'hunters_selected': case 'bots_updated':

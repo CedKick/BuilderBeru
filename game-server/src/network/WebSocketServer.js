@@ -83,6 +83,9 @@ export class WebSocketServer {
       case 'select_difficulty':
         this.roomManager.selectDifficulty(ws, client, msg);
         break;
+      case 'select_boss':
+        this.roomManager.selectBoss(ws, client, msg);
+        break;
       case 'set_simulation':
         this.roomManager.setSimulation(ws, client, msg);
         break;
