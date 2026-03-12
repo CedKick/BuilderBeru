@@ -4,10 +4,11 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const BossEditor = lazy(() => import('./BossEditor.jsx'));
+const HunterEditor = lazy(() => import('./HunterEditor.jsx'));
 import {
   Hammer, Sword, Shield, Zap, Flame, Droplets, Eye, Wind, Mountain,
   Sparkles, ArrowLeft, AlertTriangle, Check, Trash2, Clock, Info,
-  Plus, X, MapPin,
+  Plus, X, MapPin, Users,
 } from 'lucide-react';
 import { API_URL } from '../../utils/api.js';
 import { isLoggedIn, getAuthUser, authHeaders } from '../../utils/auth';
@@ -46,7 +47,8 @@ const ELEMENT_ICONS = {
 };
 
 export default function Forge() {
-  const [forgeSection, setForgeSection] = useState('weapon'); // weapon | boss
+  const isAdmin = getAuthUser()?.username?.toLowerCase() === 'kly';
+  const [forgeSection, setForgeSection] = useState('weapon'); // weapon | boss | hunter
   const [tab, setTab] = useState('create'); // create | gallery | my-weapons
   const [weapons, setWeapons] = useState([]);
   const [myWeapons, setMyWeapons] = useState([]);
@@ -535,14 +537,33 @@ export default function Forge() {
           }`}
         >
           <span className="flex items-center gap-2"><Shield size={18} /> Forger un Boss</span>
-          <span className="absolute -top-2 -right-2 bg-purple-500 text-[10px] text-white px-1.5 py-0.5 rounded-full font-bold">NEW</span>
         </button>
+        {isAdmin && (
+          <button
+            onClick={() => setForgeSection('hunter')}
+            className={`px-6 py-3 rounded-xl text-sm font-bold transition-all border relative ${
+              forgeSection === 'hunter'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/30'
+                : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'
+            }`}
+          >
+            <span className="flex items-center gap-2"><Users size={18} /> Hunters</span>
+            <span className="absolute -top-2 -right-2 bg-emerald-500 text-[10px] text-white px-1.5 py-0.5 rounded-full font-bold">NEW</span>
+          </button>
+        )}
       </div>
 
       {/* Boss Editor mode */}
       {forgeSection === 'boss' && (
         <Suspense fallback={<div className="text-center py-12 text-gray-500">Chargement...</div>}>
           <BossEditor onBack={() => setForgeSection('weapon')} />
+        </Suspense>
+      )}
+
+      {/* Hunter Editor mode */}
+      {forgeSection === 'hunter' && (
+        <Suspense fallback={<div className="text-center py-12 text-gray-500">Chargement...</div>}>
+          <HunterEditor onBack={() => setForgeSection('weapon')} />
         </Suspense>
       )}
 

@@ -8,8 +8,8 @@ import { extractUser } from '../_utils/auth.js';
 const ADMIN_USERNAME = 'kly';
 
 // ── Validation constants ────────────────────────────────────
-const VALID_ELEMENTS = ['fire', 'water', 'shadow', 'light'];
-const VALID_CLASSES = ['assassin', 'fighter', 'mage', 'support', 'tank'];
+const VALID_ELEMENTS = ['fire', 'water', 'shadow', 'light', 'wind'];
+const VALID_CLASSES = ['assassin', 'fighter', 'mage', 'support', 'tank', 'healer'];
 const VALID_RARITIES = ['rare', 'legendaire', 'mythique'];
 const VALID_PASSIVE_TYPES = [
   'permanent', 'lowHp', 'highHp', 'firstTurn', 'teamDef', 'teamAura',
