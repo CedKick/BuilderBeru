@@ -47,6 +47,7 @@ function createDefaultHunter() {
     base_stats: { hp: 400, atk: 45, def: 20, spd: 28, crit: 12, res: 8, mana: 120 },
     growth_stats: { hp: 14, atk: 3.2, def: 1.2, spd: 1.3, crit: 0.4, res: 0.3, mana: 0.6 },
     skills: [{ name: 'Attaque de base', power: 100, cdMax: 0 }],
+    awakening_passives: {},
     special: false,
   };
 }
@@ -84,6 +85,7 @@ export default function HunterEditor({ onBack }) {
     const growth = typeof h.growth_stats === 'string' ? JSON.parse(h.growth_stats) : h.growth_stats;
     const skills = typeof h.skills === 'string' ? JSON.parse(h.skills) : h.skills;
     const passiveParams = typeof h.passive_params === 'string' ? JSON.parse(h.passive_params) : (h.passive_params || {});
+    const awakeningPassives = typeof h.awakening_passives === 'string' ? JSON.parse(h.awakening_passives) : (h.awakening_passives || {});
     setEditData({
       hunter_id: h.hunter_id,
       name: h.name,
@@ -95,6 +97,7 @@ export default function HunterEditor({ onBack }) {
       passive_desc: h.passive_desc || '',
       passive_type: h.passive_type || '',
       passive_params: passiveParams,
+      awakening_passives: awakeningPassives,
       base_stats: base,
       growth_stats: growth,
       skills: skills || [],
@@ -157,6 +160,7 @@ export default function HunterEditor({ onBack }) {
         passive_desc: editData.passive_desc || null,
         passive_type: editData.passive_type || null,
         passive_params: editData.passive_params || {},
+        awakening_passives: editData.awakening_passives || {},
         base_stats: editData.base_stats,
         growth_stats: editData.growth_stats,
         skills: editData.skills,
@@ -620,6 +624,19 @@ function SkillsTab({ data, addSkill, removeSkill, updateSkill }) {
 // TAB: Passive
 // ════════════════════════════════════════════════════════════
 function PassiveTab({ data, update, updatePassiveParam }) {
+  // ── Awakening helpers ──────────────────────────────────
+  const AWAKENING_TYPES = [
+    'teamElementalDmg', 'statBoost', 'teamAura', 'permanent',
+    'critDmg', 'defIgnore', 'healBonus', 'aoeDmg', 'custom',
+  ];
+  const awakenings = data.awakening_passives || {};
+  const updateAwakening = (slot, val) => {
+    const next = { ...awakenings };
+    if (!val || (typeof val === 'object' && !val.type)) delete next[slot];
+    else next[slot] = val;
+    update('awakening_passives', next);
+  };
+
   return (
     <div className="space-y-5">
       {/* Passive description */}
@@ -732,6 +749,115 @@ function PassiveTab({ data, update, updatePassiveParam }) {
           </details>
         </div>
       )}
+
+      {/* ── Awakening Passives (A1-A5) ──────────────────── */}
+      <div className="border-t border-gray-700 pt-5">
+        <h3 className="text-sm font-bold text-purple-400 mb-3 flex items-center gap-2">
+          <Sparkles size={14} /> Passifs d'Éveil (A1 — A5)
+        </h3>
+        <p className="text-xs text-gray-500 mb-4">Chaque étoile peut débloquer un passif supplémentaire. Laisse vide si pas d'éveil à ce palier.</p>
+
+        <div className="space-y-3">
+          {['A1', 'A2', 'A3', 'A4', 'A5'].map(slot => {
+            const aw = awakenings[slot] || null;
+            const isActive = !!aw;
+            return (
+              <div key={slot} className={`rounded-lg border p-3 ${isActive ? 'bg-purple-900/20 border-purple-600/40' : 'bg-gray-900/50 border-gray-700'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-bold ${isActive ? 'text-purple-400' : 'text-gray-500'}`}>{slot}</span>
+                  {!isActive ? (
+                    <button onClick={() => updateAwakening(slot, { type: 'statBoost', desc: '' })}
+                      className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                      <Plus size={12} /> Ajouter
+                    </button>
+                  ) : (
+                    <button onClick={() => updateAwakening(slot, null)}
+                      className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                      <Trash2 size={12} /> Retirer
+                    </button>
+                  )}
+                </div>
+
+                {isActive && (
+                  <div className="space-y-2">
+                    {/* Type */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-gray-500 mb-0.5">Type</label>
+                        <select value={aw.type || 'statBoost'}
+                          onChange={e => updateAwakening(slot, { ...aw, type: e.target.value })}
+                          className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs focus:border-purple-500 outline-none">
+                          {AWAKENING_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 mb-0.5">Description</label>
+                        <input value={aw.desc || ''}
+                          onChange={e => updateAwakening(slot, { ...aw, desc: e.target.value })}
+                          placeholder="ex: +3% DMG Eau par allié Water"
+                          className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs focus:border-purple-500 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Type-specific params */}
+                    {aw.type === 'teamElementalDmg' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] text-gray-500 mb-0.5">Élément</label>
+                          <select value={aw.element || data.element}
+                            onChange={e => updateAwakening(slot, { ...aw, element: e.target.value })}
+                            className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs focus:border-purple-500 outline-none">
+                            {ELEMENTS.map(el => <option key={el} value={el}>{el}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-500 mb-0.5">% par allié</label>
+                          <input type="number" value={aw.pctPerAlly ?? 3}
+                            onChange={e => updateAwakening(slot, { ...aw, pctPerAlly: Number(e.target.value) || 0 })}
+                            className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs focus:border-purple-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {aw.type === 'statBoost' && (
+                      <div className="grid grid-cols-4 gap-2">
+                        {['atk', 'def', 'hp', 'spd', 'crit', 'res', 'elemDmg'].map(stat => (
+                          <div key={stat}>
+                            <label className="block text-[10px] text-gray-500 mb-0.5 uppercase">{stat}</label>
+                            <input type="number" value={aw[stat] ?? ''}
+                              onChange={e => {
+                                const next = { ...aw };
+                                if (e.target.value === '' || e.target.value === '0') delete next[stat];
+                                else next[stat] = Number(e.target.value);
+                                updateAwakening(slot, next);
+                              }}
+                              placeholder="-"
+                              className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs focus:border-purple-500 outline-none"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* JSON fallback for any type */}
+                    <details>
+                      <summary className="text-[10px] text-gray-600 cursor-pointer hover:text-gray-400">JSON</summary>
+                      <textarea
+                        value={JSON.stringify(aw, null, 2)}
+                        onChange={e => { try { updateAwakening(slot, JSON.parse(e.target.value)); } catch { /* */ } }}
+                        rows={4}
+                        className="w-full mt-1 px-2 py-1 bg-gray-900 border border-gray-600 rounded text-green-400 text-[10px] font-mono focus:border-purple-500 outline-none resize-none"
+                      />
+                    </details>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
