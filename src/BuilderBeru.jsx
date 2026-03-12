@@ -2612,7 +2612,7 @@ Continuer?`;
   const [selectedColoring, setSelectedColoring] = useState('default');
   const [currentColoringImage, setCurrentColoringImage] = useState(null);
   const [availableColorings, setAvailableColorings] = useState([]);
-  const [selectedCharacter, setSelectedCharacter] = useState('niermann');
+  const [selectedCharacter, setSelectedCharacter] = useState('sugimoto');
 
   /// 🎯 3️⃣ EFFECT CORRIGÉ (remplace ton useEffect actuel)
 useEffect(() => {
@@ -3349,8 +3349,8 @@ BobbyJones : "Allez l'Inter !"
         if (mainRecent.length > 0) {
           defaultCharacter = mainRecent[0];
         } else {
-          // En dernier recours, Meri Laine
-          defaultCharacter = 'meri';
+          // En dernier recours, Sugimoto Reiji
+          defaultCharacter = 'sugimoto';
         }
       }
 

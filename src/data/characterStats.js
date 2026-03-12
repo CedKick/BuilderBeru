@@ -50,6 +50,8 @@ export const characterStats = {
     'laura': { attack: 6770, defense: 5848, hp: 12690, critRate: 0, mp: 1000 }, // Laura Walker
     'sian': { attack: 6817, defense: 5961, hp: 12351, critRate: 0, mp: 1000 }, // Sian Halat
     'meri': { attack: 5890, defense: 5720, hp: 14250, critRate: 0, mp: 1000 }, // Meri Laine
+    'sugimoto': { attack: 6050, defense: 5850, hp: 14800, critRate: 0, mp: 1000 }, // Sugimoto Reiji
+    'sugimoto': { attack: 6050, defense: 5850, hp: 14800, critRate: 0, mp: 1000 }, // Sugimoto Reiji
     'son': { attack: 6344, defense: 5975, hp: 13331, critRate: 0, mp: 1000 }, // Son Kihoon
     'thomas': { attack: 5972, defense: 6824, hp: 12312, critRate: 0, mp: 1000 }, // Thomas Andre
     'woo': { attack: 5992, defense: 6748, hp: 12433, critRate: 0, mp: 1000 }, // Woo Jinchul

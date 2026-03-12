@@ -503,6 +503,15 @@ const data_chars = {
       element: 'Water',
       scaleStat: 'HP'
     },
+    'sugimoto': {
+      name: 'Sugimoto Reiji',
+      img: 'https://api.builderberu.com/cdn/images/SugimotoReiji.webp',
+      icon: 'https://api.builderberu.com/cdn/images/SugimotoReiji.webp',
+      class: 'Infusion',
+      grade: 'SSR',
+      element: 'Wind',
+      scaleStat: 'HP'
+    },
     'yoo-jinho': {
       name: 'Yoo Jinho',
       img: 'https://api.builderberu.com/cdn/images/yoo-jinho_csl27q.webp',

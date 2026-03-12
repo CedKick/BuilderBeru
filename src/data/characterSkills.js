@@ -2208,6 +2208,88 @@ export const CHARACTER_SKILLS = {
             }
         }
     },
+    // 🌪️ Sugimoto Reiji - Wind Infusion HP Scaler
+    sugimoto: {
+        id: 'sugimoto',
+        name: 'Sugimoto Reiji',
+        element: 'Wind',
+        scaleStat: 'HP',
+
+        basicAttack: {
+            name: 'Sugimoto Combo',
+            stages: [
+                { stage: 1, damage: [190, 285], description: 'Wind strike Stage 1' },
+                { stage: 2, damage: [240, 360], description: 'Wind strike Stage 2' },
+                { stage: 3, damage: [300, 450], description: 'Wind finisher Stage 3' }
+            ],
+            element: 'Wind',
+            effects: [
+                'Deals Weak Elemental Accumulation damage',
+                'Wind Infusion enhanced attacks'
+            ]
+        },
+
+        coreAttack: {
+            name: 'Gale Force',
+            damage: [1050, 1575],
+            element: 'Wind',
+            effects: [
+                'Deals Weak Elemental Accumulation damage',
+                'Super Armor during use'
+            ]
+        },
+
+        skills: [
+            {
+                id: 'skill1',
+                name: 'Cyclone Burst',
+                damage: [2600, 3900],
+                cooldown: 15,
+                mpCost: [75, 99],
+                element: 'Wind',
+                effects: [
+                    'Wind AoE burst',
+                    'Deals Wind Elemental Accumulation damage'
+                ]
+            },
+            {
+                id: 'skill2',
+                name: 'Tornado Cannon',
+                damage: [2500, 3750],
+                cooldown: 16,
+                mpCost: [80, 105],
+                element: 'Wind',
+                effects: [
+                    'Concentrated wind beam',
+                    'Deals Wind Elemental Accumulation damage'
+                ]
+            }
+        ],
+
+        ultimate: {
+            name: 'Tempest',
+            damage: [6800, 10200],
+            cooldown: 0,
+            mpCost: 0,
+            element: 'Wind',
+            effects: [
+                'Massive Wind AoE',
+                'Wind Overload enabler'
+            ],
+            gaugeRequired: 100
+        },
+
+        dpsCalculation: {
+            rotationDuration: 60,
+            expectedSkillUsage: {
+                coreAttack: 8,
+                skill1: 3,
+                skill2: 3,
+                ultimate: 2,
+                basicAttack: 12
+            }
+        }
+    },
     // 💧 Lee Joohee - Water Healer HP Scaler
     'lee-johee': {
         id: 'lee-johee',

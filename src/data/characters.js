@@ -2000,5 +2000,37 @@ export const characters = {
         ]
       }
     ]
+  },
+  'sugimoto': {
+    name: 'Sugimoto Reiji',
+    img: 'https://api.builderberu.com/cdn/images/SugimotoReiji.webp',
+    icon: 'https://api.builderberu.com/cdn/images/SugimotoReiji.webp',
+    class: 'Infusion',
+    grade: 'SSR',
+    element: 'Wind',
+    scaleStat: 'HP',
+    bdgLimits: {
+      maxDamageOnElement: 15000000000,
+      maxDamageOffElement: 4000000000
+    },
+    importantStats: ['hp', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 3.0,
+      core2: 12.0,
+      skill1: 25.0,
+      skill2: 24.0,
+      ultimate: 65.0
+    },
+    buffs: [
+      {
+        name: 'Wind Infusion',
+        img: 'https://api.builderberu.com/cdn/images/SugimotoReiji.webp',
+        duration: 30,
+        target: 'shared',
+        effects: [
+          { type: 'hp', values: [10, 20, 30] }
+        ]
+      }
+    ]
   }
 };
