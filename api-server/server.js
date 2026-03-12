@@ -22,6 +22,7 @@ import beruMessagesHandler from '../api/beru-messages.js';
 import forgeHandler from '../api/forge.js';
 import bossEditorHandler from '../api/boss-editor.js';
 import hunterAdminHandler from '../api/admin/hunter.js';
+import huntersPublicHandler from '../api/hunters.js';
 
 import storageInitHandler from '../api/storage/init.js';
 import storageLoadHandler from '../api/storage/load.js';
@@ -103,6 +104,9 @@ app.all('/api/boss-editor', bossEditorHandler);
 
 // Hunter Admin Editor (admin-only CRUD for hunter definitions)
 app.all('/api/admin/hunter', hunterAdminHandler);
+
+// Hunters public read-only (for raidData.js sync)
+app.get('/api/hunters', huntersPublicHandler);
 
 // Storage
 app.post('/api/storage/init', storageInitHandler);

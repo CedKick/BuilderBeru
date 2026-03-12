@@ -1,5 +1,8 @@
-// raidData.js — Hunter Chibis (ALL Fire/Water/Dark + Nier Collab), Raid Bosses, Sung Jinwoo Skills & Synergies
-// Mode Raid pour Shadow Colosseum — 36 Hunters
+// raidData.js — Hunter Chibis (ALL Fire/Water/Dark/Wind + Collab), Raid Bosses, Sung Jinwoo Skills & Synergies
+// Mode Raid pour Shadow Colosseum — 50+ Hunters
+// DB is source of truth when populated — refreshHuntersFromDb() syncs at runtime.
+
+import { API_URL } from '../../utils/api.js';
 
 // ─── Hunter Chibi Sprites (from characters.js icons) ─────────
 
@@ -1311,6 +1314,72 @@ export const HUNTER_PASSIVE_EFFECTS = {
 };
 
 export const getHunterPassive = (hunterId) => HUNTER_PASSIVE_EFFECTS[hunterId] || null;
+
+// ─── DB Sync: fetch hunters from API, mutate HUNTERS & PASSIVES in place ────
+let _dbSyncDone = false;
+let _dbSyncPromise = null;
+const DB_SYNC_TTL = 5 * 60 * 1000; // 5 min
+let _dbSyncTs = 0;
+
+export function refreshHuntersFromDb() {
+  if (_dbSyncDone && Date.now() - _dbSyncTs < DB_SYNC_TTL) {
+    return _dbSyncPromise || Promise.resolve(true);
+  }
+  _dbSyncPromise = (async () => {
+    try {
+      const res = await fetch(`${API_URL}/hunters`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.success || !data.hunters || data.hunters.length === 0) {
+        _dbSyncDone = true;
+        _dbSyncTs = Date.now();
+        return false;
+      }
+      let merged = 0;
+      for (const h of data.hunters) {
+        // Mutate HUNTERS in place — all components that imported it see the update
+        HUNTERS[h.hunter_id] = {
+          name: h.name,
+          element: h.element,
+          rarity: h.rarity,
+          class: h.class,
+          series: h.series || undefined,
+          sprite: h.sprite_url || '',
+          passiveDesc: h.passive_desc || '',
+          base: h.base_stats,
+          growth: h.growth_stats,
+          skills: h.skills || [],
+          special: h.special || false,
+          _fromDb: true,
+        };
+        // Mutate HUNTER_PASSIVE_EFFECTS in place
+        if (h.passive_type) {
+          HUNTER_PASSIVE_EFFECTS[h.hunter_id] = {
+            type: h.passive_type,
+            ...(h.passive_params || {}),
+          };
+        }
+        merged++;
+      }
+      _dbSyncDone = true;
+      _dbSyncTs = Date.now();
+      console.log(`[raidData] DB sync: ${merged} hunters merged from API`);
+      return true;
+    } catch (err) {
+      console.warn('[raidData] DB sync failed, using static fallback:', err.message);
+      _dbSyncDone = true;
+      _dbSyncTs = Date.now();
+      return false;
+    }
+  })();
+  return _dbSyncPromise;
+}
+
+export function invalidateHuntersSync() {
+  _dbSyncDone = false;
+  _dbSyncTs = 0;
+  _dbSyncPromise = null;
+}
 
 // ─── Awakening Passives (unique per-star A1-A5 passives) ────────
 // Each hunter can have unique passives unlocked at specific awakening levels.

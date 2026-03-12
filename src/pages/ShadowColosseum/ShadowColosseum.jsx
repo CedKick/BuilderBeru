@@ -29,7 +29,7 @@ import {
   calculatePowerScore, getDifficultyRating,
   BUFF_ICONS, computeDamagePreview, aiPickSkillArc2, fmtNum, getManaScaledPower,
 } from './colosseumCore';
-import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, getAwakeningPassives, HUNTER_SKINS, rollSkinDrop, getHunterSprite, getHunterDropSources, rollUniversalHunterDrops, rollUniversalSetUltimeDrops } from './raidData';
+import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, getAwakeningPassives, HUNTER_SKINS, rollSkinDrop, getHunterSprite, getHunterDropSources, rollUniversalHunterDrops, rollUniversalSetUltimeDrops, refreshHuntersFromDb } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
 import {
   ARTIFACT_SETS, ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
@@ -670,6 +670,12 @@ export default function ShadowColosseum() {
   });
   const dataRef = useRef(data); // Always-fresh ref for sync callbacks
   useEffect(() => { dataRef.current = data; }, [data]);
+
+  // ─── Sync HUNTERS from DB (mutates raidData.js HUNTERS in place) ──
+  const [huntersReady, setHuntersReady] = useState(false);
+  useEffect(() => {
+    refreshHuntersFromDb().then(() => setHuntersReady(true)).catch(() => setHuntersReady(true));
+  }, []);
   const [cloudLoading, setCloudLoading] = useState(isLoggedIn());
   const cloudLoadedRef = useRef(false);
   const skipSaveRef = useRef(isLoggedIn()); // Prevent save during cloud load (race condition)
