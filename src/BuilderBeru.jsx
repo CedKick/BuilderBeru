@@ -3733,7 +3733,7 @@ BobbyJones : "Allez l'Inter !"
     }, 5000);
   };
 
-  const setupJinwooStats = (strength = 749) => {
+  const setupJinwooStats = (strength = 904) => {
     // 1. D'abord, créer/récupérer l'arme de Jinwoo
     const jinwooWeapon = { mainStat: 6160, precision: 8000 };
 
@@ -8594,9 +8594,9 @@ BobbyJones : "Allez l'Inter !"
                                     onBlur={() => {
                                       setIsStrengthFocused(false);
                                       let value = parseInt(strengthInputValue) || 19;
-                                      // Clamp entre 19 et 749
+                                      // Clamp entre 19 et 904
                                       if (value < 19) value = 19;
-                                      if (value > 749) value = 749;
+                                      if (value > 904) value = 904;
 
                                       setJinwooStrength(value);
                                       setStrengthInputValue(value.toString());
