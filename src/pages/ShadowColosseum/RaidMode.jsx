@@ -73,6 +73,8 @@ const SUNG_GLOW = {
 
 export default function RaidMode() {
   const [phase, setPhase] = useState('setup'); // setup | battle | result
+  const [autoRun, setAutoRun] = useState(false);
+  const autoRunRef = useRef(false);
   const [coloData, setColoData] = useState(loadColoData);
   const [raidData, setRaidData] = useState(loadRaidData);
   const [bossId, setBossId] = useState('ant_queen');
@@ -96,6 +98,18 @@ export default function RaidMode() {
   // ─── Result state ──────────────────────────────────────────
   const [resultData, setResultData] = useState(null);
   const [showDetailedStats, setShowDetailedStats] = useState(false);
+
+  // ─── Auto-run: relaunch raid automatically after result ────
+  useEffect(() => { autoRunRef.current = autoRun; }, [autoRun]);
+  const autoRunTimerRef = useRef(null);
+  useEffect(() => {
+    if (phase === 'result' && autoRunRef.current) {
+      autoRunTimerRef.current = setTimeout(() => {
+        startRaid();
+      }, 1500);
+      return () => clearTimeout(autoRunTimerRef.current);
+    }
+  }, [phase]);
 
   // ─── Faction buffs (for community weapon drop mult) ────────
   const [factionBuffs, setFactionBuffs] = useState(null);
@@ -2167,6 +2181,32 @@ export default function RaidMode() {
     const currentTierData = getTierData(selectedTier);
     return (
     <div className="space-y-6">
+      {/* Launch bar — sticky top */}
+      <div className="sticky top-0 z-20 bg-[#0f0f1a]/95 backdrop-blur-sm py-3 -mx-4 px-4 border-b border-white/5">
+        <div className="flex items-center justify-center gap-3">
+          <Link to="/shadow-colosseum"
+            className="px-4 py-2 rounded-lg bg-white/10 text-gray-300 hover:bg-white/20 transition-all text-sm">
+            Retour
+          </Link>
+          <button onClick={startRaid}
+            disabled={selectedIds.length === 0}
+            className="px-8 py-3 rounded-xl font-bold text-lg bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95">
+            LANCER LE RAID
+          </button>
+          <button onClick={() => { setAutoRun(a => !a); }}
+            className={`px-3 py-2 rounded-lg text-sm font-bold border transition-all ${
+              autoRun
+                ? 'bg-green-600/30 border-green-400/50 text-green-300'
+                : 'bg-white/5 border-white/15 text-gray-400 hover:bg-white/10'
+            }`}>
+            {autoRun ? '🔄 Auto ON' : '🔄 Auto'}
+          </button>
+        </div>
+        {autoRun && (
+          <p className="text-center text-[10px] text-green-400/70 mt-1">Les raids s'enchainent automatiquement</p>
+        )}
+      </div>
+
       {/* Boss Preview */}
       <div className="bg-gradient-to-r from-red-900/40 to-amber-900/40 border border-red-500/30 rounded-2xl p-4 text-center relative">
         {/* Ranking button — top left, Ant Queen Ultime only */}
@@ -2479,18 +2519,6 @@ export default function RaidMode() {
         </motion.div>
       )}
 
-      {/* Launch button */}
-      <div className="flex justify-center gap-3">
-        <Link to="/shadow-colosseum"
-          className="px-4 py-2 rounded-lg bg-white/10 text-gray-300 hover:bg-white/20 transition-all text-sm">
-          Retour
-        </Link>
-        <button onClick={startRaid}
-          disabled={selectedIds.length === 0}
-          className="px-8 py-3 rounded-xl font-bold text-lg bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95">
-          LANCER LE RAID
-        </button>
-      </div>
     </div>
   );
   };
@@ -2682,13 +2710,26 @@ export default function RaidMode() {
           </motion.div>
         )}
 
+        {/* Auto-run indicator */}
+        {autoRun && (
+          <div className="text-center p-3 rounded-xl bg-green-900/30 border border-green-500/30">
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-green-400 text-sm font-bold animate-pulse">🔄 Auto-Run actif — prochain raid dans 1.5s...</span>
+              <button onClick={() => { setAutoRun(false); clearTimeout(autoRunTimerRef.current); }}
+                className="px-4 py-2 rounded-lg font-bold bg-red-600/40 border border-red-500/50 text-red-300 hover:bg-red-600/60 transition-all text-sm">
+                ⏹ STOP Auto
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex justify-center gap-3 flex-wrap">
           <Link to="/shadow-colosseum"
             className="px-4 py-2 rounded-lg bg-white/10 text-gray-300 hover:bg-white/20 transition-all text-sm">
             Retour au Colisee
           </Link>
-          <button onClick={() => { setPhase('setup'); setResultData(null); setBattleState(null); setCombatLog([]); }}
+          <button onClick={() => { setAutoRun(false); clearTimeout(autoRunTimerRef.current); setPhase('setup'); setResultData(null); setBattleState(null); setCombatLog([]); }}
             className="px-6 py-2 rounded-xl font-bold bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 transition-all">
             Relancer le Raid
           </button>
@@ -2826,6 +2867,15 @@ export default function RaidMode() {
           {phase === 'setup' && renderSetup()}
           {phase === 'battle' && (
             <>
+              {/* Floating stop auto-run during battle */}
+              {autoRun && (
+                <div className="flex justify-center mb-3">
+                  <button onClick={() => setAutoRun(false)}
+                    className="px-5 py-2 rounded-xl font-bold bg-red-600/40 border-2 border-red-500/50 text-red-300 hover:bg-red-600/60 transition-all text-sm flex items-center gap-2 animate-pulse">
+                    ⏹ STOP Auto-Run
+                  </button>
+                </div>
+              )}
               <RaidArena
                 battleState={battleState}
                 vfxQueue={vfxQueue}
