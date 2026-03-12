@@ -823,7 +823,13 @@ export default function RaidMode() {
           HUNTERS[h].rarity === dropRarity && !alreadyOwned.has(h) && !HUNTERS[h].series && !HUNTERS[h].special
         );
         if (newCandidates.length > 0) {
-          const pick = newCandidates[Math.floor(Math.random() * newCandidates.length)];
+          // Wind hunters get a slight weight boost (1.08x)
+          const weighted = [];
+          newCandidates.forEach(h => {
+            weighted.push(h);
+            if (HUNTERS[h].element === 'wind' && Math.random() < 0.08) weighted.push(h);
+          });
+          const pick = weighted[Math.floor(Math.random() * weighted.length)];
           unlockedHunters.push(pick);
           alreadyOwned.add(pick);
         } else {

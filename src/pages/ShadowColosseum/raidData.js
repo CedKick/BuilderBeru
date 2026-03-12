@@ -70,6 +70,18 @@ const S = {
   h_a2_atk1:   'https://api.builderberu.com/cdn/images/A2_ATK_houugg.webp',
   h_a2_atk2:   'https://api.builderberu.com/cdn/images/A2_ATK2_roqlzl.webp',
   h_a2_bunny:  'https://api.builderberu.com/cdn/images/A2_BUNNY_zkdqad.webp',
+  // WIND (11)
+  h_soyeon:      'https://api.builderberu.com/cdn/images/soyeon_fstvg4.webp',
+  h_jinah_w:     'https://api.builderberu.com/cdn/images/jinah_icon_pfdee6.webp',
+  h_mirei:       'https://api.builderberu.com/cdn/images/icons_build-26.webp',
+  h_goto:        'https://api.builderberu.com/cdn/images/goto_pirfgy.webp',
+  h_hansemi:     'https://api.builderberu.com/cdn/images/icons_build-12.webp',
+  h_hwangdongsoo:'https://api.builderberu.com/cdn/images/icons_build-15.webp',
+  h_woojinchul:  'https://api.builderberu.com/cdn/images/icons_build-36.webp',
+  h_niermann_w:  'https://api.builderberu.com/cdn/images/build-niermann_phfwmu.webp',
+  h_kimsangshik: 'https://api.builderberu.com/cdn/images/icons_build-20.webp',
+  h_parkbeomshik:'https://api.builderberu.com/cdn/images/icons_build-28.webp',
+  h_parkheejin:  'https://api.builderberu.com/cdn/images/icons_build-29.webp',
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -670,6 +682,131 @@ export const HUNTERS = {
         atkFrames: [S.h_a2_atk1, S.h_a2_atk2] },
     ],
   },
+
+  // ─── WIND ──────────────────────────────────────────── (11)
+
+  h_soyeon: {
+    name: 'Soyeon', element: 'wind', rarity: 'mythique', class: 'fighter',
+    sprite: S.h_soyeon, passiveDesc: 'ATK +18% permanent',
+    base:   { hp: 480, atk: 56, def: 24, spd: 36, crit: 18, res: 8, mana: 120 },
+    growth: { hp: 15, atk: 4.0, def: 1.3, spd: 1.7, crit: 0.6, res: 0.3, mana: 0.6 },
+    skills: [
+      { name: 'Rafale Tranchante', power: 115, cdMax: 0 },
+      { name: 'Tempete de Lames', power: 215, cdMax: 3 },
+      { name: 'Vent Devastateur', power: 165, cdMax: 2, buffAtk: 30, buffDur: 2 },
+    ],
+  },
+  h_jinah_w: {
+    name: 'Jinah', element: 'wind', rarity: 'mythique', class: 'support',
+    sprite: S.h_jinah_w, passiveDesc: 'Allies Wind +15% degats elementaires',
+    base:   { hp: 500, atk: 36, def: 30, spd: 30, crit: 10, res: 16, mana: 340 },
+    growth: { hp: 17, atk: 2.4, def: 1.7, spd: 1.3, crit: 0.3, res: 0.7, mana: 2.2 },
+    skills: [
+      { name: 'Brise Curative', power: 85, cdMax: 0 },
+      { name: 'Vent Protecteur', power: 0, cdMax: 3, buffDef: 55, buffDur: 3 },
+      { name: 'Souffle Revigorant', power: 0, cdMax: 4, buffAtk: 45, buffDur: 3 },
+    ],
+  },
+  h_mirei: {
+    name: 'Amamiya Mirei', element: 'wind', rarity: 'mythique', class: 'assassin',
+    sprite: S.h_mirei, passiveDesc: 'SPD +22% au 1er tour',
+    base:   { hp: 360, atk: 58, def: 16, spd: 44, crit: 24, res: 4, mana: 100 },
+    growth: { hp: 11, atk: 4.2, def: 0.8, spd: 2.2, crit: 0.8, res: 0.2, mana: 0.5 },
+    skills: [
+      { name: 'Lame du Vent', power: 118, cdMax: 0 },
+      { name: 'Danse Aerienne', power: 225, cdMax: 3 },
+      { name: 'Cyclone Assassin', power: 160, cdMax: 2, buffAtk: 28, buffDur: 2 },
+    ],
+  },
+  h_goto: {
+    name: 'Goto Ryuji', element: 'wind', rarity: 'mythique', class: 'tank',
+    sprite: S.h_goto, passiveDesc: 'DEF +35% quand PV < 40%',
+    base:   { hp: 620, atk: 32, def: 38, spd: 18, crit: 6, res: 22, mana: 140 },
+    growth: { hp: 22, atk: 2.0, def: 2.2, spd: 0.8, crit: 0.2, res: 0.9, mana: 0.7 },
+    skills: [
+      { name: 'Mur de Vent', power: 95, cdMax: 0 },
+      { name: 'Bouclier Cyclone', power: 0, cdMax: 3, buffDef: 70, buffDur: 3 },
+      { name: 'Charge de Bourrasque', power: 140, cdMax: 4, debuffDef: 25, debuffDur: 2 },
+    ],
+  },
+  h_hansemi: {
+    name: 'Han Se-Mi', element: 'wind', rarity: 'mythique', class: 'healer',
+    sprite: S.h_hansemi, passiveDesc: 'Soins +20% sur allies Wind',
+    base:   { hp: 520, atk: 30, def: 28, spd: 28, crit: 8, res: 20, mana: 360 },
+    growth: { hp: 18, atk: 1.8, def: 1.6, spd: 1.2, crit: 0.2, res: 0.8, mana: 2.5 },
+    skills: [
+      { name: 'Brise Vivifiante', power: 80, cdMax: 0 },
+      { name: 'Regeneration du Vent', power: 0, cdMax: 3, healTeam: 35 },
+      { name: 'Resurrection Aerienne', power: 0, cdMax: 5, healTeam: 40, manaRestore: 10 },
+    ],
+  },
+  h_hwangdongsoo: {
+    name: 'Hwang Dongsoo', element: 'wind', rarity: 'mythique', class: 'fighter',
+    sprite: S.h_hwangdongsoo, passiveDesc: 'ATK +12% par ennemi tue (max 3 stacks)',
+    base:   { hp: 500, atk: 54, def: 26, spd: 30, crit: 14, res: 10, mana: 130 },
+    growth: { hp: 16, atk: 3.9, def: 1.4, spd: 1.4, crit: 0.5, res: 0.4, mana: 0.7 },
+    skills: [
+      { name: 'Poing du Vent', power: 112, cdMax: 0 },
+      { name: 'Bourrasque Sauvage', power: 205, cdMax: 3 },
+      { name: 'Rage du Cyclone', power: 175, cdMax: 2, buffAtk: 35, buffDur: 2 },
+    ],
+  },
+  h_woojinchul: {
+    name: 'Woo Jinchul', element: 'wind', rarity: 'mythique', class: 'tank',
+    sprite: S.h_woojinchul, passiveDesc: 'DEF equipe +12% passif',
+    base:   { hp: 580, atk: 34, def: 36, spd: 22, crit: 8, res: 18, mana: 150 },
+    growth: { hp: 20, atk: 2.2, def: 2.0, spd: 1.0, crit: 0.3, res: 0.7, mana: 0.8 },
+    skills: [
+      { name: 'Barriere Eolienne', power: 100, cdMax: 0 },
+      { name: 'Gardien du Vent', power: 0, cdMax: 3, buffDef: 60, buffDur: 3 },
+      { name: 'Riposte Cyclonique', power: 155, cdMax: 4 },
+    ],
+  },
+  h_niermann_w: {
+    name: 'Lennart Niermann', element: 'wind', rarity: 'mythique', class: 'fighter',
+    series: 'collab', sprite: S.h_niermann_w, passiveDesc: 'ATK +16% permanent',
+    base:   { hp: 490, atk: 55, def: 28, spd: 32, crit: 16, res: 10, mana: 125 },
+    growth: { hp: 16, atk: 4.0, def: 1.5, spd: 1.5, crit: 0.6, res: 0.4, mana: 0.6 },
+    skills: [
+      { name: 'Lame Celeste', power: 116, cdMax: 0 },
+      { name: 'Jugement du Vent', power: 220, cdMax: 3 },
+      { name: 'Synergie Eolienne', power: 0, cdMax: 4, buffAtk: 40, buffDur: 3 },
+    ],
+  },
+  // SR — Legendaire
+  h_kimsangshik: {
+    name: 'Kim Sangshik', element: 'wind', rarity: 'legendaire', class: 'tank',
+    sprite: S.h_kimsangshik, passiveDesc: 'DEF +20% quand PV > 70%',
+    base:   { hp: 480, atk: 28, def: 30, spd: 18, crit: 6, res: 14, mana: 110 },
+    growth: { hp: 16, atk: 1.8, def: 1.6, spd: 0.8, crit: 0.2, res: 0.6, mana: 0.5 },
+    skills: [
+      { name: 'Garde Ventee', power: 90, cdMax: 0 },
+      { name: 'Mur Protecteur', power: 0, cdMax: 3, buffDef: 45, buffDur: 3 },
+      { name: 'Charge Frontale', power: 130, cdMax: 3 },
+    ],
+  },
+  h_parkbeomshik: {
+    name: 'Park Beom-Shik', element: 'wind', rarity: 'legendaire', class: 'fighter',
+    sprite: S.h_parkbeomshik, passiveDesc: 'ATK +12% permanent',
+    base:   { hp: 400, atk: 44, def: 20, spd: 28, crit: 12, res: 6, mana: 100 },
+    growth: { hp: 13, atk: 3.2, def: 1.0, spd: 1.3, crit: 0.4, res: 0.3, mana: 0.5 },
+    skills: [
+      { name: 'Poing du Zephyr', power: 105, cdMax: 0 },
+      { name: 'Tornade', power: 185, cdMax: 3 },
+      { name: 'Souffle Offensif', power: 145, cdMax: 2, buffAtk: 22, buffDur: 2 },
+    ],
+  },
+  h_parkheejin: {
+    name: 'Park Heejin', element: 'wind', rarity: 'legendaire', class: 'mage',
+    sprite: S.h_parkheejin, passiveDesc: 'Degats AoE +18%',
+    base:   { hp: 370, atk: 50, def: 18, spd: 30, crit: 14, res: 12, mana: 310 },
+    growth: { hp: 12, atk: 3.6, def: 1.0, spd: 1.4, crit: 0.5, res: 0.5, mana: 2.1 },
+    skills: [
+      { name: 'Bourrasque Arcanique', power: 108, cdMax: 0 },
+      { name: 'Tempete Magique', power: 200, cdMax: 3 },
+      { name: 'Vortex', power: 155, cdMax: 2, debuffDef: 22, debuffDur: 2 },
+    ],
+  },
 };
 
 // ─── Sung Jinwoo — 5 Skills Clavier ──────────────────────────
@@ -1159,6 +1296,18 @@ export const HUNTER_PASSIVE_EFFECTS = {
   h_2b:        { type: 'vsDebuffed', stats: { atk: 15 } },
   h_pascal:    { type: 'teamAura', stats: { res: 10 } },
   h_a2:        { type: 'lowHp', threshold: 50, stats: { atk: 20, spd: 15 } },
+  // ── WIND ──
+  h_soyeon:      { type: 'permanent', stats: { atk: 18 } },
+  h_jinah_w:     { type: 'teamAura', stats: { elemDmg: 15 } },
+  h_mirei:       { type: 'firstTurn', stats: { spd: 22 } },
+  h_goto:        { type: 'lowHp', threshold: 40, stats: { def: 35 } },
+  h_hansemi:     { type: 'healBonus', value: 20 },
+  h_hwangdongsoo:{ type: 'stacking', perStack: { atk: 12 }, maxStacks: 3 },
+  h_woojinchul:  { type: 'teamDef', value: 12 },
+  h_niermann_w:  { type: 'permanent', stats: { atk: 16 } },
+  h_kimsangshik: { type: 'highHp', threshold: 70, stats: { def: 20 } },
+  h_parkbeomshik:{ type: 'permanent', stats: { atk: 12 } },
+  h_parkheejin:  { type: 'aoeDmg', value: 18 },
 };
 
 export const getHunterPassive = (hunterId) => HUNTER_PASSIVE_EFFECTS[hunterId] || null;
