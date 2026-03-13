@@ -1,76 +1,75 @@
 // data/characterStats.js
-// Stats Level 130 (mise à jour)
+// Stats Level 140 (estimation ×1.05 ATK/DEF, ×1.07 HP — à confirmer avec données réelles)
 export const characterStats = {
     // ============================================
-    // 🔥 SSR HUNTERS - Level 130
+    // 🔥 SSR HUNTERS - Level 140 (estimé)
     // ============================================
 
     // Sung Il-Hwan
-    'ilhwan': { attack: 6631, defense: 5992, hp: 12683, critRate: 0, mp: 1000 },
+    'ilhwan': { attack: 6963, defense: 6292, hp: 13571, critRate: 0, mp: 1000 },
 
     // ✅ FOREVER (IDLE)
-    'minnie': { attack: 5960, defense: 6689, hp: 12625, critRate: 0, mp: 1000 },
-    'miyeon': { attack: 5960, defense: 6689, hp: 12625, critRate: 0, mp: 1000 },
-    'shuhua': { attack: 6803, defense: 5871, hp: 12576, critRate: 0, mp: 1000 },
-    'soyeon': { attack: 6720, defense: 5957, hp: 12598, critRate: 0, mp: 1000 },
-    'yuqi': { attack: 5936, defense: 5904, hp: 14386, critRate: 0, mp: 1000 },
+    'minnie': { attack: 6258, defense: 7023, hp: 13509, critRate: 0, mp: 1000 },
+    'miyeon': { attack: 6258, defense: 7023, hp: 13509, critRate: 0, mp: 1000 },
+    'shuhua': { attack: 7143, defense: 6165, hp: 13456, critRate: 0, mp: 1000 },
+    'soyeon': { attack: 7056, defense: 6255, hp: 13480, critRate: 0, mp: 1000 },
+    'yuqi': { attack: 6233, defense: 6199, hp: 15393, critRate: 0, mp: 1000 },
 
     // ✅ Autres SSR
-    'jinah': { attack: 6803, defense: 5871, hp: 12576, critRate: 0, mp: 1000 }, // Sung Jinah
-    'alicia': { attack: 6717, defense: 5855, hp: 12788, critRate: 0, mp: 1000 },
-    'mirei': { attack: 6821, defense: 5802, hp: 12681, critRate: 0, mp: 1000 },
-    'baek': { attack: 5953, defense: 6604, hp: 12823, critRate: 0, mp: 1000 }, // Baek Yoonho
-    'silverbaek': { attack: 6696, defense: 5942, hp: 12651, critRate: 0, mp: 1000 }, // Silver Mane Baek Yoonho
-    'chae-in': { attack: 6738, defense: 5948, hp: 12545, critRate: 0, mp: 1000 }, // Cha Hae In
-    'chae': { attack: 6326, defense: 6383, hp: 12499, critRate: 0, mp: 1000 }, // Cha Hae-In, the Pure Sword Princess
-    'charlotte': { attack: 5885, defense: 6766, hp: 12621, critRate: 0, mp: 1000 },
-    'choi': { attack: 6768, defense: 5768, hp: 12868, critRate: 0, mp: 1000 }, // Choi Jong-In
-    'emma': { attack: 5922, defense: 5873, hp: 14447, critRate: 0, mp: 1000 }, // Emma Laurent
-    'esil': { attack: 6752, defense: 5963, hp: 12485, critRate: 0, mp: 1000 }, // Esil Radiru
-    'gina': { attack: 6825, defense: 5908, hp: 12449, critRate: 0, mp: 1000 },
-    'go': { attack: 5873, defense: 6674, hp: 12847, critRate: 0, mp: 1000 }, // Go Gunhee
-    'goto': { attack: 5855, defense: 5970, hp: 14386, critRate: 0, mp: 1000 }, // Goto Ryuji
-    'han': { attack: 5844, defense: 5971, hp: 14404, critRate: 0, mp: 1000 }, // Han Se-Mi
-    'harper': { attack: 5924, defense: 5936, hp: 14306, critRate: 0, mp: 1000 },
-    'hwang': { attack: 5948, defense: 6659, hp: 12714, critRate: 0, mp: 1000 }, // Hwang Dongsoo
-    'isla': { attack: 6035, defense: 6782, hp: 12264, critRate: 0, mp: 1000 }, // Isla Wright
-    'lee': { attack: 6706, defense: 5915, hp: 12687, critRate: 0, mp: 1000 }, // Lee Bora
-    'niermann': { attack: 6326, defense: 6383, hp: 12499, critRate: 0, mp: 1000 }, // Lennart Niermann
-    'lim': { attack: 6735, defense: 6031, hp: 12380, critRate: 0, mp: 1000 }, // Lim Tae-Gyu
-    'meilin': { attack: 6583, defense: 5998, hp: 12768, critRate: 0, mp: 1000 }, // Meilin Fisher
-    'min': { attack: 5865, defense: 5906, hp: 14497, critRate: 0, mp: 1000 }, // Min Byung-Gu
-    'seo': { attack: 5980, defense: 6057, hp: 13928, critRate: 0, mp: 1000 }, // Seo Jiwoo
-    'seorin': { attack: 5810, defense: 5982, hp: 14454, critRate: 0, mp: 1000 },
-    'shimizu': { attack: 6015, defense: 5781, hp: 14443, critRate: 0, mp: 1000 }, // Shimizu Akari
-    'kanae': { attack: 6486, defense: 5788, hp: 13428, critRate: 0, mp: 1000 }, // Tawata Kanae
-    'frieren': { attack: 6243, defense: 6418, hp: 12603, critRate: 0, mp: 1000 },
-    'stark': { attack: 6162, defense: 5997, hp: 13670, critRate: 0, mp: 1000 },
-    'fern': { attack: 6396, defense: 5906, hp: 13364, critRate: 0, mp: 1000 },
-    'reed': { attack: 6161, defense: 6457, hp: 12692, critRate: 0, mp: 1000 }, // Christopher Reed
-    'laura': { attack: 6770, defense: 5848, hp: 12690, critRate: 0, mp: 1000 }, // Laura Walker
-    'sian': { attack: 6817, defense: 5961, hp: 12351, critRate: 0, mp: 1000 }, // Sian Halat
-    'meri': { attack: 5890, defense: 5720, hp: 14250, critRate: 0, mp: 1000 }, // Meri Laine
-    'sugimoto': { attack: 6050, defense: 5850, hp: 14800, critRate: 0, mp: 1000 }, // Sugimoto Reiji
-    'sugimoto': { attack: 6050, defense: 5850, hp: 14800, critRate: 0, mp: 1000 }, // Sugimoto Reiji
-    'son': { attack: 6344, defense: 5975, hp: 13331, critRate: 0, mp: 1000 }, // Son Kihoon
-    'thomas': { attack: 5972, defense: 6824, hp: 12312, critRate: 0, mp: 1000 }, // Thomas Andre
-    'woo': { attack: 5992, defense: 6748, hp: 12433, critRate: 0, mp: 1000 }, // Woo Jinchul
-    'yoo': { attack: 6768, defense: 5790, hp: 12817, critRate: 0, mp: 1000 }, // Yoo Soohyun
+    'jinah': { attack: 7143, defense: 6165, hp: 13456, critRate: 0, mp: 1000 }, // Sung Jinah
+    'alicia': { attack: 7053, defense: 6148, hp: 13683, critRate: 0, mp: 1000 },
+    'mirei': { attack: 7162, defense: 6092, hp: 13569, critRate: 0, mp: 1000 },
+    'baek': { attack: 6251, defense: 6934, hp: 13721, critRate: 0, mp: 1000 }, // Baek Yoonho
+    'silverbaek': { attack: 7031, defense: 6239, hp: 13537, critRate: 0, mp: 1000 }, // Silver Mane Baek Yoonho
+    'chae-in': { attack: 7075, defense: 6245, hp: 13423, critRate: 0, mp: 1000 }, // Cha Hae In
+    'chae': { attack: 6642, defense: 6702, hp: 13374, critRate: 0, mp: 1000 }, // Cha Hae-In, the Pure Sword Princess
+    'charlotte': { attack: 6179, defense: 7104, hp: 13504, critRate: 0, mp: 1000 },
+    'choi': { attack: 7106, defense: 6056, hp: 13769, critRate: 0, mp: 1000 }, // Choi Jong-In
+    'emma': { attack: 6218, defense: 6167, hp: 15458, critRate: 0, mp: 1000 }, // Emma Laurent
+    'esil': { attack: 7090, defense: 6261, hp: 13359, critRate: 0, mp: 1000 }, // Esil Radiru
+    'gina': { attack: 7166, defense: 6203, hp: 13320, critRate: 0, mp: 1000 },
+    'go': { attack: 6167, defense: 7008, hp: 13746, critRate: 0, mp: 1000 }, // Go Gunhee
+    'goto': { attack: 6148, defense: 6269, hp: 15393, critRate: 0, mp: 1000 }, // Goto Ryuji
+    'han': { attack: 6136, defense: 6270, hp: 15412, critRate: 0, mp: 1000 }, // Han Se-Mi
+    'harper': { attack: 6220, defense: 6233, hp: 15307, critRate: 0, mp: 1000 },
+    'hwang': { attack: 6245, defense: 6992, hp: 13604, critRate: 0, mp: 1000 }, // Hwang Dongsoo
+    'isla': { attack: 6337, defense: 7121, hp: 13122, critRate: 0, mp: 1000 }, // Isla Wright
+    'lee': { attack: 7041, defense: 6211, hp: 13575, critRate: 0, mp: 1000 }, // Lee Bora
+    'niermann': { attack: 6642, defense: 6702, hp: 13374, critRate: 0, mp: 1000 }, // Lennart Niermann
+    'lim': { attack: 7072, defense: 6333, hp: 13247, critRate: 0, mp: 1000 }, // Lim Tae-Gyu
+    'meilin': { attack: 6912, defense: 6298, hp: 13662, critRate: 0, mp: 1000 }, // Meilin Fisher
+    'min': { attack: 6158, defense: 6201, hp: 15512, critRate: 0, mp: 1000 }, // Min Byung-Gu
+    'seo': { attack: 6279, defense: 6360, hp: 14903, critRate: 0, mp: 1000 }, // Seo Jiwoo
+    'seorin': { attack: 6101, defense: 6281, hp: 15466, critRate: 0, mp: 1000 },
+    'shimizu': { attack: 6316, defense: 6070, hp: 15454, critRate: 0, mp: 1000 }, // Shimizu Akari
+    'kanae': { attack: 6810, defense: 6077, hp: 14368, critRate: 0, mp: 1000 }, // Tawata Kanae
+    'frieren': { attack: 6555, defense: 6739, hp: 13485, critRate: 0, mp: 1000 },
+    'stark': { attack: 6470, defense: 6297, hp: 14627, critRate: 0, mp: 1000 },
+    'fern': { attack: 6716, defense: 6201, hp: 14299, critRate: 0, mp: 1000 },
+    'reed': { attack: 6469, defense: 6780, hp: 13580, critRate: 0, mp: 1000 }, // Christopher Reed
+    'laura': { attack: 7109, defense: 6140, hp: 13578, critRate: 0, mp: 1000 }, // Laura Walker
+    'sian': { attack: 7158, defense: 6259, hp: 13216, critRate: 0, mp: 1000 }, // Sian Halat
+    'meri': { attack: 6758, defense: 6675, hp: 15993, critRate: 0, mp: 1000 }, // Meri Laine
+    'sugimoto': { attack: 6896, defense: 6597, hp: 15851, critRate: 0, mp: 1000 }, // Sugimoto Reiji
+    'son': { attack: 6661, defense: 6274, hp: 14264, critRate: 0, mp: 1000 }, // Son Kihoon
+    'thomas': { attack: 6271, defense: 7165, hp: 13174, critRate: 0, mp: 1000 }, // Thomas Andre
+    'woo': { attack: 6292, defense: 7085, hp: 13303, critRate: 0, mp: 1000 }, // Woo Jinchul
+    'yoo': { attack: 7106, defense: 6080, hp: 13714, critRate: 0, mp: 1000 }, // Yoo Soohyun
 
     // ============================================
-    // 🥈 SR HUNTERS - Level 130
+    // 🥈 SR HUNTERS - Level 140 (estimé)
     // ============================================
-    'anna': { attack: 5997, defense: 5211, hp: 11319, critRate: 0, mp: 1000 }, // Anna Ruiz
-    'han-song': { attack: 5885, defense: 5304, hp: 11360, critRate: 0, mp: 1000 }, // Han Song-Yi
-    'hwang-dongsuk': { attack: 5265, defense: 5336, hp: 12613, critRate: 0, mp: 1000 }, // Hwang Dongsuk
-    'jo': { attack: 5900, defense: 5324, hp: 11280, critRate: 0, mp: 1000 }, // Jo Kyuhwan
-    'kang': { attack: 5955, defense: 5234, hp: 11358, critRate: 0, mp: 1000 }, // Kang Taeshik
-    'kim-chul': { attack: 5297, defense: 6001, hp: 11129, critRate: 0, mp: 1000 }, // Kim Chul
-    'kim-sangshik': { attack: 5424, defense: 5890, hp: 11094, critRate: 0, mp: 1000 }, // Kim Sangshik
-    'lee-johee': { attack: 5347, defense: 5118, hp: 12903, critRate: 0, mp: 1000 }, // Lee Johee
-    'nam': { attack: 5291, defense: 5299, hp: 12637, critRate: 0, mp: 1000 }, // Nam Chae-Young
-    'park-beom': { attack: 5365, defense: 5918, hp: 11157, critRate: 0, mp: 1000 }, // Park Beom-Shik
-    'park-heejin': { attack: 5836, defense: 5364, hp: 11336, critRate: 0, mp: 1000 }, // Park Heejin
-    'song': { attack: 6099, defense: 5214, hp: 11094, critRate: 0, mp: 1000 }, // Song Chiyul
-    'yoo-jinho': { attack: 5330, defense: 5899, hp: 11272, critRate: 0, mp: 1000 } // Yoo Jinho
+    'anna': { attack: 6297, defense: 5472, hp: 12111, critRate: 0, mp: 1000 }, // Anna Ruiz
+    'han-song': { attack: 6179, defense: 5569, hp: 12155, critRate: 0, mp: 1000 }, // Han Song-Yi
+    'hwang-dongsuk': { attack: 5528, defense: 5603, hp: 13496, critRate: 0, mp: 1000 }, // Hwang Dongsuk
+    'jo': { attack: 6195, defense: 5590, hp: 12070, critRate: 0, mp: 1000 }, // Jo Kyuhwan
+    'kang': { attack: 6253, defense: 5496, hp: 12153, critRate: 0, mp: 1000 }, // Kang Taeshik
+    'kim-chul': { attack: 5562, defense: 6301, hp: 11908, critRate: 0, mp: 1000 }, // Kim Chul
+    'kim-sangshik': { attack: 5695, defense: 6185, hp: 11871, critRate: 0, mp: 1000 }, // Kim Sangshik
+    'lee-johee': { attack: 5614, defense: 5374, hp: 13806, critRate: 0, mp: 1000 }, // Lee Johee
+    'nam': { attack: 5556, defense: 5564, hp: 13521, critRate: 0, mp: 1000 }, // Nam Chae-Young
+    'park-beom': { attack: 5633, defense: 6214, hp: 11938, critRate: 0, mp: 1000 }, // Park Beom-Shik
+    'park-heejin': { attack: 6128, defense: 5632, hp: 12130, critRate: 0, mp: 1000 }, // Park Heejin
+    'song': { attack: 6404, defense: 5475, hp: 11871, critRate: 0, mp: 1000 }, // Song Chiyul
+    'yoo-jinho': { attack: 5597, defense: 6194, hp: 12061, critRate: 0, mp: 1000 } // Yoo Jinho
 };
