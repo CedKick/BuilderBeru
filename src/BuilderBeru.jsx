@@ -3747,7 +3747,7 @@ BobbyJones : "Allez l'Inter !"
       - 0.000000027519 * strength ** 4
       + 0.000000000014916 * strength ** 5;
 
-    const baseATKWithStrength = 3033 + sungForce[strength] + 113;
+    const baseATKWithStrength = 3627 + sungForce[strength] + 113;
 
     const jinwooFlatStats = {
       'Attack': baseATKWithStrength + jinwooWeapon.mainStat,
@@ -4200,7 +4200,7 @@ BobbyJones : "Allez l'Inter !"
       const currentStrength = strengthParam !== null ? strengthParam : (jinwooStrength || 0);
 
       const adjustedBonus = sungForce[currentStrength] + 113;
-      const baseATKWithStrength = 3033 + adjustedBonus;
+      const baseATKWithStrength = 3627 + adjustedBonus;
 
       // Jinwoo ne bénéficie PAS du Coop Training
       return {

@@ -9,3 +9,6 @@ dist/
 scripts/
 kly.json
 tmp_*.cjs
+tts-generator/
+src/SugimotoReiji.png
+src/SugimotoReiji.webp
