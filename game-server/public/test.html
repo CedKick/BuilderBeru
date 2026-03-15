@@ -646,10 +646,19 @@
 
     // ── Boss Sprite ──
     const bossImg = new Image();
-    bossImg.src = '/manayaBoss.png';
+    bossImg.crossOrigin = 'anonymous';
+    bossImg.src = '/manayaBoss.png'; // default, replaced by custom boss spriteUrl
     let bossImgLoaded = false;
     bossImg.onload = () => { bossImgLoaded = true; };
+    let _lastBossSpriteUrl = null; // track to avoid reloading same sprite
     const BOSS_SPRITE_SIZE = 210; // x1.5 bigger
+
+    // ── Map Background ──
+    const mapBgImg = new Image();
+    mapBgImg.crossOrigin = 'anonymous';
+    let mapBgLoaded = false;
+    mapBgImg.onload = () => { mapBgLoaded = true; };
+    let _lastMapBgUrl = null;
 
     // ── Player Sprites ──
     // Default (Sung) - used by DPS/Healer
@@ -1956,7 +1965,22 @@
           battleMusic.play().catch(() => {});
           break;
 
-        case 'state': gameState = msg; updateHUD(); break;
+        case 'state':
+          gameState = msg;
+          // Dynamic boss sprite loading
+          if (msg.boss?.spriteUrl && msg.boss.spriteUrl !== _lastBossSpriteUrl) {
+            _lastBossSpriteUrl = msg.boss.spriteUrl;
+            bossImgLoaded = false;
+            bossImg.src = msg.boss.spriteUrl;
+          }
+          // Dynamic map background loading
+          if (msg.boss?.mapBg && msg.boss.mapBg !== _lastMapBgUrl) {
+            _lastMapBgUrl = msg.boss.mapBg;
+            mapBgLoaded = false;
+            mapBgImg.src = msg.boss.mapBg;
+          }
+          updateHUD();
+          break;
 
         // ── Damage events → floating numbers + particles + shake ──
         case 'damage':
@@ -2787,8 +2811,12 @@
       const oy = (canvas.height - 1200 * scale) / 2 + screenShake.y;
       ctx.save(); ctx.translate(ox, oy); ctx.scale(scale, scale);
 
-      // Arena (map background)
-      if (arenaMapLoaded) {
+      // Arena (map background) — custom map takes priority
+      if (mapBgLoaded) {
+        ctx.drawImage(mapBgImg, 0, 0, 1600, 1200);
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.fillRect(0, 0, 1600, 1200);
+      } else if (arenaMapLoaded) {
         ctx.drawImage(arenaMapImg, 0, 0, 1600, 1200);
         // Darken slightly for better visibility
         ctx.fillStyle = 'rgba(0,0,0,0.25)';

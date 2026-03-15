@@ -12,8 +12,8 @@ export class GameLoop {
     this.wsServer = wsServer;
     this.state = new GameState(players, difficulty, simulation, bossId);
     this.simulation = simulation;
-    this.combat = new CombatEngine(this.state);
-    this.physics = new PhysicsEngine(this.state);
+    this.combat = null; // set after init()
+    this.physics = null; // set after init()
 
     this.running = false;
     this.tick = 0;
@@ -29,6 +29,13 @@ export class GameLoop {
         this.botAIs.set(def.id, new BotAI(def.id, def.class));
       }
     }
+  }
+
+  async init() {
+    await this.state.init();
+    this.combat = new CombatEngine(this.state);
+    this.physics = new PhysicsEngine(this.state);
+    return this;
   }
 
   start() {
@@ -511,6 +518,8 @@ export class GameLoop {
         name: gs.boss.name,
         color: gs.boss.color || undefined,
         radius: gs.boss.radius,
+        spriteUrl: gs.boss.spriteUrl || undefined,
+        mapBg: gs.boss.mapBg || undefined,
       },
       simulation: gs.simulation,
       adds: gs.adds.filter(a => a.alive).map(a => ({

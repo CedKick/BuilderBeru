@@ -386,7 +386,7 @@ export class RoomManager {
     }, 1000);
   }
 
-  _startGame(room) {
+  async _startGame(room) {
     room.state = 'playing';
 
     // Build player defs with colosseum data + room hunter selections
@@ -420,6 +420,7 @@ export class RoomManager {
 
     const bossId = room.selectedBossId || 'manaya';
     room.gameLoop = new GameLoop(room.code, players, room.difficulty, this.wsServer, room.simulation, bossId);
+    await room.gameLoop.init();
     room.gameLoop.onEnd = (result) => this._onGameEnd(room, result);
     room.gameLoop.start();
 
@@ -676,7 +677,7 @@ export class RoomManager {
     console.log(`[Spectator] ${client.username} spectating ${code}`);
   }
 
-  _startSpectatorRun(room) {
+  async _startSpectatorRun(room) {
     if (!this.rooms.has(room.code)) return;
     if (room.currentRun >= room.totalRuns) {
       // All runs complete
@@ -708,6 +709,7 @@ export class RoomManager {
 
     const bossId = room.selectedBossId || 'manaya';
     room.gameLoop = new GameLoop(room.code, players, room.difficulty, this.wsServer, false, bossId);
+    await room.gameLoop.init();
     room.gameLoop.onEnd = (result) => this._onSpectatorGameEnd(room, result);
     room.gameLoop.start();
 

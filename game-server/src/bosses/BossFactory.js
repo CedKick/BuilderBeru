@@ -47,7 +47,7 @@ async function fetchCustomBossConfig(bossId) {
  * - 'manaya' → hardcoded Manaya class (untouched)
  * - 'boss_*'  → custom boss loaded from DB via API
  */
-export function createBoss(bossId, difficulty, x, y) {
+export async function createBoss(bossId, difficulty, x, y) {
   // Hardcoded bosses — never touched
   switch (bossId) {
     case 'manaya':
@@ -58,15 +58,23 @@ export function createBoss(bossId, difficulty, x, y) {
     //   return new Ragnaros(difficulty, x, y);
   }
 
-  // Custom boss — check if config was pre-loaded (sync path)
-  const cached = _customBossCache.get(bossId);
+  // Custom boss — check cache first, fetch if missing
+  let cached = _customBossCache.get(bossId);
+  if (!cached) {
+    console.log(`[BossFactory] Boss "${bossId}" not cached, fetching now...`);
+    const config = await fetchCustomBossConfig(bossId);
+    if (config) {
+      cached = _customBossCache.get(bossId);
+    }
+  }
+
   if (cached) {
+    console.log(`[BossFactory] Creating CustomBoss "${cached.config.name}" — HP:${cached.config.hp} ATK:${cached.config.atk} Patterns:${cached.config.patterns?.length}`);
     return new CustomBoss(cached.config, difficulty, x, y);
   }
 
-  // Fallback: boss not in cache yet → return Manaya as safety net
-  // (The async preload should have been called before game start)
-  console.warn(`[BossFactory] Boss "${bossId}" not in cache, falling back to Manaya`);
+  // Fallback only if fetch truly failed
+  console.error(`[BossFactory] FAILED to load boss "${bossId}" — falling back to Manaya`);
   return new Manaya(difficulty, x, y);
 }
 

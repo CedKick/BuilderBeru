@@ -17,14 +17,11 @@ export class GameState {
       return new Player(def.id, def.username, def.class, spawnX, spawnY, def.colosseumData);
     });
 
-    // Boss spawns center-top of arena
-    this.boss = createBoss(bossId, difficulty, ARENA.WIDTH / 2, ARENA.HEIGHT / 2 - 150);
-
-    // Scale boss HP by player count
-    const scale = BOSS_CFG.PLAYER_SCALE[Math.min(this.playerCount, 5)] || 1.0;
-    this.boss.maxHp = Math.floor(this.boss.maxHp * scale);
-    this.boss.hp = this.boss.maxHp;
-    this.boss.playerCount = this.playerCount;
+    // Boss placeholder — will be set by init()
+    this.boss = null;
+    this._bossId = bossId;
+    this._bossX = ARENA.WIDTH / 2;
+    this._bossY = ARENA.HEIGHT / 2 - 150;
 
     // Aggro table: playerId -> aggro value
     this.aggro = new Map();
@@ -44,6 +41,17 @@ export class GameState {
 
     // Event queue for broadcasting
     this.events = [];
+  }
+
+  async init() {
+    this.boss = await createBoss(this._bossId, this.difficulty, this._bossX, this._bossY);
+
+    // Scale boss HP by player count
+    const scale = BOSS_CFG.PLAYER_SCALE[Math.min(this.playerCount, 5)] || 1.0;
+    this.boss.maxHp = Math.floor(this.boss.maxHp * scale);
+    this.boss.hp = this.boss.maxHp;
+    this.boss.playerCount = this.playerCount;
+    return this;
   }
 
   getPlayer(id) {
