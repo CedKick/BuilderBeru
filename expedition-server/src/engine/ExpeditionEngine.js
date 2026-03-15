@@ -528,10 +528,11 @@ export class ExpeditionEngine {
       }
     }
 
-    // Distribute loot among alive players (by username)
+    // Distribute loot among players (on wipe: all players roll, on win: alive only)
     const playerList = [];
     const seen = new Set();
-    for (const h of aliveHunters) {
+    const eligibleHunters = isWipe ? this.hunters : aliveHunters;
+    for (const h of eligibleHunters) {
       if (!seen.has(h.username)) {
         seen.add(h.username);
         playerList.push({ username: h.username });

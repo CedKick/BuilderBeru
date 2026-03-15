@@ -76,6 +76,7 @@ export default function BossEditor({ onBack, editBossId }) {
   const [selectedPatternIdx, setSelectedPatternIdx] = useState(null);
   const [patternLibOpen, setPatternLibOpen] = useState(false);
   const [saveFlash, setSaveFlash] = useState(false); // false | 'saving' | 'saved' | 'error'
+  const [saveError, setSaveError] = useState(null);
   const [testOpen, setTestOpen] = useState(false);
   const [myBosses, setMyBosses] = useState(null); // null = not loaded, [] = loaded
   const [showMyBosses, setShowMyBosses] = useState(false);
@@ -141,11 +142,13 @@ export default function BossEditor({ onBack, editBossId }) {
       } else {
         console.warn('[BossEditor] Save failed:', result.error);
         setSaveFlash('error');
+        setSaveError(result.error || 'Erreur inconnue');
       }
     } catch {
       setSaveFlash('error');
+      setSaveError('Erreur réseau');
     }
-    setTimeout(() => setSaveFlash(false), 2000);
+    setTimeout(() => { setSaveFlash(false); setSaveError(null); }, 5000);
   }, [boss, bossId]);
 
   // ── Load my bosses list ───────────────────────────────────
@@ -639,6 +642,11 @@ export default function BossEditor({ onBack, editBossId }) {
             <Play size={16} /> Tester
           </button>
         </div>
+        {saveError && (
+          <div className="mt-2 px-4 py-2 bg-red-900/60 border border-red-500/40 rounded-lg text-red-300 text-sm">
+            {saveError}
+          </div>
+        )}
       </div>
 
       {/* My Bosses Panel */}

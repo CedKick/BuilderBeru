@@ -12,6 +12,75 @@ import { API_URL } from '../utils/api.js';
 
 const BERU_SPRITE = 'https://api.builderberu.com/cdn/images/beru_face_w2rdyn.webp';
 
+// ─── Voice Lines (Fish Speech 1.5 / 2B JP voice) ───────────
+const BERU_CDN = 'https://api.builderberu.com/cdn/audio/beru';
+const BERU_VOICE_LINES = {
+  // French phrase (normalized) → Japanese audio file
+  "kiiiek !":                             `${BERU_CDN}/01_kiiek.wav`,
+  "je suis le soldat n1.":               `${BERU_CDN}/02_soldat_n1.wav`,
+  "bienvenue dans mon repaire !":         `${BERU_CDN}/03_bienvenue.wav`,
+  "montre-moi ton build !":              `${BERU_CDN}/04_build.wav`,
+  "kiiiek ! qu'est-ce qu'il y a ?":      `${BERU_CDN}/05_clic.wav`,
+  "arrete ca !":                          `${BERU_CDN}/06_arrete.wav`,
+  "jinwoo-sama ! l'humain recommence !": `${BERU_CDN}/07_jinwoo.wav`,
+  "he ! ou tu m'emmenes ?!":             `${BERU_CDN}/08_drag.wav`,
+  "lache moi !":                          `${BERU_CDN}/09_lache.wav`,
+  "zzz... hein ?! tu es revenu !":       `${BERU_CDN}/10_reveil.wav`,
+  "le tacos c'est pas de la nourriture. c'est un mode de vie.": `${BERU_CDN}/11_tacos.wav`,
+  "le monarque serait fier.":            `${BERU_CDN}/12_monarque.wav`,
+  "rng is rng... bonne chance.":         `${BERU_CDN}/13_rng.wav`,
+  "beru veille. le systeme anti-triche tourne 24 heures sur 24.": `${BERU_CDN}/14_anticheat.wav`,
+  // ─── Anime meme lines ───
+  "arrete ca !":                          `${BERU_CDN}/18_yamete.wav`,  // YAMETE!
+  "ok ok j'ai compris !":                `${BERU_CDN}/19_yamero.wav`,  // YAMERO!
+  "c'est du harcelement de composant !": `${BERU_CDN}/20_baka.wav`,   // BAKA!
+  "je vais finir par buguer !":          `${BERU_CDN}/19_yamero.wav`,
+  "tu sais que j'ai des sentiments ?!":  `${BERU_CDN}/18_yamete.wav`,
+  "je vais appeler igris...":            `${BERU_CDN}/21_kisama.wav`,  // KISAMA!
+  "je vais crasher !!! tu assumes ?!":   `${BERU_CDN}/25_tatakae.wav`, // TATAKAE!
+  "stop ! mon cpu surchauffe !":         `${BERU_CDN}/19_yamero.wav`,
+  "encore un clic et je fais un npm uninstall.": `${BERU_CDN}/21_kisama.wav`,
+  "beru.patience = null; // overflow":   `${BERU_CDN}/16_omae.wav`,    // Omae wa mou shindeiru
+  // Spam click specific
+  "tu me prends pour un bouton turbo ?!": `${BERU_CDN}/20_baka.wav`,
+  "tu veux que je devienne un bug ? parce que c'est comme ca qu'on devient un bug.": `${BERU_CDN}/25_tatakae.wav`,
+  // Drag/throw reactions
+  "lache moi !":                          `${BERU_CDN}/19_yamero.wav`,
+  "je suis pas une fourmi naine !!! tu vas voir toi !!": `${BERU_CDN}/21_kisama.wav`,
+  // Anti-cheat
+  "beru veille... le systeme anti-triche tourne 24h/24.": `${BERU_CDN}/14_anticheat.wav`,
+  // Positive reactions
+  "un bon build, c'est un build qui gagne.": `${BERU_CDN}/22_sugoi.wav`, // SUGOI!
+  "des gros chiffres. j'aime ca.":       `${BERU_CDN}/22_sugoi.wav`,
+  "les legendes vivent ici.":            `${BERU_CDN}/29_sasageyo.wav`, // SHINZOU WO SASAGEYO!
+  "la guerre des guildes... mon terrain prefere.": `${BERU_CDN}/25_tatakae.wav`,
+  "l'arene des ombres ! ici, on se bat.": `${BERU_CDN}/25_tatakae.wav`,
+  "kiiiek ! c'est l'heure du combat !":  `${BERU_CDN}/25_tatakae.wav`,
+  // Partial matches (substring triggers — checked last)
+  "kiiiek":                               `${BERU_CDN}/01_kiiek.wav`,
+  "soldat n1":                            `${BERU_CDN}/02_soldat_n1.wav`,
+  "jinwoo-sama":                          `${BERU_CDN}/07_jinwoo.wav`,
+  "yare yare":                            `${BERU_CDN}/27_yare_yare.wav`,
+  "nani":                                 `${BERU_CDN}/17_nani.wav`,
+};
+const _normalizeVoice = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[*]/g, '').trim();
+const _voiceEntries = Object.entries(BERU_VOICE_LINES).map(([k, v]) => [_normalizeVoice(k), v]);
+let _beruAudio = null;
+const playBeruVoice = (message) => {
+  if (!message || typeof message !== 'string') return;
+  const norm = _normalizeVoice(message);
+  // Exact match first, then substring match
+  const exact = _voiceEntries.find(([k]) => k === norm);
+  const match = exact || _voiceEntries.find(([k]) => norm.includes(k));
+  if (!match) return;
+  try {
+    if (_beruAudio) { _beruAudio.pause(); _beruAudio.currentTime = 0; }
+    _beruAudio = new Audio(match[1]);
+    _beruAudio.volume = parseFloat(localStorage.getItem('beru_voice_volume') ?? '0.4');
+    _beruAudio.play().catch(() => {});
+  } catch {}
+};
+
 // ─── Messages ───────────────────────────────────────────────
 
 // ─── Beru Modes ─────────────────────────────────────────────
@@ -1296,6 +1365,7 @@ const FloatingBeruMascot = () => {
     setBubble(message);
     setIsAdminMessage(isAdmin);
     pushChatMessage('Beru', message);
+    playBeruVoice(message);
     if (duration > 0 && !isAdmin) {
       bubbleTimerRef.current = setTimeout(() => {
         setBubble(null);

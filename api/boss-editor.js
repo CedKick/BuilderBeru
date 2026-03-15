@@ -8,8 +8,11 @@ import { extractUser } from './_utils/auth.js';
 const MAX_NAME_LEN = 50;
 const MAX_DESC_LEN = 300;
 const MAX_BOSSES_PER_USER = 5;
-const MAX_CONFIG_SIZE = 512_000; // 500KB max for boss config JSON
+const MAX_CONFIG_SIZE = 2_000_000; // 2MB max for boss config JSON
 const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 1 week between creations
+
+// Admin accounts — no limits on creation/cooldown
+const ADMIN_USERNAMES = ['kly', 'cedkick'];
 
 const BANNED_WORDS = ['admin', 'system', 'hack', 'cheat', 'exploit', 'nigga', 'nazi', 'hitler', 'porn', 'sex'];
 
@@ -83,25 +86,29 @@ async function handleCreate(req, res) {
   const configError = validateConfig(config);
   if (configError) return res.status(400).json({ error: configError });
 
-  // Check boss limit per user
-  const countResult = await query(
-    `SELECT COUNT(*) as cnt FROM custom_bosses WHERE creator_device_id = $1 AND status != 'deleted'`,
-    [user.deviceId]
-  );
-  if (parseInt(countResult.rows[0].cnt) >= MAX_BOSSES_PER_USER) {
-    return res.status(400).json({ error: `Maximum ${MAX_BOSSES_PER_USER} boss par joueur. Supprime un boss existant.` });
-  }
+  const isAdmin = ADMIN_USERNAMES.includes(user.username?.toLowerCase());
 
-  // Cooldown check
-  const lastResult = await query(
-    `SELECT created_at FROM custom_bosses WHERE creator_device_id = $1 ORDER BY created_at DESC LIMIT 1`,
-    [user.deviceId]
-  );
-  if (lastResult.rows.length > 0) {
-    const lastTime = new Date(lastResult.rows[0].created_at).getTime();
-    if (Date.now() - lastTime < COOLDOWN_MS) {
-      const nextAt = new Date(lastTime + COOLDOWN_MS).toISOString();
-      return res.status(429).json({ error: 'Cooldown actif — 1 boss par semaine', nextCreateAt: nextAt });
+  // Check boss limit per user (admins bypass)
+  if (!isAdmin) {
+    const countResult = await query(
+      `SELECT COUNT(*) as cnt FROM custom_bosses WHERE creator_device_id = $1 AND status != 'deleted'`,
+      [user.deviceId]
+    );
+    if (parseInt(countResult.rows[0].cnt) >= MAX_BOSSES_PER_USER) {
+      return res.status(400).json({ error: `Maximum ${MAX_BOSSES_PER_USER} boss par joueur. Supprime un boss existant.` });
+    }
+
+    // Cooldown check (admins bypass)
+    const lastResult = await query(
+      `SELECT created_at FROM custom_bosses WHERE creator_device_id = $1 ORDER BY created_at DESC LIMIT 1`,
+      [user.deviceId]
+    );
+    if (lastResult.rows.length > 0) {
+      const lastTime = new Date(lastResult.rows[0].created_at).getTime();
+      if (Date.now() - lastTime < COOLDOWN_MS) {
+        const nextAt = new Date(lastTime + COOLDOWN_MS).toISOString();
+        return res.status(429).json({ error: 'Cooldown actif — 1 boss par semaine', nextCreateAt: nextAt });
+      }
     }
   }
 
