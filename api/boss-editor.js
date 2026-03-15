@@ -3,6 +3,11 @@
 
 import { query } from './_db/neon.js';
 import { extractUser } from './_utils/auth.js';
+import fs from 'fs';
+import path from 'path';
+
+const CDN_DIR = '/opt/manaya-raid/public/cdn/bosses';
+const CDN_URL = 'https://api.builderberu.com/cdn/bosses';
 
 // ── Validation constants ────────────────────────────────
 const MAX_NAME_LEN = 50;
@@ -15,6 +20,34 @@ const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 1 week between creations
 const ADMIN_USERNAMES = ['kly', 'cedkick'];
 
 const BANNED_WORDS = ['admin', 'system', 'hack', 'cheat', 'exploit', 'nigga', 'nazi', 'hitler', 'porn', 'sex'];
+
+// Save base64 image to CDN, return public URL (or null if not base64)
+function saveBase64Image(base64, bossId, suffix) {
+  if (!base64 || !base64.startsWith('data:image/')) return null;
+  const match = base64.match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/);
+  if (!match) return null;
+  const ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+  const buffer = Buffer.from(match[2], 'base64');
+  if (buffer.length > 2_000_000) return null; // 2MB max per image
+  const filename = `${bossId}_${suffix}.${ext}`;
+  fs.mkdirSync(CDN_DIR, { recursive: true });
+  fs.writeFileSync(path.join(CDN_DIR, filename), buffer);
+  return `${CDN_URL}/${filename}`;
+}
+
+// Process config: replace base64 with CDN URLs
+function processConfigImages(config, bossId) {
+  const cleaned = { ...config };
+  if (cleaned.spriteUrl?.startsWith('data:')) {
+    const url = saveBase64Image(cleaned.spriteUrl, bossId, 'sprite');
+    cleaned.spriteUrl = url || null;
+  }
+  if (cleaned.mapBg?.startsWith('data:')) {
+    const url = saveBase64Image(cleaned.mapBg, bossId, 'map');
+    cleaned.mapBg = url || null;
+  }
+  return cleaned;
+}
 
 // ── Table creation ──────────────────────────────────────
 const TABLE_SQL = `
@@ -117,14 +150,8 @@ async function handleCreate(req, res) {
   const patternCount = config.patterns?.length || 0;
   const phaseCount = config.phases?.length || 0;
 
-  // Strip sprites from config (they'll be uploaded separately via CDN later)
-  const cleanConfig = { ...config };
-  if (cleanConfig.spriteUrl && cleanConfig.spriteUrl.startsWith('data:')) {
-    cleanConfig.spriteUrl = null; // Don't store base64 in DB
-  }
-  if (cleanConfig.mapBg && cleanConfig.mapBg.startsWith('data:')) {
-    cleanConfig.mapBg = null;
-  }
+  // Upload sprites to CDN, replace base64 with URLs
+  const cleanConfig = processConfigImages(config, bossId);
 
   await query(
     `INSERT INTO custom_bosses (boss_id, creator_username, creator_device_id, name, description, config, pattern_count, phase_count, status)
@@ -177,9 +204,7 @@ async function handleUpdate(req, res) {
     params.push((description || '').slice(0, MAX_DESC_LEN));
   }
   if (config) {
-    const cleanConfig = { ...config };
-    if (cleanConfig.spriteUrl && cleanConfig.spriteUrl.startsWith('data:')) cleanConfig.spriteUrl = null;
-    if (cleanConfig.mapBg && cleanConfig.mapBg.startsWith('data:')) cleanConfig.mapBg = null;
+    const cleanConfig = processConfigImages(config, bossId);
     sets.push(`config = $${paramIdx++}`);
     params.push(JSON.stringify(cleanConfig));
     sets.push(`pattern_count = $${paramIdx++}`);
@@ -290,6 +315,41 @@ async function handleDelete(req, res) {
   return res.json({ success: true, deleted: bossId });
 }
 
+async function handlePublish(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  await ensureTable();
+
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
+
+  const { bossId } = req.body;
+  if (!bossId) return res.status(400).json({ error: 'bossId requis' });
+
+  // Check ownership
+  const existing = await query(
+    `SELECT id, status, config FROM custom_bosses WHERE boss_id = $1 AND creator_device_id = $2 AND status != 'deleted'`,
+    [bossId, user.deviceId]
+  );
+  if (existing.rows.length === 0) {
+    return res.status(404).json({ error: 'Boss non trouvé ou pas le tien.' });
+  }
+
+  // Validate config has minimum requirements for publishing
+  const config = existing.rows[0].config;
+  if (!config?.patterns?.length) {
+    return res.status(400).json({ error: 'Au moins 1 pattern requis pour publier.' });
+  }
+
+  const newStatus = existing.rows[0].status === 'published' ? 'draft' : 'published';
+  await query(
+    `UPDATE custom_bosses SET status = $1, updated_at = NOW() WHERE boss_id = $2`,
+    [newStatus, bossId]
+  );
+
+  console.log(`[BossEditor] ${newStatus === 'published' ? 'Published' : 'Unpublished'} boss ${bossId} by ${user.username}`);
+  return res.json({ success: true, bossId, status: newStatus });
+}
+
 // ── Main router ─────────────────────────────────────────
 export default async function handler(req, res) {
   // CORS
@@ -310,6 +370,7 @@ export default async function handler(req, res) {
       case 'list':       return handleList(req, res);
       case 'my-bosses':  return handleMyBosses(req, res);
       case 'get':        return handleGet(req, res);
+      case 'publish':    return handlePublish(req, res);
       case 'delete':     return handleDelete(req, res);
       case 'init':
         await ensureTable();

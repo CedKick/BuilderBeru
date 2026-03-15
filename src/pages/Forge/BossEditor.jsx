@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Sword, Heart, Zap, Target, Settings, Plus, Trash2, Copy,
   ChevronDown, ChevronUp, Play, Pause, RotateCcw,
-  Save, Upload, AlertTriangle, Info, GripVertical, Flame, Droplets,
+  Save, Upload, AlertTriangle, Info, GripVertical, Flame, Droplets, Globe,
   Wind, Mountain, Sparkles, Crown, Clock, ArrowLeft, Link, Unlink, ArrowDown,
 } from 'lucide-react';
 import {
@@ -80,6 +80,7 @@ export default function BossEditor({ onBack, editBossId }) {
   const [testOpen, setTestOpen] = useState(false);
   const [myBosses, setMyBosses] = useState(null); // null = not loaded, [] = loaded
   const [showMyBosses, setShowMyBosses] = useState(false);
+  const [bossStatus, setBossStatus] = useState('draft');
   const spriteInputRef = useRef(null);
   const mapInputRef = useRef(null);
 
@@ -97,6 +98,7 @@ export default function BossEditor({ onBack, editBossId }) {
         restoreUidCounter(config);
         setBoss(config);
         setBossId(data.boss.boss_id);
+        setBossStatus(data.boss.status || 'draft');
         localStorage.setItem(LS_KEY, JSON.stringify(config));
         localStorage.setItem(LS_BOSS_ID_KEY, data.boss.boss_id);
       }
@@ -164,6 +166,30 @@ export default function BossEditor({ onBack, editBossId }) {
     } catch { /* offline */ }
   }, []);
 
+  // ── Publish / Unpublish ────────────────────────────────────
+  const togglePublish = useCallback(async () => {
+    if (!bossId) return;
+    const token = localStorage.getItem('builderberu_auth_token');
+    if (!token) return;
+    try {
+      const resp = await fetch(`${API_URL}/boss-editor?action=publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ bossId }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setBossStatus(data.status);
+      } else {
+        setSaveError(data.error || 'Erreur publication');
+        setTimeout(() => setSaveError(null), 5000);
+      }
+    } catch {
+      setSaveError('Erreur réseau');
+      setTimeout(() => setSaveError(null), 5000);
+    }
+  }, [bossId]);
+
   // ── Load a specific boss from list ────────────────────────
   const loadBoss = useCallback(async (id) => {
     const token = localStorage.getItem('builderberu_auth_token');
@@ -178,6 +204,7 @@ export default function BossEditor({ onBack, editBossId }) {
         restoreUidCounter(config);
         setBoss(config);
         setBossId(data.boss.boss_id);
+        setBossStatus(data.boss.status || 'draft');
         localStorage.setItem(LS_KEY, JSON.stringify(config));
         localStorage.setItem(LS_BOSS_ID_KEY, data.boss.boss_id);
         setShowMyBosses(false);
@@ -641,6 +668,16 @@ export default function BossEditor({ onBack, editBossId }) {
             className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-sm flex items-center gap-2 transition-colors font-bold">
             <Play size={16} /> Tester
           </button>
+          {bossId && (
+            <button onClick={togglePublish}
+              className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors font-bold ${
+                bossStatus === 'published'
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'bg-purple-600 hover:bg-purple-500 text-white'
+              }`}>
+              <Globe size={16} /> {bossStatus === 'published' ? 'Publié ✓' : 'Publier'}
+            </button>
+          )}
         </div>
         {saveError && (
           <div className="mt-2 px-4 py-2 bg-red-900/60 border border-red-500/40 rounded-lg text-red-300 text-sm">
