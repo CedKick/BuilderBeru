@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, TrendingUp, Target, Shield, Swords, X, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { characters } from '../../data/characters';
+import { characterStats } from '../../data/characterStats';
 import { ARTIFACT_SETS, getSetBonuses, getSetClassBonus } from '../../data/setData';
 import { CHARACTER_BUFFS, getCharacterBuffs, getCharacterBaseStats } from '../../data/characterBuffs';
 import { CHARACTER_ADVANCED_BUFFS, getCumulativeBuffs } from '../../data/characterAdvancedBuffs';
 import { statConversions, statConversionsWithEnemy, newDefPenFormula } from '../../utils/statConversions';
+import { computeArtifactOptimization, computeOptimalArtifactSet, MANTICORE_TARGETS, getClassProfile, SLOT_MAINSTATS, PROC_TIERS } from '../../utils/artifactOptimizer';
 import shadowAchievementManager from '../../utils/ShadowAchievementManager';
 import { OptimizationCard, InlineOptimizationDot, OptimizationBadge } from './OptimizationIndicator';
 import { CHARACTER_OPTIMIZATION, getOptimizationStatus, getOverallOptimization, getCurrentBenchmark, getMainStatStatus } from '../../data/characterOptimization';
@@ -217,10 +219,80 @@ const Theorycraft = () => {
 
     // Settings popup
     const [showSettings, setShowSettings] = useState(false);
+    const [showGemsPanel, setShowGemsPanel] = useState(false);
+    const [enableGemsCores, setEnableGemsCores] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('theorycraft_settings'))?.enableGemsCores ?? false; } catch { return false; }
+    });
     const [useNewDefPenFormula, setUseNewDefPenFormula] = useState(true); // Nouvelle formule par défaut
 
     // Sung Blessing (+24.5% Crit Rate)
     const [sungBlessing, setSungBlessing] = useState(false);
+
+    // 💎 GEMS (partagées pour tout le compte) — valeurs LV12 MAX par défaut
+    const TC_STORAGE_KEY = 'theorycraft_settings';
+    const [gemData, setGemData] = useState(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem(TC_STORAGE_KEY));
+            return saved?.gems || {
+                'ATK%': 60, 'DEF%': 60, 'HP%': 60,
+                'DefPen': 6755, 'Precision': 9000,
+                'MPCR': 1540, 'AdditionalMP': 600,
+            };
+        } catch { return { 'ATK%': 60, 'DEF%': 60, 'HP%': 60, 'DefPen': 6755, 'Precision': 9000, 'MPCR': 1540, 'AdditionalMP': 600 }; }
+    });
+
+    // 🔮 CORES (par perso) — 3 cores par hunter, chacun avec main stats fixes + 1 substat au choix
+    // Defaults: meilleurs substats possibles (3× CritRate pour DPS, adapté par classe)
+    const CORE_MAIN_STATS = {
+        atkPercent: { label: 'ATK%', value: 58.49 },
+        atkFlat: { label: 'ATK flat', value: 6023 },
+        defPercent: { label: 'DEF%', value: 58.49 },
+        defFlat: { label: 'DEF flat', value: 6023 },
+        hpPercent: { label: 'HP%', value: 58.49 },
+        hpFlat: { label: 'HP flat', value: 12046 },
+    };
+    const CORE_SUBSTAT_OPTIONS = [
+        { id: 'critRate', label: 'Crit Rate', value: 7289 },
+        { id: 'critDMG', label: 'Crit DMG', value: 7289 },
+        { id: 'damageIncrease', label: 'Damage Increase', value: 7289 },
+        { id: 'defPen', label: 'Def Pen', value: 7289 },
+        { id: 'additionalMP', label: 'Additional MP', value: 1285 },
+        { id: 'mpcr', label: 'MPCR', value: 2341 },
+    ];
+    const getDefaultCoreSubstats = (charClass) => {
+        // Artifacts left side already gives 4× CritRate subs (~11,800 raw high)
+        // So cores should diversify: 1× CritRate max, rest in CritDMG / DamageIncrease
+        // DPS: 1× CritRate + 1× CritDMG + 1× DamageIncrease
+        // Breaker: 1× CritRate + 1× CritDMG + 1× DamageIncrease
+        // Support: 1× CritDMG + 1× DamageIncrease + 1× DefPen
+        if (charClass === 'Healer' || charClass === 'Supporter' || charClass === 'Tank') return ['critDMG', 'damageIncrease', 'defPen'];
+        return ['critRate', 'critDMG', 'damageIncrease']; // DPS / Breaker default
+    };
+    const [hunterCores, setHunterCores] = useState(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem(TC_STORAGE_KEY));
+            return saved?.hunterCores || {};
+        } catch { return {}; }
+    });
+
+    // Helper: get cores for a character (with defaults)
+    const getCoresForCharacter = (charId) => {
+        if (hunterCores[charId]) return hunterCores[charId];
+        const charData = characters[charId];
+        const charClass = charData?.class || 'Fighter';
+        return getDefaultCoreSubstats(charClass);
+    };
+
+    // Save gems/cores/toggle to localStorage
+    useEffect(() => {
+        try {
+            const existing = JSON.parse(localStorage.getItem(TC_STORAGE_KEY)) || {};
+            existing.gems = gemData;
+            existing.hunterCores = hunterCores;
+            existing.enableGemsCores = enableGemsCores;
+            localStorage.setItem(TC_STORAGE_KEY, JSON.stringify(existing));
+        } catch { /* ignore */ }
+    }, [gemData, hunterCores, enableGemsCores]);
 
     // Achievement: compter une session Theorycraft
     useEffect(() => { shadowAchievementManager.incrementCounter('theorycraftSessions'); }, []);
@@ -1407,12 +1479,13 @@ const Theorycraft = () => {
         <div className="min-h-screen text-white p-6 relative">
             {/* Background Image avec overlay violet */}
             <div
-                className="fixed inset-0 z-0"
+                className="fixed z-0"
                 style={{
-                    backgroundImage: 'url(https://api.builderberu.com/cdn/images/BackgroundScreen-Theorycraft_opfviw.webp)',
+                    inset: '-8px',
+                    backgroundImage: `url(${new URL('../../theorycraftWallpaper.png', import.meta.url).href})`,
+                    filter: 'blur(4px)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    backgroundAttachment: 'fixed',
                 }}
             />
             {/* Overlay violet/sombre pour se fondre avec le thème */}
@@ -1538,6 +1611,84 @@ const Theorycraft = () => {
                     </div>
                 </motion.div>
 
+                {/* 💎 Gemmes (partagées) — collapsible */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.08 }}
+                    className="bg-gradient-to-r from-cyan-800/15 to-blue-800/15 backdrop-blur-sm rounded-xl mb-6 border border-cyan-500/25 overflow-hidden"
+                >
+                    <div className="px-4 py-3 flex items-center justify-between">
+                        <button
+                            onClick={() => setShowGemsPanel(prev => !prev)}
+                            className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                        >
+                            <h2 className="text-sm font-bold flex items-center gap-1.5 text-cyan-300">
+                                💎 Gemmes & Noyaux
+                            </h2>
+                            <motion.div animate={{ rotate: showGemsPanel ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-gray-400">
+                                <ChevronDown size={18} />
+                            </motion.div>
+                        </button>
+                        <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-xs text-gray-400">Inclure dans les calculs</span>
+                            <div
+                                className={`relative w-10 h-5 rounded-full transition-colors ${enableGemsCores ? 'bg-cyan-600' : 'bg-gray-600'}`}
+                                onClick={() => setEnableGemsCores(prev => !prev)}
+                            >
+                                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${enableGemsCores ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                            </div>
+                        </label>
+                    </div>
+                    <AnimatePresence>
+                        {showGemsPanel && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="px-4 pb-4 space-y-3">
+                                    {/* Gemmes */}
+                                    <div>
+                                        <div className="text-xs text-cyan-400 font-semibold mb-2">💎 Gemmes (partagées)</div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                            {[
+                                                { key: 'ATK%', label: 'ATK%', icon: '⚔️', suffix: '%' },
+                                                { key: 'DEF%', label: 'DEF%', icon: '🛡️', suffix: '%' },
+                                                { key: 'HP%', label: 'HP%', icon: '💖', suffix: '%' },
+                                                { key: 'DefPen', label: 'Def Pen', icon: '🎯', suffix: '' },
+                                                { key: 'Precision', label: 'Precision', icon: '🔫', suffix: '' },
+                                                { key: 'MPCR', label: 'MPCR', icon: '💧', suffix: '' },
+                                                { key: 'AdditionalMP', label: 'Add. MP', icon: '💧', suffix: '' },
+                                            ].map(({ key, label, icon, suffix }) => (
+                                                <div key={key} className="flex items-center gap-1.5 bg-gray-900/50 rounded-lg px-2 py-1.5 border border-gray-700/30">
+                                                    <span className="text-[10px]">{icon}</span>
+                                                    <span className="text-[10px] text-gray-400 flex-1">{label}</span>
+                                                    <input
+                                                        type="text"
+                                                        value={gemData[key] || 0}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/[^0-9.]/g, '');
+                                                            setGemData(prev => ({ ...prev, [key]: parseFloat(val) || 0 }));
+                                                        }}
+                                                        className="w-16 text-right text-xs font-bold text-cyan-300 bg-transparent border-b border-cyan-500/30 focus:border-cyan-500 focus:outline-none px-1"
+                                                    />
+                                                    {suffix && <span className="text-[10px] text-gray-500">{suffix}</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="text-[10px] text-gray-500 italic">
+                                        Les noyaux se configurent par perso dans le panneau de détails (clic sur un perso).
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+
                 {/* Sung Jin-Woo (Position 1 optionnelle) */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -1571,8 +1722,10 @@ const Theorycraft = () => {
                                                 ...sungChar,
                                                 advancement: 5,
                                                 weaponAdvancement: 5,
-                                                set: 'burning-greed',
-                                                setPieces: 0,
+                                                leftSet: 'none',
+                                                leftPieces: 0,
+                                                rightSet: 'none',
+                                                rightPieces: 0,
                                                 sungWeapon: 'none', // Arme de Sung (none, ennio, knightkiller)
                                                 rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
                                             };
@@ -1686,6 +1839,10 @@ const Theorycraft = () => {
                         sungBlessing={sungBlessing}
                         selectedEnemy={selectedEnemy}
                         onCharacterClick={(teamId, slotId) => selectCharForDetails(teamId, slotId)}
+                        enableGemsCores={enableGemsCores}
+                        gemData={gemData}
+                        getCoresForCharacter={getCoresForCharacter}
+                        coreSubstatOptions={CORE_SUBSTAT_OPTIONS}
                     />
                 </motion.div>
 
@@ -1719,6 +1876,17 @@ const Theorycraft = () => {
                             team2={team2}
                             useNewDefPenFormula={useNewDefPenFormula}
                             selectedEnemy={selectedEnemy}
+                            hunterCores={hunterCores}
+                            getCoresForCharacter={getCoresForCharacter}
+                            onCoreChange={(charId, coreIndex, substatId) => {
+                                setHunterCores(prev => {
+                                    const current = prev[charId] || getCoresForCharacter(charId);
+                                    const updated = [...current];
+                                    updated[coreIndex] = substatId;
+                                    return { ...prev, [charId]: updated };
+                                });
+                            }}
+                            coreSubstatOptions={CORE_SUBSTAT_OPTIONS}
                         />
                     )}
                 </AnimatePresence>
@@ -1990,7 +2158,11 @@ const CharacterDetailsPanel = ({
     team1,
     team2,
     useNewDefPenFormula = true,
-    selectedEnemy = 'fachtna'
+    selectedEnemy = 'fachtna',
+    hunterCores = {},
+    getCoresForCharacter,
+    onCoreChange,
+    coreSubstatOptions = [],
 }) => {
     const { t } = useTranslation();
     const { member } = charData;
@@ -2070,6 +2242,56 @@ const CharacterDetailsPanel = ({
                     </div>
                 </label>
             </div>
+
+            {/* 🔮 Noyaux (3 cores: Offensif, Défensif, Endurance) */}
+            {getCoresForCharacter && onCoreChange && (() => {
+                const CORE_TYPES = [
+                    { name: 'Offensif', mainStats: [
+                        { stat: 'ATK% or ATK flat', value: '58.49% / 6,023' },
+                        { stat: 'Def Pen', value: '7,289' },
+                    ]},
+                    { name: 'Défensif', mainStats: [
+                        { stat: 'DEF% or DEF flat', value: '58.49% / 6,023' },
+                        { stat: 'Additional MP', value: '1,285' },
+                    ]},
+                    { name: 'Endurance', mainStats: [
+                        { stat: 'HP% or HP flat', value: '58.49% / 12,046' },
+                        { stat: 'Def Pen', value: '7,289' },
+                    ]},
+                ];
+                const currentSubs = getCoresForCharacter(member.id);
+                return (
+                    <div className="bg-gray-800/50 rounded-lg p-3 border border-purple-700/30 mb-4">
+                        <div className="text-sm font-semibold text-purple-300 mb-2">🔮 Noyaux</div>
+                        <div className="grid grid-cols-3 gap-2">
+                            {CORE_TYPES.map((core, idx) => (
+                                <div key={core.name} className="bg-gray-900/50 rounded-lg p-2 border border-gray-700/30">
+                                    <div className="text-[10px] text-purple-400 font-semibold mb-1">{core.name}</div>
+                                    {/* Fixed main stats */}
+                                    {core.mainStats.map(ms => (
+                                        <div key={ms.stat} className="flex justify-between text-[9px] text-gray-400">
+                                            <span>{ms.stat}</span>
+                                            <span className="text-gray-300 font-mono">{ms.value}</span>
+                                        </div>
+                                    ))}
+                                    {/* Choosable substat */}
+                                    <div className="mt-1 pt-1 border-t border-gray-700/30">
+                                        <select
+                                            value={currentSubs[idx] || 'critRate'}
+                                            onChange={(e) => onCoreChange(member.id, idx, e.target.value)}
+                                            className="w-full text-[10px] bg-gray-800 text-purple-300 border border-purple-500/30 rounded px-1 py-0.5 focus:border-purple-500 focus:outline-none cursor-pointer"
+                                        >
+                                            {coreSubstatOptions.map(opt => (
+                                                <option key={opt.id} value={opt.id}>{opt.label} ({opt.value.toLocaleString()})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })()}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Colonne 1: Arme */}
@@ -2209,62 +2431,7 @@ const CharacterDetailsPanel = ({
                 </div>
             </div>
 
-            {/* Section: Presets de stats rapides */}
-            {charOptim && (
-                <div className="mt-6 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg p-4 border border-purple-500/50">
-                    <h3 className="text-lg font-bold mb-3 text-purple-300">🎯 {t('optimization.presets.title')}</h3>
-                    <p className="text-xs text-gray-400 mb-3">
-                        {t('optimization.presets.description')}
-                    </p>
-                    <div className="grid grid-cols-3 gap-3">
-                        {/* Preset Casual */}
-                        <PresetButton
-                            label={`🌱 ${t('optimization.presets.casual.label')}`}
-                            description={t('optimization.presets.casual.description')}
-                            color="#6b7280"
-                            benchmarks={charOptim.benchmarks.casual}
-                            mainStatValue={charOptim.mainStat?.benchmarks?.casual}
-                            mainStatLabel={t(`optimization.stats.${charOptim.mainStat?.type || 'atk'}`)}
-                            onClick={() => {
-                                if (charOptim.mainStat) {
-                                    onMainStatChange(charOptim.mainStat.benchmarks.casual);
-                                }
-                            }}
-                        />
-                        {/* Preset Dolphin/Avancé */}
-                        <PresetButton
-                            label={`🐬 ${t('optimization.presets.dolphin.label')}`}
-                            description={t('optimization.presets.dolphin.description')}
-                            color="#f59e0b"
-                            benchmarks={charOptim.benchmarks.advanced}
-                            mainStatValue={charOptim.mainStat?.benchmarks?.advanced}
-                            mainStatLabel={t(`optimization.stats.${charOptim.mainStat?.type || 'atk'}`)}
-                            onClick={() => {
-                                if (charOptim.mainStat) {
-                                    onMainStatChange(charOptim.mainStat.benchmarks.advanced);
-                                }
-                            }}
-                        />
-                        {/* Preset Whale */}
-                        <PresetButton
-                            label={`🐋 ${t('optimization.presets.whale.label')}`}
-                            description={t('optimization.presets.whale.description')}
-                            color="#a855f7"
-                            benchmarks={charOptim.benchmarks.whale}
-                            mainStatValue={charOptim.mainStat?.benchmarks?.whale}
-                            mainStatLabel={t(`optimization.stats.${charOptim.mainStat?.type || 'atk'}`)}
-                            onClick={() => {
-                                if (charOptim.mainStat) {
-                                    onMainStatChange(charOptim.mainStat.benchmarks.whale);
-                                }
-                            }}
-                        />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-3 italic">
-                        💡 {t('optimization.presets.note', { mainStat: t(`optimization.stats.${charOptim.mainStat?.type || 'atk'}`) })}
-                    </p>
-                </div>
-            )}
+            {/* Section Presets de Stats supprimée */}
 
             {/* Section: Buffs/Debuffs Actifs (Advanced Mechanics) */}
             {CHARACTER_ADVANCED_BUFFS[member.id] && (
@@ -2275,187 +2442,312 @@ const CharacterDetailsPanel = ({
                 />
             )}
 
-            {/* Section: Buffs donnés par advancement (A0 à A5) - VERSION DÉTAILLÉE */}
-            <CollapsibleSection
-                title="Buffs Donnés par Advancement (L'Œil de Sauron)"
-                icon="👁️"
-                defaultOpen={false}
-                borderColor="border-purple-700/50"
-                bgColor="bg-gray-800/50"
-            >
-                <p className="text-xs text-gray-400 mb-3">
-                    {t('theorycraft.buffs.description')}
-                </p>
+            {/* Section Buffs par Advancement supprimée — info déjà dans ActiveBuffsDisplayPanel + IndividualStats */}
 
-                {/* Tableau des buffs A0-A5 avec tooltips */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-purple-700/50">
-                                <th className="text-left py-2 px-3 text-purple-300 font-semibold">{t('theorycraft.buffs.level')}</th>
-                                <th className="text-center py-2 px-3 text-yellow-300 font-semibold">{t('theorycraft.weapon.critRate')} (%)</th>
-                                <th className="text-center py-2 px-3 text-red-300 font-semibold">{t('theorycraft.weapon.critDMG')} (%)</th>
-                                <th className="text-center py-2 px-3 text-blue-300 font-semibold">{t('theorycraft.weapon.defPen')} (%)</th>
-                                <th className="text-left py-2 px-3 text-purple-300 font-semibold min-w-[200px]">{t('theorycraft.buffs.specialBuffs')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {advancementLevels.map(level => {
-                                const buffs = getCharacterBuffs(member.id, level);
-                                const isCurrentLevel = level === member.advancement;
-
-                                // Déterminer les buffs spéciaux (pour Lee Bora notamment)
-                                let specialBuffsDisplay = [];
-
-                                // Buffs personnels - utiliser les buffs du niveau actuel
-                                // Vérifier si ce niveau a des personalBuffs
-                                if (buffs.personalBuffs) {
-                                    const parts = [];
-                                    if (buffs.personalBuffs.critRate > 0) {
-                                        parts.push(`${buffs.personalBuffs.critRate}% TC`);
-                                    }
-                                    if (buffs.personalBuffs.critDMG > 0) {
-                                        parts.push(`${buffs.personalBuffs.critDMG}% DCC`);
-                                    }
-                                    if (buffs.personalBuffs.defPen > 0) {
-                                        parts.push(`${buffs.personalBuffs.defPen}% Def Pen`);
-                                    }
-
-                                    if (parts.length > 0) {
-                                        const characterName = member.id === 'lee' ? 'Lee Bora' :
-                                                             member.id === 'ilhwan' ? 'Ilhwan' :
-                                                             member.id === 'silverbaek' ? 'Silver Mane Baek Yoonho' :
-                                                             member.id === 'minnie' ? 'Minnie' :
-                                                             member.id === 'harper' ? 'Harper' :
-                                                             member.id === 'lim' ? 'Lim' :
-                                                             member.name || 'ce personnage';
-                                        specialBuffsDisplay.push({
-                                            label: `(only ${characterName})`,
-                                            value: parts.join(', '),
-                                            tooltip: `Ces buffs s'appliquent UNIQUEMENT à ${characterName}`
-                                        });
-                                    }
-                                }
-
-                                // Buffs RAID conditionnels (affichés uniquement pour les personnages de l'élément ciblé)
-                                // Vérifier si Lee Bora est dans la composition à A2+ pour activer le buff RAID Dark
-                                const leeInRaid = [
-                                    ...(sungEnabled && sungData ? [sungData] : []),
-                                    ...team1.filter(m => m !== null),
-                                    ...team2.filter(m => m !== null),
-                                ].find(m => m && m.id === 'lee' && m.advancement >= 2);
-
-                                // IMPORTANT: Afficher seulement si le NIVEAU ACTUEL est A2+
-                                // Le buff DCC s'applique à TOUT LE RAID (pas que Dark !)
-                                if (leeInRaid && level >= 2) {
-                                    const leeA2 = getCharacterBuffs('lee', 2);
-                                    if (leeA2.conditionalBuff) {
-                                        // Compter les Dark hunters dans le RAID
-                                        const allMembers = [
-                                            ...(sungEnabled && sungData ? [sungData] : []),
-                                            ...team1.filter(m => m !== null),
-                                            ...team2.filter(m => m !== null),
-                                        ];
-                                        const darkCount = allMembers.filter(m => {
-                                            const charData = characters[m.id];
-                                            return charData && charData.element === 'Dark';
-                                        }).length;
-
-                                        const totalBuff = darkCount * leeA2.conditionalBuff.critDMGPerAlly;
-
-                                        specialBuffsDisplay.push({
-                                            label: `raid buff (Lee Bora)`,
-                                            value: `${totalBuff}% DCC (${darkCount} Dark × ${leeA2.conditionalBuff.critDMGPerAlly}%)`,
-                                            tooltip: `Buff appliqué à TOUT LE RAID. ${darkCount} Dark hunters × ${leeA2.conditionalBuff.critDMGPerAlly}% = +${totalBuff}% DCC`
-                                        });
-                                    }
-                                }
-
-                                return (
-                                    <tr
-                                        key={level}
-                                        className={`border-b border-gray-700/30 ${
-                                            isCurrentLevel ? 'bg-purple-900/30' : ''
-                                        }`}
-                                    >
-                                        <td className={`py-2 px-3 font-bold ${isCurrentLevel ? 'text-purple-300' : 'text-gray-400'}`}>
-                                            {level === 0 ? '1x (A0)' : `A${level}`}
-                                            {isCurrentLevel && ' ⭐'}
-                                        </td>
-                                        <td className="text-center py-2 px-3">
-                                            <StatValueWithTooltip
-                                                value={buffs.critRate}
-                                                tooltip={`Taux Critique donné à la TEAM entière au niveau ${level === 0 ? 'A0' : `A${level}`}`}
-                                                colorClass={buffs.critRate > 0 ? 'text-yellow-300' : 'text-gray-500'}
-                                            />
-                                        </td>
-                                        <td className="text-center py-2 px-3">
-                                            <StatValueWithTooltip
-                                                value={buffs.critDMG}
-                                                tooltip={`Dégâts Critiques donnés à la TEAM entière au niveau ${level === 0 ? 'A0' : `A${level}`}`}
-                                                colorClass={buffs.critDMG > 0 ? 'text-red-300' : 'text-gray-500'}
-                                            />
-                                        </td>
-                                        <td className="text-center py-2 px-3">
-                                            <StatValueWithTooltip
-                                                value={buffs.defPen}
-                                                tooltip={`Pénétration Défense donnée à la TEAM entière au niveau ${level === 0 ? 'A0' : `A${level}`}`}
-                                                colorClass={buffs.defPen > 0 ? 'text-blue-300' : 'text-gray-500'}
-                                            />
-                                        </td>
-                                        <td className="py-2 px-3">
-                                            {specialBuffsDisplay.length > 0 ? (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {specialBuffsDisplay.map((special, idx) => (
-                                                        <div
-                                                            key={`${level}-${special.label}-${idx}`}
-                                                            className="group relative"
-                                                        >
-                                                            <div className="bg-purple-900/50 px-2 py-1 rounded border border-purple-600/30 text-xs cursor-help whitespace-nowrap">
-                                                                <span className="font-semibold">{special.label}:</span> {special.value}
-                                                            </div>
-                                                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 pointer-events-none">
-                                                                <div className="bg-gray-900/95 text-white p-2 rounded border border-purple-500/50 text-xs shadow-lg">
-                                                                    {special.tooltip}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <span className="text-gray-500 text-xs">-</span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div className="mt-3 text-xs text-gray-400 italic flex items-start gap-2">
-                    <span>👁️</span>
-                    <span>
-                        <span className="text-purple-300 font-semibold">L'Œil de Sauron voit tout !</span>
-                        {' '}Survolez n'importe quelle valeur pour comprendre d'où vient chaque buff.
-                        Les buffs spéciaux (personnels et conditionnels) sont affichés dans la dernière colonne.
-                    </span>
-                </div>
-            </CollapsibleSection>
-
-            {/* Section: Optimisation & Sweet Spots */}
-            {CHARACTER_OPTIMIZATION[member.id] && (
-                <CollapsibleSection
-                    title="Optimisation & Sweet Spots"
-                    icon="🎯"
-                    defaultOpen={false}
-                    borderColor="border-green-700/50"
-                    bgColor="bg-gray-800/50"
-                >
-                    <CharacterOptimizationPanel characterId={member.id} />
-                </CollapsibleSection>
-            )}
+            {/* Section: Artefacts Optimaux (affichage complet pièce par pièce) */}
+            <ArtifactSetSection member={member} element={characters[member.id]?.element || 'Fire'} scaleStat={characters[member.id]?.scaleStat || 'Attack'} charClass={characters[member.id]?.class || 'Fighter'} enemyLevel={enemyLevel} />
         </motion.div>
+    );
+};
+
+// Section complète d'artefacts dans le CharacterDetailsPanel
+const ArtifactSetSection = ({ member, element, scaleStat, charClass, enemyLevel = 80 }) => {
+    const [selectedTier, setSelectedTier] = useState('mid');
+    const [showMyStats, setShowMyStats] = useState(false);
+    const [userStats, setUserStats] = useState({});
+    const storageKey = `tc_artifacts_${member.id}`;
+
+    useEffect(() => {
+        try { const s = JSON.parse(localStorage.getItem(storageKey)); if (s) setUserStats(s); } catch {}
+    }, [storageKey]);
+
+    const saveUserStat = (key, val) => {
+        const updated = { ...userStats, [key]: val };
+        setUserStats(updated);
+        try { localStorage.setItem(storageKey, JSON.stringify(updated)); } catch {}
+    };
+
+    const needsMP = MP_HUNGRY_CHARS.has(member.id);
+    const artifactSet = useMemo(() => computeOptimalArtifactSet({
+        characterId: member.id,
+        buffTotals: { critRate: member.finalStats?.critRate || 0, critDMG: member.finalStats?.critDMG || 0, defPen: member.finalStats?.defPen || 0 },
+        scaleStat, charClass, element, enemyLevel, needsMP,
+    }), [member.id, member.finalStats, scaleStat, charClass, element, enemyLevel, needsMP]);
+
+    if (!artifactSet) return null;
+    const { pieces, totals } = artifactSet;
+    const leftPieces = pieces.filter(p => p.side === 'left');
+    const rightPieces = pieces.filter(p => p.side === 'right');
+    const tierColors = { low: '#ef4444', mid: '#f59e0b', high: '#22c55e' };
+
+    const PieceRow = ({ piece, side }) => (
+        <div className="bg-gray-900/40 rounded-lg p-2.5 border border-gray-700/30 hover:border-gray-600/50 transition-colors">
+            {/* Header: slot name + mainstat */}
+            <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-semibold text-gray-200">{piece.name}</span>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    piece.mainStat.isElemDmg ? 'bg-purple-900/50 text-purple-300 border border-purple-500/30' : 'bg-emerald-900/40 text-emerald-300 border border-emerald-500/30'
+                }`}>
+                    {piece.mainStat.stat}: {piece.mainStat.isRaw ? piece.mainStat.value.toLocaleString() : `${piece.mainStat.value}%`}
+                </span>
+            </div>
+            {/* Substats: optimal | user */}
+            <div className="space-y-0.5">
+                {piece.substats.map((sub, idx) => {
+                    const optVal = sub[selectedTier];
+                    const uKey = `${piece.slot}_${idx}`;
+                    const uVal = userStats[uKey];
+                    const isPercent = sub.isPercent;
+                    const displayOpt = isPercent ? `${optVal.toFixed(2)}%` : optVal.toLocaleString();
+
+                    return (
+                        <div key={sub.id} className="flex items-center text-[10px] gap-1">
+                            <span className={`flex-1 ${idx === 0 ? 'text-emerald-400 font-medium' : 'text-gray-400'}`}>
+                                {sub.id}
+                            </span>
+                            {/* Enchant badge */}
+                            {sub.enchant > 0 && (
+                                <span className="text-[8px] text-amber-400/70 px-1 rounded bg-amber-900/20">
+                                    +{isPercent ? `${sub.enchant}%` : sub.enchant.toLocaleString()}
+                                </span>
+                            )}
+                            {/* Optimal value (sub + enchant) */}
+                            <span className="w-16 text-right font-mono" style={{ color: tierColors[selectedTier] }}>
+                                {isPercent ? `${(optVal + (sub.enchant || 0)).toFixed(2)}%` : (optVal + (sub.enchant || 0)).toLocaleString()}
+                            </span>
+                            {/* User value (if comparing) */}
+                            {showMyStats && (
+                                <input
+                                    type="text"
+                                    value={uVal ?? ''}
+                                    onChange={(e) => saveUserStat(uKey, e.target.value)}
+                                    placeholder="—"
+                                    className="w-16 text-right text-[10px] font-mono bg-gray-800/50 border border-gray-600/30 rounded px-1 py-0.5 text-cyan-300 focus:border-cyan-500 focus:outline-none"
+                                />
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+
+    return (
+        <CollapsibleSection
+            title="Artefacts Optimaux"
+            icon="📦"
+            defaultOpen={false}
+            borderColor="border-emerald-700/50"
+            bgColor="bg-gray-800/50"
+        >
+            {/* Toolbar: tier selector + my stats toggle */}
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <div className="flex items-center gap-1">
+                    {['low', 'mid', 'high'].map(tier => (
+                        <button
+                            key={tier}
+                            onClick={() => setSelectedTier(tier)}
+                            className={`text-xs px-3 py-1 rounded-lg transition-all font-semibold ${
+                                selectedTier === tier
+                                    ? 'text-white shadow-md'
+                                    : 'bg-gray-800 text-gray-500 hover:text-gray-300'
+                            }`}
+                            style={selectedTier === tier ? { backgroundColor: tierColors[tier] } : {}}
+                        >
+                            {tier === 'low' ? 'Low Proc' : tier === 'mid' ? 'Mid Proc' : 'High Proc'}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    onClick={() => setShowMyStats(prev => !prev)}
+                    className={`text-xs px-3 py-1 rounded-lg transition-all font-semibold ${
+                        showMyStats ? 'bg-cyan-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+                    }`}
+                >
+                    {showMyStats ? '✏️ Mes Stats ON' : '✏️ Mes Stats'}
+                </button>
+            </div>
+
+            {/* Column headers when comparing */}
+            {showMyStats && (
+                <div className="flex items-center text-[10px] text-gray-500 mb-1 px-2">
+                    <span className="flex-1">Substat</span>
+                    <span className="w-16 text-right" style={{ color: tierColors[selectedTier] }}>Optimal</span>
+                    <span className="w-16 text-right text-cyan-400">Mes Stats</span>
+                </div>
+            )}
+
+            {/* Artifact grid: Left column | Right column */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* LEFT SIDE */}
+                <div className="space-y-2">
+                    <div className="text-xs text-blue-400 font-semibold flex items-center gap-1">
+                        <span>⬅</span>
+                        <span>Left Side</span>
+                    </div>
+                    {leftPieces.map(p => <PieceRow key={p.slot} piece={p} side="left" />)}
+                </div>
+
+                {/* RIGHT SIDE */}
+                <div className="space-y-2">
+                    <div className="text-xs text-rose-400 font-semibold flex items-center gap-1">
+                        <span>Right Side</span>
+                        <span>➡</span>
+                    </div>
+                    {rightPieces.map(p => <PieceRow key={p.slot} piece={p} side="right" />)}
+                </div>
+            </div>
+
+            {/* === TOTALS SECTION === */}
+            {(() => {
+                const currentTotals = totals[selectedTier];
+                const charInfo = characters[member.id];
+                const baseStats = characterStats[member.id] || { attack: 0, defense: 0, hp: 0 };
+                const isSung = member.id === 'sung' || member.id === 'jinwoo';
+                const scStat = charInfo?.scaleStat || 'Attack';
+                const coopATK = !isSung && scStat === 'Attack' ? 2760 : 0;
+                const coopDEF = !isSung && scStat === 'Defense' ? 2760 : 0;
+                const coopHP = !isSung && scStat === 'HP' ? 5520 : 0;
+                // Weapon boost: ATK/DEF scalers = 3080, HP scalers = 6120, Sung = 6160 (dual-wield)
+                const weaponBoost = isSung ? 6160 : (scStat === 'HP' ? 6120 : 3080);
+
+                // Base flat stats (base + weapon on scaling stat ONLY — coop is additional, NOT multiplied by %)
+                const baseATK = isSung ? 3627 + 113 + weaponBoost : baseStats.attack + (scStat === 'Attack' ? weaponBoost : 0);
+                const baseDEF = isSung ? 2775 : baseStats.defense + (scStat === 'Defense' ? weaponBoost : 0);
+                const baseHP = isSung ? 5436 : baseStats.hp + (scStat === 'HP' ? weaponBoost : 0);
+
+                // Gems totals (from parent gemData via closure — use defaults if not available)
+                const gemsATKp = 60, gemsDEFp = 60, gemsHPp = 60, gemsDefPen = 6755;
+                // Cores: each hunter has 3 cores (Offensif, Défensif, Endurance)
+                // Each core gives ONE main stat: % OR flat (not both!)
+                // Breakeven: if base × 58.49% > flat_value → pick %, else → pick flat
+                // - HP: 12046 / 0.5849 = 20,594 → base HP never that high → flat always wins? But with all % bonuses, % scales better
+                //   In practice: HP% wins for most characters (base HP 13,000+)
+                // - ATK: 6023 / 0.5849 = 10,297 → base+weapon ~9,700 → flat usually wins
+                // - DEF: 6023 / 0.5849 = 10,297 → base+weapon ~9,700 → flat usually wins
+                const atkGainFromPercent = baseATK * 58.49 / 100;
+                const defGainFromPercent = baseDEF * 58.49 / 100;
+                const hpGainFromPercent = baseHP * 58.49 / 100;
+
+                const coreATKisPercent = atkGainFromPercent > 6023;
+                const coreDEFisPercent = defGainFromPercent > 6023;
+                const coreHPisPercent = hpGainFromPercent > 12046;
+
+                const coresATKp = coreATKisPercent ? 58.49 : 0;
+                const coresDEFp = coreDEFisPercent ? 58.49 : 0;
+                const coresHPp = coreHPisPercent ? 58.49 : 0;
+                const coresATKflat = coreATKisPercent ? 0 : 6023;
+                const coresDEFflat = coreDEFisPercent ? 0 : 6023;
+                const coresHPflat = coreHPisPercent ? 0 : 12046;
+                const coresDefPen = 7289 * 2; // Offensif + Endurance have DefPen (Défensif has AddMP)
+
+                // Artifact substats (from current tier)
+                const artSubs = currentTotals.substats;
+                const artEnchants = currentTotals.enchants || {};
+                const artATKflat = (artSubs['ATK flat'] || 0) + (artEnchants['ATK flat'] || 0);
+                const artDEFflat = (artSubs['DEF flat'] || 0) + (artEnchants['DEF flat'] || 0);
+                const artHPflat = (artSubs['HP flat'] || 0) + (artEnchants['HP flat'] || 0);
+                const artATKp = (artSubs['ATK%'] || 0) + (artEnchants['ATK%'] || 0);
+                const artDEFp = (artSubs['DEF%'] || 0) + (artEnchants['DEF%'] || 0);
+                const artHPp = (artSubs['HP%'] || 0) + (artEnchants['HP%'] || 0);
+
+                // Artifact mainstats (% and flat from mainstats)
+                const artMainATKp = currentTotals.mainStats['ATK%'] || 0;
+                const artMainDEFp = currentTotals.mainStats['DEF%'] || 0;
+                const artMainHPp = currentTotals.mainStats['HP%'] || 0;
+                const artMainATKflat = currentTotals.mainStats['ATK flat'] || 0;
+                const artMainDEFflat = currentTotals.mainStats['DEF flat'] || 0;
+                const artMainHPflat = currentTotals.mainStats['HP flat'] || 0;
+
+                // Total % bonuses
+                const totalATKp = gemsATKp + coresATKp + artATKp + artMainATKp;
+                const totalDEFp = gemsDEFp + coresDEFp + artDEFp + artMainDEFp;
+                const totalHPp = gemsHPp + coresHPp + artHPp + artMainHPp;
+
+                // Total additional flat (coop goes here — NOT in base, not multiplied by %)
+                const totalATKadd = coresATKflat + artATKflat + artMainATKflat + coopATK;
+                const totalDEFadd = coresDEFflat + artDEFflat + artMainDEFflat + coopDEF;
+                const totalHPadd = coresHPflat + artHPflat + artMainHPflat + coopHP;
+
+                // FINAL = base × (1 + total_% / 100) + additional_flat
+                // base = character base + weapon (multiplied by %)
+                // additional_flat = coop + cores flat + artifact flat (NOT multiplied by %)
+                const finalATK = Math.round(baseATK * (1 + totalATKp / 100) + totalATKadd);
+                const finalDEF = Math.round(baseDEF * (1 + totalDEFp / 100) + totalDEFadd);
+                const finalHP = Math.round(baseHP * (1 + totalHPp / 100) + totalHPadd);
+
+                const SectionRow = ({ label, val, color = 'text-gray-300' }) => (
+                    <div className="flex justify-between text-xs">
+                        <span className="text-gray-500">{label}</span>
+                        <span className={`font-semibold font-mono ${color}`}>
+                            {typeof val === 'string' ? val : val.toLocaleString()}
+                        </span>
+                    </div>
+                );
+
+                return (
+                    <div className="mt-3 space-y-2">
+                        {/* Totaux Substats */}
+                        <div className="bg-gray-900/60 rounded-lg p-3 border border-gray-700/30">
+                            <div className="text-xs text-gray-300 font-semibold mb-2">
+                                Totaux Substats ({selectedTier === 'low' ? 'Low' : selectedTier === 'mid' ? 'Mid' : 'High'} Proc)
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs">
+                                {Object.entries(currentTotals.substats).map(([stat, val]) => (
+                                    <div key={stat} className="flex justify-between">
+                                        <span className="text-gray-500">{stat}</span>
+                                        <span className="font-semibold" style={{ color: tierColors[selectedTier] }}>
+                                            {typeof val === 'number' && val % 1 !== 0 ? `${val.toFixed(2)}%` : val.toLocaleString()}
+                                            {artEnchants[stat] ? ` (+${typeof artEnchants[stat] === 'number' && artEnchants[stat] % 1 !== 0 ? artEnchants[stat].toFixed(1) + '%' : artEnchants[stat].toLocaleString()})` : ''}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Totaux Gemmes & Noyaux */}
+                        <div className="bg-gray-900/60 rounded-lg p-3 border border-cyan-700/30">
+                            <div className="text-xs text-cyan-300 font-semibold mb-2">💎 Totaux Gemmes & Noyaux</div>
+                            <div className="grid grid-cols-3 gap-x-4 gap-y-1">
+                                <SectionRow label={`ATK ${coreATKisPercent ? '(core %)' : '(core flat)'}`} val={coreATKisPercent ? `${(gemsATKp + coresATKp).toFixed(1)}%` : `${gemsATKp}% + ${coresATKflat.toLocaleString()}`} color="text-cyan-400" />
+                                <SectionRow label={`DEF ${coreDEFisPercent ? '(core %)' : '(core flat)'}`} val={coreDEFisPercent ? `${(gemsDEFp + coresDEFp).toFixed(1)}%` : `${gemsDEFp}% + ${coresDEFflat.toLocaleString()}`} color="text-cyan-400" />
+                                <SectionRow label={`HP ${coreHPisPercent ? '(core %)' : '(core flat)'}`} val={coreHPisPercent ? `${(gemsHPp + coresHPp).toFixed(1)}%` : `${gemsHPp}% + ${coresHPflat.toLocaleString()}`} color="text-cyan-400" />
+                                <SectionRow label="Def Pen" val={(gemsDefPen + coresDefPen).toLocaleString()} color="text-cyan-400" />
+                            </div>
+                        </div>
+
+                        {/* Stats de base du perso */}
+                        <div className="bg-gray-900/60 rounded-lg p-3 border border-orange-700/30">
+                            <div className="text-xs text-orange-300 font-semibold mb-2">⚔️ Stats de base (+ Weapon + Coop)</div>
+                            <div className="grid grid-cols-3 gap-x-4 gap-y-1">
+                                <SectionRow label="ATK" val={baseATK} color="text-orange-400" />
+                                <SectionRow label="DEF" val={baseDEF} color="text-orange-400" />
+                                <SectionRow label="HP" val={baseHP} color="text-orange-400" />
+                                {coopATK > 0 && <SectionRow label="Coop ATK" val={`+${coopATK}`} color="text-orange-300" />}
+                                {coopDEF > 0 && <SectionRow label="Coop DEF" val={`+${coopDEF}`} color="text-orange-300" />}
+                                {coopHP > 0 && <SectionRow label="Coop HP" val={`+${coopHP}`} color="text-orange-300" />}
+                                <SectionRow label="Weapon" val={`+${weaponBoost} (${scStat})`} color="text-orange-300" />
+                            </div>
+                        </div>
+
+                        {/* FINAL STATS */}
+                        <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 rounded-lg p-3 border border-purple-500/40">
+                            <div className="text-xs text-purple-300 font-semibold mb-2">🏆 Stats Finales (Base + Gems + Cores + Artefacts)</div>
+                            <div className="grid grid-cols-3 gap-x-4 gap-y-1">
+                                <SectionRow label="ATK" val={finalATK} color="text-purple-200" />
+                                <SectionRow label="DEF" val={finalDEF} color="text-purple-200" />
+                                <SectionRow label="HP" val={finalHP} color="text-purple-200" />
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-purple-500/20 grid grid-cols-3 gap-x-4 gap-y-1">
+                                <SectionRow label="Total ATK%" val={`${totalATKp.toFixed(1)}%`} color="text-gray-400" />
+                                <SectionRow label="Total DEF%" val={`${totalDEFp.toFixed(1)}%`} color="text-gray-400" />
+                                <SectionRow label="Total HP%" val={`${totalHPp.toFixed(1)}%`} color="text-gray-400" />
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+        </CollapsibleSection>
     );
 };
 
@@ -3469,6 +3761,12 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
         let totalWaterOverloadDamage = 0;         // Water Overload DMG %
         let totalWaterOverloadDamageTaken = 0;    // Water Overload DMG Taken (debuff on enemy)
 
+        // Wind advanced stats
+        let totalWindDamage = 0;               // Wind DMG%
+        let totalWindDamageTaken = 0;          // Wind DMG Taken (debuff on enemy)
+        let totalWindElementalAccumulation = 0; // Wind Elemental Accumulation %
+        let totalWindOverloadDamage = 0;        // Wind Overload DMG %
+
         // Damage Increase (raw stat → %)
         let totalDamageIncrease = 0;
 
@@ -3505,6 +3803,11 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
             waterElementalAccumulation: [],
             waterOverloadDamage: [],
             waterOverloadDamageTaken: [],
+            // Wind stats
+            windDamage: [],
+            windDamageTaken: [],
+            windElementalAccumulation: [],
+            windOverloadDamage: [],
             // Damage Increase (raw stat → %)
             damageIncrease: []
         };
@@ -4412,6 +4715,53 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                             ...timingInfo
                         });
                     }
+
+                    // 🌪️ Wind DMG (selfBuff)
+                    if (effects.windDamage) {
+                        totalWindDamage += effects.windDamage;
+                        breakdown.windDamage.push({
+                            source: `${buffName} (${characterName}) - Scope: PERSONAL`,
+                            value: effects.windDamage,
+                            ...timingInfo
+                        });
+                    }
+
+                    // 🌪️ Wind DMG per Wind Ally (selfBuff, ex: Jinah A4)
+                    if (effects.windDamagePerWindAlly) {
+                        const windCount = allMembers.filter(m => {
+                            const cd = characters[m.id];
+                            return cd && cd.element === 'Wind';
+                        }).length;
+                        const maxAllies = buff.maxStacks || 3;
+                        const count = Math.min(windCount, maxAllies);
+                        const totalValue = effects.windDamagePerWindAlly * count;
+                        totalWindDamage += totalValue;
+                        breakdown.windDamage.push({
+                            source: `${buffName} (${characterName}) - ${count} Wind × ${effects.windDamagePerWindAlly}%`,
+                            value: totalValue
+                        });
+                    }
+
+                    // 🌪️ Wind Elemental Accumulation (selfBuff)
+                    if (effects.windElementalAccumulation) {
+                        totalWindElementalAccumulation += effects.windElementalAccumulation;
+                        breakdown.windElementalAccumulation.push({
+                            source: `${buffName} (${characterName}) - Scope: PERSONAL`,
+                            value: effects.windElementalAccumulation,
+                            ...timingInfo
+                        });
+                    }
+
+                    // 🌪️ Wind Overload DMG (selfBuff)
+                    if (effects.windOverload || effects.windOverloadDamage) {
+                        const windOLVal = effects.windOverload || effects.windOverloadDamage;
+                        totalWindOverloadDamage += windOLVal;
+                        breakdown.windOverloadDamage.push({
+                            source: `${buffName} (${characterName}) - Scope: PERSONAL`,
+                            value: windOLVal,
+                            ...timingInfo
+                        });
+                    }
                 });
             }
 
@@ -4623,6 +4973,54 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                             ...timingInfo
                         });
                     }
+
+                    // 🌪️ Wind DMG from team buffs
+                    if (effects.windDamage) {
+                        totalWindDamage += effects.windDamage;
+                        breakdown.windDamage.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.windDamage,
+                            ...timingInfo
+                        });
+                    }
+
+                    // 🌪️ Wind DMG per Wind Ally (team buff, ex: Jinah A4)
+                    if (effects.windDamagePerWindAlly) {
+                        const windCount = allMembers.filter(m => {
+                            const cd = characters[m.id];
+                            return cd && cd.element === 'Wind';
+                        }).length;
+                        const maxAllies = buff.maxStacks || 3;
+                        const count = Math.min(windCount, maxAllies);
+                        const totalValue = effects.windDamagePerWindAlly * count;
+                        totalWindDamage += totalValue;
+                        breakdown.windDamage.push({
+                            source: `team buff (${characterName} - ${buffName}) - ${count} Wind × ${effects.windDamagePerWindAlly}%`,
+                            value: totalValue,
+                            ...timingInfo
+                        });
+                    }
+
+                    // 🌪️ Wind Overload DMG (team buff)
+                    if (effects.windOverload || effects.windOverloadDamage) {
+                        const windOLVal = effects.windOverload || effects.windOverloadDamage;
+                        totalWindOverloadDamage += windOLVal;
+                        breakdown.windOverloadDamage.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: windOLVal,
+                            ...timingInfo
+                        });
+                    }
+
+                    // 🌪️ Wind Elemental Accumulation (team buff)
+                    if (effects.windElementalAccumulation) {
+                        totalWindElementalAccumulation += effects.windElementalAccumulation;
+                        breakdown.windElementalAccumulation.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.windElementalAccumulation,
+                            ...timingInfo
+                        });
+                    }
                 });
             }
         });
@@ -4678,6 +5076,16 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         const buffReceiverTeam = member.teamId;
                         if (buffGiverTeam !== buffReceiverTeam) return;
                     }
+
+                    // 🌪️ Scope team-wind : Applique uniquement aux Wind de la MÊME TEAM que le buffer
+                    if (scope === 'team-wind') {
+                        if (memberElement !== 'Wind') return;
+                        const buffGiverTeam = raidMember.teamId;
+                        const buffReceiverTeam = member.teamId;
+                        if (buffGiverTeam !== buffReceiverTeam) return;
+                    }
+
+                    if (scope === 'raid-wind' && memberElement !== 'Wind') return;
 
                     // Dark Overload Damage
                     if (effects.darkOverloadDamage) {
@@ -4798,6 +5206,36 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                             value: waterVal
                         });
                     }
+
+                    // 🌪️ Wind DMG from raid/team buffs
+                    if (effects.windDamage) {
+                        totalWindDamage += effects.windDamage;
+                        const scopeLabel = scope === 'team-wind' ? 'TEAM Wind' : scope === 'raid-wind' ? 'RAID Wind' : scope === 'raid' ? 'RAID' : 'TEAM';
+                        breakdown.windDamage.push({
+                            source: `${buffName} (${characterName}) - Scope: ${scopeLabel}`,
+                            value: effects.windDamage
+                        });
+                    }
+
+                    // 🌪️ Wind Overload DMG from raid/team buffs
+                    if (effects.windOverload || effects.windOverloadDamage) {
+                        const windOLVal = effects.windOverload || effects.windOverloadDamage;
+                        totalWindOverloadDamage += windOLVal;
+                        const scopeLabel = scope === 'team-wind' ? 'TEAM Wind' : scope === 'raid' ? 'RAID' : 'TEAM';
+                        breakdown.windOverloadDamage.push({
+                            source: `${buffName} (${characterName}) - Scope: ${scopeLabel}`,
+                            value: windOLVal
+                        });
+                    }
+
+                    // 🌪️ Wind Elemental Accumulation from raid/team buffs
+                    if (effects.windElementalAccumulation) {
+                        totalWindElementalAccumulation += effects.windElementalAccumulation;
+                        breakdown.windElementalAccumulation.push({
+                            source: `${buffName} (${characterName})`,
+                            value: effects.windElementalAccumulation
+                        });
+                    }
                 });
             }
         });
@@ -4896,6 +5334,16 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                             value: maxValue
                         });
                     }
+
+                    // 🌪️ Wind Damage Taken (debuff sur l'ennemi, ex: Han Se-Mi weapon)
+                    if (effects.windDamageTaken) {
+                        const maxValue = effects.windDamageTaken * maxStacks;
+                        totalWindDamageTaken += maxValue;
+                        breakdown.windDamageTaken.push({
+                            source: `${debuffName} (${characterName}) - Scope: Debuff Boss • ${effects.windDamageTaken}% × ${maxStacks} stack${maxStacks > 1 ? 's' : ''}`,
+                            value: maxValue
+                        });
+                    }
                 });
             }
         });
@@ -4936,6 +5384,11 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                 waterElementalAccumulation: totalWaterElementalAccumulation,
                 waterOverloadDamage: totalWaterOverloadDamage,
                 waterOverloadDamageTaken: totalWaterOverloadDamageTaken,
+                // Wind stats
+                windDamage: totalWindDamage,
+                windDamageTaken: totalWindDamageTaken,
+                windElementalAccumulation: totalWindElementalAccumulation,
+                windOverloadDamage: totalWindOverloadDamage,
                 // Damage Increase (raw stat conversion)
                 damageIncrease: totalDamageIncrease
             },
@@ -4955,22 +5408,82 @@ const STAT_LABELS = {
     fireOverloadDamage: 'Fire OL DMG', fireOverloadDamageTaken: 'Fire OL DMG Taken',
     waterDamage: 'Water DMG', waterDamageTaken: 'Water DMG Taken',
     waterElementalAccumulation: 'Water Elem Acc', waterOverloadDamage: 'Water OL DMG',
+    windDamage: 'Wind DMG', windDamageTaken: 'Wind DMG Taken',
+    windElementalAccumulation: 'Wind Elem Acc', windOverloadDamage: 'Wind OL DMG',
     waterOverloadDamageTaken: 'Water OL DMG Taken',
     damageIncrease: 'DMG Increase',
 };
 
 // Composant: Affichage des stats individuelles par personnage
-const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula = true, sungBlessing = false, selectedEnemy = 'fachtna', onCharacterClick }) => {
+const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula = true, sungBlessing = false, selectedEnemy = 'fachtna', onCharacterClick, enableGemsCores = false, gemData = {}, getCoresForCharacter, coreSubstatOptions = [] }) => {
 
     // === COMPARISON STATES ===
     const [compareSlot, setCompareSlot] = useState(null);
     const [compareCharacterId, setCompareCharacterId] = useState(null);
     const [compareElementFilter, setCompareElementFilter] = useState('all');
 
+    // Helper: add gems+cores contribution to a member's stats
+    const applyGemsCores = (members) => {
+        if (!enableGemsCores || !members) return members;
+        return members.map(member => {
+            const charData = characters[member.id];
+            if (!charData) return member;
+
+            // Core substats (3 per hunter)
+            const coreSubs = getCoresForCharacter ? getCoresForCharacter(member.id) : ['critRate', 'critRate', 'critRate'];
+            const coreContrib = { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 };
+            coreSubs.forEach(subId => {
+                const opt = coreSubstatOptions.find(o => o.id === subId);
+                if (!opt) return;
+                if (subId === 'critRate') {
+                    // Convert raw to % using the TC formula
+                    coreContrib.critRate += opt.value; // Raw value, will be converted below
+                } else if (subId === 'critDMG') {
+                    coreContrib.critDMG += opt.value;
+                } else if (subId === 'defPen') {
+                    coreContrib.defPen += opt.value;
+                } else if (subId === 'damageIncrease') {
+                    coreContrib.damageIncrease += opt.value;
+                }
+                // MP stats don't affect the displayed TC/CD/DP stats
+            });
+
+            // Convert core raw values to %
+            const crFromCores = coreContrib.critRate > 0
+                ? parseFloat(statConversionsWithEnemy.tc.toPercent(coreContrib.critRate, enemyLevel)) - 5 : 0;
+            const cdFromCores = coreContrib.critDMG > 0
+                ? parseFloat(statConversionsWithEnemy.dcc.toPercent(coreContrib.critDMG, enemyLevel)) - 50 : 0;
+            const dpFromCores = coreContrib.defPen > 0
+                ? parseFloat(newDefPenFormula.toPercent(coreContrib.defPen, enemyLevel)) : 0;
+            const diFromCores = coreContrib.damageIncrease > 0
+                ? parseFloat(statConversionsWithEnemy.di.toPercent(coreContrib.damageIncrease, enemyLevel)) : 0;
+
+            // Gem DefPen raw → %
+            const dpFromGems = (gemData.DefPen || 0) > 0
+                ? parseFloat(newDefPenFormula.toPercent(gemData.DefPen, enemyLevel)) : 0;
+
+            const newFinalStats = { ...member.finalStats };
+            newFinalStats.critRate += crFromCores;
+            newFinalStats.critDMG += cdFromCores;
+            newFinalStats.defPen += dpFromCores + dpFromGems;
+            newFinalStats.damageIncrease = (newFinalStats.damageIncrease || 0) + diFromCores;
+
+            // Add gem/core source to breakdown
+            const newBreakdown = { ...member.breakdown };
+            if (crFromCores > 0) newBreakdown.critRate = [...(newBreakdown.critRate || []), { source: `🔮 Noyaux (${coreSubs.filter(s => s === 'critRate').length}× CR)`, value: crFromCores }];
+            if (cdFromCores > 0) newBreakdown.critDMG = [...(newBreakdown.critDMG || []), { source: `🔮 Noyaux (${coreSubs.filter(s => s === 'critDMG').length}× CD)`, value: cdFromCores }];
+            if (dpFromCores + dpFromGems > 0) newBreakdown.defPen = [...(newBreakdown.defPen || []), { source: `💎 Gemmes + 🔮 Noyaux DefPen`, value: dpFromCores + dpFromGems }];
+
+            return { ...member, finalStats: newFinalStats, breakdown: newBreakdown };
+        });
+    };
+
     // Calculer les stats avec useMemo
     const membersWithStats = useMemo(() => {
-        return computeTeamStats(sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing);
-    }, [sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing]);
+        const base = computeTeamStats(sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing);
+        return applyGemsCores(base);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing, enableGemsCores, gemData, getCoresForCharacter]);
 
     // Beru's Tips: detecter CR > 100% ou > 80%
     const crTipShownRef = useRef(new Set());
@@ -5141,6 +5654,7 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                         <IndividualCharacterStatCard
                             key={`${key}-${idx}`}
                             member={member}
+                            enemyLevel={enemyLevel}
                             onClick={() => onCharacterClick && onCharacterClick(member.teamId, member.slotId)}
                             onCompare={handleCompare}
                             isComparing={isComparing}
@@ -5169,7 +5683,7 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
 };
 
 // Composant: Carte de stats individuelles d'un personnage
-const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, whatIfMember, deltas, compareActive, whatIfBreakdown }) => {
+const IndividualCharacterStatCard = ({ member, enemyLevel = 80, onClick, onCompare, isComparing, whatIfMember, deltas, compareActive, whatIfBreakdown }) => {
     const hasOptimizationData = CHARACTER_OPTIMIZATION[member.id];
     const benchmark = hasOptimizationData ? getCurrentBenchmark(member.id, member.finalStats) : null;
     const overall = hasOptimizationData ? getOverallOptimization(member.id, member.finalStats) : null;
@@ -5714,12 +6228,69 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
                 </div>
             )}
 
-            {/* Carte d'optimisation (si données disponibles) */}
-            {hasOptimizationData && overall && (
-                <div className="mt-3 pt-3 border-t border-gray-700/50">
-                    <OptimizationCard characterId={member.id} stats={member.finalStats} compact={false} />
+            {/* SECTION 5 - Wind stats (Wind DMG, Wind Overload, Wind Elem Acc) */}
+            {(member.finalStats.windDamage > 0 || member.finalStats.windElementalAccumulation > 0 || member.finalStats.windOverloadDamage > 0 || member.finalStats.windDamageTaken > 0
+                || Math.abs(deltas?.windDamage || 0) > 0.05 || Math.abs(deltas?.windOverloadDamage || 0) > 0.05
+            ) && (
+                <div className="mt-3 pt-3 border-t border-emerald-500/30">
+                    <div className="text-xs text-emerald-400 font-semibold mb-2 flex items-center gap-1">
+                        <span>🌪️</span>
+                        <span>Wind Stats</span>
+                    </div>
+                    <div className="space-y-2">
+                        {(member.finalStats.windDamage > 0 || Math.abs(deltas?.windDamage || 0) > 0.05) && (
+                            <StatWithBreakdown
+                                label="Wind DMG"
+                                value={member.finalStats.windDamage}
+                                breakdown={member.breakdown.windDamage}
+                                color="text-emerald-400"
+                                icon="🌪️"
+                                delta={deltas?.windDamage}
+                                whatIfBreakdown={whatIfBreakdown?.windDamage}
+                            />
+                        )}
+
+                        {(member.finalStats.windDamageTaken > 0 || Math.abs(deltas?.windDamageTaken || 0) > 0.05) && (
+                            <StatWithBreakdown
+                                label="Wind DMG Taken"
+                                value={member.finalStats.windDamageTaken}
+                                breakdown={member.breakdown.windDamageTaken}
+                                color="text-green-400"
+                                icon="💢"
+                                delta={deltas?.windDamageTaken}
+                                whatIfBreakdown={whatIfBreakdown?.windDamageTaken}
+                            />
+                        )}
+
+                        {(member.finalStats.windElementalAccumulation > 0 || Math.abs(deltas?.windElementalAccumulation || 0) > 0.05) && (
+                            <StatWithBreakdown
+                                label="Wind Elem Acc"
+                                value={member.finalStats.windElementalAccumulation}
+                                breakdown={member.breakdown.windElementalAccumulation}
+                                color="text-emerald-300"
+                                icon="🔮"
+                                delta={deltas?.windElementalAccumulation}
+                                whatIfBreakdown={whatIfBreakdown?.windElementalAccumulation}
+                            />
+                        )}
+
+                        {(member.finalStats.windOverloadDamage > 0 || Math.abs(deltas?.windOverloadDamage || 0) > 0.05) && (
+                            <StatWithBreakdown
+                                label="Wind OL DMG"
+                                value={member.finalStats.windOverloadDamage}
+                                breakdown={member.breakdown.windOverloadDamage}
+                                color="text-emerald-500"
+                                icon="💥"
+                                delta={deltas?.windOverloadDamage}
+                                whatIfBreakdown={whatIfBreakdown?.windOverloadDamage}
+                            />
+                        )}
+                    </div>
                 </div>
             )}
+
+            {/* Recommandation d'artefacts optimaux (pour tous les persos) */}
+            <ArtifactRecommendationCard member={member} enemyLevel={80} />
 
             {/* Résumé d'impact What-If (pour les cartes non-comparées mais affectées) */}
             {deltas && compareActive && !isComparing && (() => {
@@ -5755,6 +6326,90 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
         </div>
     );
 };
+
+// Composant: Carte de recommandation d'artefacts optimaux
+// Set of MP-hungry characters
+const MP_HUNGRY_CHARS = new Set(['mirei', 'fern', 'seorin', 'alicia', 'meri', 'laine']);
+
+// Compact: sweet spots + résumé pour les stat cards
+const ArtifactRecommendationCard = ({ member, enemyLevel = 80 }) => {
+    const charData = characters[member.id];
+    if (!charData) return null;
+
+    const optimization = useMemo(() => {
+        return computeArtifactOptimization({
+            characterId: member.id,
+            buffTotals: {
+                critRate: member.finalStats?.critRate || 0,
+                critDMG: member.finalStats?.critDMG || 0,
+                defPen: member.finalStats?.defPen || 0,
+                damageIncrease: member.finalStats?.damageIncrease || 0,
+            },
+            scaleStat: charData.scaleStat || 'Attack',
+            charClass: charData.class || 'Fighter',
+            enemyLevel,
+        });
+    }, [member.id, member.finalStats, charData, enemyLevel]);
+
+    if (!optimization) return null;
+    const { sweetSpots, overall, profile } = optimization;
+
+    const statBarColor = (status) => {
+        if (status === 'optimal') return 'bg-green-500';
+        if (status === 'good') return 'bg-lime-500';
+        if (status === 'improving') return 'bg-amber-500';
+        return 'bg-red-500';
+    };
+
+    return (
+        <div className="mt-3 pt-3 border-t border-emerald-500/30">
+            <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                    <span>📦</span>
+                    <span>Optimisation</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: `${overall.color}20`, color: overall.color }}>
+                    {profile} — {overall.percentage}%
+                </span>
+            </div>
+
+            <div className="space-y-1.5">
+                {[
+                    { key: 'critRate', label: 'Crit Rate', icon: '🎯', color: 'text-yellow-400' },
+                    { key: 'critDMG', label: 'Crit DMG', icon: '⚔️', color: 'text-red-400' },
+                    { key: 'defPen', label: 'Def Pen', icon: '🛡️', color: 'text-blue-400' },
+                    { key: 'di', label: 'DMG Inc', icon: '⚡', color: 'text-amber-400' },
+                ].map(({ key, label, icon, color }) => {
+                    const spot = sweetSpots[key];
+                    if (!spot) return null;
+                    const pct = Math.min(100, (spot.estimated / spot.target) * 100);
+                    return (
+                        <div key={key} className="flex items-center gap-2 text-xs">
+                            <span className={`${color} w-16 flex items-center gap-1`}>
+                                <span>{icon}</span>
+                                <span>{label}</span>
+                            </span>
+                            <div className="flex-1 h-2 bg-gray-700/50 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${statBarColor(spot.status.status)}`}
+                                    style={{ width: `${pct}%` }}
+                                />
+                            </div>
+                            <span className="w-20 text-right font-semibold" style={{ color: spot.status.color }}>
+                                {spot.estimated.toFixed(0)}% / {spot.target}%
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="mt-2 text-[10px] text-gray-500 italic text-center">
+                Cliquez pour voir les artefacts détaillés
+            </div>
+        </div>
+    );
+};
+
 
 // Composant: Stat avec breakdown détaillé au hover
 const StatWithBreakdown = ({ label, value, breakdown, color, icon, hasBaseValue = false, characterId, statName, delta, whatIfBreakdown }) => {
