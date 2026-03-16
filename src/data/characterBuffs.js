@@ -3469,6 +3469,186 @@ export const CHARACTER_BUFFS = {
         }
     },
 
+    // ═══ LENNART NIERMANN - Wind Tank/DPS (DEF scaling) ═══
+    // Arme: rien de notable pour la team
+    // A0: [Hunter's Cage] +30% damage taken (self only) + [Analysis] +20% DEF (self only)
+    // Pas de buff team/raid — tout est personnel
+    niermann: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // ═══ SUGIMOTO REIJI - Wind Infusion (HP scaling) ═══
+    // Arme: +12% HP (self) + Wind Overload +10% per stack ×3 (team, 30s) — see advancedBuffs
+    // Pas de buff team TC/DCC/DefPen direct
+    sugimoto: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 2 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 8 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 10 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 12 } },
+        }
+    },
+
+    // ═══ AMAMIYA MIREI - Wind Assassin (ATK scaling) ═══
+    // Arme: rien de notable
+    // Pas de buff team TC/DCC/DefPen
+    mirei: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // ═══ SOYEON - Wind Fighter (ATK scaling) ═══
+    // Arme: +ATK% (self) + Basic Skill DMG +X% for team (30s)
+    // ATK scaling: 2/4/6/8/10/12%  |  Basic Skill team: 5/10/15/20/25/30%
+    soyeon: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 2 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 6 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 8 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 10 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 12 } },
+        }
+    },
+
+    // ═══ GOTO RYUJI - Wind Tank (HP scaling) ═══
+    // Arme: +HP% (self) + CritDMG on skill use (self, 15s)
+    goto: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 2 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 8 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 10 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 12 } },
+        }
+    },
+
+    // ═══ PARK BEOM-SHIK - Wind Fighter (DEF scaling) ═══
+    // Arme: +DEF (self) + Basic Skill DMG on Father's Determination (self)
+    // Zero team buffs — pure solo tank
+    'park-beom': {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // ═══ PARK HEEJIN - Wind Mage (ATK scaling) ═══
+    // Arme: +Ulti Skill DMG (self) + Ulti → +Ulti Skill DMG for highest TP ally (team)
+    // Mostly QoL/utility, minimal team DMG
+    'park-heejin': {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // ═══ HWANG DONGSOO - Wind Fighter (DEF scaling) ═══
+    // Arme: +Wind DMG (self) + Basic Skill DMG stacks (self)
+    // Zero team buffs — pure solo tank/DPS
+    hwang: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // ═══ KIM SANGSHIK - Wind Fighter (HP scaling) ═══
+    // Arme: Core Attack DMG + Basic Skill DMG (all self)
+    // Zero team buffs — pure solo kit
+    'kim-sangshik': {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // ═══ WOO JINCHUL - Wind Fighter (ATK scaling) ═══
+    // Arme: +DefPen (self) + Mediation of Power debuff enemy + Break → Wind DMG team
+    // No team TC/DCC/DefPen — mostly self buffs
+    woo: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // ═══ HAN SE-MI - Wind Support (HP scaling) ═══
+    // Arme: +HP% (self) + +5% damage taken debuff on enemy (10s)
+    // HP scaling: 2/4/6/8/10/10%
+    han: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 2 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 8 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 10 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 10 } },
+        }
+    },
+
+    // ═══ JINAH - Wind Support (DEF scaling) ═══
+    // Arme: +DEF% (self) + Basic Skill DMG +X% for team (on Reverse Tempest Cleave / Umbrella)
+    // DEF scaling: 2/4/6/8/10/12%  |  Basic Skill team: 0.3/0.7/1.0/1.3/1.7/2.0%
+    jinah: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 2 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 6 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 8 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 10 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 12 } },
+        }
+    },
+
     // Template pour ajouter d'autres persos
     // characterId: {
     //     baseStats: { critRate: 0, critDMG: 0, defPen: 0 },

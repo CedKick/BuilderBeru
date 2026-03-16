@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, TrendingUp, Target, Shield, Swords, X, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { characters } from '../../data/characters';
-import { ARTIFACT_SETS, getSetBonuses } from '../../data/setData';
+import { ARTIFACT_SETS, getSetBonuses, getSetClassBonus } from '../../data/setData';
 import { CHARACTER_BUFFS, getCharacterBuffs, getCharacterBaseStats } from '../../data/characterBuffs';
 import { CHARACTER_ADVANCED_BUFFS, getCumulativeBuffs } from '../../data/characterAdvancedBuffs';
 import { statConversions, statConversionsWithEnemy, newDefPenFormula } from '../../utils/statConversions';
@@ -16,50 +16,42 @@ import { CHARACTER_OPTIMIZATION, getOptimizationStatus, getOverallOptimization, 
 // Focus: Crit Rate, Crit DMG, Def Pen avec système de duplication (A0-A5) + SETS
 
 // 🎯 HELPER: Calculer les bonus combinés des sets (leftSet + rightSet)
-const getCombinedSetBonuses = (member) => {
-    if (!member) return { critRate: 0, critDMG: 0, defPen: 0 };
+const EMPTY_SET_BONUS = {
+    critRate: 0, critDMG: 0, defPen: 0,
+    attack: 0, defense: 0, hp: 0,
+    basicSkillDamage: 0, ultimateSkillDamage: 0,
+    damageDealt: 0, overloadDamage: 0,
+    elementalWeaknessDamage: 0, breakSkillDamage: 0, breakEffectiveness: 0,
+};
 
-    const totalBonus = { critRate: 0, critDMG: 0, defPen: 0 };
+const mergeSetBonus = (total, bonus) => {
+    if (!bonus) return;
+    for (const key of Object.keys(EMPTY_SET_BONUS)) {
+        total[key] += bonus[key] || 0;
+    }
+};
+
+const getCombinedSetBonuses = (member) => {
+    if (!member) return { ...EMPTY_SET_BONUS };
+
+    const totalBonus = { ...EMPTY_SET_BONUS };
 
     // Si l'ancien système est utilisé (set + setPieces)
     if (member.set && member.setPieces !== undefined) {
-        const bonus = getSetBonuses(member.set, member.setPieces);
-        if (bonus) {
-            totalBonus.critRate += bonus.critRate;
-            totalBonus.critDMG += bonus.critDMG;
-            totalBonus.defPen += bonus.defPen;
-        }
+        mergeSetBonus(totalBonus, getSetBonuses(member.set, member.setPieces));
     }
 
     // Si le nouveau système est utilisé (leftSet + rightSet)
     // IMPORTANT: Si left === right, combiner les pièces pour un seul 8pc au lieu de 2x 4pc !
     if (member.leftSet && member.rightSet && member.leftSet === member.rightSet) {
-        // Même set des deux côtés = 8pc UNIQUE (pas 4pc + 4pc !)
         const totalPieces = (member.leftPieces || 0) + (member.rightPieces || 0);
-        const bonus = getSetBonuses(member.leftSet, totalPieces);
-        if (bonus) {
-            totalBonus.critRate += bonus.critRate;
-            totalBonus.critDMG += bonus.critDMG;
-            totalBonus.defPen += bonus.defPen;
-        }
+        mergeSetBonus(totalBonus, getSetBonuses(member.leftSet, totalPieces));
     } else {
-        // Sets différents = calculer séparément
         if (member.leftSet && member.leftPieces) {
-            const leftBonus = getSetBonuses(member.leftSet, member.leftPieces);
-            if (leftBonus) {
-                totalBonus.critRate += leftBonus.critRate;
-                totalBonus.critDMG += leftBonus.critDMG;
-                totalBonus.defPen += leftBonus.defPen;
-            }
+            mergeSetBonus(totalBonus, getSetBonuses(member.leftSet, member.leftPieces));
         }
-
         if (member.rightSet && member.rightPieces) {
-            const rightBonus = getSetBonuses(member.rightSet, member.rightPieces);
-            if (rightBonus) {
-                totalBonus.critRate += rightBonus.critRate;
-                totalBonus.critDMG += rightBonus.critDMG;
-                totalBonus.defPen += rightBonus.defPen;
-            }
+            mergeSetBonus(totalBonus, getSetBonuses(member.rightSet, member.rightPieces));
         }
     }
 
@@ -116,6 +108,12 @@ const ENEMIES = {
         name: 'Ant Queen',
         level: 80,
         icon: '🐜'
+    },
+    manticore: {
+        id: 'manticore',
+        name: 'Manticore',
+        level: 80,
+        icon: '🦁'
     }
 };
 
@@ -163,6 +161,11 @@ const BERU_TIPS = {
         "Equipe Eau activee. Cha Hae-In Water en tete !",
         "Water Team ! L'Ombre aime quand ca coule de source.",
     ],
+    presetWind: [
+        "Preset Wind ! Le vent se leve !",
+        "Wind Team activee ! Jinah va tout bufffer.",
+        "Sugimoto va faire monter l'Overload !",
+    ],
 };
 
 const dispatchBeruTip = (pool, mood = 'excited') => {
@@ -187,7 +190,7 @@ const Theorycraft = () => {
     const [selectedSlot, setSelectedSlot] = useState(null); // { team: 0|1|2, slot: 0-2 }
     const [elementFilter, setElementFilter] = useState(() => {
         if (urlElement) {
-            const validElements = ['Water', 'Dark', 'Fire', 'Light', 'all'];
+            const validElements = ['Water', 'Dark', 'Fire', 'Light', 'Wind', 'all'];
             if (validElements.includes(urlElement)) return urlElement;
         }
         return 'all';
@@ -197,7 +200,7 @@ const Theorycraft = () => {
     // Enemy selection (pour les calculs de stats réels)
     const [selectedEnemy, setSelectedEnemy] = useState(() => {
         if (urlBoss) {
-            const bossMap = { 'AntQueen': 'antQueen', 'Fachtna': 'fachtna', 'Statue': 'statue' };
+            const bossMap = { 'AntQueen': 'antQueen', 'Fachtna': 'fachtna', 'Statue': 'statue', 'Manticore': 'manticore' };
             const enemyId = bossMap[urlBoss];
             if (enemyId && ENEMIES[enemyId]) return enemyId;
         }
@@ -205,7 +208,7 @@ const Theorycraft = () => {
     });
     const [enemyLevel, setEnemyLevel] = useState(() => {
         if (urlBoss) {
-            const bossMap = { 'AntQueen': 'antQueen', 'Fachtna': 'fachtna', 'Statue': 'statue' };
+            const bossMap = { 'AntQueen': 'antQueen', 'Fachtna': 'fachtna', 'Statue': 'statue', 'Manticore': 'manticore' };
             const enemyId = bossMap[urlBoss];
             if (enemyId && ENEMIES[enemyId]) return ENEMIES[enemyId].level;
         }
@@ -236,7 +239,7 @@ const Theorycraft = () => {
 
     // 🔗 URL Sync - Mettre à jour l'URL quand boss/element changent
     useEffect(() => {
-        const bossSlug = { 'antQueen': 'AntQueen', 'fachtna': 'Fachtna', 'statue': 'Statue' };
+        const bossSlug = { 'antQueen': 'AntQueen', 'fachtna': 'Fachtna', 'statue': 'Statue', 'manticore': 'Manticore' };
         const slug = bossSlug[selectedEnemy] || 'Fachtna';
         const elemSlug = elementFilter !== 'all' ? `/${elementFilter}` : '';
         navigate(`/theorycraft/${slug}${elemSlug}`, { replace: true });
@@ -462,7 +465,18 @@ const Theorycraft = () => {
 
         if (!member) return;
 
-        const updatedMember = { ...member, set: setId };
+        // Update both old (set/setPieces) and new (leftSet/rightSet) systems
+        // Default to 8pc (4+4) when selecting a set, 0 for 'none'
+        const pieces = setId === 'none' ? 0 : 4;
+        const updatedMember = {
+            ...member,
+            set: setId,
+            setPieces: setId === 'none' ? 0 : 8,
+            leftSet: setId,
+            leftPieces: pieces,
+            rightSet: setId,
+            rightPieces: pieces,
+        };
 
         if (team === 0) {
             setSungData(updatedMember);
@@ -985,6 +999,120 @@ const Theorycraft = () => {
         setTimeout(() => dispatchBeruTip('presetWater', 'excited'), 300);
     };
 
+    // 🌪️ PRESET: Wind Team (Manticore)
+    // Sung (8pc Noble Flesh), Team 1: Sugimoto/Jinah/Lennart | Team 2: Soyeon/Han Se-Mi/Mirei
+    const applyWindPreset = () => {
+        // Switch to Manticore boss + Wind element filter
+        setSelectedEnemy('manticore');
+        setEnemyLevel(ENEMIES.manticore.level);
+        setElementFilter('Wind');
+
+        // Activer Sung avec 8pc Glorious Arrogance (Glory)
+        const sungChar = availableCharacters.find(c => c.id === 'jinwoo');
+        if (sungChar) {
+            setSungEnabled(true);
+            setSungData({
+                ...sungChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'glorious-arrogance',
+                leftPieces: 4,
+                rightSet: 'glorious-arrogance',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            });
+            setSungBlessing(true);
+        }
+
+        // Team 1: Sugimoto (8pc Kamish), Jinah (8pc Noble Flesh), Lennart (8pc Architect)
+        const sugimotoChar = availableCharacters.find(c => c.id === 'sugimoto');
+        const jinahChar = availableCharacters.find(c => c.id === 'jinah');
+        const lennartChar = availableCharacters.find(c => c.id === 'niermann');
+
+        const newTeam1Wind = [
+            sugimotoChar ? {
+                ...sugimotoChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'kamish-obsession',
+                leftPieces: 4,
+                rightSet: 'kamish-obsession',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null,
+            jinahChar ? {
+                ...jinahChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'noble-flesh',
+                leftPieces: 4,
+                rightSet: 'noble-flesh',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null,
+            lennartChar ? {
+                ...lennartChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'architect-blue-poison',
+                leftPieces: 4,
+                rightSet: 'architect-blue-poison',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null
+        ];
+        setTeam1(newTeam1Wind);
+
+        // Team 2: Soyeon (8pc Glorious Arrogance/Glory), Han Se-Mi (8pc Noble Flesh), Mirei (8pc Architect)
+        const soyeonChar = availableCharacters.find(c => c.id === 'soyeon');
+        const hanChar = availableCharacters.find(c => c.id === 'han');
+        const mireiChar = availableCharacters.find(c => c.id === 'mirei');
+
+        const newTeam2Wind = [
+            soyeonChar ? {
+                ...soyeonChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'glorious-arrogance',
+                leftPieces: 4,
+                rightSet: 'glorious-arrogance',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null,
+            hanChar ? {
+                ...hanChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'noble-flesh',
+                leftPieces: 4,
+                rightSet: 'noble-flesh',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null,
+            mireiChar ? {
+                ...mireiChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'architect-blue-poison',
+                leftPieces: 4,
+                rightSet: 'architect-blue-poison',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null
+        ];
+        setTeam2(newTeam2Wind);
+
+        setSelectedSlot(null);
+        setTimeout(() => dispatchBeruTip('presetWind', 'excited'), 300);
+    };
+
     // 🧮 CALCULER LES STATS FINALES AVEC BREAKDOWN DÉTAILLÉ
     const calculateFinalStats = useMemo(() => {
         // Initialiser les totaux à 0 (pas de stats de base séparées)
@@ -1307,18 +1435,19 @@ const Theorycraft = () => {
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-8 relative"
+                    className="flex items-center justify-between mb-6"
                 >
-                    <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-[#6c63ff] to-[#a855f7] bg-clip-text text-transparent">
-                        ⚡ Theorycraft
-                    </h1>
-                    <p className="text-purple-300">
-                        Calculateur de synergies de team - Crit Rate, Crit DMG, Def Pen
-                    </p>
-                    {/* Settings Button */}
+                    <div>
+                        <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-[#6c63ff] to-[#a855f7] bg-clip-text text-transparent">
+                            Theorycraft
+                        </h1>
+                        <p className="text-sm text-purple-300/70 mt-0.5">
+                            Synergies de team & calculs de stats
+                        </p>
+                    </div>
                     <button
                         onClick={() => setShowSettings(true)}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 p-3 bg-gray-800/80 hover:bg-gray-700 rounded-xl border border-gray-600 hover:border-purple-500 transition-all"
+                        className="p-2.5 bg-gray-800/80 hover:bg-gray-700 rounded-xl border border-gray-600/50 hover:border-purple-500 transition-all text-gray-400 hover:text-white"
                         title="Paramètres des formules"
                     >
                         ⚙️
@@ -1332,24 +1461,30 @@ const Theorycraft = () => {
                     transition={{ delay: 0.05 }}
                     className="flex justify-center mb-6"
                 >
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                         <button
                             onClick={applyDarkPreset}
-                            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl font-bold text-white shadow-lg shadow-purple-500/50 transition-all hover:scale-105 flex items-center gap-2"
+                            className="px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl font-bold text-sm sm:text-base text-white shadow-lg shadow-purple-500/30 transition-all hover:scale-105 hover:shadow-purple-500/50 flex items-center gap-1.5"
                         >
-                            🌑 Preset Dark Team
+                            🌑 Dark
                         </button>
                         <button
                             onClick={applyFirePreset}
-                            className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 rounded-xl font-bold text-white shadow-lg shadow-orange-500/50 transition-all hover:scale-105 flex items-center gap-2"
+                            className="px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 rounded-xl font-bold text-sm sm:text-base text-white shadow-lg shadow-orange-500/30 transition-all hover:scale-105 hover:shadow-orange-500/50 flex items-center gap-1.5"
                         >
-                            🔥 Preset Fire Team
+                            🔥 Fire
                         </button>
                         <button
                             onClick={applyWaterPreset}
-                            className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 rounded-xl font-bold text-white shadow-lg shadow-cyan-500/50 transition-all hover:scale-105 flex items-center gap-2"
+                            className="px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 rounded-xl font-bold text-sm sm:text-base text-white shadow-lg shadow-cyan-500/30 transition-all hover:scale-105 hover:shadow-cyan-500/50 flex items-center gap-1.5"
                         >
-                            💧 Preset Water Team
+                            💧 Water
+                        </button>
+                        <button
+                            onClick={applyWindPreset}
+                            className="px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl font-bold text-sm sm:text-base text-white shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 hover:shadow-emerald-500/50 flex items-center gap-1.5"
+                        >
+                            🌪️ Wind
                         </button>
                     </div>
                 </motion.div>
@@ -1359,53 +1494,47 @@ const Theorycraft = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.075 }}
-                    className="bg-gradient-to-r from-red-800/30 to-rose-800/30 backdrop-blur-sm rounded-xl p-6 mb-6 border border-red-500/50"
+                    className="bg-gradient-to-r from-red-800/20 to-rose-800/20 backdrop-blur-sm rounded-xl p-4 mb-6 border border-red-500/30"
                 >
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold flex items-center gap-2">
-                            🎯 Ennemi Ciblé
+                    <div className="flex flex-wrap items-center gap-3">
+                        <h2 className="text-base font-bold flex items-center gap-1.5 text-red-300 shrink-0">
+                            🎯 Boss
                         </h2>
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-400">Sélectionner:</span>
-                            <div className="flex gap-2">
-                                {Object.values(ENEMIES).map(enemy => (
-                                    <button
-                                        key={enemy.id}
-                                        onClick={() => {
-                                            setSelectedEnemy(enemy.id);
-                                            setEnemyLevel(enemy.level); // Réinitialiser au level par défaut
-                                        }}
-                                        className={`px-4 py-2 rounded-lg font-semibold transition-all border-2 ${
-                                            selectedEnemy === enemy.id
-                                                ? 'bg-red-700 border-red-500 text-white shadow-lg shadow-red-500/50'
-                                                : 'bg-gray-900/50 border-red-700/50 text-gray-400 hover:bg-red-900/30 hover:text-white'
-                                        }`}
-                                    >
-                                        <span className="mr-2">{enemy.icon}</span>
-                                        {enemy.name}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="flex items-center gap-2 ml-2 border-l border-red-500/30 pl-4">
-                                <span className="text-sm text-gray-400">Niveau:</span>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="100"
-                                    value={enemyLevel}
-                                    onChange={(e) => {
-                                        const value = parseInt(e.target.value);
-                                        if (value >= 1 && value <= 100) {
-                                            setEnemyLevel(value);
-                                        }
+                        <div className="flex flex-wrap gap-1.5">
+                            {Object.values(ENEMIES).map(enemy => (
+                                <button
+                                    key={enemy.id}
+                                    onClick={() => {
+                                        setSelectedEnemy(enemy.id);
+                                        setEnemyLevel(enemy.level);
                                     }}
-                                    className="w-16 px-2 py-1 bg-gray-900/70 border border-red-500/50 rounded text-white text-center font-bold focus:border-red-500 focus:outline-none"
-                                />
-                            </div>
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all border ${
+                                        selectedEnemy === enemy.id
+                                            ? 'bg-red-700/80 border-red-500 text-white shadow-md shadow-red-500/30'
+                                            : 'bg-gray-900/40 border-red-700/30 text-gray-400 hover:bg-red-900/30 hover:text-white hover:border-red-600/50'
+                                    }`}
+                                >
+                                    <span className="mr-1">{enemy.icon}</span>
+                                    {enemy.name}
+                                </button>
+                            ))}
                         </div>
-                    </div>
-                    <div className="mt-3 text-xs text-gray-400 italic">
-                        💡 Le niveau de l'ennemi affecte les % réels de Taux Crit, Dégâts Crit et Pénétration Déf
+                        <div className="flex items-center gap-1.5 border-l border-red-500/20 pl-3 ml-auto">
+                            <span className="text-xs text-gray-500">Lv.</span>
+                            <input
+                                type="number"
+                                min="1"
+                                max="100"
+                                value={enemyLevel}
+                                onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (value >= 1 && value <= 100) {
+                                        setEnemyLevel(value);
+                                    }
+                                }}
+                                className="w-14 px-1.5 py-1 bg-gray-900/70 border border-red-500/30 rounded text-white text-center text-sm font-bold focus:border-red-500 focus:outline-none"
+                            />
+                        </div>
                     </div>
                 </motion.div>
 
@@ -1414,11 +1543,11 @@ const Theorycraft = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="bg-gradient-to-r from-purple-800/30 to-blue-800/30 backdrop-blur-sm rounded-xl p-6 mb-6 border border-purple-500/50"
+                    className="bg-gradient-to-r from-purple-800/20 to-blue-800/20 backdrop-blur-sm rounded-xl p-4 mb-6 border border-purple-500/30"
                 >
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold flex items-center gap-2">
-                            👑 Sung Jin-Woo (Position 1)
+                    <div className="flex items-center justify-between mb-3">
+                        <h2 className="text-base font-bold flex items-center gap-1.5 text-purple-300">
+                            👑 Sung Jin-Woo
                         </h2>
                         <label className="flex items-center gap-2 cursor-pointer">
                             <span className="text-sm text-gray-400">Activer</span>
@@ -1538,14 +1667,15 @@ const Theorycraft = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="bg-gradient-to-r from-indigo-800/30 to-purple-800/30 backdrop-blur-sm rounded-xl p-6 mb-6 border border-indigo-500/50"
+                    className="bg-gradient-to-r from-indigo-800/20 to-purple-800/20 backdrop-blur-sm rounded-xl p-5 mb-6 border border-indigo-500/40"
                 >
-                    <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                        👥 Stats par Personnage
-                    </h2>
-                    <p className="text-sm text-gray-400 mb-4">
-                        💡 Chaque personnage a des stats différentes selon ses buffs personnels et son élément. Survolez les valeurs pour voir le détail.
-                    </p>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold flex items-center gap-2 text-indigo-200">
+                            <Target className="w-5 h-5" />
+                            Stats individuelles
+                        </h2>
+                        <span className="text-xs text-gray-500">Cliquez pour configurer</span>
+                    </div>
                     <IndividualStatsDisplay
                         sungEnabled={sungEnabled}
                         sungData={sungData}
@@ -1717,113 +1847,76 @@ const Theorycraft = () => {
 };
 
 // Composant: Slot de personnage
+const ELEMENT_COLORS = {
+    Fire: { border: 'border-orange-500', hoverBorder: 'hover:border-orange-500', shadow: 'shadow-orange-500/40', hoverShadow: 'hover:shadow-orange-500/40', bg: 'bg-orange-500', text: 'text-orange-400' },
+    Water: { border: 'border-blue-500', hoverBorder: 'hover:border-blue-500', shadow: 'shadow-blue-500/40', hoverShadow: 'hover:shadow-blue-500/40', bg: 'bg-blue-500', text: 'text-blue-400' },
+    Wind: { border: 'border-emerald-500', hoverBorder: 'hover:border-emerald-500', shadow: 'shadow-emerald-500/40', hoverShadow: 'hover:shadow-emerald-500/40', bg: 'bg-emerald-500', text: 'text-emerald-400' },
+    Dark: { border: 'border-purple-500', hoverBorder: 'hover:border-purple-500', shadow: 'shadow-purple-500/40', hoverShadow: 'hover:shadow-purple-500/40', bg: 'bg-purple-500', text: 'text-purple-400' },
+    Light: { border: 'border-yellow-400', hoverBorder: 'hover:border-yellow-400', shadow: 'shadow-yellow-400/40', hoverShadow: 'hover:shadow-yellow-400/40', bg: 'bg-yellow-400', text: 'text-yellow-400' },
+};
+
 const CharacterSlot = ({ character, onRemove, onAdvancementChange, onSetPiecesChange, onClick, isSelected }) => {
     const advancementLabels = ['1x', 'A1', 'A2', 'A3', 'A4', 'A5'];
-    const [showSetMenu, setShowSetMenu] = useState(false);
+    const elemColor = ELEMENT_COLORS[character.element] || ELEMENT_COLORS.Dark;
 
     return (
-        <div className="relative flex flex-col items-center gap-2 group">
-            {/* Remove button (en haut à droite de l'image) */}
+        <div className="relative flex flex-col items-center gap-1.5 group">
+            {/* Remove button */}
             <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onRemove();
-                }}
-                className="absolute -top-2 -right-2 bg-black/60 backdrop-blur-sm text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600 transition-all shadow-md z-10 opacity-0 group-hover:opacity-100 border border-gray-500/50 hover:border-red-500"
+                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                className="absolute -top-1.5 -right-1.5 bg-black/70 backdrop-blur-sm text-white w-5 h-5 rounded-full flex items-center justify-center hover:bg-red-600 transition-all shadow-md z-10 opacity-0 group-hover:opacity-100 border border-gray-600/50 hover:border-red-500"
             >
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3" />
             </button>
 
-            {/* Indicateur d'advancement (en haut à gauche) */}
-            <div className="absolute -top-2 -left-2 bg-purple-900/90 border border-purple-500/50 text-purple-200 px-2 py-0.5 rounded text-xs font-bold shadow-md z-10">
+            {/* Advancement badge (top-left) */}
+            <div className={`absolute -top-1.5 -left-1.5 ${character.advancement === 5 ? 'bg-yellow-600/90 border-yellow-400/60 text-yellow-100' : 'bg-gray-800/90 border-purple-500/50 text-purple-200'} border px-1.5 py-0.5 rounded text-[10px] font-bold shadow-md z-10`}>
                 {advancementLabels[character.advancement]}
             </div>
 
-            {/* Image du personnage (cliquable pour voir détails) */}
+            {/* Character image */}
             <div
                 onClick={onClick}
-                className={`w-24 h-24 bg-gray-800 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
-                    isSelected ? 'border-yellow-400 shadow-lg shadow-yellow-400/50' : 'border-purple-600/50 hover:border-purple-500'
+                className={`w-20 h-20 sm:w-24 sm:h-24 bg-gray-800 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
+                    isSelected
+                        ? 'border-yellow-400 shadow-lg shadow-yellow-400/50 scale-105'
+                        : `border-gray-600/60 ${elemColor.hoverBorder} ${elemColor.hoverShadow}`
                 }`}
             >
                 {character.image ? (
                     <img loading="lazy" src={character.image} alt={character.name} className="w-full h-full object-cover" />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-purple-400 text-4xl">
-                        👤
-                    </div>
+                    <div className="w-full h-full flex items-center justify-center text-gray-500 text-3xl">👤</div>
                 )}
             </div>
 
-            {/* Contrôles SOUS l'image (ne déclenchent pas onClick) */}
+            {/* Controls below image */}
             <div className="flex flex-col gap-1 w-full items-center">
-                {/* Boutons +/- d'advancement */}
-                <div className="flex items-center gap-1">
+                {/* Name first (more important than controls) */}
+                <div className={`text-center text-[11px] font-medium truncate w-full px-0.5 ${elemColor.text}`}>
+                    {character.name}
+                </div>
+
+                {/* Advancement +/- */}
+                <div className="flex items-center gap-0.5">
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onAdvancementChange(-1);
-                        }}
-                        className="bg-purple-800/90 hover:bg-purple-700 text-white w-6 h-6 rounded flex items-center justify-center font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-md"
+                        onClick={(e) => { e.stopPropagation(); onAdvancementChange(-1); }}
+                        className="bg-gray-700/80 hover:bg-purple-700 text-white w-5 h-5 rounded text-xs flex items-center justify-center font-bold transition-colors disabled:opacity-20"
                         disabled={character.advancement <= 0}
-                    >
-                        -
-                    </button>
-                    <span className="text-purple-300 text-xs font-semibold min-w-[30px] text-center">
+                    >-</button>
+                    <span className="text-purple-300 text-[10px] font-semibold min-w-[24px] text-center">
                         {advancementLabels[character.advancement]}
                     </span>
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onAdvancementChange(1);
-                        }}
-                        className="bg-purple-800/90 hover:bg-purple-700 text-white w-6 h-6 rounded flex items-center justify-center font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-md"
+                        onClick={(e) => { e.stopPropagation(); onAdvancementChange(1); }}
+                        className="bg-gray-700/80 hover:bg-purple-700 text-white w-5 h-5 rounded text-xs flex items-center justify-center font-bold transition-colors disabled:opacity-20"
                         disabled={character.advancement >= 5}
-                    >
-                        +
-                    </button>
+                    >+</button>
                 </div>
 
-                {/* Set selector */}
-                <div className="relative">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowSetMenu(!showSetMenu);
-                        }}
-                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white px-2 py-0.5 rounded text-xs font-semibold shadow-md transition-all flex items-center gap-1"
-                    >
-                        {getSetDisplayText(character)}
-                        <ChevronDown className="w-3 h-3" />
-                    </button>
-
-                    {/* Set pieces dropdown */}
-                    {showSetMenu && (
-                        <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-900/95 border border-purple-600/50 rounded shadow-lg z-50 min-w-[100px] overflow-hidden">
-                            {[0, 2, 4, 8].map(pieces => (
-                                <button
-                                    key={pieces}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onSetPiecesChange(pieces);
-                                        setShowSetMenu(false);
-                                    }}
-                                    className={`w-full px-3 py-2 text-left text-sm transition-colors ${
-                                        character.setPieces === pieces
-                                            ? 'bg-purple-900/50 text-purple-200 font-semibold'
-                                            : 'text-gray-300 hover:bg-purple-900/30 hover:text-white'
-                                    }`}
-                                >
-                                    {pieces === 0 ? 'Aucun set' : `${pieces} pièces`}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Name */}
-                <div className="text-center text-xs text-gray-300 truncate w-full px-1">
-                    {character.name}
+                {/* Set display (click character to edit sets in detail panel) */}
+                <div className="text-center text-[9px] text-gray-500 truncate max-w-[100px] leading-tight">
+                    {getSetDisplayText(character)}
                 </div>
             </div>
         </div>
@@ -1831,19 +1924,30 @@ const CharacterSlot = ({ character, onRemove, onAdvancementChange, onSetPiecesCh
 };
 
 // Composant: Panneau d'équipe
+const TEAM_COLORS = {
+    1: { accent: 'from-blue-600/20 to-indigo-600/20', border: 'border-blue-500/40', badge: 'bg-blue-600', text: 'text-blue-300', emptyBorder: 'border-blue-500/25 hover:border-blue-400/50', emptyHover: 'hover:bg-blue-900/20' },
+    2: { accent: 'from-rose-600/20 to-pink-600/20', border: 'border-rose-500/40', badge: 'bg-rose-600', text: 'text-rose-300', emptyBorder: 'border-rose-500/25 hover:border-rose-400/50', emptyHover: 'hover:bg-rose-900/20' },
+};
+
 const TeamPanel = ({ title, team, teamNumber, onSlotClick, onRemove, onAdvancementChange, onSetPiecesChange, onCharClick, selectedChar }) => {
+    const tc = TEAM_COLORS[teamNumber] || TEAM_COLORS[1];
+    const filledCount = team.filter(Boolean).length;
+
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="bg-purple-900/20 backdrop-blur-sm rounded-xl p-6 border border-purple-700/50"
+            transition={{ delay: 0.15 + teamNumber * 0.05 }}
+            className={`bg-gradient-to-br ${tc.accent} backdrop-blur-sm rounded-xl p-5 border ${tc.border}`}
         >
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5 text-purple-400" />
-                {title}
-            </h2>
-            <div className="grid grid-cols-3 gap-6">
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                    <span className={`${tc.badge} text-white text-xs font-bold px-2 py-0.5 rounded-full`}>{teamNumber}</span>
+                    <span className={tc.text}>{title}</span>
+                </h2>
+                <span className="text-xs text-gray-500">{filledCount}/3</span>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
                 {team.map((member, index) => (
                     <div key={index} className="flex justify-center">
                         {member ? (
@@ -1858,9 +1962,10 @@ const TeamPanel = ({ title, team, teamNumber, onSlotClick, onRemove, onAdvanceme
                         ) : (
                             <button
                                 onClick={() => onSlotClick(index)}
-                                className="w-24 h-24 bg-gray-800/50 border-2 border-dashed border-purple-600/30 rounded-lg flex items-center justify-center hover:bg-purple-900/30 hover:border-purple-500/50 transition-colors"
+                                className={`w-20 h-20 sm:w-24 sm:h-24 bg-gray-800/30 border-2 border-dashed ${tc.emptyBorder} rounded-lg flex flex-col items-center justify-center ${tc.emptyHover} transition-all group`}
                             >
-                                <span className="text-purple-500 text-3xl">+</span>
+                                <span className="text-gray-500 group-hover:text-white text-2xl transition-colors">+</span>
+                                <span className="text-[10px] text-gray-600 group-hover:text-gray-400 transition-colors mt-0.5">Slot {index + 1}</span>
                             </button>
                         )}
                     </div>
@@ -2077,7 +2182,7 @@ const CharacterDetailsPanel = ({
                                             setShowSetSelector(false);
                                         }}
                                         className={`w-full px-3 py-2 text-left text-sm transition-colors ${
-                                            member.set === set.id
+                                            (member.leftSet === set.id || member.set === set.id)
                                                 ? 'bg-indigo-900/50 text-indigo-200 font-semibold'
                                                 : 'text-gray-300 hover:bg-indigo-900/30 hover:text-white'
                                         }`}
@@ -3631,6 +3736,130 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
             });
         }
 
+        // 2b. CLASS BONUS from new meta sets (Sung/Breaker/Supporter/etc.)
+        // Class bonuses give TEAM effects (e.g. +15% CritRate from Glorious Arrogance on Sung)
+        // and SELF effects (e.g. +40% CritDMG for the wearer)
+        // They also DISABLE the normal set bonus for the wearer
+        {
+            const groupMembers = isInGroup1
+                ? [...(sungEnabled && sungData ? [sungData] : []), ...team1.filter(m => m !== null)]
+                : isInGroup2
+                    ? team2.filter(m => m !== null)
+                    : [];
+
+            groupMembers.forEach(groupMember => {
+                // Check both left and right sets for class bonus
+                const setsToCheck = [];
+                if (groupMember.leftSet) setsToCheck.push(groupMember.leftSet);
+                if (groupMember.rightSet && groupMember.rightSet !== groupMember.leftSet) setsToCheck.push(groupMember.rightSet);
+                // Old system
+                if (groupMember.set && !groupMember.leftSet) setsToCheck.push(groupMember.set);
+
+                setsToCheck.forEach(setId => {
+                    const cb = getSetClassBonus(setId);
+                    if (!cb) return;
+
+                    // Check if this member qualifies for the class bonus
+                    const isSung = (groupMember.id === 'sung' || groupMember.id === 'jinwoo') && cb.alsoSung;
+                    const charClass = CHARACTER_ADVANCED_BUFFS[groupMember.id]?.class || '';
+                    const matchesClass = cb.classes?.some(c => c.toLowerCase() === charClass.toLowerCase());
+
+                    if (!isSung && !matchesClass) return;
+
+                    const setName = ARTIFACT_SETS[setId]?.name || setId;
+                    const wearerName = groupMember.name || groupMember.id;
+                    const effects = cb.effects || {};
+
+                    // SELF effects: only for the wearer (e.g. +40% CritDMG from Glorious Arrogance)
+                    // TEAM effects: for all group members (e.g. +15% CritRate from Glorious Arrogance)
+                    // We apply ALL effects as team-wide, then note self-only ones
+                    // Based on set descriptions:
+                    // - Glorious Arrogance: critDMG=40 is SELF, critRate=15 is TEAM
+                    // - Noble Flesh: all effects are TEAM (ATK/DEF/HP/BasicSkillDMG)
+                    // - Kamish: overloadDamage is TEAM, others depend
+                    // - Architect: damageDealt is SELF-only for Striker
+
+                    // Determine which effects are self vs team based on set id
+                    const selfEffects = {};
+                    const teamEffects = {};
+
+                    if (setId === 'glorious-arrogance') {
+                        selfEffects.critDMG = effects.critDMG || 0;  // +40% CritDMG self
+                        teamEffects.critRate = effects.critRate || 0;  // +15% CritRate team
+                    } else if (setId === 'noble-flesh') {
+                        // All team: +30% Basic Skill DMG, +15% ATK/DEF/HP
+                        Object.assign(teamEffects, effects);
+                    } else if (setId === 'kamish-obsession') {
+                        // +50% Overload DMG self, +20% Elem Weakness DMG team
+                        selfEffects.overloadDamage = effects.overloadDamage || 0;
+                        teamEffects.elementalWeaknessDamage = effects.elementalWeaknessDamage || 0;
+                    } else if (setId === 'architect-blue-poison') {
+                        // +50% DMG dealt self
+                        selfEffects.damageDealt = effects.damageDealt || 0;
+                    } else {
+                        // Default: all team
+                        Object.assign(teamEffects, effects);
+                    }
+
+                    // Apply SELF effects (only to the wearer)
+                    if (groupMember.id === member.id) {
+                        if (selfEffects.critRate) {
+                            totalCritRate += selfEffects.critRate;
+                            breakdown.critRate.push({ source: `👑 Class Bonus ${setName} (self)`, value: selfEffects.critRate });
+                        }
+                        if (selfEffects.critDMG) {
+                            totalCritDMG += selfEffects.critDMG;
+                            breakdown.critDMG.push({ source: `👑 Class Bonus ${setName} (self)`, value: selfEffects.critDMG });
+                        }
+                        if (selfEffects.defPen) {
+                            totalDefPen += selfEffects.defPen;
+                            breakdown.defPen.push({ source: `👑 Class Bonus ${setName} (self)`, value: selfEffects.defPen });
+                        }
+                        if (selfEffects.damageDealt) {
+                            totalDamageDealt += selfEffects.damageDealt;
+                            breakdown.damageDealt.push({ source: `👑 Class Bonus ${setName} (self)`, value: selfEffects.damageDealt });
+                        }
+                        if (selfEffects.overloadDamage) {
+                            // Generic overload — could be any element, add to damageDealt as approximation
+                            totalDamageDealt += selfEffects.overloadDamage;
+                            breakdown.damageDealt.push({ source: `👑 Class Bonus ${setName} - Overload (self)`, value: selfEffects.overloadDamage });
+                        }
+                    }
+
+                    // Apply TEAM effects (to all group members including wearer)
+                    if (teamEffects.critRate) {
+                        totalCritRate += teamEffects.critRate;
+                        breakdown.critRate.push({ source: `👑 Class Bonus ${wearerName} (${setName})`, value: teamEffects.critRate });
+                    }
+                    if (teamEffects.critDMG) {
+                        totalCritDMG += teamEffects.critDMG;
+                        breakdown.critDMG.push({ source: `👑 Class Bonus ${wearerName} (${setName})`, value: teamEffects.critDMG });
+                    }
+                    if (teamEffects.attack) {
+                        totalAttack += teamEffects.attack;
+                        breakdown.attack.push({ source: `👑 Class Bonus ${wearerName} (${setName})`, value: teamEffects.attack });
+                    }
+                    if (teamEffects.defense) {
+                        totalDefense += teamEffects.defense;
+                        breakdown.defense.push({ source: `👑 Class Bonus ${wearerName} (${setName})`, value: teamEffects.defense });
+                    }
+                    if (teamEffects.hp) {
+                        totalHP += teamEffects.hp;
+                        breakdown.hp.push({ source: `👑 Class Bonus ${wearerName} (${setName})`, value: teamEffects.hp });
+                    }
+                    if (teamEffects.basicSkillDamage) {
+                        totalBasicSkillDamage += teamEffects.basicSkillDamage;
+                        breakdown.basicSkillDamage.push({ source: `👑 Class Bonus ${wearerName} (${setName})`, value: teamEffects.basicSkillDamage });
+                    }
+                    if (teamEffects.elementalWeaknessDamage) {
+                        // Add to general damage dealt as approximation
+                        totalDamageDealt += teamEffects.elementalWeaknessDamage;
+                        breakdown.damageDealt.push({ source: `👑 Class Bonus ${wearerName} (${setName}) - Elem Weakness`, value: teamEffects.elementalWeaknessDamage });
+                    }
+                });
+            });
+        }
+
         // 3. CORE ATTACK TC (+10% TC si activé)
         if (member.coreAttackTC) {
             totalCritRate += 10;
@@ -4182,6 +4411,44 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                             value: effects.waterOverloadDamage,
                             ...timingInfo
                         });
+                    }
+                });
+            }
+
+            // 8.1b WEAPON SELF BUFFS (from characterAdvancedBuffs weapon section)
+            const charAdvData = CHARACTER_ADVANCED_BUFFS[member.id];
+            if (charAdvData?.weapon?.selfBuffs) {
+                const weaponAdv = member.weaponAdvancement || 0;
+                charAdvData.weapon.selfBuffs.forEach(weaponBuff => {
+                    // Weapon buffs use scaling array [A0, A1, A2, A3, A4, A5]
+                    const effects = weaponBuff.scaling
+                        ? (weaponBuff.scaling[weaponAdv]?.effects || {})
+                        : (weaponBuff.effects || {});
+                    const characterName = member.name || member.id;
+
+                    if (effects.critRate) {
+                        totalCritRate += effects.critRate;
+                        breakdown.critRate.push({ source: `⚔️ Arme ${characterName} (A${weaponAdv})`, value: effects.critRate });
+                    }
+                    if (effects.critDMG) {
+                        totalCritDMG += effects.critDMG;
+                        breakdown.critDMG.push({ source: `⚔️ Arme ${characterName} (A${weaponAdv})`, value: effects.critDMG });
+                    }
+                    if (effects.defPen) {
+                        totalDefPen += effects.defPen;
+                        breakdown.defPen.push({ source: `⚔️ Arme ${characterName} (A${weaponAdv})`, value: effects.defPen });
+                    }
+                    if (effects.attack) {
+                        totalAttack += effects.attack;
+                        breakdown.attack.push({ source: `⚔️ Arme ${characterName} (A${weaponAdv})`, value: effects.attack });
+                    }
+                    if (effects.defense) {
+                        totalDefense += effects.defense;
+                        breakdown.defense.push({ source: `⚔️ Arme ${characterName} (A${weaponAdv})`, value: effects.defense });
+                    }
+                    if (effects.hp) {
+                        totalHP += effects.hp;
+                        breakdown.hp.push({ source: `⚔️ Arme ${characterName} (A${weaponAdv})`, value: effects.hp });
                     }
                 });
             }
@@ -5003,24 +5270,25 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
 
             {/* Header avec image et nom */}
             <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-700/50">
-                {member.image ? (
-                    <img loading="lazy" src={member.image} alt={member.name} className="w-12 h-12 rounded-lg object-cover border-2 border-purple-500" />
-                ) : (
-                    <div className="w-12 h-12 rounded-lg bg-gray-700 flex items-center justify-center text-2xl">👤</div>
-                )}
+                {(() => {
+                    const ec = ELEMENT_COLORS[member.element] || ELEMENT_COLORS.Dark;
+                    return member.image ? (
+                        <img loading="lazy" src={member.image} alt={member.name} className={`w-11 h-11 rounded-lg object-cover border-2 ${ec.border}`} />
+                    ) : (
+                        <div className="w-11 h-11 rounded-lg bg-gray-700 flex items-center justify-center text-xl">👤</div>
+                    );
+                })()}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                        <span className="font-bold text-white truncate">{member.name}</span>
+                        <span className="font-bold text-white truncate text-sm">{member.name}</span>
                         {hasOptimizationData && <OptimizationBadge characterId={member.id} stats={member.finalStats} />}
                     </div>
-                    <div className="text-xs text-gray-400 flex items-center gap-1">
+                    <div className="text-[11px] text-gray-400 flex items-center gap-1">
                         <span>{getElementEmoji(member.element)}</span>
-                        <span>{member.element}</span>
-                        <span className="mx-1">•</span>
-                        <span className="text-purple-400">A{member.advancement}</span>
+                        <span className="text-purple-400 font-medium">A{member.advancement}</span>
                         {benchmark && (
                             <>
-                                <span className="mx-1">•</span>
+                                <span className="text-gray-600">|</span>
                                 <span style={{ color: benchmark.color }}>{benchmark.label}</span>
                             </>
                         )}
@@ -5658,6 +5926,15 @@ const StatWithBreakdown = ({ label, value, breakdown, color, icon, hasBaseValue 
 };
 
 // Composant: Modal de sélection de personnage
+const ELEM_FILTER_COLORS = {
+    all:   { active: 'bg-purple-600 text-white border-purple-400', inactive: 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700' },
+    Fire:  { active: 'bg-orange-600 text-white border-orange-400', inactive: 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-orange-900/40' },
+    Water: { active: 'bg-blue-600 text-white border-blue-400', inactive: 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-blue-900/40' },
+    Wind:  { active: 'bg-emerald-600 text-white border-emerald-400', inactive: 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-emerald-900/40' },
+    Dark:  { active: 'bg-purple-700 text-white border-purple-500', inactive: 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-purple-900/40' },
+    Light: { active: 'bg-yellow-600 text-white border-yellow-400', inactive: 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-yellow-900/40' },
+};
+
 const CharacterSelectionModal = ({ characters, elementFilter, onElementChange, onSelect, onClose, elements }) => {
     return (
         <motion.div
@@ -5671,56 +5948,61 @@ const CharacterSelectionModal = ({ characters, elementFilter, onElementChange, o
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-gray-900 rounded-xl p-6 max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col border border-purple-500/50"
+                className="bg-gray-900/95 rounded-2xl p-5 max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col border border-purple-500/40 shadow-2xl shadow-purple-500/10"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 className="text-2xl font-bold mb-4">Sélectionner un personnage</h2>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-white">Choisir un chasseur</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-1">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
                 {/* Filtres d'élément */}
-                <div className="flex gap-2 mb-4 flex-wrap">
-                    {elements.map(elem => (
-                        <button
-                            key={elem}
-                            onClick={() => onElementChange(elem)}
-                            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                                elementFilter === elem
-                                    ? 'bg-purple-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                            }`}
-                        >
-                            {elem === 'all' ? '🌟 Tous' : `${getElementEmoji(elem)} ${elem}`}
-                        </button>
-                    ))}
+                <div className="flex gap-1.5 mb-4 flex-wrap">
+                    {elements.map(elem => {
+                        const colors = ELEM_FILTER_COLORS[elem] || ELEM_FILTER_COLORS.all;
+                        const isActive = elementFilter === elem;
+                        return (
+                            <button
+                                key={elem}
+                                onClick={() => onElementChange(elem)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all border ${isActive ? colors.active : colors.inactive}`}
+                            >
+                                {elem === 'all' ? 'Tous' : `${getElementEmoji(elem)} ${elem}`}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Liste des personnages */}
-                <div className="flex-1 overflow-y-auto grid grid-cols-4 md:grid-cols-6 gap-4">
-                    {characters.map(char => (
-                        <button
-                            key={char.id}
-                            onClick={() => onSelect(char)}
-                            className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 transition-colors group"
-                        >
-                            {char.image ? (
-                                <img loading="lazy" src={char.image} alt={char.name} className="w-full aspect-square object-cover rounded mb-2" />
-                            ) : (
-                                <div className="w-full aspect-square bg-gray-700 rounded mb-2 flex items-center justify-center text-4xl">
-                                    👤
+                <div className="flex-1 overflow-y-auto grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2.5 pr-1">
+                    {characters.map(char => {
+                        const ec = ELEMENT_COLORS[char.element] || ELEMENT_COLORS.Dark;
+                        return (
+                            <button
+                                key={char.id}
+                                onClick={() => onSelect(char)}
+                                className="bg-gray-800/80 hover:bg-gray-700 rounded-lg p-1.5 transition-all group border border-transparent hover:border-purple-500/60 hover:shadow-md"
+                            >
+                                <div className="relative overflow-hidden rounded">
+                                    {char.image ? (
+                                        <img loading="lazy" src={char.image} alt={char.name} className="w-full aspect-square object-cover" />
+                                    ) : (
+                                        <div className="w-full aspect-square bg-gray-700 flex items-center justify-center text-3xl">
+                                            👤
+                                        </div>
+                                    )}
+                                    {/* Element dot */}
+                                    <div className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${ec.bg} ring-1 ring-black/50`} />
                                 </div>
-                            )}
-                            <div className="text-xs text-center text-gray-300 group-hover:text-white truncate">
-                                {char.name}
-                            </div>
-                        </button>
-                    ))}
+                                <div className="text-[11px] text-center text-gray-400 group-hover:text-white truncate mt-1 px-0.5">
+                                    {char.name}
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
-
-                <button
-                    onClick={onClose}
-                    className="mt-4 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors"
-                >
-                    Annuler
-                </button>
             </motion.div>
         </motion.div>
     );

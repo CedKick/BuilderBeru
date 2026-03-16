@@ -2489,9 +2489,9 @@ export const CHARACTER_OPTIMIZATION = {
             }
         },
         sweetSpots: {
-            critRate: { min: 65, optimal: 85, max: 100, unit: '%' },
-            critDMG: { min: 150, optimal: 200, max: 260, unit: '%' },
-            defPen: { min: 40, optimal: 60, max: 80, unit: '%' }
+            critRate: { min: 65, ideal: 85, max: 100, unit: '%' },
+            critDMG: { min: 150, ideal: 200, max: 260, unit: '%' },
+            defPen: { min: 40, ideal: 60, max: 80, unit: '%' }
         },
         substatPriority: ['HP %', 'Crit Rate', 'Crit DMG', 'Def Pen', 'Damage Increase'],
         scaling: {
@@ -2538,9 +2538,9 @@ export const CHARACTER_OPTIMIZATION = {
             }
         },
         sweetSpots: {
-            critRate: { min: 65, optimal: 85, max: 100, unit: '%' },
-            critDMG: { min: 160, optimal: 220, max: 280, unit: '%' },
-            defPen: { min: 45, optimal: 65, max: 85, unit: '%' }
+            critRate: { min: 65, ideal: 85, max: 100, unit: '%' },
+            critDMG: { min: 160, ideal: 220, max: 280, unit: '%' },
+            defPen: { min: 45, ideal: 65, max: 85, unit: '%' }
         },
         substatPriority: ['ATK %', 'Crit DMG', 'Crit Rate', 'Def Pen', 'Damage Increase'],
         scaling: {
@@ -2569,6 +2569,762 @@ export const CHARACTER_OPTIMIZATION = {
             intermediate: { critRate: 65, critDMG: 200, defPen: 55, dps: "15-35B" },
             advanced: { critRate: 80, critDMG: 240, defPen: 70, dps: "35-60B" },
             whale: { critRate: 90, critDMG: 280, defPen: 85, dps: "60-100B" }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🌪️ WIND ELEMENT CHARACTERS
+    // ═══════════════════════════════════════════════════════════════
+
+    // 🌪️ Mirei - Wind Assassin DPS (ATK scaling) - Best Wind DPS
+    mirei: {
+        id: 'mirei',
+        name: "Mirei",
+        role: "DPS / Wind Assassin",
+        element: "Wind",
+        tier: "S+",
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 14000,
+                intermediate: 18000,
+                advanced: 22000,
+                whale: 28000
+            },
+            note: "ATK scaler pur. Self-buffs massifs: +90% ATK [Possessed] + +24% ATK [Deep Darkness]"
+        },
+        sweetSpots: {
+            critRate: {
+                min: 80,
+                max: 100,
+                ideal: 95,
+                priority: 1,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "+74% CR self-buff (Possessed+Deep Darkness+Weapon) → très peu de CR raw nécessaire, cap 100% facilement"
+            },
+            critDMG: {
+                min: 180,
+                max: 260,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "+90% CritDMG self-buff → investir modérément, focus ATK% et DefPen en substats"
+            },
+            defPen: {
+                min: 55,
+                max: 85,
+                ideal: 75,
+                priority: 2,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "+20% DefPen [Midnight Gale] → besoin de ~55% raw pour atteindre 75% total"
+            }
+        },
+        substatPriority: ['ATK %', 'Crit DMG', 'Def Pen', 'Crit Rate'],
+        scaling: {
+            atk: { grade: "S+", description: "Self-buffs massifs: +90% ATK [Possessed] + +24% ATK [Deep Darkness]" },
+            critDMG: { grade: "S", description: "+90% CritDMG self-buff → scaling CritDMG excellent" },
+            defPen: { grade: "S", description: "+20% DefPen [Midnight Gale] → bon scaling DefPen" },
+            critRate: { grade: "A", description: "+74% CR self-buff → CR raw peu nécessaire" }
+        },
+        tips: [
+            'Mirei self-buff +74% CR total (20% Possessed + 24% Deep Darkness + 30% Weapon) → très peu de CR raw nécessaire',
+            'Self-buff +90% CritDMG (20% Possessed + 40% A2 + 30% Weapon) → focus ATK% et DefPen en substats',
+            '+90% ATK [Possessed] + +24% ATK [Deep Darkness] = scaling ATK monstrueux',
+            'A5 +80% Skill DMG → multiplicateur énorme sur toutes les skills',
+            '+20% DefPen [Midnight Gale] + +36% Wind DMG (A4) → dégâts Wind absurdes',
+            'Meilleure DPS Wind du jeu, investir prioritairement sur elle'
+        ],
+        recommendedSets: {
+            bdg: '4x Armed + 4x Expert',
+            general: '8x Chaotic Infamy',
+            alternative: '4x Armed + 4x Obsidian'
+        },
+        benchmarks: {
+            casual: { critRate: 60, critDMG: 160, defPen: 45, dps: "15-30B" },
+            intermediate: { critRate: 80, critDMG: 200, defPen: 60, dps: "40-70B" },
+            advanced: { critRate: 95, critDMG: 230, defPen: 75, dps: "80-130B" },
+            whale: { critRate: 100, critDMG: 260, defPen: 85, dps: "130-200B" }
+        }
+    },
+
+    // 🌪️ Soyeon - Wind Fighter DPS/Support (ATK scaling)
+    soyeon: {
+        id: 'soyeon',
+        name: "Soyeon",
+        role: "DPS / Support Wind",
+        element: "Wind",
+        tier: "A+",
+
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 12000,
+                intermediate: 16000,
+                advanced: 20000,
+                whale: 25000
+            },
+            note: "ATK scaler avec buffs team Wind. A3 +16% ATK team-wind, A4 +20% Wind DMG team"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 80,
+                max: 100,
+                ideal: 95,
+                priority: 1,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "A5 +10% CR team → réduit le besoin de CR raw pour toute l'équipe Wind, viser cap 100%"
+            },
+            critDMG: {
+                min: 170,
+                max: 240,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "A1 +15% CritDMG self → investir modérément, priorité ATK% et DefPen"
+            },
+            defPen: {
+                min: 55,
+                max: 85,
+                ideal: 75,
+                priority: 2,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "Pas de DefPen self-buff → besoin de raw DefPen élevé pour maximiser les dégâts"
+            }
+        },
+
+        substatPriority: ['ATK %', 'Def Pen', 'Crit DMG', 'Crit Rate'],
+
+        scaling: {
+            atk: { grade: "S", description: "ATK scaler hybride DPS/Support avec buffs team Wind" },
+            critDMG: { grade: "A", description: "A1 +15% CritDMG self → scaling correct" },
+            defPen: { grade: "S", description: "Pas de DefPen self → investir en raw pour dégâts optimaux" },
+            critRate: { grade: "A", description: "A5 +10% CR team → réduit besoin de CR raw" }
+        },
+        tips: [
+            'A5 +10% CR team → réduit le besoin de CR raw pour toute l\'équipe Wind',
+            'A4 +20% Wind DMG team → buff Wind majeur permanent',
+            'A3 +16% ATK team-wind → excellent support passif',
+            '[FOREVER] +15% DMG dealt team en donjon → utile en raid',
+            'A1 +15% CritDMG self → petit boost perso',
+            'Weapon: +12% ATK self + Basic Skill DMG pour l\'équipe',
+            'Hybride DPS/Support: investir ATK pour ses propres dégâts tout en buffant l\'équipe'
+        ],
+        recommendedSets: {
+            bdg: '4x Armed + 4x Expert',
+            general: '4x Sylph + 4x Armed',
+            alternative: '4x Armed + 4x Obsidian'
+        },
+        benchmarks: {
+            casual: { critRate: 55, critDMG: 150, defPen: 40, dps: "5-12B" },
+            intermediate: { critRate: 75, critDMG: 180, defPen: 55, dps: "15-30B" },
+            advanced: { critRate: 90, critDMG: 210, defPen: 70, dps: "30-55B" },
+            whale: { critRate: 95, critDMG: 240, defPen: 80, dps: "55-85B" }
+        }
+    },
+
+    // 🌪️ Jinah - Wind Support GOD (DEF scaling)
+    jinah: {
+        id: 'jinah',
+        name: "Jinah",
+        role: "Support / Wind Buffer",
+        element: "Wind",
+        tier: "S+",
+
+        mainStat: {
+            type: 'def',
+            label: 'DEF',
+            icon: '🛡️',
+            color: '#3b82f6',
+            benchmarks: {
+                casual: 8000,
+                intermediate: 12000,
+                advanced: 16000,
+                whale: 20000
+            },
+            note: "DEF scaler. Meilleur support Wind du jeu. Buffs Wind massifs pour toute l'équipe"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 75,
+                max: 100,
+                ideal: 95,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "Support mais contribue aux dégâts → viser CR élevé pour maximiser son impact"
+            },
+            critDMG: {
+                min: 160,
+                max: 240,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "Priorité DEF% et DefPen avant CritDMG, investir modérément"
+            },
+            defPen: {
+                min: 55,
+                max: 85,
+                ideal: 75,
+                priority: 1,
+                status: "PRIORITY",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "DefPen crucial pour maximiser ses propres dégâts en tant que support DEF scaler"
+            }
+        },
+
+        substatPriority: ['DEF %', 'Def Pen', 'Crit Rate', 'Crit DMG'],
+
+        scaling: {
+            def: { grade: "S+", description: "Tout le kit scale sur DEF → priorité absolue" },
+            defPen: { grade: "S", description: "DefPen crucial pour ses propres dégâts" },
+            critRate: { grade: "A", description: "CR important pour contribuer aux dégâts" },
+            critDMG: { grade: "A", description: "CritDMG secondaire, focus DEF% d'abord" }
+        },
+        tips: [
+            'Meilleur support Wind du jeu - priorité absolue dans toute team Wind',
+            'A3 doublé pour Wind: +20% ATK, +20% DEF, +10% Basic Skill DMG pour alliés Wind',
+            'A4 +5% Wind DMG par allié Wind (×3 = +15% team-wind) → build full Wind obligatoire',
+            'A5 +10% Wind DMG team → total +25% Wind DMG team avec A4',
+            'A1 +20% Basic/Ulti team + +10% Wind DMG team → buffs empilés',
+            'A0 +50% Skill DMG self + +10% Basic/Ulti team → elle fait aussi des dégâts',
+            'Weapon: DEF 12% self + Basic Skill DMG 2% team',
+            'Focus DEF% en mainstat et substats, puis Def Pen pour ses propres dégâts'
+        ],
+        recommendedSets: {
+            bdg: '4x Guardian + 4x Sylph',
+            general: '8x Sylph',
+            alternative: '4x Armed + 4x Sylph'
+        },
+        benchmarks: {
+            casual: { critRate: 55, critDMG: 140, defPen: 40, dps: "3-8B" },
+            intermediate: { critRate: 75, critDMG: 175, defPen: 55, dps: "10-20B" },
+            advanced: { critRate: 90, critDMG: 200, defPen: 70, dps: "25-45B" },
+            whale: { critRate: 95, critDMG: 240, defPen: 80, dps: "45-70B" }
+        }
+    },
+
+    // 🌪️ Niermann (Lennart Niermann) - Wind Fighter DPS (ATK scaling)
+    niermann: {
+        id: 'niermann',
+        name: "Lennart Niermann",
+        role: "DPS / Wind Speed",
+        element: "Wind",
+        tier: "S",
+
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 13000,
+                intermediate: 17000,
+                advanced: 21000,
+                whale: 27000
+            },
+            note: "ATK scaler avec self-buffs massifs. [Speed of Sound] +40% ATK, [Supersonic] +50% ATK"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 75,
+                max: 100,
+                ideal: 95,
+                priority: 1,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "A1 +10% CR self → réduit légèrement le besoin raw, viser cap 100%"
+            },
+            critDMG: {
+                min: 170,
+                max: 250,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "+90% CritDMG self (Speed of Sound+Supersonic) → investir modérément, focus ATK% et DefPen"
+            },
+            defPen: {
+                min: 50,
+                max: 85,
+                ideal: 75,
+                priority: 2,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "A3 +40% DefPen [Speed of Sound] → besoin de ~35% raw pour atteindre 75% total"
+            }
+        },
+
+        substatPriority: ['ATK %', 'Def Pen', 'Crit DMG', 'Crit Rate'],
+
+        scaling: {
+            atk: { grade: "S+", description: "Self-buffs massifs: +40% ATK [Speed of Sound] + +50% ATK [Supersonic]" },
+            critDMG: { grade: "S", description: "+90% CritDMG self → scaling CritDMG excellent" },
+            defPen: { grade: "S", description: "+40% DefPen [Speed of Sound] → réduit le besoin raw" },
+            critRate: { grade: "A", description: "A1 +10% CR self → CR raw nécessaire pour cap" }
+        },
+        tips: [
+            'Self-buff +90% CritDMG total (40% Speed of Sound + 50% Supersonic) → focus ATK% et DefPen',
+            'A1 +10% CR self → réduit légèrement le besoin de CR raw',
+            'A3 +40% DefPen [Speed of Sound] → énorme, réduit beaucoup le besoin de DefPen raw',
+            'A4 +12% Wind DMG par allié Wind (×3 = +36%) → build full Wind',
+            'Weapon: +12% ATK self + DefPen 10% team → support DefPen passif',
+            '[Supersonic] A5 +50% ATK/CritDMG → burst window très puissant',
+            'Avec +40% DefPen self, viser ~35% raw DefPen suffit pour atteindre 75% total'
+        ],
+        recommendedSets: {
+            bdg: '4x Armed + 4x Expert',
+            general: '8x Chaotic Infamy',
+            alternative: '4x Armed + 4x Obsidian'
+        },
+        benchmarks: {
+            casual: { critRate: 55, critDMG: 150, defPen: 40, dps: "10-20B" },
+            intermediate: { critRate: 75, critDMG: 185, defPen: 55, dps: "25-50B" },
+            advanced: { critRate: 90, critDMG: 220, defPen: 70, dps: "55-90B" },
+            whale: { critRate: 95, critDMG: 250, defPen: 80, dps: "90-140B" }
+        }
+    },
+
+    // 🌪️ Han Se-Mi - Wind Healer (HP scaling)
+    han: {
+        id: 'han',
+        name: "Han Se-Mi",
+        role: "Healer / Wind Support",
+        element: "Wind",
+        tier: "A+",
+
+        mainStat: {
+            type: 'hp',
+            label: 'HP',
+            icon: '💚',
+            color: '#22c55e',
+            benchmarks: {
+                casual: 18000,
+                intermediate: 26000,
+                advanced: 34000,
+                whale: 42000
+            },
+            note: "HP scaler. Healer Wind avec buffs team. A2 +10% HP, A5 +10% ATK/+10% DEF/+20% Wind DMG team"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 75,
+                max: 100,
+                ideal: 95,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "A1 +10% CR team (20s sur Ulti) → CR important pour contribuer aux dégâts entre heals"
+            },
+            critDMG: {
+                min: 160,
+                max: 240,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "A1 +10% CritDMG team → investir modérément, focus HP% pour maximiser les soins"
+            },
+            defPen: {
+                min: 55,
+                max: 85,
+                ideal: 75,
+                priority: 1,
+                status: "PRIORITY",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "DefPen prioritaire pour maximiser la contribution dégâts entre phases de heal"
+            }
+        },
+
+        substatPriority: ['HP %', 'Def Pen', 'Crit Rate', 'Crit DMG'],
+
+        scaling: {
+            hp: { grade: "S", description: "HP scaler → heals et survie scalent sur HP" },
+            defPen: { grade: "A", description: "DefPen pour contribuer aux dégâts" },
+            critRate: { grade: "A", description: "A1 +10% CR team → CR utile pour dégâts" },
+            critDMG: { grade: "B", description: "CritDMG secondaire, focus HP% d'abord" }
+        },
+        tips: [
+            'Healer Wind principale - indispensable en team Wind pour la survie',
+            'A1 +10% CR + +10% CritDMG team (20s sur Ulti) → buff team burst',
+            'A4 +10% Wind DMG team → contribue aux dégâts Wind',
+            'A5 +10% ATK, +10% DEF, +20% Wind DMG team (25s) → buff total énorme',
+            'Weapon: HP 10% self + 5% DMG taken debuff sur ennemi → survie + dégâts',
+            'Focus HP% pour maximiser les soins, puis Def Pen pour contribuer aux dégâts'
+        ],
+        recommendedSets: {
+            bdg: '4x Guardian + 4x Sylph',
+            general: '8x Desire',
+            alternative: '4x Desire + 4x Sylph'
+        },
+        benchmarks: {
+            casual: { critRate: 50, critDMG: 140, defPen: 35, dps: "2-5B" },
+            intermediate: { critRate: 70, critDMG: 170, defPen: 50, dps: "5-12B" },
+            advanced: { critRate: 85, critDMG: 200, defPen: 65, dps: "12-25B" },
+            whale: { critRate: 95, critDMG: 230, defPen: 75, dps: "25-40B" }
+        }
+    },
+
+    // 🌪️ Goto Ryuji - Wind Tank (HP scaling)
+    goto: {
+        id: 'goto',
+        name: "Goto Ryuji",
+        role: "Tank / Wind Frontline",
+        element: "Wind",
+        tier: "A",
+
+        mainStat: {
+            type: 'hp',
+            label: 'HP',
+            icon: '💚',
+            color: '#22c55e',
+            benchmarks: {
+                casual: 20000,
+                intermediate: 28000,
+                advanced: 36000,
+                whale: 45000
+            },
+            note: "HP scaler. Tank Wind avec A2 +10% HP, A4 +10% DEF. Focus survie"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 60,
+                max: 100,
+                ideal: 85,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "Tank → CR secondaire, mais utile pour contribuer un peu aux dégâts"
+            },
+            critDMG: {
+                min: 140,
+                max: 220,
+                ideal: 180,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "Tank → CritDMG très secondaire, focus HP% et DEF% pour survie"
+            },
+            defPen: {
+                min: 40,
+                max: 75,
+                ideal: 60,
+                priority: 1,
+                status: "PRIORITY",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "DefPen prioritaire parmi les stats offensives pour un minimum de contribution dégâts"
+            }
+        },
+
+        substatPriority: ['HP %', 'DEF %', 'Def Pen', 'Crit Rate'],
+
+        scaling: {
+            hp: { grade: "S", description: "HP scaler → survie et tanking scalent sur HP" },
+            def: { grade: "A", description: "DEF secondaire important pour la survie" },
+            critRate: { grade: "B", description: "CR peu prioritaire pour un tank" },
+            critDMG: { grade: "B", description: "CritDMG très secondaire pour un tank" }
+        },
+        tips: [
+            'Tank Wind principal - A1 +60% DEF sur taunt → très tanky en aggro',
+            'A0 +15% CritDMG par allié Wind → bonus passif intéressant en full Wind',
+            'A2 +10% HP et A4 +10% DEF → solide en survie pure',
+            'A5 Shield → couche de protection supplémentaire',
+            'Weapon: HP 10% self + CritDMG stacks on skill → contribue un peu aux dégâts',
+            'Focus HP% et DEF% pour maximiser la survie, dégâts secondaires'
+        ],
+        recommendedSets: {
+            bdg: '4x Guardian + 4x Desire',
+            general: '8x Desire',
+            alternative: '4x Guardian + 4x Sylph'
+        },
+        benchmarks: {
+            casual: { critRate: 45, critDMG: 130, defPen: 30, dps: "1-4B" },
+            intermediate: { critRate: 65, critDMG: 160, defPen: 45, dps: "4-10B" },
+            advanced: { critRate: 80, critDMG: 185, defPen: 60, dps: "10-20B" },
+            whale: { critRate: 85, critDMG: 220, defPen: 70, dps: "20-35B" }
+        }
+    },
+
+    // 🌪️ Woo Jinchul - Wind DPS Solo (ATK scaling)
+    woo: {
+        id: 'woo',
+        name: "Woo Jinchul",
+        role: "DPS Solo / Wind Selfish",
+        element: "Wind",
+        tier: "A",
+
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 12000,
+                intermediate: 15000,
+                advanced: 19000,
+                whale: 24000
+            },
+            note: "ATK scaler self-only. Aucun buff team. +30% Skill DMG, +35% DMG increase, +16% Wind DMG self"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 75,
+                max: 100,
+                ideal: 95,
+                priority: 1,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "Pas de CR self-buff → besoin de CR raw élevé, viser cap 100%"
+            },
+            critDMG: {
+                min: 170,
+                max: 240,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "Pas de CritDMG self-buff → investir modérément après CR cap et DefPen"
+            },
+            defPen: {
+                min: 55,
+                max: 85,
+                ideal: 75,
+                priority: 2,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "+10% DefPen self (A2) + 20% [Midnight Gale] weapon → besoin de ~45% raw"
+            }
+        },
+
+        substatPriority: ['ATK %', 'Def Pen', 'Crit DMG', 'Crit Rate'],
+
+        scaling: {
+            atk: { grade: "S", description: "ATK scaler self-only avec multiplicateurs empilés" },
+            critRate: { grade: "A", description: "Pas de CR self-buff → CR raw nécessaire" },
+            critDMG: { grade: "A", description: "Pas de CritDMG self-buff → investir en raw" },
+            defPen: { grade: "A", description: "+10% DefPen (A2) + 20% weapon → scaling correct" }
+        },
+        tips: [
+            'DPS purement égoïste - ZERO buff team, tous les buffs sont self-only',
+            '+10% DefPen self (A2) + 20% [Midnight Gale] weapon → réduction besoin raw DefPen',
+            '+35% DMG increase self (A3) → gros multiplicateur personnel',
+            '+100% Break effect (A1) → excellent pour casser les barres de break',
+            '+16% Wind DMG self (A4) + +60% DEF self (A5) → un peu de survie',
+            'Weapon: DefPen 5% + Wind DMG 10% team (excl. user) → ironie: le seul buff team vient de l\'arme',
+            'Correct en DPS solo mais ne contribue rien a l\'équipe - préférer Mirei/Niermann'
+        ],
+        recommendedSets: {
+            bdg: '4x Armed + 4x Expert',
+            general: '8x Chaotic Infamy',
+            alternative: '4x Armed + 4x Obsidian'
+        },
+        benchmarks: {
+            casual: { critRate: 50, critDMG: 150, defPen: 40, dps: "4-10B" },
+            intermediate: { critRate: 70, critDMG: 180, defPen: 55, dps: "12-25B" },
+            advanced: { critRate: 90, critDMG: 210, defPen: 70, dps: "25-45B" },
+            whale: { critRate: 95, critDMG: 240, defPen: 80, dps: "45-70B" }
+        }
+    },
+
+    // 🌪️ Hwang Dongsoo - Wind Tank (DEF scaling)
+    hwang: {
+        id: 'hwang',
+        name: "Hwang Dongsoo",
+        role: "Tank / Wind Self-tank",
+        element: "Wind",
+        tier: "B",
+
+        mainStat: {
+            type: 'def',
+            label: 'DEF',
+            icon: '🛡️',
+            color: '#3b82f6',
+            benchmarks: {
+                casual: 7000,
+                intermediate: 10000,
+                advanced: 14000,
+                whale: 18000
+            },
+            note: "DEF scaler. Tank égoïste sans buffs team. +15% DEF stacks ×5, +24% DEF, +12% DEF/DefPen [Madness]"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 55,
+                max: 95,
+                ideal: 80,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "Tank égoïste → CR secondaire, utile pour un minimum de dégâts"
+            },
+            critDMG: {
+                min: 130,
+                max: 200,
+                ideal: 160,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "CritDMG très secondaire pour un tank, focus DEF% pour survie"
+            },
+            defPen: {
+                min: 40,
+                max: 75,
+                ideal: 60,
+                priority: 1,
+                status: "PRIORITY",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "+12% DefPen [Madness] → besoin de ~48% raw pour atteindre 60% total"
+            }
+        },
+
+        substatPriority: ['DEF %', 'Def Pen', 'Crit Rate', 'Crit DMG'],
+
+        scaling: {
+            def: { grade: "S", description: "+75% DEF max (stacks ×5) + +24% DEF permanent → scaling DEF énorme" },
+            critRate: { grade: "B", description: "CR peu prioritaire pour un tank égoïste" },
+            critDMG: { grade: "B", description: "CritDMG très secondaire" },
+            defPen: { grade: "B", description: "+12% DefPen [Madness] → scaling limité" }
+        },
+        tips: [
+            'Tank purement égoïste - ZERO buff team, tous les buffs sont self-only',
+            '+15% DEF stacks ×5 = +75% DEF max → incroyablement tanky à plein stacks',
+            '+24% DEF permanent + A2 +8% DEF → mur de DEF',
+            '[Madness] +12% DEF et +12% DefPen → mode offensif/défensif',
+            'Weapon: Wind DMG 24% self + Basic Skill DMG stacks self → dégâts basiques corrects',
+            'Aucune utilité équipe - existe uniquement pour tanker. Goto est meilleur en équipe'
+        ],
+        recommendedSets: {
+            bdg: '4x Guardian + 4x Desire',
+            general: '8x Guardian',
+            alternative: '4x Guardian + 4x Obsidian'
+        },
+        benchmarks: {
+            casual: { critRate: 40, critDMG: 120, defPen: 30, dps: "1-3B" },
+            intermediate: { critRate: 60, critDMG: 145, defPen: 45, dps: "3-8B" },
+            advanced: { critRate: 75, critDMG: 170, defPen: 60, dps: "8-15B" },
+            whale: { critRate: 80, critDMG: 200, defPen: 70, dps: "15-25B" }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 💧 WATER ELEMENT CHARACTERS (continued)
+    // ═══════════════════════════════════════════════════════════════
+
+    // 💧 Alicia - Water Assassin DPS (ATK scaling)
+    alicia: {
+        id: 'alicia',
+        name: "Alicia",
+        role: "DPS / Water Assassin",
+        element: "Water",
+        tier: "A+",
+
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 12000,
+                intermediate: 16000,
+                advanced: 20000,
+                whale: 25000
+            },
+            note: "ATK scaler. +30% DMG dealt (A0), +60% Skill DMG (A1), +16% ATK self, +40% Water DMG self (A4)"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 75,
+                max: 100,
+                ideal: 95,
+                priority: 1,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "Pas de CR self-buff notable → besoin de CR raw élevé, viser cap 100%"
+            },
+            critDMG: {
+                min: 170,
+                max: 240,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "Multiplicateurs empilés (+30% DMG, +60% Skill DMG) → CritDMG amplifié mais secondaire"
+            },
+            defPen: {
+                min: 55,
+                max: 85,
+                ideal: 75,
+                priority: 2,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "Pas de DefPen self-buff → besoin de raw DefPen élevé pour maximiser les dégâts"
+            }
+        },
+
+        substatPriority: ['ATK %', 'Def Pen', 'Crit DMG', 'Crit Rate'],
+
+        scaling: {
+            atk: { grade: "S", description: "+16% ATK self → ATK scaler solide" },
+            critDMG: { grade: "A", description: "Multiplicateurs empilés amplifient le CritDMG" },
+            defPen: { grade: "S", description: "DefPen crucial avec les multiplicateurs DMG" },
+            critRate: { grade: "A", description: "Pas de CR self-buff → investir en raw" }
+        },
+        tips: [
+            'A0 +30% DMG dealt → multiplicateur global très fort',
+            'A1 +60% Skill DMG → booster énorme sur toutes les skills',
+            '+16% ATK self → bonus ATK permanent',
+            'A4 +40% Water DMG self → très gros boost élémental',
+            'Assassin Water solide avec des multiplicateurs empilés',
+            'Focus ATK% et DefPen pour maximiser les dégâts avec ses multiplicateurs'
+        ],
+        recommendedSets: {
+            bdg: '4x Armed + 4x Expert',
+            general: '8x Chaotic Infamy',
+            alternative: '4x Armed + 4x Obsidian'
+        },
+        benchmarks: {
+            casual: { critRate: 50, critDMG: 150, defPen: 40, dps: "5-12B" },
+            intermediate: { critRate: 70, critDMG: 185, defPen: 55, dps: "15-30B" },
+            advanced: { critRate: 90, critDMG: 215, defPen: 70, dps: "30-55B" },
+            whale: { critRate: 95, critDMG: 240, defPen: 80, dps: "55-85B" }
         }
     },
 };

@@ -6256,10 +6256,10 @@ export const CHARACTER_ADVANCED_BUFFS = {
                     {
                         name: 'Pure Sword Princess Synergy (A4)',
                         trigger: 'passive (per Water ally)',
-                        scope: 'raid-water',
+                        scope: 'team-water',
                         effects: { critRate: 42, critDMG: 42 },
                         duration: 'infinite',
-                        note: 'A4: +7% CR & +7% CritDMG per Water ally. Guild Boss: 6×7% = +42% CR/CD (no stack limit, all Water)'
+                        note: 'A4: +7% CR & +7% CritDMG per Water ally (team only, not raid-wide)'
                     }
                 ],
                 debuffs: [
@@ -6356,10 +6356,10 @@ export const CHARACTER_ADVANCED_BUFFS = {
                     {
                         name: 'Pure Sword Princess Synergy (A4)',
                         trigger: 'passive (per Water ally)',
-                        scope: 'raid-water',
+                        scope: 'team-water',
                         effects: { critRate: 42, critDMG: 42 },
                         duration: 'infinite',
-                        note: 'A4: +7% CR & +7% CritDMG per Water ally. Guild Boss: 6×7% = +42% CR/CD (no stack limit, all Water)'
+                        note: 'A4: +7% CR & +7% CritDMG per Water ally (team only, not raid-wide)'
                     }
                 ],
                 debuffs: [
@@ -7778,6 +7778,3174 @@ export const CHARACTER_ADVANCED_BUFFS = {
                     { name: 'Unrecoverable', trigger: 'Skill 1 / Skill 2 hit', scope: 'enemy', effects: {}, duration: 30, note: 'No HP recovery (30s)' }
                 ]
             }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🌪️ LENNART NIERMANN - Wind Tank/DPS (DEF scaling)
+    // [Hunter's Cage] +30% damage taken from Lennart (self, 20s)
+    // [Analysis] 12 stacks via Todes-Symphonie → +20% DEF while active (self)
+    // Arme: rien de notable
+    // ═══════════════════════════════════════════════════════════════
+    niermann: {
+        id: 'niermann',
+        name: 'Lennart Niermann',
+        class: 'Fighter / Tank',
+        element: 'Wind',
+        scaleStat: 'DEF',
+        primaryRole: 'DPS',
+        secondaryRole: 'Tank',
+        tags: ['DEF Scaler', 'Self Buffer', 'Hunter Cage', 'Analysis'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: "Hunter's Cage",
+                        description: "[Hunter's Cage] Increases the target's damage taken from Lennart by 30%. Duration: 20s.",
+                        mechanic: 'self-debuff',
+                        duration: 20
+                    },
+                    {
+                        name: 'Analysis Effect',
+                        description: 'When using Todes-Symphonie, gain 12 instances of [Analysis]. DEF +20% while [Analysis] is active.',
+                        mechanic: 'conditional',
+                        duration: 0
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: "Hunter's Cage (Self DPS boost)",
+                        trigger: 'on hit (marks enemy)',
+                        scope: 'self',
+                        effects: { damageTaken: 30 },
+                        duration: 20,
+                        note: '+30% damage taken by target from Lennart only (not shared with team/raid)'
+                    },
+                    {
+                        name: 'Analysis DEF Boost',
+                        trigger: 'Todes-Symphonie (12 stacks)',
+                        scope: 'self',
+                        effects: { defense: 20 },
+                        duration: 'while active',
+                        note: '+20% DEF while [Analysis] stacks are active'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A1: [Analysis] 20 stacks → [Defensive Divination Circle] on ENTIRE TEAM
+            // +30% CritDMG, +30% DEF, Super Armor, Analysis stacks frozen. 20s.
+            A1: {
+                passives: [
+                    {
+                        name: 'Defensive Divination Circle (A1)',
+                        description: 'When [Analysis] reaches 20 stacks, activates [Defensive Divination Circle] on the entire team. Cannot lose or gain [Analysis] stacks while active. Gains Super Armor.',
+                        mechanic: 'conditional',
+                        duration: 20
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: "Hunter's Cage (Self DPS boost)",
+                        trigger: 'on hit (marks enemy)',
+                        scope: 'self',
+                        effects: { damageTaken: 30 },
+                        duration: 20,
+                        note: '+30% damage taken by target from Lennart only'
+                    },
+                    {
+                        name: 'Analysis DEF Boost',
+                        trigger: 'Todes-Symphonie (12 stacks)',
+                        scope: 'self',
+                        effects: { defense: 20 },
+                        duration: 'while active',
+                        note: '+20% DEF while [Analysis] stacks are active'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Defensive Divination Circle',
+                        trigger: '[Analysis] reaches 20 stacks',
+                        scope: 'team',
+                        effects: { critDMG: 30, defense: 30 },
+                        duration: 20,
+                        note: 'A1: +30% CritDMG & +30% DEF for entire team. Also grants Super Armor to Lennart.'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A2: +30% Wind elemental damage (self)
+            A2: {
+                passives: [
+                    {
+                        name: 'Wind Elemental Mastery (A2)',
+                        description: "The user's Wind elemental damage increases by 30%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Wind Elemental Damage +30%',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { windDamage: 30 },
+                        duration: 'infinite',
+                        note: 'A2: +30% Wind elemental damage (self only)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A3: Skills zone +3s, Wind allies Basic Skill → 3% MP + 5% Power Gauge for Lennart
+            // When ally puts target in [Break] → Lennart gains [Mark]: +20% Wind DMG, +10% DefPen (infinite)
+            A3: {
+                passives: [
+                    {
+                        name: 'Extended Attack Zones (A3)',
+                        description: 'Using Fenriszahn, Kaisers Rache, or Todes-Symphonie increases attack zone duration by 3s.',
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: 'Wind Team Synergy (A3)',
+                        description: 'When Wind team members (including self) use Basic Skill, Lennart recovers 3% MP and 5% Power Gauge charge.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: '[Mark] - Break Trigger',
+                        trigger: 'ally puts target in [Break] state',
+                        scope: 'self',
+                        effects: { windDamage: 20, defPen: 10 },
+                        duration: 'infinite',
+                        note: 'A3: +20% Wind damage & +10% Defense Penetration when ally triggers [Break] (infinite duration)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A4: [Hunter's Cage] enhanced → 60% damage taken (was 30%), 40s (was 20s)
+            // [Mark] enhanced → +30% Wind DMG (was 20%), +15% DefPen (was 10%), infinite
+            // +10 Analysis stacks on stage enter, Todes-Symphonie CD -25s
+            A4: {
+                passives: [
+                    {
+                        name: "Enhanced Hunter's Cage & Mark (A4)",
+                        description: "[Hunter's Cage] and [Mark] effects are enhanced. Gain 10 [Analysis] stacks when entering a stage. Todes-Symphonie cooldown -25s.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: "Hunter's Cage Enhanced (A4)",
+                        trigger: 'on hit (marks enemy)',
+                        scope: 'self',
+                        effects: { damageTaken: 60 },
+                        duration: 40,
+                        note: 'A4: +60% damage taken by target from Lennart only (upgraded from 30%/20s → 60%/40s)'
+                    },
+                    {
+                        name: '[Mark] Enhanced (A4)',
+                        trigger: 'ally puts target in [Break] state',
+                        scope: 'self',
+                        effects: { windDamage: 30, defPen: 15 },
+                        duration: 'infinite',
+                        note: 'A4: +30% Wind DMG & +15% DefPen (upgraded from 20%/10%)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A5: Same as A4 — full kit unlocked, no stat changes
+            A5: {
+                passives: [
+                    {
+                        name: "Enhanced Hunter's Cage & Mark (A5)",
+                        description: "[Hunter's Cage] and [Mark] effects are enhanced. Gain 10 [Analysis] stacks when entering a stage. Todes-Symphonie cooldown -25s.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: "Hunter's Cage Enhanced (A5)",
+                        trigger: 'on hit (marks enemy)',
+                        scope: 'self',
+                        effects: { damageTaken: 60 },
+                        duration: 40,
+                        note: '+60% damage taken by target from Lennart only (40s)'
+                    },
+                    {
+                        name: '[Mark] Enhanced (A5)',
+                        trigger: 'ally puts target in [Break] state',
+                        scope: 'self',
+                        effects: { windDamage: 30, defPen: 15 },
+                        duration: 'infinite',
+                        note: '+30% Wind DMG & +15% DefPen (infinite)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Defensive Divination Circle',
+                        trigger: '[Analysis] reaches 20 stacks',
+                        scope: 'team',
+                        effects: { critDMG: 30, defense: 30 },
+                        duration: 20,
+                        note: '+30% CritDMG & +30% DEF for entire team (from A1)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🌪️ SUGIMOTO REIJI - Wind Infusion (HP scaling)
+    // Arme: +HP% (self) + Wind Overload +10% per stack ×3 for team (30s)
+    // Skills: Punisher, Eclipse Slash, Extinction Blade
+    // ═══════════════════════════════════════════════════════════════
+    sugimoto: {
+        id: 'sugimoto',
+        name: 'Sugimoto Reiji',
+        class: 'Infusion',
+        element: 'Wind',
+        scaleStat: 'HP',
+        primaryRole: 'DPS',
+        secondaryRole: 'Support',
+        tags: ['HP Scaler', 'Wind Overload Buffer', 'Team Buffer'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: "Sugimoto's Weapon - Wind Overload Buffer",
+                        description: 'Using Punisher, Eclipse Slash, or Extinction Blade increases all team members\' Wind Overload damage by 4%. Stacks up to 3 times (max +12%). Duration: 30s.',
+                        mechanic: 'weapon',
+                        duration: 30
+                    },
+                    {
+                        name: '[Sword-fighting] System',
+                        description: 'Cycles through 3 phases: [Initiation] → [Acceleration] (+50% skill DMG) → [Finale] (+100% skill DMG). Each phase upgrades skills and transitions on skill use.',
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: '[Flash Draw]',
+                        description: 'Using Flash of Steel/Returning Edge/Revolving Edge grants stacks (max 3). Punisher/Eclipse Slash/Extinction Blade become available, consuming 1 stack each.',
+                        mechanic: 'conditional'
+                    },
+                    {
+                        name: '[Sword Dance]',
+                        description: 'Using Unbroken Focus: Core Gauge restores 2× faster + Extreme Evasion activates Core Attack. 15s.',
+                        mechanic: 'conditional',
+                        duration: 15
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: '[Sword-fighting] Acceleration Phase',
+                        trigger: 'Punisher during [Initiation]',
+                        scope: 'self',
+                        effects: { damageIncrease: 50 },
+                        duration: 'until skill use',
+                        note: 'Skills enhanced +50% DMG (Punisher→Eclipse Slash, Flash of Steel→Returning Edge)'
+                    },
+                    {
+                        name: '[Sword-fighting] Finale Phase',
+                        trigger: 'Eclipse Slash during [Acceleration]',
+                        scope: 'self',
+                        effects: { damageIncrease: 100 },
+                        duration: 'until skill use',
+                        note: 'Skills enhanced +100% DMG (Eclipse Slash→Extinction Blade, Returning Edge→Revolving Edge)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Wind Overload Boost',
+                        trigger: 'Punisher / Eclipse Slash / Extinction Blade',
+                        scope: 'team',
+                        effects: { windOverload: 12 },
+                        duration: 30,
+                        note: 'A0 weapon: +4% Wind OL per stack ×3 = +12% Wind Overload for team (30s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: "[Winter's Edge]",
+                        trigger: 'Punisher (1 stack) / Eclipse Slash or Extinction Blade (2 stacks)',
+                        scope: 'enemy',
+                        effects: { dot: 50 },
+                        duration: 30,
+                        note: 'DOT: 50% of Max HP every 3s. Stacks up to 10 times. HP-scaling DOT.'
+                    }
+                ],
+            },
+            // A1: Unbroken Focus / Quickblade-Oblivion → [Flash Draw] + Core Attack
+            // Consuming Flash Draw: Quickblade-Oblivion CD -10s + 35% Power Gauge restored
+            A1: {
+                passives: [
+                    {
+                        name: 'Enhanced Flash Draw (A1)',
+                        description: 'Unbroken Focus or Quickblade-Oblivion activates [Flash Draw] + Core Attack. Consuming [Flash Draw] reduces Quickblade-Oblivion CD by 10s and restores 35% Power Gauge.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Wind Overload Boost',
+                        trigger: 'Punisher / Eclipse Slash / Extinction Blade',
+                        scope: 'team',
+                        effects: { windOverload: 18 },
+                        duration: 30,
+                        note: 'A1 weapon: +6% Wind OL per stack ×3 = +18% Wind Overload for team (30s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A2: Wind Elemental Accumulation +20% (self — faster Overload buildup)
+            A2: {
+                passives: [
+                    {
+                        name: 'Wind Elemental Accumulation (A2)',
+                        description: '[Wind] [Elemental Accumulation] effectiveness increases by 20%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Wind Elemental Accumulation +20%',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { windElementalAccumulation: 20 },
+                        duration: 'infinite',
+                        note: 'A2: +20% Wind Elemental Accumulation effectiveness (builds Overload faster)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Wind Overload Boost',
+                        trigger: 'Punisher / Eclipse Slash / Extinction Blade',
+                        scope: 'team',
+                        effects: { windOverload: 21 },
+                        duration: 30,
+                        note: 'A2 weapon: +7% Wind OL per stack ×3 = +21% Wind Overload for team (30s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A3: [Tempest Blade] — on Wind Overload inflicted → Sung + Wind team get massive buffs
+            // +18% DefPen, +45% Wind Overload DMG, +100% Wind QTE Skill DMG, 15s
+            A3: {
+                passives: [
+                    {
+                        name: '[Tempest Blade] (A3)',
+                        description: 'When Sugimoto or an ally inflicts Wind Overload, grants Sung Jinwoo and Wind team members [Tempest Blade]: +18% DefPen, +45% Wind Overload DMG, +100% Wind QTE Skill DMG. 15s.',
+                        mechanic: 'conditional',
+                        duration: 15
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Wind Overload Boost',
+                        trigger: 'Punisher / Eclipse Slash / Extinction Blade',
+                        scope: 'team',
+                        effects: { windOverload: 24 },
+                        duration: 30,
+                        note: 'A3 weapon: +8% Wind OL per stack ×3 = +24% Wind Overload for team (30s)'
+                    },
+                    {
+                        name: '[Tempest Blade]',
+                        trigger: 'Wind Overload inflicted (by Sugimoto or ally)',
+                        scope: 'team-wind',
+                        effects: { defPen: 18, windOverload: 45, windQTESkillDamage: 100 },
+                        duration: 15,
+                        note: 'A3: +18% DefPen, +45% Wind OL DMG, +100% Wind QTE Skill DMG for Sung + Wind team (15s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A4: +10% CritDMG per Wind ally for Wind team members
+            A4: {
+                passives: [
+                    {
+                        name: 'Wind Crit Synergy (A4)',
+                        description: 'The Critical Hit damage of Wind team members increases by 10% for every Wind ally.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Wind Overload Boost',
+                        trigger: 'Punisher / Eclipse Slash / Extinction Blade',
+                        scope: 'team',
+                        effects: { windOverload: 27 },
+                        duration: 30,
+                        note: 'A4 weapon: +9% Wind OL per stack ×3 = +27% Wind Overload for team (30s)'
+                    },
+                    {
+                        name: 'Wind Crit Synergy',
+                        trigger: 'passive (per Wind ally)',
+                        scope: 'team-wind',
+                        effects: { critDMG: 30 },
+                        duration: 'infinite',
+                        note: 'A4: +10% CritDMG per Wind ally (3 Wind allies = +30% CritDMG for Wind team)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A5: [Stormflash] Extinction Blade & Blossomfall +300% DMG (30s)
+            // [Sword Dance] enhanced: Core Attack +100%, Wind Accumulation +20%, 15s
+            A5: {
+                passives: [
+                    {
+                        name: '[Stormflash] (A5)',
+                        description: 'Using Quickblade-Oblivion activates [Stormflash]: Extinction Blade and Blossomfall damage increase by 300%. 30s.',
+                        mechanic: 'conditional',
+                        duration: 30
+                    },
+                    {
+                        name: '[Sword Dance] Enhanced (A5)',
+                        description: 'Core Gauge recharges 2× faster. Skills + Extreme Evasion activate Core Attack. Core Attack DMG +100%. Wind Elemental Accumulation +20%. 15s.',
+                        mechanic: 'conditional',
+                        duration: 15
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: '[Stormflash]',
+                        trigger: 'Quickblade-Oblivion',
+                        scope: 'self',
+                        effects: { skillDamage: 300 },
+                        duration: 30,
+                        note: 'A5: Extinction Blade & Blossomfall +300% DMG (30s)'
+                    },
+                    {
+                        name: '[Sword Dance] Enhanced (A5)',
+                        trigger: 'Unbroken Focus',
+                        scope: 'self',
+                        effects: { coreAttackDamage: 100, windElementalAccumulation: 20 },
+                        duration: 15,
+                        note: 'A5: Core Attack +100% DMG, Wind Accumulation +20%, Extreme Evasion → Core Attack (15s)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Wind Overload Boost',
+                        trigger: 'Punisher / Eclipse Slash / Extinction Blade',
+                        scope: 'team',
+                        effects: { windOverload: 30 },
+                        duration: 30,
+                        note: 'A5 weapon: +10% Wind OL per stack ×3 = +30% Wind Overload for team (30s)'
+                    },
+                    {
+                        name: '[Tempest Blade]',
+                        trigger: 'Wind Overload inflicted (by Sugimoto or ally)',
+                        scope: 'team-wind',
+                        effects: { defPen: 18, windOverload: 45, windQTESkillDamage: 100 },
+                        duration: 15,
+                        note: 'A3: +18% DefPen, +45% Wind OL DMG, +100% Wind QTE Skill DMG for Sung + Wind team (15s)'
+                    },
+                    {
+                        name: 'Wind Crit Synergy',
+                        trigger: 'passive (per Wind ally)',
+                        scope: 'team-wind',
+                        effects: { critDMG: 30 },
+                        duration: 'infinite',
+                        note: 'A4: +10% CritDMG per Wind ally (3 Wind allies = +30% CritDMG for Wind team)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🌪️ AMAMIYA MIREI - Wind Assassin (ATK scaling)
+    // MP-based ATK scaler, [Kuroha's Darkness] skill damage boost
+    // Arme: rien de notable
+    // ═══════════════════════════════════════════════════════════════
+    mirei: {
+        id: 'mirei',
+        name: 'Amamiya Mirei',
+        class: 'Assassin',
+        element: 'Wind',
+        scaleStat: 'ATK',
+        primaryRole: 'DPS',
+        secondaryRole: 'None',
+        tags: ['ATK Scaler', 'MP Scaler', 'Self Buffer', 'Kuroha Darkness'],
+
+        // Arme: Power Gauge +X% on stage enter + CR/CritDMG +X% on Kuroha skills (self)
+        // A0→A5: Power Gauge 10/20/30/40/50/60%, CR/CD on skills 5/10/15/20/25/30%
+        weapon: {
+            selfBuffs: [
+                {
+                    name: 'Kuroha Skill CR/CritDMG Boost (Weapon)',
+                    trigger: 'Kuroha skills (Wings of Night / Raven\'s Cry)',
+                    scope: 'self',
+                    scaling: [
+                        { effects: { critRate: 5, critDMG: 5 } },
+                        { effects: { critRate: 10, critDMG: 10 } },
+                        { effects: { critRate: 15, critDMG: 15 } },
+                        { effects: { critRate: 20, critDMG: 20 } },
+                        { effects: { critRate: 25, critDMG: 25 } },
+                        { effects: { critRate: 30, critDMG: 30 } },
+                    ],
+                    duration: 'while active',
+                    note: 'Weapon: +CR & +CritDMG on Kuroha skills (main rotation, ~permanent uptime)'
+                }
+            ],
+            teamBuffs: [],
+        },
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: 'MP-based ATK Scaling',
+                        description: 'When MP ≥ 30%, applies [Kuroha\'s Darkness]. ATK increases by 6% per 150 additional MP (up to +90% ATK).',
+                        mechanic: 'conditional'
+                    },
+                    {
+                        name: "[Kuroha's Darkness]",
+                        description: "Increases damage of Kuroha's Sword Technique Type 3: Wings of Night and Type 4: Raven's Cry by 30%.",
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'MP ATK Scaling',
+                        trigger: 'MP ≥ 30%',
+                        scope: 'self',
+                        effects: { attack: 90 },
+                        duration: 'while active',
+                        note: 'A0: +6% ATK per 150 MP (max +90% ATK at full MP)'
+                    },
+                    {
+                        name: "[Kuroha's Darkness] Skill Boost",
+                        trigger: 'MP ≥ 30%',
+                        scope: 'self',
+                        effects: { skillDamage: 30 },
+                        duration: 'while active',
+                        note: "A0: +30% DMG on Wings of Night & Raven's Cry"
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A1: [Possessed] +20% CR/CritDMG, [Deep Darkness] +12% ATK/CR ×2, [Winter's Edge] DOT 100% ATK
+            A1: {
+                passives: [
+                    {
+                        name: "[Winter's Edge] (A1)",
+                        description: "Kuroha's Sword Technique Lethal Move: Moonless Night Overture inflicts [Winter's Edge]. DOT: 100% ATK every 3s, 30s, stacks ×10.",
+                        mechanic: 'conditional',
+                        duration: 30
+                    },
+                    {
+                        name: '[Deep Darkness] (A1)',
+                        description: "Using Wings of Night while [Possessed] is active applies [Deep Darkness]: +12% ATK & CR, stacks ×2. 12s.",
+                        mechanic: 'conditional',
+                        duration: 12
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: '[Possessed] CR/CritDMG Boost',
+                        trigger: '[Possessed] active',
+                        scope: 'self',
+                        effects: { critRate: 20, critDMG: 20 },
+                        duration: 'while active',
+                        note: 'A1: +20% CR & +20% CritDMG while [Possessed] is active'
+                    },
+                    {
+                        name: '[Deep Darkness]',
+                        trigger: 'Wings of Night during [Possessed]',
+                        scope: 'self',
+                        effects: { attack: 24, critRate: 24 },
+                        duration: 12,
+                        note: 'A1: +12% ATK & +12% CR per stack ×2 = +24% ATK/CR (12s)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: "[Winter's Edge]",
+                        trigger: 'Moonless Night Overture hit',
+                        scope: 'enemy',
+                        effects: { dot: 100 },
+                        duration: 30,
+                        note: 'DOT: 100% ATK every 3s. Stacks ×10. ATK-scaling DOT.'
+                    }
+                ],
+            },
+            // A2: Power Gauge +40% on stage enter, +40% CritDMG (self, permanent)
+            A2: {
+                passives: [
+                    {
+                        name: 'Stage Entry Boost (A2)',
+                        description: 'When entering the stage, Power Gauge is charged by 40% and Critical Hit damage increases by 40%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'CritDMG Boost (A2)',
+                        trigger: 'stage entry (permanent)',
+                        scope: 'self',
+                        effects: { critDMG: 40 },
+                        duration: 'infinite',
+                        note: 'A2: +40% CritDMG (permanent from stage entry)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A3: Basic/Core Attack → 2% MP + 1% Power Gauge + Lethal Move CD -2s
+            // [Midnight Gale]: +0.2% DefPen + +1% Wind OL per stack ×100 = +20% DefPen + +100% Wind OL (self, infinite)
+            A3: {
+                passives: [
+                    {
+                        name: 'Basic/Core Attack Recovery (A3)',
+                        description: 'Basic Attack or Core Attack restores 2% MP, 1% Power Gauge, and reduces Moonless Night Overture CD by 2s.',
+                        mechanic: 'conditional'
+                    },
+                    {
+                        name: '[Midnight Gale] (A3)',
+                        description: "Hitting a target affected by [Winter's Edge] grants [Midnight Gale]: +0.2% DefPen + +1% Wind Overload per stack. Stacks ×100 (max +20% DefPen + +100% Wind OL). Infinite.",
+                        mechanic: 'stacking'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: '[Midnight Gale]',
+                        trigger: "hit target with [Winter's Edge]",
+                        scope: 'self',
+                        effects: { defPen: 20, windOverload: 100 },
+                        duration: 'infinite',
+                        note: "A3: +0.2% DefPen + +1% Wind OL per stack ×100 = +20% DefPen + +100% Wind Overload (infinite)"
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A4: +12% Wind DMG per Wind member ×3 = +36% Wind DMG (self)
+            // In Guild Boss: stacks per ally (no cap)
+            A4: {
+                passives: [
+                    {
+                        name: 'Wind Synergy (A4)',
+                        description: "Mirei's Wind damage increases by 12% for every Wind member (stacks ×3). In Guild Boss mode, stacks once per ally with no limit.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Wind Ally Damage Boost',
+                        trigger: 'passive (per Wind ally)',
+                        scope: 'self',
+                        effects: { windDamage: 36 },
+                        duration: 'infinite',
+                        note: 'A4: +12% Wind DMG per Wind member ×3 = +36% Wind DMG (self). Guild Boss: no stack limit.'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A5: [Raven's Confession] while [Possessed]: +80% skill DMG + +30% back attack DMG
+            A5: {
+                passives: [
+                    {
+                        name: "[Raven's Confession] (A5)",
+                        description: "While [Possessed], gains [Raven's Confession]: Wings of Night & Raven's Cry +80% DMG. Back attack damage +30%.",
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: "[Raven's Confession]",
+                        trigger: '[Possessed] active',
+                        scope: 'self',
+                        effects: { skillDamage: 80, backAttackDamage: 30 },
+                        duration: 'while active',
+                        note: "A5: +80% DMG on Wings of Night & Raven's Cry + +30% back attack DMG"
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🌪️ SOYEON - Wind Fighter (ATK scaling)
+    // Arme: +ATK% (self) + Basic Skill DMG for team (30s)
+    // ═══════════════════════════════════════════════════════════════
+    soyeon: {
+        id: 'soyeon',
+        name: 'Soyeon',
+        class: 'Fighter',
+        element: 'Wind',
+        scaleStat: 'ATK',
+        primaryRole: 'DPS',
+        secondaryRole: 'Support',
+        tags: ['ATK Scaler', 'Basic Skill Buffer', 'Team Buffer'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: "Soyeon's Weapon - Basic Skill Buffer",
+                        description: 'Using Kill the Mic, Hook and Chain (or Ver. 2) increases Basic Skill damage of team members by 5% for 30s.',
+                        mechanic: 'weapon',
+                        duration: 30
+                    },
+                    {
+                        name: '[FOREVER] (A0)',
+                        description: '[FOREVER] activates on entire team when entering stage: +5% damage dealt per stack ×3 = +15% DMG. Infinite.',
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: '[Beat Maker] / [Drop the Beat] System',
+                        description: 'Hook and Chain → [Beat Maker]: skills become Ver. 2 (+100% Kill the Mic, +50% Hook and Chain). Kill the Mic within 20s after Beat Maker ends → [Drop the Beat]: Core Attack + Remix Shot Ver. 2 (+50% DMG).',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: '[Beat Maker] Skill Enhancement',
+                        trigger: 'Hook and Chain',
+                        scope: 'self',
+                        effects: { skillDamage: 100 },
+                        duration: 10,
+                        note: 'A0: Kill the Mic +100%, Hook and Chain +50%. Super Armor during Ver. 2 skills. 10s.'
+                    },
+                    {
+                        name: '[Magnum Chain]',
+                        trigger: 'Remix Shot Ver. 2 (consumes [magnum] rounds)',
+                        scope: 'self',
+                        effects: { coreAttackDamage: 15 },
+                        duration: 3,
+                        note: 'A0: +15% Core Attack DMG per stack ×6, restores 8 MP + 1.2% Power Gauge per stack. 3s.'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG Boost',
+                        trigger: 'Kill the Mic / Hook and Chain (or Ver. 2)',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 5 },
+                        duration: 30,
+                        note: 'A0 weapon: +5% Basic Skill DMG for team (30s)'
+                    },
+                    {
+                        name: '[FOREVER]',
+                        trigger: 'stage entry (automatic)',
+                        scope: 'team',
+                        effects: { damageIncrease: 15 },
+                        duration: 'infinite',
+                        note: 'A0: +5% damage dealt per stack ×3 = +15% DMG for entire team (infinite)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A1: [Break] +3s duration. [Diss Battle] debuff: +1% Wind DMG taken + +1% DMG taken ×5 (30s)
+            A1: {
+                passives: [
+                    {
+                        name: 'Extended Break (A1)',
+                        description: 'When Soyeon or an ally puts target in [Break], its duration increases by 3s.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG Boost',
+                        trigger: 'Kill the Mic / Hook and Chain (or Ver. 2)',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 10 },
+                        duration: 30,
+                        note: 'A1 weapon: +10% Basic Skill DMG for team (30s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: '[Diss Battle]',
+                        trigger: 'Hook and Chain / Hook and Chain Ver. 2 hit',
+                        scope: 'enemy',
+                        effects: { windDamageTaken: 5, damageTaken: 5 },
+                        duration: 30,
+                        note: 'A1: +1% Wind DMG taken + +1% DMG taken per stack ×5 = +5%/+5% on enemy (30s)'
+                    }
+                ],
+            },
+            // A2: [Break] effectiveness +20% (self utility)
+            A2: {
+                passives: [
+                    {
+                        name: 'Break Effectiveness (A2)',
+                        description: '[Break] effectiveness increases by 20%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG Boost',
+                        trigger: 'Kill the Mic / Hook and Chain (or Ver. 2)',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 15 },
+                        duration: 30,
+                        note: 'A2 weapon: +15% Basic Skill DMG for team (30s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A3: [Beat Boost] on entire team at stage entry: +15% Ultimate Skill DMG + +10% Wind DMG (infinite)
+            // Wind 3rd hunter synergy: 10% Power Gauge on magnum reload
+            A3: {
+                passives: [
+                    {
+                        name: '[Beat Boost] (A3)',
+                        description: '[Beat Boost] applied to entire team on stage entry: +15% Ultimate Skill DMG + +10% Wind DMG. Infinite. If 3rd hunter is Wind, they regain 10% Power Gauge on magnum reload.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG Boost',
+                        trigger: 'Kill the Mic / Hook and Chain (or Ver. 2)',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 20 },
+                        duration: 30,
+                        note: 'A3 weapon: +20% Basic Skill DMG for team (30s)'
+                    },
+                    {
+                        name: '[Beat Boost]',
+                        trigger: 'stage entry (automatic)',
+                        scope: 'team',
+                        effects: { ultimateSkillDamage: 15, windDamage: 10 },
+                        duration: 'infinite',
+                        note: 'A3: +15% Ultimate Skill DMG + +10% Wind DMG for entire team (infinite)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A4: +3% Wind DMG per Wind ally for team members (×3 = +9% Wind DMG)
+            A4: {
+                passives: [
+                    {
+                        name: 'Wind Team Synergy (A4)',
+                        description: 'The Wind damage of team members increases by 3% for every Wind ally.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG Boost',
+                        trigger: 'Kill the Mic / Hook and Chain (or Ver. 2)',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 25 },
+                        duration: 30,
+                        note: 'A4 weapon: +25% Basic Skill DMG for team (30s)'
+                    },
+                    {
+                        name: 'Wind Ally DMG Synergy',
+                        trigger: 'passive (per Wind ally)',
+                        scope: 'team',
+                        effects: { windDamage: 9 },
+                        duration: 'infinite',
+                        note: 'A4: +3% Wind DMG per Wind ally ×3 = +9% Wind DMG for team members'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A5: [Magnum Chain] enhanced → +30% Core ATK (was 15%)
+            // [Diss Battle] enhanced → stacks ×10 = +10% Wind DMG taken + +10% DMG taken (was ×5)
+            A5: {
+                passives: [
+                    {
+                        name: 'Enhanced Magnum Chain & Diss Battle (A5)',
+                        description: '[Magnum Chain] Core Attack +30% (was 15%). [Diss Battle] stacks ×10 (was ×5): +10% Wind DMG taken + +10% DMG taken.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: '[Magnum Chain] Enhanced (A5)',
+                        trigger: 'Remix Shot Ver. 2 (consumes [magnum] rounds)',
+                        scope: 'self',
+                        effects: { coreAttackDamage: 30 },
+                        duration: 3,
+                        note: 'A5: +30% Core Attack DMG per stack ×6 (upgraded from 15%). 8 MP + 1.2% Power Gauge per stack.'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG Boost',
+                        trigger: 'Kill the Mic / Hook and Chain (or Ver. 2)',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 30 },
+                        duration: 30,
+                        note: 'A5 weapon: +30% Basic Skill DMG for team (30s)'
+                    },
+                    {
+                        name: '[FOREVER]',
+                        trigger: 'stage entry (automatic)',
+                        scope: 'team',
+                        effects: { damageIncrease: 15 },
+                        duration: 'infinite',
+                        note: '+5% damage dealt per stack ×3 = +15% DMG for entire team (infinite)'
+                    },
+                    {
+                        name: '[Beat Boost]',
+                        trigger: 'stage entry (automatic)',
+                        scope: 'team',
+                        effects: { ultimateSkillDamage: 15, windDamage: 10 },
+                        duration: 'infinite',
+                        note: 'A3: +15% Ultimate Skill DMG + +10% Wind DMG for entire team (infinite)'
+                    },
+                    {
+                        name: 'Wind Ally DMG Synergy',
+                        trigger: 'passive (per Wind ally)',
+                        scope: 'team',
+                        effects: { windDamage: 9 },
+                        duration: 'infinite',
+                        note: 'A4: +3% Wind DMG per Wind ally ×3 = +9% Wind DMG for team members'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: '[Diss Battle] Enhanced (A5)',
+                        trigger: 'Hook and Chain / Hook and Chain Ver. 2 hit',
+                        scope: 'enemy',
+                        effects: { windDamageTaken: 10, damageTaken: 10 },
+                        duration: 30,
+                        note: 'A5: +1% Wind DMG taken + +1% DMG taken per stack ×10 = +10%/+10% on enemy (30s, upgraded from ×5)'
+                    }
+                ],
+            },
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🌪️ GOTO RYUJI - Wind Tank (HP scaling)
+    // Arme: +HP% (self) + CritDMG on Reverse Tempest / Storm Blade (self, 15s)
+    // ═══════════════════════════════════════════════════════════════
+    goto: {
+        id: 'goto',
+        name: 'Goto Ryuji',
+        class: 'Tank',
+        element: 'Wind',
+        scaleStat: 'HP',
+        primaryRole: 'Tank',
+        secondaryRole: 'DPS',
+        tags: ['HP Scaler', 'Tank', 'Self Buffer'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: "Goto's Weapon - CritDMG on Skill",
+                        description: 'Using Reverse Tempest or Storm Blade increases CritDMG by 5% for 15s.',
+                        mechanic: 'weapon',
+                        duration: 15
+                    },
+                    {
+                        name: 'MP Recovery on Basic Skill',
+                        description: 'Basic Skill hit recovers 50 MP.',
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: 'CritDMG → CritRate Conversion',
+                        description: "Critical Hit Rate increases equal to 20% of the user's Critical Hit damage stat.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: CritDMG Boost',
+                        trigger: 'Reverse Tempest / Storm Blade',
+                        scope: 'self',
+                        effects: { critDMG: 5 },
+                        duration: 15,
+                        note: 'A0 weapon: +5% CritDMG on skill use (self, 15s)'
+                    },
+                    {
+                        name: 'CritDMG → CritRate Conversion',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { critRateFromCritDMG: 20 },
+                        duration: 'infinite',
+                        note: 'A0: CR increases by 20% of CritDMG stat (passive conversion)'
+                    },
+                    {
+                        name: '[Exorcise]',
+                        trigger: 'Skill 1 hit',
+                        scope: 'self',
+                        effects: { critDMG: 15 },
+                        duration: 7,
+                        note: 'A0: +3% CritDMG per stack ×5 = +15% CritDMG (7s). At 5 stacks triggers [Arrogance].'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: '[Arrogance]',
+                        trigger: '[Exorcise] reaches 5 stacks',
+                        scope: 'team-wind',
+                        effects: { critDMG: 20, basicSkillDamage: 20 },
+                        duration: 20,
+                        note: 'A0: +20% CritDMG + +20% Basic Skill DMG for Wind team members (20s). Side effect: +33% Mana consumption.'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A1: [Break] +3s, [Tyrant's Path] +12% DMG vs Break (team, infinite)
+            // Death Gale → +10% Wind DMG on Reverse Tempest/Storm Blade (self, 10s)
+            // [Exorcise] ×5 → [Demonic Soul]
+            A1: {
+                passives: [
+                    {
+                        name: 'Extended Break (A1)',
+                        description: "If Goto or an ally puts enemy in [Break], its duration increases by 3s.",
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: '[Demonic Soul] (A1)',
+                        description: 'When [Exorcise] stacks 5 times, triggers [Demonic Soul] effect.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: CritDMG Boost',
+                        trigger: 'Reverse Tempest / Storm Blade',
+                        scope: 'self',
+                        effects: { critDMG: 10 },
+                        duration: 15,
+                        note: 'A1 weapon: +10% CritDMG on skill use (self, 15s)'
+                    },
+                    {
+                        name: 'Death Gale Wind Boost',
+                        trigger: 'Death Gale',
+                        scope: 'self',
+                        effects: { windDamage: 10 },
+                        duration: 10,
+                        note: 'A1: +10% Wind DMG on Reverse Tempest & Storm Blade (10s)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: "[Tyrant's Path]",
+                        trigger: 'stage entry (automatic)',
+                        scope: 'team',
+                        effects: { breakTargetDmg: 12 },
+                        duration: 'infinite',
+                        note: 'A1: +12% damage dealt to targets in [Break] state for all allies (infinite)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A2: [Break] effectiveness +20%
+            A2: {
+                passives: [
+                    {
+                        name: 'Break Effectiveness (A2)',
+                        description: "[Break] effectiveness increases by 20%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: CritDMG Boost',
+                        trigger: 'Reverse Tempest / Storm Blade',
+                        scope: 'self',
+                        effects: { critDMG: 15 },
+                        duration: 15,
+                        note: 'A2 weapon: +15% CritDMG on skill use (self, 15s)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A3: +20% CritDMG on Divine Wind / Devastate Prey (self, 12s)
+            A3: {
+                passives: [
+                    {
+                        name: 'Divine Wind CritDMG (A3)',
+                        description: 'Using Divine Wind or Devastate Prey increases CritDMG by 20% for 12s.',
+                        mechanic: 'conditional',
+                        duration: 12
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: CritDMG Boost',
+                        trigger: 'Reverse Tempest / Storm Blade',
+                        scope: 'self',
+                        effects: { critDMG: 20 },
+                        duration: 15,
+                        note: 'A3 weapon: +20% CritDMG on skill use (self, 15s)'
+                    },
+                    {
+                        name: 'Divine Wind CritDMG',
+                        trigger: 'Divine Wind / Devastate Prey',
+                        scope: 'self',
+                        effects: { critDMG: 20 },
+                        duration: 12,
+                        note: 'A3: +20% CritDMG on Divine Wind or Devastate Prey (12s)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A4: 3rd hunter in team gets +24% DMG dealt but +12% DMG taken
+            A4: {
+                passives: [
+                    {
+                        name: 'Third Hunter Empowerment (A4)',
+                        description: 'The damage of the third hunter in the team increases by 24%, but their damage taken also increases by 12%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: CritDMG Boost',
+                        trigger: 'Reverse Tempest / Storm Blade',
+                        scope: 'self',
+                        effects: { critDMG: 25 },
+                        duration: 15,
+                        note: 'A4 weapon: +25% CritDMG on skill use (self, 15s)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Third Hunter Empowerment',
+                        trigger: 'permanent (3rd team slot)',
+                        scope: 'team',
+                        effects: { damageIncrease: 24 },
+                        duration: 'infinite',
+                        note: 'A4: 3rd hunter in team +24% DMG dealt (but +12% DMG taken as tradeoff)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A5: Skills +2 extra hits (+10% DMG each), +2 usages
+            // Devastate Prey +60% DMG & CritDMG when HP ratio > enemy's
+            A5: {
+                passives: [
+                    {
+                        name: 'Enhanced Skills (A5)',
+                        description: "Phantom's Heavenly Hurricane, Reverse Tempest, and Storm Blade can hit 2 more times with +10% additional damage per attack. Usage count increases by 2.",
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: 'Devastate Prey HP Conditional (A5)',
+                        description: "When Goto's HP ratio is higher than the enemy's, Devastate Prey's damage and Critical Hit damage increase by 60%.",
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: CritDMG Boost',
+                        trigger: 'Reverse Tempest / Storm Blade',
+                        scope: 'self',
+                        effects: { critDMG: 30 },
+                        duration: 15,
+                        note: 'A5 weapon: +30% CritDMG on skill use (self, 15s)'
+                    },
+                    {
+                        name: 'Devastate Prey Conditional (A5)',
+                        trigger: 'HP ratio > enemy',
+                        scope: 'self',
+                        effects: { skillDamage: 60, critDMG: 60 },
+                        duration: 'while active',
+                        note: 'A5: Devastate Prey +60% DMG & +60% CritDMG when HP ratio > enemy'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: "[Tyrant's Path]",
+                        trigger: 'stage entry (automatic)',
+                        scope: 'team',
+                        effects: { breakTargetDmg: 12 },
+                        duration: 'infinite',
+                        note: 'A1: +12% damage dealt to targets in [Break] state for all allies (infinite)'
+                    },
+                    {
+                        name: '[Arrogance]',
+                        trigger: '[Exorcise] reaches 5 stacks',
+                        scope: 'team-wind',
+                        effects: { critDMG: 20, basicSkillDamage: 20 },
+                        duration: 20,
+                        note: 'A0: +20% CritDMG + +20% Basic Skill DMG for Wind team (20s)'
+                    },
+                    {
+                        name: 'Third Hunter Empowerment',
+                        trigger: 'permanent (3rd team slot)',
+                        scope: 'team',
+                        effects: { damageIncrease: 24 },
+                        duration: 'infinite',
+                        note: 'A4: 3rd hunter +24% DMG dealt (but +12% DMG taken)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+        }
+    },
+    // 🌪️ JINAH - Wind Support (DEF scaling)
+    // Arme: +DEF% (self) + Basic Skill DMG +X% for team (on Reverse Tempest Cleave / Umbrella)
+    // A0: [Wind] +50% skill DMG (self), [Gale Wings] → [Wings of Freedom] +10% Basic/Ulti Skill DMG (team)
+    // A1: [Wings of Freedom] enhanced: +20% Basic/Ulti + +10% Wind DMG, MP recovery on Gale Wings
+    // A2: [Wings of Freedom] adds [Unrecoverable] on Ulti hit (anti-heal debuff)
+    // A3: [Wind's Touch] ×10 stacks: +10% ATK/DEF/+5% Basic (all), doubled for Wind members
+    // A4: +5% Wind DMG per Wind ally (team-wind)
+    // A5: [Aero] +2% Wind DMG ×5 = +10% Wind DMG (team), [Serenade] burst
+    // ═══════════════════════════════════════════════════════════════
+    jinah: {
+        id: 'jinah',
+        name: 'Jinah',
+        class: 'Fighter',
+        element: 'Wind',
+        scaleStat: 'DEF',
+        primaryRole: 'Support',
+        secondaryRole: 'DPS',
+        tags: ['DEF Scaler', 'Support', 'Team Buffer', 'Wind Synergy'],
+
+        advancements: {
+            // A0: [Wind] +50% skill DMG (self), [Gale Wings] → [Wings of Freedom] +10% Basic/Ulti (team)
+            A0: {
+                passives: [
+                    {
+                        name: "Jinah's Weapon - Basic Skill DMG for Team",
+                        description: 'Using Reverse Tempest Cleave or Umbrella: Reverse Tempest Cleave increases team Basic Skill damage by 0.3%.',
+                        mechanic: 'weapon',
+                        duration: 30
+                    },
+                    {
+                        name: '[Wind] Effect',
+                        description: 'Using skills activates [Wind]: +50% skill DMG (self). At 3 stacks, grants max [Gale Wings] to team (except Jinah). Duration 60s, ×3 stacks.',
+                        mechanic: 'conditional'
+                    },
+                    {
+                        name: '[Gale Wings] → [Wings of Freedom]',
+                        description: 'Allies consume [Gale Wings] on Basic/Ultimate Skill use to activate [Wings of Freedom]: +10% Basic & Ultimate Skill DMG (5s).',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 2 },
+                        duration: 'infinite',
+                        note: 'A0 weapon: +2% DEF (self)'
+                    },
+                    {
+                        name: '[Wind] Skill DMG',
+                        trigger: 'skill use (stacking)',
+                        scope: 'self',
+                        effects: { skillDamage: 50 },
+                        duration: 60,
+                        note: 'A0: [Wind] effect +50% skill DMG (self, 60s, ×3 stacks)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG',
+                        trigger: 'Reverse Tempest Cleave / Umbrella',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 0.3 },
+                        duration: 30,
+                        note: 'A0 weapon: +0.3% Basic Skill DMG for team (30s)'
+                    },
+                    {
+                        name: '[Wings of Freedom]',
+                        trigger: 'ally consumes [Gale Wings]',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 10, ultimateSkillDamage: 10 },
+                        duration: 5,
+                        note: 'A0: +10% Basic & Ultimate Skill DMG for allies (5s, high uptime via Gale Wings)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A1: [Wings of Freedom] enhanced → +20% Basic/Ulti + +10% Wind DMG (10s)
+            A1: {
+                passives: [
+                    {
+                        name: '[Wings of Freedom] Enhanced (A1)',
+                        description: '[Wings of Freedom] now grants +20% Basic/Ultimate Skill DMG + +10% Wind DMG (10s). [Gale Wings] activation recovers 100 MP per instance for entire team.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 4 },
+                        duration: 'infinite',
+                        note: 'A1 weapon: +4% DEF (self)'
+                    },
+                    {
+                        name: '[Wind] Skill DMG',
+                        trigger: 'skill use (stacking)',
+                        scope: 'self',
+                        effects: { skillDamage: 50 },
+                        duration: 60,
+                        note: 'A0: [Wind] effect +50% skill DMG (self, 60s, ×3 stacks)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG',
+                        trigger: 'Reverse Tempest Cleave / Umbrella',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 0.7 },
+                        duration: 30,
+                        note: 'A1 weapon: +0.7% Basic Skill DMG for team (30s)'
+                    },
+                    {
+                        name: '[Wings of Freedom] Enhanced',
+                        trigger: 'ally consumes [Gale Wings]',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 20, ultimateSkillDamage: 20, windDamage: 10 },
+                        duration: 10,
+                        note: 'A1: +20% Basic/Ulti Skill DMG + +10% Wind DMG for allies (10s, high uptime)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            // A2: [Wings of Freedom] adds [Unrecoverable] on Ulti hit (anti-heal, no % DMG change)
+            A2: {
+                passives: [
+                    {
+                        name: '[Unrecoverable] Debuff (A2)',
+                        description: '[Wings of Freedom] enhanced: when ally Ultimate Skill hits, applies [Unrecoverable] (target cannot recover HP, 30s).',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 6 },
+                        duration: 'infinite',
+                        note: 'A2 weapon: +6% DEF (self)'
+                    },
+                    {
+                        name: '[Wind] Skill DMG',
+                        trigger: 'skill use (stacking)',
+                        scope: 'self',
+                        effects: { skillDamage: 50 },
+                        duration: 60,
+                        note: 'A0: [Wind] effect +50% skill DMG (self, 60s, ×3 stacks)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG',
+                        trigger: 'Reverse Tempest Cleave / Umbrella',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 1.0 },
+                        duration: 30,
+                        note: 'A2 weapon: +1.0% Basic Skill DMG for team (30s)'
+                    },
+                    {
+                        name: '[Wings of Freedom] Enhanced',
+                        trigger: 'ally consumes [Gale Wings]',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 20, ultimateSkillDamage: 20, windDamage: 10 },
+                        duration: 10,
+                        note: 'A1+: +20% Basic/Ulti Skill DMG + +10% Wind DMG for allies (10s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: '[Unrecoverable]',
+                        trigger: 'ally Ultimate Skill hit (via Wings of Freedom)',
+                        scope: 'enemy',
+                        effects: { antiHeal: true },
+                        duration: 30,
+                        note: 'A2: Target cannot recover HP (30s)'
+                    }
+                ],
+            },
+            // A3: [Wind's Touch] ×10: all +10% ATK/DEF/+5% Basic, Wind members +20% ATK/DEF/+10% Basic
+            A3: {
+                passives: [
+                    {
+                        name: "[Wind's Touch] (A3)",
+                        description: 'When [Wind] activates, grants [Wind\'s Touch] to entire team. Per stack: +1% ATK, +1% DEF, +0.5% Basic Skill DMG. Wind members get double. Infinite duration, ×10 stacks.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 8 },
+                        duration: 'infinite',
+                        note: 'A3 weapon: +8% DEF (self)'
+                    },
+                    {
+                        name: '[Wind] Skill DMG',
+                        trigger: 'skill use (stacking)',
+                        scope: 'self',
+                        effects: { skillDamage: 50 },
+                        duration: 60,
+                        note: 'A0: [Wind] effect +50% skill DMG (self, 60s, ×3 stacks)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG',
+                        trigger: 'Reverse Tempest Cleave / Umbrella',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 1.3 },
+                        duration: 30,
+                        note: 'A3 weapon: +1.3% Basic Skill DMG for team (30s)'
+                    },
+                    {
+                        name: '[Wings of Freedom] Enhanced',
+                        trigger: 'ally consumes [Gale Wings]',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 20, ultimateSkillDamage: 20, windDamage: 10 },
+                        duration: 10,
+                        note: 'A1+: +20% Basic/Ulti Skill DMG + +10% Wind DMG for allies (10s)'
+                    },
+                    {
+                        name: "[Wind's Touch] (all allies)",
+                        trigger: '[Wind] activation (stacking)',
+                        scope: 'team',
+                        effects: { attack: 10, defense: 10, basicSkillDamage: 5 },
+                        duration: 'infinite',
+                        note: 'A3: +1% ATK/DEF + +0.5% Basic Skill DMG per stack ×10 = +10% ATK, +10% DEF, +5% Basic (all allies)'
+                    },
+                    {
+                        name: "[Wind's Touch] Wind Bonus",
+                        trigger: '[Wind] activation (stacking)',
+                        scope: 'team-wind',
+                        effects: { attack: 10, defense: 10, basicSkillDamage: 5 },
+                        duration: 'infinite',
+                        note: 'A3: Additional +10% ATK, +10% DEF, +5% Basic Skill DMG for Wind members (×10 stacks). Total Wind: +20% ATK/DEF, +10% Basic.'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: '[Unrecoverable]',
+                        trigger: 'ally Ultimate Skill hit (via Wings of Freedom)',
+                        scope: 'enemy',
+                        effects: { antiHeal: true },
+                        duration: 30,
+                        note: 'A2: Target cannot recover HP (30s)'
+                    }
+                ],
+            },
+            // A4: +5% Wind DMG per Wind ally for Wind team members (×3 = +15%)
+            A4: {
+                passives: [
+                    {
+                        name: 'Wind Ally Synergy (A4)',
+                        description: 'For every Wind ally, Wind team members\' Wind damage increases by 5%. (×3 Wind = +15%)',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 10 },
+                        duration: 'infinite',
+                        note: 'A4 weapon: +10% DEF (self)'
+                    },
+                    {
+                        name: '[Wind] Skill DMG',
+                        trigger: 'skill use (stacking)',
+                        scope: 'self',
+                        effects: { skillDamage: 50 },
+                        duration: 60,
+                        note: 'A0: [Wind] effect +50% skill DMG (self, 60s, ×3 stacks)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG',
+                        trigger: 'Reverse Tempest Cleave / Umbrella',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 1.7 },
+                        duration: 30,
+                        note: 'A4 weapon: +1.7% Basic Skill DMG for team (30s)'
+                    },
+                    {
+                        name: '[Wings of Freedom] Enhanced',
+                        trigger: 'ally consumes [Gale Wings]',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 20, ultimateSkillDamage: 20, windDamage: 10 },
+                        duration: 10,
+                        note: 'A1+: +20% Basic/Ulti Skill DMG + +10% Wind DMG for allies (10s)'
+                    },
+                    {
+                        name: "[Wind's Touch] (all allies)",
+                        trigger: '[Wind] activation (stacking)',
+                        scope: 'team',
+                        effects: { attack: 10, defense: 10, basicSkillDamage: 5 },
+                        duration: 'infinite',
+                        note: 'A3: +10% ATK, +10% DEF, +5% Basic (all allies, ×10 stacks)'
+                    },
+                    {
+                        name: "[Wind's Touch] Wind Bonus",
+                        trigger: '[Wind] activation (stacking)',
+                        scope: 'team-wind',
+                        effects: { attack: 10, defense: 10, basicSkillDamage: 5 },
+                        duration: 'infinite',
+                        note: 'A3: Additional +10% ATK/DEF, +5% Basic for Wind members'
+                    },
+                    {
+                        name: 'Wind Ally Synergy',
+                        trigger: 'permanent (per Wind ally)',
+                        scope: 'team-wind',
+                        effects: { windDamage: 15 },
+                        duration: 'infinite',
+                        note: 'A4: +5% Wind DMG per Wind ally ×3 = +15% Wind DMG for Wind members'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: '[Unrecoverable]',
+                        trigger: 'ally Ultimate Skill hit (via Wings of Freedom)',
+                        scope: 'enemy',
+                        effects: { antiHeal: true },
+                        duration: 30,
+                        note: 'A2: Target cannot recover HP (30s)'
+                    }
+                ],
+            },
+            // A5: [Aero] +2% Wind DMG ×5 = +10% Wind DMG (team), [Serenade] 300% burst
+            A5: {
+                passives: [
+                    {
+                        name: "Jinah's Weapon - Basic Skill DMG for Team (A5)",
+                        description: 'Using Reverse Tempest Cleave or Umbrella: Reverse Tempest Cleave increases team Basic Skill damage by 2%.',
+                        mechanic: 'weapon',
+                        duration: 30
+                    },
+                    {
+                        name: '[Aero] Effect (A5)',
+                        description: 'Using Aero Disruption or Serenade: Aero Disruption grants [Aero] to entire team: +2% Wind DMG per stack, ×5 = +10% Wind DMG (60s). Tag-out also grants 1 stack.',
+                        mechanic: 'conditional'
+                    },
+                    {
+                        name: '[Serenade: Aero Disruption] (A5)',
+                        description: 'Deals 300% of Stormwind Serenade damage. Reduces Stormwind Serenade CD by 60%. Reactivates [Sudden Showers].',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 12 },
+                        duration: 'infinite',
+                        note: 'A5 weapon: +12% DEF (self)'
+                    },
+                    {
+                        name: '[Wind] Skill DMG',
+                        trigger: 'skill use (stacking)',
+                        scope: 'self',
+                        effects: { skillDamage: 50 },
+                        duration: 60,
+                        note: 'A0: [Wind] effect +50% skill DMG (self, 60s, ×3 stacks)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Basic Skill DMG',
+                        trigger: 'Reverse Tempest Cleave / Umbrella',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 2.0 },
+                        duration: 30,
+                        note: 'A5 weapon: +2.0% Basic Skill DMG for team (30s)'
+                    },
+                    {
+                        name: '[Wings of Freedom] Enhanced',
+                        trigger: 'ally consumes [Gale Wings]',
+                        scope: 'team',
+                        effects: { basicSkillDamage: 20, ultimateSkillDamage: 20, windDamage: 10 },
+                        duration: 10,
+                        note: 'A1+: +20% Basic/Ulti Skill DMG + +10% Wind DMG for allies (10s)'
+                    },
+                    {
+                        name: "[Wind's Touch] (all allies)",
+                        trigger: '[Wind] activation (stacking)',
+                        scope: 'team',
+                        effects: { attack: 10, defense: 10, basicSkillDamage: 5 },
+                        duration: 'infinite',
+                        note: 'A3: +10% ATK, +10% DEF, +5% Basic (all allies, ×10 stacks)'
+                    },
+                    {
+                        name: "[Wind's Touch] Wind Bonus",
+                        trigger: '[Wind] activation (stacking)',
+                        scope: 'team-wind',
+                        effects: { attack: 10, defense: 10, basicSkillDamage: 5 },
+                        duration: 'infinite',
+                        note: 'A3: Additional +10% ATK/DEF, +5% Basic for Wind members'
+                    },
+                    {
+                        name: 'Wind Ally Synergy',
+                        trigger: 'permanent (per Wind ally)',
+                        scope: 'team-wind',
+                        effects: { windDamage: 15 },
+                        duration: 'infinite',
+                        note: 'A4: +5% Wind DMG per Wind ally ×3 = +15% Wind DMG for Wind members'
+                    },
+                    {
+                        name: '[Aero]',
+                        trigger: 'Aero Disruption / Serenade / tag-out',
+                        scope: 'team',
+                        effects: { windDamage: 10 },
+                        duration: 60,
+                        note: 'A5: +2% Wind DMG per stack ×5 = +10% Wind DMG for entire team (60s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: '[Unrecoverable]',
+                        trigger: 'ally Ultimate Skill hit (via Wings of Freedom)',
+                        scope: 'enemy',
+                        effects: { antiHeal: true },
+                        duration: 30,
+                        note: 'A2: Target cannot recover HP (30s)'
+                    }
+                ],
+            },
+        }
+    },
+
+    // 🌪️ PARK BEOM-SHIK - Wind Fighter (DEF scaling)
+    // Arme A0: +2% DEF (self) + [Father's Determination] → Shield 2% DEF + +10% Basic Skill DMG (self)
+    // A0: [Father of Two] +4% DEF ×10 = +40% (self, 30s). [Father's Determination] HP≤30% → +8% ATK Speed/DEF
+    // A1: +15% DMG vs lower HP targets (self)
+    // A2: +6% DEF (self)
+    // A3: Downward Strike +60% DMG (self)
+    // A4: +10% HP (self)
+    // A5: Another Worldline → [Father's Determination] without HP condition
+    // ZERO team buffs
+    // ═══════════════════════════════════════════════════════════════
+    'park-beom': {
+        id: 'park-beom',
+        name: 'Park Beom-Shik',
+        class: 'Fighter',
+        element: 'Wind',
+        scaleStat: 'DEF',
+        primaryRole: 'Tank',
+        secondaryRole: 'DPS',
+        tags: ['DEF Scaler', 'Tank', 'Self Buffer'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: "Beom-Shik's Weapon - DEF + Basic Skill",
+                        description: '+2% DEF (self). [Father\'s Determination] → Shield 2% DEF + +10% Basic Skill DMG (self).',
+                        mechanic: 'weapon'
+                    },
+                    {
+                        name: '[Father of Two]',
+                        description: 'Skills → +4% DEF per stack ×10 = +40% DEF (self, 30s).',
+                        mechanic: 'conditional'
+                    },
+                    {
+                        name: "[Father's Determination]",
+                        description: 'HP ≤ 30% → Spinning Strike infinite + Super Armor + +8% ATK Speed + +8% DEF (self, 4s, once).',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 2 },
+                        duration: 'infinite',
+                        note: 'A0 weapon: +2% DEF (self)'
+                    },
+                    {
+                        name: '[Father of Two]',
+                        trigger: 'skill use (stacking)',
+                        scope: 'self',
+                        effects: { defense: 40 },
+                        duration: 30,
+                        note: 'A0: +4% DEF per stack ×10 = +40% DEF (self, 30s)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Execute DMG (A1)',
+                        description: 'Damage dealt to targets with HP lower than the user\'s increases by 15%.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 4 },
+                        duration: 'infinite',
+                        note: 'A1 weapon: +4% DEF (self)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'DEF Increase (A2)',
+                        description: "Increases the user's Defense by 6%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 6 },
+                        duration: 'infinite',
+                        note: 'A2 weapon: +6% DEF (self)'
+                    },
+                    {
+                        name: 'A2 DEF Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { defense: 6 },
+                        duration: 'infinite',
+                        note: 'A2: +6% DEF (self, permanent)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A3: {
+                passives: [
+                    {
+                        name: 'Downward Strike Enhanced (A3)',
+                        description: 'Downward Strike: charge -30%, range +30%, +60% DMG.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 8 },
+                        duration: 'infinite',
+                        note: 'A3 weapon: +8% DEF (self)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'HP Increase (A4)',
+                        description: "The user's HP increases by 10%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 10 },
+                        duration: 'infinite',
+                        note: 'A4 weapon: +10% DEF (self)'
+                    },
+                    {
+                        name: 'A4 HP Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { hp: 10 },
+                        duration: 'infinite',
+                        note: 'A4: +10% HP (self, permanent)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A5: {
+                passives: [
+                    {
+                        name: "Father's Determination Unconditional (A5)",
+                        description: "Another Worldline now applies [Father's Determination] without HP condition.",
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DEF Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defense: 12 },
+                        duration: 'infinite',
+                        note: 'A5 weapon: +12% DEF (self)'
+                    },
+                    {
+                        name: '[Father of Two]',
+                        trigger: 'skill use (stacking)',
+                        scope: 'self',
+                        effects: { defense: 40 },
+                        duration: 30,
+                        note: 'A0: +40% DEF (self, ×10 stacks)'
+                    },
+                    {
+                        name: 'A2 DEF Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { defense: 6 },
+                        duration: 'infinite',
+                        note: 'A2: +6% DEF (self)'
+                    },
+                    {
+                        name: 'A4 HP Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { hp: 10 },
+                        duration: 'infinite',
+                        note: 'A4: +10% HP (self)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+        }
+    },
+
+    // 🌪️ PARK HEEJIN - Wind Mage (ATK scaling)
+    // Arme A0: +5% Ultimate Skill DMG (self) + Ulti → +5% Ulti Skill DMG for highest TP ally (20s)
+    // A0: Power Gauge +8% on skills, Wind Storm CD -30%
+    // A1: Air Cutter removes debuffs (utility)
+    // A2: Wind Storm CD -10%
+    // A3: Skills → team Power Gauge +10% (utility)
+    // A4: Wind Storm +30% DMG (self)
+    // A5: Battle start → Power Gauge 100%
+    // Minimal team contribution — mostly utility/QoL
+    // ═══════════════════════════════════════════════════════════════
+    'park-heejin': {
+        id: 'park-heejin',
+        name: 'Park Heejin',
+        class: 'Mage',
+        element: 'Wind',
+        scaleStat: 'ATK',
+        primaryRole: 'DPS',
+        secondaryRole: 'Support',
+        tags: ['ATK Scaler', 'Mage', 'Utility'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: "Heejin's Weapon - Ultimate Skill Synergy",
+                        description: '+5% Ultimate Skill DMG (self). On Ulti use: +5% Ulti Skill DMG for highest Total Power ally (20s).',
+                        mechanic: 'weapon'
+                    },
+                    {
+                        name: 'Power Gauge Recovery',
+                        description: 'Skills recover Power Gauge by 8%. Wind Storm CD -30%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Ultimate Skill DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { ultimateSkillDamage: 5 },
+                        duration: 'infinite',
+                        note: 'A0 weapon: +5% Ultimate Skill DMG (self)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Ulti Skill DMG for Ally',
+                        trigger: 'Ultimate Skill use',
+                        scope: 'team',
+                        effects: { ultimateSkillDamage: 5 },
+                        duration: 20,
+                        note: 'A0 weapon: +5% Ulti Skill DMG for highest TP ally (20s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Debuff Cleanse (A1)',
+                        description: 'Air Cutter removes [debuffs] from Heejin and her party.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Ultimate Skill DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { ultimateSkillDamage: 10 },
+                        duration: 'infinite',
+                        note: 'A1 weapon: +10% Ultimate Skill DMG (self)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Ulti Skill DMG for Ally',
+                        trigger: 'Ultimate Skill use',
+                        scope: 'team',
+                        effects: { ultimateSkillDamage: 10 },
+                        duration: 20,
+                        note: 'A1 weapon: +10% Ulti Skill DMG for highest TP ally (20s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'Wind Storm CD Reduction (A2)',
+                        description: 'Wind Storm cooldown decreases by 10%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Ultimate Skill DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { ultimateSkillDamage: 15 },
+                        duration: 'infinite',
+                        note: 'A2 weapon: +15% Ultimate Skill DMG (self)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Ulti Skill DMG for Ally',
+                        trigger: 'Ultimate Skill use',
+                        scope: 'team',
+                        effects: { ultimateSkillDamage: 15 },
+                        duration: 20,
+                        note: 'A2 weapon: +15% Ulti Skill DMG for highest TP ally (20s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A3: {
+                passives: [
+                    {
+                        name: 'Team Power Gauge (A3)',
+                        description: 'When Heejin uses skills, team Power Gauges refill by 10%.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Ultimate Skill DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { ultimateSkillDamage: 20 },
+                        duration: 'infinite',
+                        note: 'A3 weapon: +20% Ultimate Skill DMG (self)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Ulti Skill DMG for Ally',
+                        trigger: 'Ultimate Skill use',
+                        scope: 'team',
+                        effects: { ultimateSkillDamage: 20 },
+                        duration: 20,
+                        note: 'A3 weapon: +20% Ulti Skill DMG for highest TP ally (20s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'Wind Storm DMG (A4)',
+                        description: 'Wind Storm damage increases by 30%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Ultimate Skill DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { ultimateSkillDamage: 25 },
+                        duration: 'infinite',
+                        note: 'A4 weapon: +25% Ultimate Skill DMG (self)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Ulti Skill DMG for Ally',
+                        trigger: 'Ultimate Skill use',
+                        scope: 'team',
+                        effects: { ultimateSkillDamage: 25 },
+                        duration: 20,
+                        note: 'A4 weapon: +25% Ulti Skill DMG for highest TP ally (20s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A5: {
+                passives: [
+                    {
+                        name: 'Instant Ultimate (A5)',
+                        description: 'Battle start → Power Gauge refills by 100%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Ultimate Skill DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { ultimateSkillDamage: 30 },
+                        duration: 'infinite',
+                        note: 'A5 weapon: +30% Ultimate Skill DMG (self)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Ulti Skill DMG for Ally',
+                        trigger: 'Ultimate Skill use',
+                        scope: 'team',
+                        effects: { ultimateSkillDamage: 30 },
+                        duration: 20,
+                        note: 'A5 weapon: +30% Ulti Skill DMG for highest TP ally (20s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [],
+            },
+        }
+    },
+
+    // 🌪️ HWANG DONGSOO - Wind Fighter (DEF scaling)
+    // Arme A0: +4% Wind DMG (self) + +3% Basic Skill DMG ×4 on Impulse/Madness (self)
+    // A0: [Impulse] +15% DEF (self), [Impulsive Revenge] +24% DEF (self, 10s)
+    // A1: Greed Scavenger Tier 2 +150% DMG (self)
+    // A2: +8% DEF (self)
+    // A3: [Madness] +12% DEF + +12% DefPen (self, 6s)
+    // A4: Merciless +40% DMG (self)
+    // A5: Merciless +80% DMG during Impulsive Revenge (self)
+    // ZERO team buffs — entirely self-contained kit
+    // ═══════════════════════════════════════════════════════════════
+    hwang: {
+        id: 'hwang',
+        name: 'Hwang Dongsoo',
+        class: 'Fighter',
+        element: 'Wind',
+        scaleStat: 'DEF',
+        primaryRole: 'Tank',
+        secondaryRole: 'DPS',
+        tags: ['DEF Scaler', 'Tank', 'Self Buffer'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: "Hwang's Weapon - Wind DMG + Basic Skill",
+                        description: '+4% Wind DMG (self). +3% Basic Skill DMG per [Impulse/Madness] activation ×4 = +12% (self).',
+                        mechanic: 'weapon'
+                    },
+                    {
+                        name: '[Impulse] → [Impulsive Revenge]',
+                        description: 'Hit/skills → [Impulse]: +3% DEF ×5 = +15% (infinite). At 5 stacks → [Impulsive Revenge]: +24% DEF + Shield 12% DEF + Greed Scavenger ×2 DMG (10s).',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Wind DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { windDamage: 4 },
+                        duration: 'infinite',
+                        note: 'A0 weapon: +4% Wind DMG (self)'
+                    },
+                    {
+                        name: '[Impulse] DEF Stacking',
+                        trigger: 'hit / skill use',
+                        scope: 'self',
+                        effects: { defense: 15 },
+                        duration: 'infinite',
+                        note: 'A0: +3% DEF per stack ×5 = +15% DEF (self, infinite)'
+                    },
+                    {
+                        name: '[Impulsive Revenge]',
+                        trigger: '[Impulse] 5 stacks',
+                        scope: 'self',
+                        effects: { defense: 24 },
+                        duration: 10,
+                        note: 'A0: +24% DEF + Shield (10s). Greed Scavenger ×2 DMG.'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Greed Scavenger Tier 2 (A1)',
+                        description: 'Greed Scavenger charges to Tier 2 (+150% DMG). [Super Armor] while charging.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Wind DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { windDamage: 8 },
+                        duration: 'infinite',
+                        note: 'A1 weapon: +8% Wind DMG (self)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'DEF Increase (A2)',
+                        description: "Increases the user's Defense by 8%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Wind DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { windDamage: 12 },
+                        duration: 'infinite',
+                        note: 'A2 weapon: +12% Wind DMG (self)'
+                    },
+                    {
+                        name: 'A2 DEF Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { defense: 8 },
+                        duration: 'infinite',
+                        note: 'A2: +8% DEF (self, permanent)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A3: {
+                passives: [
+                    {
+                        name: '[Madness] (A3)',
+                        description: 'Urge to Kill / Greed Scavenger → [Madness]: +4% DEF + +4% DefPen per stack ×3 = +12% each (6s).',
+                        mechanic: 'conditional',
+                        duration: 6
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Wind DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { windDamage: 16 },
+                        duration: 'infinite',
+                        note: 'A3 weapon: +16% Wind DMG (self)'
+                    },
+                    {
+                        name: '[Madness]',
+                        trigger: 'Urge to Kill / Greed Scavenger',
+                        scope: 'self',
+                        effects: { defense: 12, defPen: 12 },
+                        duration: 6,
+                        note: 'A3: +4% DEF + +4% DefPen ×3 = +12%/+12% (self, 6s)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'Merciless DMG (A4)',
+                        description: "Increases Merciless damage by 40%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Wind DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { windDamage: 20 },
+                        duration: 'infinite',
+                        note: 'A4 weapon: +20% Wind DMG (self)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A5: {
+                passives: [
+                    {
+                        name: 'Merciless Enhanced (A5)',
+                        description: "Merciless damage increases by 80% while [Impulsive Revenge] is active.",
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: Wind DMG',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { windDamage: 24 },
+                        duration: 'infinite',
+                        note: 'A5 weapon: +24% Wind DMG (self)'
+                    },
+                    {
+                        name: 'A2 DEF Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { defense: 8 },
+                        duration: 'infinite',
+                        note: 'A2: +8% DEF (self)'
+                    },
+                    {
+                        name: '[Impulse] DEF Stacking',
+                        trigger: 'hit / skill use',
+                        scope: 'self',
+                        effects: { defense: 15 },
+                        duration: 'infinite',
+                        note: 'A0: +15% DEF (self, ×5 stacks)'
+                    },
+                    {
+                        name: '[Madness]',
+                        trigger: 'Urge to Kill / Greed Scavenger',
+                        scope: 'self',
+                        effects: { defense: 12, defPen: 12 },
+                        duration: 6,
+                        note: 'A3: +12% DEF + +12% DefPen (self, 6s)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+        }
+    },
+
+    // 🌪️ KIM SANGSHIK - Wind Fighter (HP scaling)
+    // Arme: +Core Attack DMG +4% (self) + Core → next Basic +4% (self). A0 values.
+    // A0-A5: Entire kit is self-only. No team buffs whatsoever.
+    // A2: +10% HP (self). A4: +6% DEF (self). A3: Break effectiveness +20%.
+    // ═══════════════════════════════════════════════════════════════
+    'kim-sangshik': {
+        id: 'kim-sangshik',
+        name: 'Kim Sangshik',
+        class: 'Fighter',
+        element: 'Wind',
+        scaleStat: 'HP',
+        primaryRole: 'DPS',
+        secondaryRole: 'Tank',
+        tags: ['HP Scaler', 'Self Buffer', 'Break Specialist'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: "Kim's Weapon - Core/Basic Synergy",
+                        description: '+4% Core Attack DMG. Core Attack → next Basic Skill +4% DMG (self).',
+                        mechanic: 'weapon'
+                    },
+                    {
+                        name: 'Skill CD Cross-Reduction',
+                        description: 'Storm Split/Swift Shock/Gale Gouge reduce each other\'s CD by 1s + Core Gauge +50%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Enhanced CD Reduction (A1)',
+                        description: 'Skills CD reduction changes to 2s. Storm Split/Swift Shock auto-activates Gale Gouge.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'HP Increase (A2)',
+                        description: "The user's HP increases by 10%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'A2 HP Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { hp: 10 },
+                        duration: 'infinite',
+                        note: 'A2: +10% HP (self, permanent)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A3: {
+                passives: [
+                    {
+                        name: 'Break Effectiveness (A3)',
+                        description: "[Break] effectiveness increases by 20%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'DEF Increase (A4)',
+                        description: "Increases the user's Defense by 6%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'A4 DEF Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { defense: 6 },
+                        duration: 'infinite',
+                        note: 'A4: +6% DEF (self, permanent)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+            A5: {
+                passives: [
+                    {
+                        name: 'Gale Gouge MP Recovery (A5)',
+                        description: 'Gale Gouge recovers 60 MP.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'A2 HP Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { hp: 10 },
+                        duration: 'infinite',
+                        note: 'A2: +10% HP (self)'
+                    },
+                    {
+                        name: 'A4 DEF Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { defense: 6 },
+                        duration: 'infinite',
+                        note: 'A4: +6% DEF (self)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [],
+            },
+        }
+    },
+
+    // 🌪️ WOO JINCHUL - Wind Fighter (ATK scaling)
+    // Arme A3: 3.5% DefPen (self) + Mediation: +14% DMG taken debuff (×3=42%) + Break: +7% Wind DMG team
+    // A0: Dash → +30% skill DMG (self, 6s)
+    // A1: Mediation enhanced +100% Break effect (self)
+    // A2: +10% DefPen (self)
+    // A3: Judgment → +35% DMG increase (self, 7s), CD reductions
+    // A4: +16% Wind DMG (self)
+    // A5: Mediation → +5% DEF ×12 = +60% DEF (self)
+    // ═══════════════════════════════════════════════════════════════
+    woo: {
+        id: 'woo',
+        name: 'Woo Jinchul',
+        class: 'Fighter',
+        element: 'Wind',
+        scaleStat: 'ATK',
+        primaryRole: 'DPS',
+        secondaryRole: 'Tank',
+        tags: ['ATK Scaler', 'DPS', 'Self Buffer', 'Break Specialist'],
+
+        advancements: {
+            // A0: Dash → +30% skill DMG (self, 6s) + Super Armor
+            A0: {
+                passives: [
+                    {
+                        name: "Woo's Weapon - DefPen + Mediation Debuff",
+                        description: 'Attacks ignore 1.0% of target\'s Defense. Mediation of Power increases damage dealt to target by 4% (5s, ×3). On enemy [Break]: +2% Wind DMG for team (excl. user, infinite).',
+                        mechanic: 'weapon'
+                    },
+                    {
+                        name: 'Dash Skill Boost',
+                        description: 'Using Dash increases damage of Suppress, Mediation of Power, and Iron Fist by 30% for 6s and grants [Super Armor]. Dash CD -1s.',
+                        mechanic: 'conditional',
+                        duration: 6
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DefPen',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defPen: 1.0 },
+                        duration: 'infinite',
+                        note: 'A0 weapon: +1.0% DefPen (self)'
+                    },
+                    {
+                        name: 'Dash Skill DMG Boost',
+                        trigger: 'Dash',
+                        scope: 'self',
+                        effects: { skillDamage: 30 },
+                        duration: 6,
+                        note: 'A0: +30% DMG on Suppress/Mediation/Iron Fist after Dash (6s)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Break Wind DMG',
+                        trigger: 'enemy enters [Break]',
+                        scope: 'team',
+                        effects: { windDamage: 2 },
+                        duration: 'infinite',
+                        note: 'A0 weapon: +2% Wind DMG for team (excl. user) on enemy Break (infinite)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Mediation Debuff',
+                        trigger: 'Mediation of Power',
+                        scope: 'enemy',
+                        effects: { damageTaken: 12 },
+                        duration: 5,
+                        note: 'A0 weapon: +4% DMG taken per stack ×3 = +12% on enemy (5s)'
+                    }
+                ],
+            },
+            // A1: Mediation enhanced +100% Break effect (self)
+            A1: {
+                passives: [
+                    {
+                        name: 'Mediation of Power Enhanced (A1)',
+                        description: 'Mediation of Power increases [Break] effect and damage by 100%. Can be used up to 3 times.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DefPen',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defPen: 1.8 },
+                        duration: 'infinite',
+                        note: 'A1 weapon: +1.8% DefPen (self)'
+                    },
+                    {
+                        name: 'Dash Skill DMG Boost',
+                        trigger: 'Dash',
+                        scope: 'self',
+                        effects: { skillDamage: 30 },
+                        duration: 6,
+                        note: 'A0: +30% skill DMG after Dash (6s)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Break Wind DMG',
+                        trigger: 'enemy enters [Break]',
+                        scope: 'team',
+                        effects: { windDamage: 3.5 },
+                        duration: 'infinite',
+                        note: 'A1 weapon: +3.5% Wind DMG for team on Break (infinite)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Mediation Debuff',
+                        trigger: 'Mediation of Power',
+                        scope: 'enemy',
+                        effects: { damageTaken: 21 },
+                        duration: 5,
+                        note: 'A1 weapon: +7% DMG taken ×3 = +21% on enemy (5s)'
+                    }
+                ],
+            },
+            // A2: +10% DefPen (self, permanent)
+            A2: {
+                passives: [
+                    {
+                        name: 'Defense Penetration (A2)',
+                        description: "The user's Defense Penetration increases by 10%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DefPen',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defPen: 2.6 },
+                        duration: 'infinite',
+                        note: 'A2 weapon: +2.6% DefPen (self)'
+                    },
+                    {
+                        name: 'A2 DefPen Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { defPen: 10 },
+                        duration: 'infinite',
+                        note: 'A2: +10% DefPen (self, permanent)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Break Wind DMG',
+                        trigger: 'enemy enters [Break]',
+                        scope: 'team',
+                        effects: { windDamage: 5 },
+                        duration: 'infinite',
+                        note: 'A2 weapon: +5% Wind DMG for team on Break (infinite)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Mediation Debuff',
+                        trigger: 'Mediation of Power',
+                        scope: 'enemy',
+                        effects: { damageTaken: 30 },
+                        duration: 5,
+                        note: 'A2 weapon: +10% DMG taken ×3 = +30% on enemy (5s)'
+                    }
+                ],
+            },
+            // A3: Judgment → +35% DMG (self, 7s), CD reductions
+            A3: {
+                passives: [
+                    {
+                        name: 'Enhanced Dash Passive (A3)',
+                        description: 'Dash/Extreme Evasion/Judgment reduces CD of Mediation & Iron Fist by 2s + activates Core Attack. Judgment activates Basic Passive enhanced: +35% DMG (7s).',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DefPen',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defPen: 3.5 },
+                        duration: 'infinite',
+                        note: 'A3 weapon: +3.5% DefPen (self)'
+                    },
+                    {
+                        name: 'Judgment DMG Boost',
+                        trigger: 'Judgment',
+                        scope: 'self',
+                        effects: { damageIncrease: 35 },
+                        duration: 7,
+                        note: 'A3: +35% DMG increase after Judgment (7s, enhanced from A0 30%/6s)'
+                    },
+                    {
+                        name: 'A2 DefPen Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { defPen: 10 },
+                        duration: 'infinite',
+                        note: 'A2: +10% DefPen (self)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Break Wind DMG',
+                        trigger: 'enemy enters [Break]',
+                        scope: 'team',
+                        effects: { windDamage: 7 },
+                        duration: 'infinite',
+                        note: 'A3 weapon: +7% Wind DMG for team on Break (infinite)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Mediation Debuff',
+                        trigger: 'Mediation of Power',
+                        scope: 'enemy',
+                        effects: { damageTaken: 42 },
+                        duration: 5,
+                        note: 'A3 weapon: +14% DMG taken ×3 = +42% on enemy (5s)'
+                    }
+                ],
+            },
+            // A4: +16% Wind DMG (self, permanent)
+            A4: {
+                passives: [
+                    {
+                        name: 'Wind DMG Boost (A4)',
+                        description: "The user's Wind damage increases by 16%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DefPen',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defPen: 4.2 },
+                        duration: 'infinite',
+                        note: 'A4 weapon: +4.2% DefPen (self)'
+                    },
+                    {
+                        name: 'A2 DefPen Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { defPen: 10 },
+                        duration: 'infinite',
+                        note: 'A2: +10% DefPen (self)'
+                    },
+                    {
+                        name: 'A4 Wind DMG',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { windDamage: 16 },
+                        duration: 'infinite',
+                        note: 'A4: +16% Wind DMG (self, permanent)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Break Wind DMG',
+                        trigger: 'enemy enters [Break]',
+                        scope: 'team',
+                        effects: { windDamage: 8.5 },
+                        duration: 'infinite',
+                        note: 'A4 weapon: +8.5% Wind DMG for team on Break (infinite)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Mediation Debuff',
+                        trigger: 'Mediation of Power',
+                        scope: 'enemy',
+                        effects: { damageTaken: 54 },
+                        duration: 5,
+                        note: 'A4 weapon: +18% DMG taken ×3 = +54% on enemy (5s)'
+                    }
+                ],
+            },
+            // A5: Mediation → +5% DEF ×12 = +60% DEF (self), Basic Attack ×4 → Tier 3 Passive
+            A5: {
+                passives: [
+                    {
+                        name: 'Tier 3 Passive (A5)',
+                        description: 'Basic Attack ×4 activates [Tier 3 Passive].',
+                        mechanic: 'conditional'
+                    },
+                    {
+                        name: 'Mediation DEF Stacking (A5)',
+                        description: 'Mediation of Power increases DEF by 5% per stack (×12 = +60% DEF).',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: DefPen',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { defPen: 5.0 },
+                        duration: 'infinite',
+                        note: 'A5 weapon: +5.0% DefPen (self)'
+                    },
+                    {
+                        name: 'A2 DefPen Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { defPen: 10 },
+                        duration: 'infinite',
+                        note: 'A2: +10% DefPen (self)'
+                    },
+                    {
+                        name: 'A4 Wind DMG',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { windDamage: 16 },
+                        duration: 'infinite',
+                        note: 'A4: +16% Wind DMG (self)'
+                    },
+                    {
+                        name: 'Judgment DMG Boost',
+                        trigger: 'Judgment',
+                        scope: 'self',
+                        effects: { damageIncrease: 35 },
+                        duration: 7,
+                        note: 'A3: +35% DMG increase after Judgment (7s)'
+                    },
+                    {
+                        name: 'Mediation DEF Stacking',
+                        trigger: 'Mediation of Power',
+                        scope: 'self',
+                        effects: { defense: 60 },
+                        duration: 'infinite',
+                        note: 'A5: +5% DEF per Mediation stack ×12 = +60% DEF (self)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Weapon: Break Wind DMG',
+                        trigger: 'enemy enters [Break]',
+                        scope: 'team',
+                        effects: { windDamage: 10 },
+                        duration: 'infinite',
+                        note: 'A5 weapon: +10% Wind DMG for team on enemy Break (excl. user, infinite)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Mediation Debuff',
+                        trigger: 'Mediation of Power',
+                        scope: 'enemy',
+                        effects: { damageTaken: 66 },
+                        duration: 5,
+                        note: 'A5 weapon: +22% DMG taken ×3 = +66% on enemy (5s)'
+                    }
+                ],
+            },
+        }
+    },
+
+    // 🌪️ HAN SE-MI - Wind Healer/Support (HP scaling)
+    // Arme: +HP% (self) + +X% damage taken debuff on enemy (10s)
+    // A0: [Breath] +10% Basic Skill DMG (self ×2=+20%), +5% Basic Skill DMG Wind team (×2=+10%)
+    // A1: [Sharp Breath] +10% CritRate + +10% CritDMG (team, 20s, on Ulti use)
+    // A2: +10% HP (self)
+    // A3: [Immortal] survival (no DMG%)
+    // A4: +10% Wind DMG (entire team, permanent)
+    // A5: [Natural Unity] +10% ATK, +10% DEF, +20% Wind DMG (team, 25s)
+    // ═══════════════════════════════════════════════════════════════
+    han: {
+        id: 'han',
+        name: 'Han Se-Mi',
+        class: 'Healer',
+        element: 'Wind',
+        scaleStat: 'HP',
+        primaryRole: 'Healer',
+        secondaryRole: 'Support',
+        tags: ['HP Scaler', 'Healer', 'Team Buffer', 'Wind Synergy'],
+
+        advancements: {
+            // A0: [Breath] +20% Basic Skill DMG (self), +10% Basic Skill DMG (team-wind)
+            A0: {
+                passives: [
+                    {
+                        name: "Han Se-Mi's Weapon - Enemy Debuff",
+                        description: 'Targets hit by Han Se-Mi\'s skills take 0.8% more damage (10s).',
+                        mechanic: 'weapon',
+                        duration: 10
+                    },
+                    {
+                        name: '[Breath]',
+                        description: 'Using Sharp Sprouts, Golden Meadow or Vines of Vitality grants [Breath] to team (CD 15s): +10% Basic Skill DMG (self), +5% Basic Skill DMG (Wind team). 25s, ×2 stacks.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: HP Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { hp: 2 },
+                        duration: 'infinite',
+                        note: 'A0 weapon: +2% HP (self)'
+                    },
+                    {
+                        name: '[Breath] Self',
+                        trigger: 'Sharp Sprouts / Golden Meadow / Vines of Vitality',
+                        scope: 'self',
+                        effects: { basicSkillDamage: 20 },
+                        duration: 25,
+                        note: 'A0: +10% Basic Skill DMG per stack ×2 = +20% (self, 25s)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: '[Breath] Wind Team',
+                        trigger: 'Sharp Sprouts / Golden Meadow / Vines of Vitality',
+                        scope: 'team-wind',
+                        effects: { basicSkillDamage: 10 },
+                        duration: 25,
+                        note: 'A0: +5% Basic Skill DMG per stack ×2 = +10% for Wind team members (25s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Damage Taken Debuff',
+                        trigger: 'skill hit',
+                        scope: 'enemy',
+                        effects: { damageTaken: 0.8 },
+                        duration: 10,
+                        note: 'A0 weapon: +0.8% damage taken on enemy (10s)'
+                    }
+                ],
+            },
+            // A1: [Sharp Breath] +10% CritRate + +10% CritDMG (team, 20s)
+            A1: {
+                passives: [
+                    {
+                        name: '[Sharp Breath] (A1)',
+                        description: 'When allies use their Ultimate Skill, they receive [Sharp Breath]: +1% CritRate/s + +1% CritDMG/s (max 10% each) + 1% Power Gauge/s. Duration 20s.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: HP Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { hp: 4 },
+                        duration: 'infinite',
+                        note: 'A1 weapon: +4% HP (self)'
+                    },
+                    {
+                        name: '[Breath] Self',
+                        trigger: 'Sharp Sprouts / Golden Meadow / Vines of Vitality',
+                        scope: 'self',
+                        effects: { basicSkillDamage: 20 },
+                        duration: 25,
+                        note: 'A0: +20% Basic Skill DMG (self, 25s, ×2 stacks)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: '[Breath] Wind Team',
+                        trigger: 'Sharp Sprouts / Golden Meadow / Vines of Vitality',
+                        scope: 'team-wind',
+                        effects: { basicSkillDamage: 10 },
+                        duration: 25,
+                        note: 'A0: +10% Basic Skill DMG for Wind team (25s, ×2 stacks)'
+                    },
+                    {
+                        name: '[Sharp Breath]',
+                        trigger: 'ally Ultimate Skill use',
+                        scope: 'team',
+                        effects: { critRate: 10, critDMG: 10 },
+                        duration: 20,
+                        note: 'A1: +10% CritRate + +10% CritDMG for team (20s, ramps 1%/s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Damage Taken Debuff',
+                        trigger: 'skill hit',
+                        scope: 'enemy',
+                        effects: { damageTaken: 1.7 },
+                        duration: 10,
+                        note: 'A1 weapon: +1.7% damage taken on enemy (10s)'
+                    }
+                ],
+            },
+            // A2: +10% HP (self, permanent)
+            A2: {
+                passives: [
+                    {
+                        name: 'HP Increase (A2)',
+                        description: "The user's HP increases by 10%.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: HP Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { hp: 6 },
+                        duration: 'infinite',
+                        note: 'A2 weapon: +6% HP (self)'
+                    },
+                    {
+                        name: 'A2 HP Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { hp: 10 },
+                        duration: 'infinite',
+                        note: 'A2: +10% HP (self, permanent)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Damage Taken Debuff',
+                        trigger: 'skill hit',
+                        scope: 'enemy',
+                        effects: { damageTaken: 2.5 },
+                        duration: 10,
+                        note: 'A2 weapon: +2.5% damage taken on enemy (10s)'
+                    }
+                ],
+            },
+            // A3: [Immortal] survival mechanic (no DMG%)
+            A3: {
+                passives: [
+                    {
+                        name: '[Immortal] (A3)',
+                        description: 'When HP ≤ 1 within Golden Meadow zone, becomes [Immortal] for 2s. After, recovers 30% of Han Se-Mi\'s Max HP. Once per battle.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: HP Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { hp: 8 },
+                        duration: 'infinite',
+                        note: 'A3 weapon: +8% HP (self)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Damage Taken Debuff',
+                        trigger: 'skill hit',
+                        scope: 'enemy',
+                        effects: { damageTaken: 3.3 },
+                        duration: 10,
+                        note: 'A3 weapon: +3.3% damage taken on enemy (10s)'
+                    }
+                ],
+            },
+            // A4: +10% Wind DMG (entire team, permanent)
+            A4: {
+                passives: [
+                    {
+                        name: 'Wind DMG Team Boost (A4)',
+                        description: 'Increases entire team members\' Wind damage by 10%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: HP Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { hp: 10 },
+                        duration: 'infinite',
+                        note: 'A4 weapon: +10% HP (self)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Wind DMG Team Boost',
+                        trigger: 'permanent',
+                        scope: 'team',
+                        effects: { windDamage: 10 },
+                        duration: 'infinite',
+                        note: 'A4: +10% Wind DMG for entire team (permanent)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Damage Taken Debuff',
+                        trigger: 'skill hit',
+                        scope: 'enemy',
+                        effects: { damageTaken: 4.2 },
+                        duration: 10,
+                        note: 'A4 weapon: +4.2% damage taken on enemy (10s)'
+                    }
+                ],
+            },
+            // A5: [Natural Unity] +10% ATK, +10% DEF, +20% Wind DMG (team, 25s)
+            A5: {
+                passives: [
+                    {
+                        name: '[Natural Unity] (A5)',
+                        description: 'When tagging out or using Vines of Vitality, grants [Natural Unity] to team: +10% ATK, +10% DEF, +20% Wind DMG (25s).',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Weapon: HP Boost',
+                        trigger: 'permanent (weapon)',
+                        scope: 'self',
+                        effects: { hp: 10 },
+                        duration: 'infinite',
+                        note: 'A5 weapon: +10% HP (self)'
+                    },
+                    {
+                        name: 'A2 HP Boost',
+                        trigger: 'permanent',
+                        scope: 'self',
+                        effects: { hp: 10 },
+                        duration: 'infinite',
+                        note: 'A2: +10% HP (self, permanent)'
+                    },
+                    {
+                        name: '[Breath] Self',
+                        trigger: 'Sharp Sprouts / Golden Meadow / Vines of Vitality',
+                        scope: 'self',
+                        effects: { basicSkillDamage: 20 },
+                        duration: 25,
+                        note: 'A0: +20% Basic Skill DMG (self, 25s, ×2 stacks)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: '[Breath] Wind Team',
+                        trigger: 'Sharp Sprouts / Golden Meadow / Vines of Vitality',
+                        scope: 'team-wind',
+                        effects: { basicSkillDamage: 10 },
+                        duration: 25,
+                        note: 'A0: +10% Basic Skill DMG for Wind team (25s, ×2 stacks)'
+                    },
+                    {
+                        name: '[Sharp Breath]',
+                        trigger: 'ally Ultimate Skill use',
+                        scope: 'team',
+                        effects: { critRate: 10, critDMG: 10 },
+                        duration: 20,
+                        note: 'A1: +10% CritRate + +10% CritDMG for team (20s)'
+                    },
+                    {
+                        name: 'Wind DMG Team Boost',
+                        trigger: 'permanent',
+                        scope: 'team',
+                        effects: { windDamage: 10 },
+                        duration: 'infinite',
+                        note: 'A4: +10% Wind DMG for entire team (permanent)'
+                    },
+                    {
+                        name: '[Natural Unity]',
+                        trigger: 'tag-out / Vines of Vitality',
+                        scope: 'team',
+                        effects: { attack: 10, defense: 10, windDamage: 20 },
+                        duration: 25,
+                        note: 'A5: +10% ATK, +10% DEF, +20% Wind DMG for team (25s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Damage Taken Debuff',
+                        trigger: 'skill hit',
+                        scope: 'enemy',
+                        effects: { damageTaken: 5 },
+                        duration: 10,
+                        note: 'A5 weapon: +5% damage taken on enemy (10s)'
+                    }
+                ],
+            },
         }
     },
 };

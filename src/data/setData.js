@@ -524,6 +524,143 @@ export const ARTIFACT_SETS = {
         }
     },
 
+    // === NEW META SETS (4pc / 8pc only, 8pc replaces 4pc) ===
+
+    'architect-blue-poison': {
+        id: 'architect-blue-poison',
+        name: "The Architect's Blue Poison",
+        frenchName: 'Poison Bleu de l\'Architecte',
+        description: 'Set DPS pour ATK/DEF scalers — Basic Skill + ATK/DEF stacking',
+        isNewMeta: true,
+        bonuses: {
+            '2pc': {
+                critRate: 0, critDMG: 0, defPen: 0,
+                description: 'Aucun bonus (set 4pc/8pc uniquement)'
+            },
+            '4pc': {
+                critRate: 0, critDMG: 0, defPen: 0,
+                basicSkillDamage: 20,
+                attack: 30,       // +1%/s ×30 stacks = +30% ATK (permanent)
+                defense: 30,      // +1%/s ×30 stacks = +30% DEF (permanent)
+                description: '[Poison] +20% Basic Skill DMG, +30% ATK & DEF (1%/s ×30, permanent)'
+            },
+            '8pc': {
+                critRate: 0, critDMG: 0, defPen: 20,
+                basicSkillDamage: 30,
+                attack: 75,       // +2.5%/s ×30 stacks = +75% ATK
+                defense: 75,      // +2.5%/s ×30 stacks = +75% DEF
+                description: '[Blue Poison] +20% DefPen, +30% Basic Skill DMG, +75% ATK & DEF (2.5%/s ×30)'
+            }
+        },
+        classBonus: {
+            classes: ['Striker'],
+            alsoSung: true,
+            effects: { damageDealt: 50 },
+            disables: 'Poison',
+            description: 'Sung/Striker: +50% DMG dealt, [Poison] désactivé'
+        }
+    },
+
+    'kamish-obsession': {
+        id: 'kamish-obsession',
+        name: "Kamish's Obsession",
+        frenchName: 'Obsession de Kamish',
+        description: 'Set Overload/Élémentaliste — Overload DMG + Basic/Ulti sur Overload',
+        isNewMeta: true,
+        bonuses: {
+            '2pc': {
+                critRate: 0, critDMG: 0, defPen: 0,
+                description: 'Aucun bonus (set 4pc/8pc uniquement)'
+            },
+            '4pc': {
+                critRate: 0, critDMG: 0, defPen: 0,
+                overloadDamage: 15,
+                basicSkillDamage: 25,      // on Overload inflict (20s, CD 20s)
+                ultimateSkillDamage: 25,
+                description: '[Obsession] +15% Overload DMG (team), +25% Basic/Ulti Skill DMG on Overload (20s)'
+            },
+            '8pc': {
+                critRate: 0, critDMG: 0, defPen: 0,
+                overloadDamage: 30,
+                basicSkillDamage: 40,      // on Overload inflict (20s, CD 20s)
+                ultimateSkillDamage: 40,
+                description: '[Burning Obsession] +30% Overload DMG (team), +40% Basic/Ulti Skill DMG on Overload (20s)'
+            }
+        },
+        classBonus: {
+            classes: ['Elemental Stacker'],
+            alsoSung: true,
+            effects: { overloadDamage: 50, elementalWeaknessDamage: 20 },
+            disables: 'Obsession',
+            description: 'Sung/Elemental Stacker: +50% Overload DMG, +20% Elemental Weakness DMG, [Obsession] désactivé'
+        }
+    },
+
+    'glorious-arrogance': {
+        id: 'glorious-arrogance',
+        name: 'Glorious Arrogance',
+        frenchName: 'Arrogance Glorieuse',
+        description: 'Set Breaker/Crit — Break DMG + CritDMG team',
+        isNewMeta: true,
+        bonuses: {
+            '2pc': {
+                critRate: 0, critDMG: 0, defPen: 0,
+                description: 'Aucun bonus (set 4pc/8pc uniquement)'
+            },
+            '4pc': {
+                critRate: 0, critDMG: 15, defPen: 0,
+                breakSkillDamage: 30,
+                description: '[Arrogance] +30% Break skill DMG, Break hit → +15% CritDMG (team, 40s)'
+            },
+            '8pc': {
+                critRate: 15, critDMG: 25, defPen: 0,
+                breakSkillDamage: 50,
+                breakEffectiveness: 30,
+                description: '[Brilliant Arrogance] +30% Break effectiveness, +50% Break skill DMG, +25% CritDMG (team, 40s), Ulti → +15% CritRate (team, 60s)'
+            }
+        },
+        classBonus: {
+            classes: ['Breaker'],
+            alsoSung: true,
+            effects: { critDMG: 40 },
+            disables: 'Arrogance',
+            description: 'Sung/Breaker: +40% CritDMG (self), [Arrogance] désactivé'
+        }
+    },
+
+    'noble-flesh': {
+        id: 'noble-flesh',
+        name: 'Noble Flesh',
+        frenchName: 'Chair Noble',
+        description: 'Set Support — Elemental Weakness DMG + DMG dealt team',
+        isNewMeta: true,
+        bonuses: {
+            '2pc': {
+                critRate: 0, critDMG: 0, defPen: 0,
+                description: 'Aucun bonus (set 4pc/8pc uniquement)'
+            },
+            '4pc': {
+                critRate: 0, critDMG: 0, defPen: 0,
+                elementalWeaknessDamage: 15,
+                damageDealt: 10,
+                description: '[Fortification] +15% Elem Weakness DMG (team, 45s) + [Brilliant Light] +10% DMG dealt (team, 20s)'
+            },
+            '8pc': {
+                critRate: 0, critDMG: 0, defPen: 0,
+                elementalWeaknessDamage: 25,
+                damageDealt: 20,
+                description: '[Iron Body] +25% Elem Weakness DMG (team, 45s) + [Glory] +20% DMG dealt (team, 20s)'
+            }
+        },
+        classBonus: {
+            classes: ['Supporter'],
+            alsoSung: true,
+            effects: { basicSkillDamage: 30, attack: 15, defense: 15, hp: 15 },
+            disables: 'Fortification/Brilliant Light',
+            description: 'Sung/Supporter: +30% Basic Skill DMG, +15% ATK/DEF/HP (team), [Fortification]/[Brilliant Light] désactivés'
+        }
+    },
+
     // Set par défaut pour "Aucun set"
     'none': {
         id: 'none',
@@ -569,19 +706,40 @@ export const getSetBonuses = (setId, pieceCount) => {
         activeTier = '2pc';
     }
 
-    // Retourner UNIQUEMENT le bonus du palier activé (non-cumulatif)
-    if (activeTier) {
-        return {
-            critRate: set.bonuses[activeTier].critRate || 0,
-            critDMG: set.bonuses[activeTier].critDMG || 0,
-            defPen: set.bonuses[activeTier].defPen || 0,
-        };
-    }
-
-    // Aucun bonus si < 2 pièces
-    return {
+    const defaultBonuses = {
         critRate: 0,
         critDMG: 0,
         defPen: 0,
     };
+
+    // Retourner UNIQUEMENT le bonus du palier activé (non-cumulatif)
+    if (activeTier) {
+        const tierData = set.bonuses[activeTier];
+        return {
+            critRate: tierData.critRate || 0,
+            critDMG: tierData.critDMG || 0,
+            defPen: tierData.defPen || 0,
+            // Extended stats for new meta sets
+            attack: tierData.attack || 0,
+            defense: tierData.defense || 0,
+            hp: tierData.hp || 0,
+            basicSkillDamage: tierData.basicSkillDamage || 0,
+            ultimateSkillDamage: tierData.ultimateSkillDamage || 0,
+            damageDealt: tierData.damageDealt || 0,
+            overloadDamage: tierData.overloadDamage || 0,
+            elementalWeaknessDamage: tierData.elementalWeaknessDamage || 0,
+            breakSkillDamage: tierData.breakSkillDamage || 0,
+            breakEffectiveness: tierData.breakEffectiveness || 0,
+        };
+    }
+
+    // Aucun bonus si < 2 pièces
+    return defaultBonuses;
+};
+
+// Helper pour obtenir le class bonus d'un set (Sung/Striker/Breaker/etc.)
+export const getSetClassBonus = (setId) => {
+    const set = ARTIFACT_SETS[setId];
+    if (!set || !set.classBonus) return null;
+    return set.classBonus;
 };
