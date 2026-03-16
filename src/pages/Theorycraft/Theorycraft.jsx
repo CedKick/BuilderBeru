@@ -1482,7 +1482,7 @@ const Theorycraft = () => {
                 className="fixed z-0"
                 style={{
                     inset: '-8px',
-                    backgroundImage: `url(${new URL('../../theorycraftWallpaper.png', import.meta.url).href})`,
+                    backgroundImage: 'url(https://api.builderberu.com/cdn/images/theorycraftWallpaper.webp)',
                     filter: 'blur(4px)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
