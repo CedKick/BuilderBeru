@@ -7,7 +7,6 @@ import { Mail, Inbox, Gift, Trash2, ChevronDown, ChevronUp, Check, X, ArrowLeft,
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
 import { API_URL } from '../utils/api.js';
 import { cloudStorage } from '../utils/CloudStorage';
-import shadowCoinManager from '../components/ChibiSystem/ShadowCoinManager';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
 import { HUNTERS } from './ShadowColosseum/raidData';
 
@@ -321,7 +320,7 @@ export default function MailInbox() {
 
     // Coins
     if (rewards.coins && typeof rewards.coins === 'number') {
-      shadowCoinManager.addCoins(rewards.coins, 'mail-reward');
+      // shadowCoinManager removed
     }
 
     // Expedition items → convert to artifact format and add to artifactInventory
@@ -450,7 +449,7 @@ export default function MailInbox() {
         if (freshRaid) localStorage.setItem(RAID_KEY, JSON.stringify(freshRaid));
         // Coins use their own manager (separate from colosseum data)
         if (rewards.coins && typeof rewards.coins === 'number') {
-          shadowCoinManager.addCoins(rewards.coins, 'mail-reward');
+          // shadowCoinManager removed
         }
         // Dispatch update so ShadowColosseum picks up new data
         window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'shadow-data-update' } }));

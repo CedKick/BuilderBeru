@@ -4,7 +4,6 @@ import { Menu } from 'lucide-react';
 import BuilderMenu from './buildermenu';
 import FloatingBeruMascot from './components/FloatingBeruMascot';
 import FloatingDaijin from './components/FloatingDaijin';
-import FloatingPod042 from './components/FloatingPod042';
 import FloatingShortcuts from './components/FloatingShortcuts';
 import AchievementToast from './components/AchievementToast';
 import IgrisVsBeru from './components/IgrisVsBeru/IgrisVsBeru';
@@ -75,7 +74,7 @@ export default function AppLayout({ children }) {
   }, [showMenu]);
 
   return (
-    <div className="relative min-h-screen bg-[#0f0f1a] text-white">
+    <div className="flex min-h-screen w-full bg-[#0f0f1a] text-white">
       {/* Faction Background */}
       {userFaction && (
         <div
@@ -95,61 +94,25 @@ export default function AppLayout({ children }) {
         />
       )}
 
-      <style jsx="true">{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4);
-          }
-          50% {
-            box-shadow: 0 0 0 8px rgba(168, 85, 247, 0);
-          }
-        }
-
-        .menu-button {
-          animation: pulse 2s infinite;
-        }
-
-        .backdrop {
-          animation: fadeIn 0.3s ease-out;
-        }
-      `}</style>
-
-      {/* Bouton hamburger - Desktop & Mobile */}
-      <button
-        onClick={() => setShowMenu(true)}
-        className="menu-button fixed bottom-4 left-4 md:top-4 md:bottom-auto z-40 p-2 rounded-xl
-                   bg-gradient-to-br from-purple-600/60 to-indigo-600/60
-                   hover:from-purple-500/80 hover:to-indigo-500/80
-                   backdrop-blur-md border border-purple-400/30
-                   shadow-lg hover:shadow-purple-500/50
-                   transition-all duration-300 hover:scale-110
-                   group"
-        aria-label="Ouvrir le menu"
-      >
-        <Menu className="w-5 h-5 text-white group-hover:rotate-180 transition-transform duration-300" />
-      </button>
-
-      {/* Overlay backdrop - visible quand le menu est ouvert */}
-      {showMenu && (
-        <div
-          className="backdrop fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-          onClick={() => setShowMenu(false)}
-          aria-label="Fermer le menu"
-        />
-      )}
-
-      {/* Menu latéral */}
+      {/* Sidebar — persistent on desktop */}
       <BuilderMenu isOpen={showMenu} onClose={() => setShowMenu(false)} />
 
-      {/* Contenu principal */}
-      <main className="w-full min-h-screen">
-        {children}
-      </main>
+      {/* Main content area */}
+      <div className="flex flex-col flex-1 min-h-screen">
+        {/* Mobile hamburger button */}
+        <button
+          onClick={() => setShowMenu(true)}
+          className="fixed top-4 left-4 z-30 rounded-md bg-[#1a1a2a] p-2 text-white lg:hidden border border-purple-500/20"
+          aria-label="Ouvrir le menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        {/* Contenu principal — offset by sidebar width on desktop */}
+        <main className="flex-1 overflow-auto lg:ml-64">
+          {children}
+        </main>
+      </div>
 
       {/* Mascot Panel (hidden when on Shadow Colosseum - shown in FloatingShortcuts) */}
       {showMascotPanel && (
@@ -172,14 +135,6 @@ export default function AppLayout({ children }) {
               />
             )}
 
-            {/* Pod 042 (only for Replicant members) */}
-            {userFaction === 'replicant' && (
-              <MascotToggleButton
-                name="Pod 042"
-                icon="🤖"
-                storageKey="pod042_mode"
-              />
-            )}
           </div>
         </div>
       )}
@@ -195,13 +150,6 @@ export default function AppLayout({ children }) {
         />
       )}
 
-      {/* Pod 042 - Unité de Support Replicant */}
-      {userFaction === 'replicant' && (
-        <FloatingPod042
-          isHovering={false}
-          hasFaction={true}
-        />
-      )}
 
       {/* Floating Shortcuts - Only on Shadow Colosseum */}
       {location.pathname === '/shadow-colosseum' && (

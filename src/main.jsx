@@ -81,15 +81,10 @@ const Builder = React.lazy(() => import('./BuilderBeru'));
 const GuideEditor = React.lazy(() => import('./pages/GuideEditor.jsx'));
 const HallOfFlameStandalone = React.lazy(() => import('./components/HallOfFlameStandalone.jsx'));
 const TrainingCenter = React.lazy(() => import('./components/Training/TrainingCenter.jsx'));
-const BeruvianWorld = React.lazy(() => import('./pages/beruvianWorld/BeruvianWorld.jsx'));
 const CraftSimulator = React.lazy(() => import('./components/CraftSimulator/CraftSimulator.jsx'));
 const DamageCalculatorStandalone = React.lazy(() => import('./DamageCalculatorStandalone.jsx'));
-const ChibiWorld = React.lazy(() => import('./components/ChibiSystem/ChibiWorld.jsx'));
 const DrawBeruLauncher = React.lazy(() => import('./pages/DrawBeru/DrawBeruLauncher.jsx'));
-const BDGScore = React.lazy(() => import('./components/BDGScore.jsx'));
-const PODScore = React.lazy(() => import('./components/PODScore.jsx'));
 const Theorycraft = React.lazy(() => import('./pages/Theorycraft/Theorycraft.jsx'));
-const LoreStory = React.lazy(() => import('./pages/LoreStory/LoreStory.jsx'));
 const ShadowColosseum = React.lazy(() => import('./pages/ShadowColosseum/ShadowColosseum.jsx'));
 const RaidMode = React.lazy(() => import('./pages/ShadowColosseum/RaidMode.jsx'));
 const PvpMode = React.lazy(() => import('./pages/ShadowColosseum/PvpMode.jsx'));
@@ -130,13 +125,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/craft-simulator" element={<CraftSimulator />} />
               <Route path="/trainingCenter" element={<TrainingCenter />} />
               <Route path="/guide-editor" element={<GuideEditor />} />
-              <Route path="/pod" element={<PODScore />} />
-              <Route path="/bdg" element={<BDGScore />} />
               <Route path="/hall-of-flame" element={<HallOfFlameStandalone />} />
               <Route path="/damage-calculator" element={<DamageCalculatorStandalone />} />
-              <Route path="/beruvian-world" element={<BeruvianWorld />} />
-              <Route path="/chibi-world" element={<ChibiWorld />} />
-              <Route path="/lorestory" element={<LoreStory />} />
               <Route path="/theorycraft" element={<Theorycraft />} />
               <Route path="/theorycraft/:boss" element={<Theorycraft />} />
               <Route path="/theorycraft/:boss/:element" element={<Theorycraft />} />

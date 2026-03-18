@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
-import HomeDashboard from './components/HomeDashboard';
 
 export default function HomePage() {
   const { t, i18n } = useTranslation();
@@ -149,15 +148,6 @@ export default function HomePage() {
       alt: "DrawBeru - Coloring and Drawing System",
     },
     {
-      label: "LoreStory",
-      path: "/lorestory",
-      img: "https://api.builderberu.com/cdn/images/LogoLoreStory128_mqxibm.webp",
-      glowColor: "rgba(139, 92, 246, 0.5)",
-      isNew: true,
-      beruMessage: "Des histoires ? Installe-toi... le Soldat N1 raconte.",
-      alt: "LoreStory - Shadow Army Chronicles",
-    },
-    {
       label: "Shadow Colosseum",
       path: "/shadow-colosseum",
       img: "https://api.builderberu.com/cdn/images/LogoColossum128-removebg-preview_jrzpts.webp",
@@ -165,15 +155,6 @@ export default function HomePage() {
       isNew: true,
       beruMessage: "Le Colisee des Ombres t'attend... Tes chibis sont prets ?",
       alt: "Shadow Colosseum - Chibi Battle RPG",
-    },
-    {
-      label: "Expedition I",
-      path: "/expedition",
-      img: "https://api.builderberu.com/cdn/images/GardienDeLaForet_fsymf8.webp",
-      glowColor: "rgba(245, 158, 11, 0.5)",
-      isNew: true,
-      beruMessage: "L'Expedition commence ! 5 boss, 30 chasseurs... Qui survivra ?",
-      alt: "Expedition I - Cooperative Boss Raid",
     },
   ];
 
@@ -229,15 +210,10 @@ export default function HomePage() {
   const currentSEODisplay = seoDisplayData[currentLang] || seoDisplayData.fr;
 
   return (
-    <div
-      className="min-h-screen bg-[#0f0f1a] text-white flex flex-col items-center py-6 md:py-12 px-3 md:px-4 relative"
-      style={{ backgroundImage: 'url(https://api.builderberu.com/cdn/images/backgroundVD_ywvghj.webp)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}
-    >
-      <div className="absolute inset-0 bg-[#0f0f1a]/75 pointer-events-none" />
-
+    <div className="min-h-screen bg-[#0f0f1a] text-white">
       {/* Language Selector */}
-      <div className="absolute top-3 right-3 z-10">
-        <div className="flex gap-1.5 items-center bg-black/40 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
+      <div className="fixed top-3 right-3 z-50">
+        <div className="flex gap-1.5 items-center bg-[#1a1f2c]/80 backdrop-blur-sm rounded-lg px-2.5 py-1.5 border border-purple-500/20">
           {langFlags.map(flag => (
             <img loading="lazy"
               key={flag.lang}
@@ -245,198 +221,127 @@ export default function HomePage() {
               alt={flag.alt}
               onClick={() => i18n.changeLanguage(flag.lang)}
               className={`w-6 h-4 cursor-pointer hover:scale-110 transition-all duration-200 rounded
-                ${currentLang === flag.lang ? 'ring-1 ring-yellow-400 scale-110 opacity-100' : 'opacity-60 hover:opacity-100'}`}
+                ${currentLang === flag.lang ? 'ring-1 ring-purple-400 scale-110 opacity-100' : 'opacity-50 hover:opacity-100'}`}
             />
           ))}
         </div>
       </div>
 
-      {/* Header SEO */}
-      <header className="text-center mb-3 md:mb-8 relative z-10 max-w-2xl">
-        <h1 className="text-base md:text-4xl font-extrabold text-purple-400 drop-shadow-md">
-          {currentSEODisplay.h1}
-        </h1>
-        <h2 className="text-[11px] md:text-xl text-gray-300 mt-1 font-semibold">
-          {currentSEODisplay.h2}
-        </h2>
-        <h3 className="text-[9px] md:text-lg text-purple-300/70 mt-0.5 font-medium">
-          {currentSEODisplay.h3}
-        </h3>
-      </header>
+      <div className="w-full max-w-5xl mx-auto px-4 lg:px-8 py-10 md:py-16">
+        {/* Header SEO */}
+        <header className="text-center mb-12 md:mb-16">
+          <h1 className="text-2xl md:text-4xl font-extrabold text-purple-400 mb-2">
+            {currentSEODisplay.h1}
+          </h1>
+          <h2 className="text-sm md:text-xl text-gray-300 font-semibold">
+            {currentSEODisplay.h2}
+          </h2>
+          <h3 className="text-xs md:text-base text-purple-300/60 mt-1 font-medium">
+            {currentSEODisplay.h3}
+          </h3>
+        </header>
 
-      {/* Navigation */}
-      <nav className="w-full max-w-2xl mx-auto relative z-10 mb-6 md:mb-10 px-2" aria-label="Main Navigation">
-        <style>{`
-          @keyframes navFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-          }
-          @keyframes navShine {
-            0% { left: -60%; }
-            100% { left: 160%; }
-          }
-          @keyframes navGlowPulse {
-            0%, 100% { opacity: 0.15; transform: scale(0.85); }
-            50% { opacity: 0.3; transform: scale(0.95); }
-          }
-          .nav-link:hover .nav-shine-bar {
-            animation: navShine 0.7s ease-out;
-          }
-          .nav-link:hover .nav-logo {
-            transform: scale(1.18);
-            filter: brightness(1.25) drop-shadow(0 0 20px var(--glow-color));
-          }
-          .nav-link:hover .nav-glow {
-            opacity: 0.6 !important;
-            transform: scale(1.3) !important;
-          }
-          .nav-link:hover .nav-badge {
-            animation: navFloat 0.6s ease-in-out infinite;
-          }
-        `}</style>
-
-        {/* SLA Section */}
-        <div className="text-center mb-5">
-          <span className="text-[10px] md:text-xs font-bold text-purple-400/80 uppercase tracking-widest">Solo Leveling: Arise</span>
-        </div>
-        <div className="flex justify-center items-center gap-10 md:gap-20 mb-10">
-          {slaItems.map((item, i) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className="nav-link group relative flex flex-col items-center"
-              aria-label={item.alt}
-              onMouseEnter={() => handleNavHover(item)}
-            >
-              <div
-                className="relative"
-                style={{ animation: `navFloat 4s ease-in-out infinite`, animationDelay: `${-i * 1.5}s` }}
+        {/* SLA Tools Section */}
+        <section className="mb-14" aria-label="Solo Leveling: Arise Tools">
+          <h2 className="text-xl md:text-2xl font-bold text-purple-400 mb-6">
+            Solo Leveling: Arise
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+            {slaItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className="group relative flex items-center gap-4 bg-[#1a1f2c] border border-gray-700/50 rounded-lg p-4 md:p-5 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-0.5 transition-all duration-300"
+                aria-label={item.alt}
+                onMouseEnter={() => handleNavHover(item)}
               >
-                {/* Ambient glow pulse */}
-                <div
-                  className="nav-glow absolute inset-[-30%] rounded-full blur-3xl transition-all duration-700 pointer-events-none"
-                  style={{
-                    backgroundColor: item.glowColor,
-                    animation: 'navGlowPulse 4s ease-in-out infinite',
-                    animationDelay: `${-i * 2}s`,
-                  }}
-                />
-
-                {/* Shine sweep on hover */}
-                <div className="absolute inset-0 overflow-hidden rounded-full z-20 pointer-events-none">
-                  <div
-                    className="nav-shine-bar absolute top-0 h-full pointer-events-none"
-                    style={{
-                      width: '40%',
-                      left: '-60%',
-                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
-                    }}
-                  />
-                </div>
-
-                {/* Logo */}
                 <img loading="lazy"
                   src={item.img}
                   alt={item.label}
-                  className="nav-logo w-24 h-24 md:w-32 md:h-32 object-contain relative z-10 transition-all duration-500 ease-out"
-                  style={{ '--glow-color': item.glowColor, filter: `drop-shadow(0 4px 12px ${item.glowColor})` }}
+                  className="w-16 h-16 md:w-20 md:h-20 object-contain flex-shrink-0"
+                  style={{ filter: `drop-shadow(0 2px 8px ${item.glowColor})` }}
                   draggable={false}
                 />
-              </div>
-
-              {item.isNew && (
-                <span className="nav-badge absolute -top-1 -right-2 z-30 px-2 py-0.5 rounded-full text-[8px] md:text-[9px] font-bold bg-green-500 text-white shadow-md shadow-green-500/50">
-                  NEW
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg md:text-xl font-bold text-white group-hover:text-purple-300 transition-colors">
+                      {item.label}
+                    </span>
+                    {item.isNew && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-500 text-white">
+                        NEW
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs md:text-sm text-gray-400 mt-1">{item.alt}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         {/* FanArts Section */}
-        <div className="text-center mb-5">
-          <span className="text-[10px] md:text-xs font-bold text-pink-400/80 uppercase tracking-widest">FanArts</span>
-        </div>
-        <div className="flex justify-center items-center gap-10 md:gap-20">
-          {fanartItems.map((item, i) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className="nav-link group relative flex flex-col items-center"
-              aria-label={item.alt}
-              onMouseEnter={() => handleNavHover(item)}
-            >
-              <div
-                className="relative"
-                style={{ animation: 'navFloat 4s ease-in-out infinite', animationDelay: `${-0.8 - i * 1.3}s` }}
+        <section className="mb-14" aria-label="FanArts & Creativity">
+          <h2 className="text-xl md:text-2xl font-bold text-pink-400 mb-6">
+            FanArts
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+            {fanartItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className="group relative flex items-center gap-4 bg-[#1a1f2c] border border-gray-700/50 rounded-lg p-4 md:p-5 hover:border-pink-500/50 hover:shadow-lg hover:shadow-pink-500/10 hover:-translate-y-0.5 transition-all duration-300"
+                aria-label={item.alt}
+                onMouseEnter={() => handleNavHover(item)}
               >
-                <div
-                  className="nav-glow absolute inset-[-30%] rounded-full blur-3xl transition-all duration-700 pointer-events-none"
-                  style={{
-                    backgroundColor: item.glowColor,
-                    animation: 'navGlowPulse 4s ease-in-out infinite',
-                    animationDelay: `${-1 - i * 1.5}s`,
-                  }}
+                <img loading="lazy"
+                  src={item.img}
+                  alt={item.label}
+                  className="w-16 h-16 md:w-20 md:h-20 object-contain flex-shrink-0"
+                  style={{ filter: `drop-shadow(0 2px 8px ${item.glowColor})` }}
+                  draggable={false}
                 />
-                <div className="absolute inset-0 overflow-hidden rounded-full z-20 pointer-events-none">
-                  <div
-                    className="nav-shine-bar absolute top-0 h-full pointer-events-none"
-                    style={{
-                      width: '40%',
-                      left: '-60%',
-                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
-                    }}
-                  />
-                </div>
-                {item.img ? (
-                  <img loading="lazy"
-                    src={item.img}
-                    alt={item.label}
-                    className="nav-logo w-24 h-24 md:w-32 md:h-32 object-contain relative z-10 transition-all duration-500 ease-out"
-                    style={{ '--glow-color': item.glowColor, filter: `drop-shadow(0 4px 12px ${item.glowColor})` }}
-                    draggable={false}
-                  />
-                ) : (
-                  <div className="nav-logo relative z-10 flex flex-col items-center justify-center w-24 h-24 md:w-32 md:h-32 transition-all duration-500 ease-out">
-                    <span className="text-5xl md:text-6xl" style={{ filter: `drop-shadow(0 4px 12px ${item.glowColor})` }}>{item.icon}</span>
-                    <span className="text-[10px] md:text-xs font-bold text-white/90 mt-1">{item.label}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg md:text-xl font-bold text-white group-hover:text-pink-300 transition-colors">
+                      {item.label}
+                    </span>
+                    {item.isNew && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-500 text-white">
+                        NEW
+                      </span>
+                    )}
                   </div>
-                )}
-              </div>
-              {item.isNew && (
-                <span className="nav-badge absolute -top-1 -right-2 z-30 px-2 py-0.5 rounded-full text-[8px] md:text-[9px] font-bold bg-green-500 text-white shadow-md shadow-green-500/50">
-                  NEW
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
-      </nav>
+                  <p className="text-xs md:text-sm text-gray-400 mt-1">{item.alt}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
 
-      {/* Dashboard Vivant */}
-      <HomeDashboard />
 
-      {/* Footer */}
-      <footer className="mt-auto pt-4 md:pt-8 text-center max-w-md relative z-10">
-        <p className="text-[10px] md:text-xs text-gray-500 italic mb-1.5">
-          {t('home.footer.disclaimer')}
-        </p>
-        <p className="text-[9px] md:text-[11px] text-gray-600 mb-1.5">
-          This is a fan-made website for Solo Leveling: Arise. Not affiliated with Netmarble.
-        </p>
-        <p className="text-[10px] md:text-xs text-gray-500">
-          {t('home.footer.community')}{" "}
-          <a
-            href="https://discord.gg/m8RCuDz5"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-purple-400 hover:text-purple-300 hover:underline transition-colors"
-            aria-label="Join BuilderBeru Discord Community"
-          >
-            Discord
-          </a>.
-        </p>
-      </footer>
+        {/* Footer */}
+        <footer className="mt-16 pt-8 border-t border-gray-800 text-center">
+          <p className="text-xs text-gray-500 italic mb-2">
+            {t('home.footer.disclaimer')}
+          </p>
+          <p className="text-[11px] text-gray-600 mb-2">
+            This is a fan-made website for Solo Leveling: Arise. Not affiliated with Netmarble.
+          </p>
+          <p className="text-xs text-gray-500">
+            {t('home.footer.community')}{" "}
+            <a
+              href="https://discord.gg/m8RCuDz5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-400 hover:text-purple-300 hover:underline transition-colors"
+              aria-label="Join BuilderBeru Discord Community"
+            >
+              Discord
+            </a>.
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }

@@ -14,8 +14,6 @@ import BerserkerShadowTrail from './components/BerserkerShadowTrail/BerserkerSha
 import { characters } from './data/characters';
 import { sungForce } from './data/sungForce';
 import ArtifactCard from "./components/ArtifactCard";
-import BDGScoreCard from "./components/ScoreCard/BDGScoreCard"
-import PODScoreCard from "./components/ScoreCard/PODScoreCard"
 import NoyauxPopup from './components/NoyauxPopup';
 import GemmesPopup from './components/GemmePopup';
 import SpaceMarineShadowTrail from './components/SpaceMarineShadowTrail/SpaceMarineShadowTrail';
@@ -6402,36 +6400,6 @@ BobbyJones : "Allez l'Inter !"
                         />
                       ))}
 
-                      {activeSection === 'artifacts' && (
-                        <>
-                          {/* ... autres composants ... */}
-
-                          {/* Ajouter BDG Score Card */}
-                          <div className="w-full mt-6">
-                            <BDGScoreCard
-                              showTankMessage={showTankMessage}
-                              activeAccount={activeAccount}
-                              t={t}
-                              currentBuildStats={{
-                                selectedCharacter: selectedCharacter,
-                                finalStats: (() => {
-                                  const scaleStat = characters[selectedCharacter]?.scaleStat;
-                                  return {
-                                    [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
-                                    'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
-                                    'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
-                                    'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
-                                    'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
-                                    'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
-                                    'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
-                                    [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
-                                  };
-                                })()
-                              }}
-                            />
-                          </div>
-                        </>
-                      )}
 
                     </div>
                   </div>
@@ -6478,29 +6446,6 @@ BobbyJones : "Allez l'Inter !"
                       />
                       <SpaceMarineShadowTrail />
 
-                      {/* Ajouter POD Score Card */}
-                      <div className="w-full mt-6">
-                        <PODScoreCard
-                          showTankMessage={showTankMessage}
-                          activeAccount={activeAccount}
-                          currentBuildStats={{
-                            selectedCharacter: selectedCharacter,
-                            finalStats: (() => {
-                              const scaleStat = characters[selectedCharacter]?.scaleStat;
-                              return {
-                                [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
-                                'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
-                                'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
-                                'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
-                                'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
-                                'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
-                                'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
-                                [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
-                              };
-                            })()
-                          }}
-                        />
-                      </div>
 
                     </div>
                   </div>
@@ -7166,36 +7111,6 @@ BobbyJones : "Allez l'Inter !"
                     />
                   ))}
 
-                  {activeSection === 'artifacts' && (
-                    <>
-                      {/* ... autres composants ... */}
-
-                      {/* Ajouter BDG Score Card */}
-                      <div className="w-full mt-6">
-                        <BDGScoreCard
-                          showTankMessage={showTankMessage}
-                          activeAccount={activeAccount}
-                          t={t}
-                          currentBuildStats={{
-                            selectedCharacter: selectedCharacter,
-                            finalStats: (() => {
-                              const scaleStat = characters[selectedCharacter]?.scaleStat;
-                              return {
-                                [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
-                                'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
-                                'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
-                                'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
-                                'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
-                                'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
-                                'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
-                                [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
-                              };
-                            })()
-                          }}
-                        />
-                      </div>
-                    </>
-                  )}
 
                 </div>
 
@@ -8776,29 +8691,6 @@ BobbyJones : "Allez l'Inter !"
                 />
                 <SpaceMarineShadowTrail />
 
-                {/* Ajouter POD Score Card */}
-                <div className="w-full mt-6">
-                  <PODScoreCard
-                    showTankMessage={showTankMessage}
-                    activeAccount={activeAccount}
-                    currentBuildStats={{
-                      selectedCharacter: selectedCharacter,
-                      finalStats: (() => {
-                        const scaleStat = characters[selectedCharacter]?.scaleStat;
-                        return {
-                          [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
-                          'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
-                          'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
-                          'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
-                          'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
-                          'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
-                          'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
-                          [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
-                        };
-                      })()
-                    }}
-                  />
-                </div>
 
 
 

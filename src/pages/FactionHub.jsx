@@ -21,7 +21,6 @@ import {
 import shadowCoinManager from '../components/ChibiSystem/ShadowCoinManager';
 import { API_URL } from '../utils/api.js';
 import FloatingDaijin from '../components/FloatingDaijin';
-import FloatingPod042 from '../components/FloatingPod042';
 
 // Auth helpers
 const isLoggedIn = () => {
@@ -447,15 +446,6 @@ export default function FactionHub() {
           )}
         </AnimatePresence>
 
-        {/* Pod 042 mascot for Replicant */}
-        <AnimatePresence>
-          {hoveringReplicant && (
-            <FloatingPod042
-              isHovering={hoveringReplicant}
-              hasFaction={factionData?.faction?.id === 'replicant'}
-            />
-          )}
-        </AnimatePresence>
       </div>
     );
   }
@@ -602,13 +592,6 @@ export default function FactionHub() {
         />
       )}
 
-      {/* Pod 042 mascot for Replicant members */}
-      {currentFaction.id === 'replicant' && (
-        <FloatingPod042
-          isHovering={false}
-          hasFaction={true}
-        />
-      )}
 
       {/* Change Faction Modal */}
       <AnimatePresence>
