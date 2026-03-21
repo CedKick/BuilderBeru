@@ -13924,7 +13924,7 @@ export default function ShadowColosseum() {
 
       {/* Floating scroll arrows + shortcuts — only on hub view */}
       {view === 'hub' && createPortal(
-        <div style={{ position: 'fixed', right: window.innerWidth >= 1024 ? 'calc(50% - 380px - 128px)' : 'calc(50% - 380px)', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 99999, pointerEvents: 'auto' }}>
+        <div className="col-elevator" style={{ position: 'fixed', right: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 99999, pointerEvents: 'auto' }}>
           {/* Up arrow */}
           <button
             onClick={() => { if (!scrollAtTop) { _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 20000); const isTroll = _shortcutClickCount >= 3 && Math.random() < 0.6; elevatorScroll(0, 900, isTroll); const p = isTroll ? randomPick(BERU_SHORTCUT_PHRASES.troll) : _shortcutClickCount >= 3 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SCROLL_PHRASES); beruSay(p.msg, p.mood); } }}
