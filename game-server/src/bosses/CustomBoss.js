@@ -33,7 +33,8 @@ export class CustomBoss extends BossBase {
     // Visual overrides
     this.radius = config.radius || BOSS_CFG.RADIUS;
     this.color = config.color || '#ef4444';
-    this.spriteUrl = config.spriteUrl || null;
+    this.spriteUrl = config.spriteUrl || config.sprites?.idle?.down || null;
+    this.sprites = config.sprites || null; // Multi-directional sprites { idle: {down,up,left,right}, atk: {…} }
     this.mapBg = config.mapBg || null;
 
     // Auto-attack config

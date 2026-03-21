@@ -25,6 +25,10 @@ function createDefaultBoss() {
     color: '#ef4444',
     radius: 75,
     spriteUrl: null,
+    sprites: {
+      idle: { down: null, up: null, left: null, right: null },
+      atk: { down: null, up: null, left: null, right: null },
+    },
     mapBg: null,
     // Stats
     hp: 1_000_000_000,
@@ -60,6 +64,26 @@ function restoreUidCounter(config) {
   nextPatternUid = maxUid + 1;
 }
 
+// Migrate old single spriteUrl → new multi-sprite structure
+function migrateSprites(config) {
+  const empty = { down: null, up: null, left: null, right: null };
+  if (!config.sprites) {
+    config.sprites = {
+      idle: { ...empty, down: config.spriteUrl || null },
+      atk: { ...empty },
+    };
+  } else {
+    // Ensure all keys exist
+    if (!config.sprites.idle) config.sprites.idle = { ...empty };
+    if (!config.sprites.atk) config.sprites.atk = { ...empty };
+    for (const dir of ['down', 'up', 'left', 'right']) {
+      if (config.sprites.idle[dir] === undefined) config.sprites.idle[dir] = null;
+      if (config.sprites.atk[dir] === undefined) config.sprites.atk[dir] = null;
+    }
+  }
+  return config;
+}
+
 export default function BossEditor({ onBack, editBossId }) {
   const [boss, setBoss] = useState(() => {
     try {
@@ -67,6 +91,7 @@ export default function BossEditor({ onBack, editBossId }) {
       if (saved) {
         const parsed = JSON.parse(saved);
         restoreUidCounter(parsed);
+        migrateSprites(parsed);
         return parsed;
       }
     } catch { /* ignore */ }
@@ -82,7 +107,9 @@ export default function BossEditor({ onBack, editBossId }) {
   const [myBosses, setMyBosses] = useState(null); // null = not loaded, [] = loaded
   const [showMyBosses, setShowMyBosses] = useState(false);
   const [bossStatus, setBossStatus] = useState('draft');
+  const [showAtkSprites, setShowAtkSprites] = useState(false);
   const spriteInputRef = useRef(null);
+  const spriteInputRefs = useRef({});
   const mapInputRef = useRef(null);
 
   // ── Load from DB if editBossId is set ─────────────────────
@@ -97,6 +124,7 @@ export default function BossEditor({ onBack, editBossId }) {
       if (data.success && data.boss?.config) {
         const config = typeof data.boss.config === 'string' ? JSON.parse(data.boss.config) : data.boss.config;
         restoreUidCounter(config);
+        migrateSprites(config);
         setBoss(config);
         setBossId(data.boss.boss_id);
         setBossStatus(data.boss.status || 'draft');
@@ -203,6 +231,7 @@ export default function BossEditor({ onBack, editBossId }) {
       if (data.success && data.boss?.config) {
         const config = typeof data.boss.config === 'string' ? JSON.parse(data.boss.config) : data.boss.config;
         restoreUidCounter(config);
+        migrateSprites(config);
         setBoss(config);
         setBossId(data.boss.boss_id);
         setBossStatus(data.boss.status || 'draft');
@@ -272,6 +301,45 @@ export default function BossEditor({ onBack, editBossId }) {
   const updateAutoAtk = useCallback((key, val) => setBoss(b => ({
     ...b, autoAttack: { ...b.autoAttack, [key]: val },
   })), []);
+
+  // Update a sprite in the sprites object: updateSprite('idle', 'down', url)
+  const updateSprite = useCallback((state, dir, val) => {
+    setBoss(b => ({
+      ...b,
+      sprites: {
+        ...b.sprites,
+        [state]: { ...b.sprites[state], [dir]: val },
+      },
+      // Keep spriteUrl in sync for rétrocompat (use idle.down as primary)
+      ...(state === 'idle' && dir === 'down' ? { spriteUrl: val } : {}),
+    }));
+  }, []);
+
+  // Handle sprite file upload for a specific state+direction
+  const handleSpriteUpload = useCallback((file, state, dir) => {
+    if (!file) return;
+    if (file.size > 512_000) { alert('Fichier trop lourd (max 500KB)'); return; }
+    if (!file.type.startsWith('image/')) { alert('Format image requis (PNG/WebP)'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 400, maxH = 400;
+        if (img.width > maxW || img.height > maxH) {
+          const canvas = document.createElement('canvas');
+          const scale = Math.min(maxW / img.width, maxH / img.height);
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          updateSprite(state, dir, canvas.toDataURL('image/webp', 0.85));
+        } else {
+          updateSprite(state, dir, e.target.result);
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }, [updateSprite]);
 
   // ── Phase CRUD ──────────────────────────────────────────
   const addPhase = () => {
@@ -801,30 +869,164 @@ export default function BossEditor({ onBack, editBossId }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <Label>Sprite du boss (PNG/WebP, max 500KB)</Label>
-                    <div className="flex items-center gap-3">
-                      <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50">
-                        {boss.spriteUrl
-                          ? <img src={boss.spriteUrl} alt="sprite" className="w-full h-full object-contain rounded-xl" />
-                          : <div className="w-12 h-12 rounded-full" style={{ backgroundColor: boss.color + '60', border: `2px solid ${boss.color}` }} />
-                        }
+                {/* ── Sprites du boss ── */}
+                <Panel title="Sprites du boss" subtitle="PNG/WebP, max 500KB par sprite">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* IDLE column */}
+                    <div>
+                      <h4 className="text-xs font-bold text-white mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-500" /> IDLE (repos)
+                      </h4>
+                      <div className="space-y-2">
+                        {[
+                          { dir: 'down', label: 'Down ↓', required: true },
+                          { dir: 'up', label: 'Up ↑' },
+                          { dir: 'left', label: 'Left ←' },
+                        ].map(({ dir, label, required }) => {
+                          const val = boss.sprites?.idle?.[dir];
+                          const refKey = `idle_${dir}`;
+                          return (
+                            <div key={dir} className="flex items-center gap-2">
+                              <div className="w-12 h-12 rounded-lg border border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50 flex-shrink-0 overflow-hidden">
+                                {val ? <img src={val} alt={label} className="w-full h-full object-contain" /> : <span className="text-gray-600 text-[9px]">—</span>}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                                  {label}
+                                  {required && <span className="text-amber-500 text-[9px] font-bold">Requis</span>}
+                                </p>
+                              </div>
+                              <input ref={el => spriteInputRefs.current[refKey] = el} type="file" accept="image/png,image/webp,image/jpeg" className="hidden"
+                                onChange={e => { handleSpriteUpload(e.target.files[0], 'idle', dir); e.target.value = ''; }} />
+                              <button onClick={() => spriteInputRefs.current[refKey]?.click()}
+                                className="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-[10px] text-gray-300 flex-shrink-0">
+                                <Upload size={10} />
+                              </button>
+                              {val && (
+                                <button onClick={() => updateSprite('idle', dir, null)}
+                                  className="p-1 rounded hover:bg-red-900/30 text-gray-600 hover:text-red-400 flex-shrink-0">
+                                  <Trash2 size={10} />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {/* Right = auto flip of Left */}
+                        <div className="flex items-center gap-2">
+                          <div className="w-12 h-12 rounded-lg border border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50 flex-shrink-0 overflow-hidden">
+                            {(boss.sprites?.idle?.right || boss.sprites?.idle?.left)
+                              ? <img src={boss.sprites?.idle?.right || boss.sprites?.idle?.left} alt="Right"
+                                  className="w-full h-full object-contain" style={!boss.sprites?.idle?.right && boss.sprites?.idle?.left ? { transform: 'scaleX(-1)' } : {}} />
+                              : <span className="text-gray-600 text-[9px]">—</span>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] text-gray-400">Right →</p>
+                            {!boss.sprites?.idle?.right && boss.sprites?.idle?.left && (
+                              <p className="text-[8px] text-green-500">Auto (flip de Left)</p>
+                            )}
+                          </div>
+                          {!boss.sprites?.idle?.left && (
+                            <>
+                              <input ref={el => spriteInputRefs.current['idle_right'] = el} type="file" accept="image/png,image/webp,image/jpeg" className="hidden"
+                                onChange={e => { handleSpriteUpload(e.target.files[0], 'idle', 'right'); e.target.value = ''; }} />
+                              <button onClick={() => spriteInputRefs.current['idle_right']?.click()}
+                                className="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-[10px] text-gray-300 flex-shrink-0">
+                                <Upload size={10} />
+                              </button>
+                            </>
+                          )}
+                          {boss.sprites?.idle?.right && (
+                            <button onClick={() => updateSprite('idle', 'right', null)}
+                              className="p-1 rounded hover:bg-red-900/30 text-gray-600 hover:text-red-400 flex-shrink-0">
+                              <Trash2 size={10} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <input ref={spriteInputRef} type="file" accept="image/png,image/webp,image/jpeg" className="hidden"
-                        onChange={e => handleFileUpload(e.target.files[0], 'spriteUrl', 400, 400)} />
-                      <button onClick={() => spriteInputRef.current?.click()}
-                        className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm text-gray-300 flex items-center gap-2 transition-colors">
-                        <Upload size={14} /> Upload sprite
+                    </div>
+
+                    {/* ATK column */}
+                    <div>
+                      <button onClick={() => setShowAtkSprites(!showAtkSprites)}
+                        className="text-xs font-bold text-white mb-3 flex items-center gap-2 hover:text-amber-400 transition-colors w-full">
+                        <span className="w-2 h-2 rounded-full bg-red-500" /> ATK (attaque)
+                        <span className="text-[9px] text-gray-500 font-normal">optionnel</span>
+                        {showAtkSprites ? <ChevronUp size={12} className="ml-auto" /> : <ChevronDown size={12} className="ml-auto" />}
                       </button>
-                      {boss.spriteUrl && (
-                        <button onClick={() => update('spriteUrl', null)}
-                          className="p-2 rounded-lg hover:bg-red-900/30 text-gray-600 hover:text-red-400 transition-colors">
-                          <Trash2 size={14} />
-                        </button>
+                      {showAtkSprites && (
+                        <div className="space-y-2">
+                          {[
+                            { dir: 'down', label: 'Down ↓' },
+                            { dir: 'up', label: 'Up ↑' },
+                            { dir: 'left', label: 'Left ←' },
+                          ].map(({ dir, label }) => {
+                            const val = boss.sprites?.atk?.[dir];
+                            const refKey = `atk_${dir}`;
+                            return (
+                              <div key={dir} className="flex items-center gap-2">
+                                <div className="w-12 h-12 rounded-lg border border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50 flex-shrink-0 overflow-hidden">
+                                  {val ? <img src={val} alt={label} className="w-full h-full object-contain" /> : <span className="text-gray-600 text-[9px]">—</span>}
+                                </div>
+                                <p className="text-[10px] text-gray-400 flex-1">{label}</p>
+                                <input ref={el => spriteInputRefs.current[refKey] = el} type="file" accept="image/png,image/webp,image/jpeg" className="hidden"
+                                  onChange={e => { handleSpriteUpload(e.target.files[0], 'atk', dir); e.target.value = ''; }} />
+                                <button onClick={() => spriteInputRefs.current[refKey]?.click()}
+                                  className="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-[10px] text-gray-300 flex-shrink-0">
+                                  <Upload size={10} />
+                                </button>
+                                {val && (
+                                  <button onClick={() => updateSprite('atk', dir, null)}
+                                    className="p-1 rounded hover:bg-red-900/30 text-gray-600 hover:text-red-400 flex-shrink-0">
+                                    <Trash2 size={10} />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {/* ATK Right = auto flip */}
+                          <div className="flex items-center gap-2">
+                            <div className="w-12 h-12 rounded-lg border border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50 flex-shrink-0 overflow-hidden">
+                              {(boss.sprites?.atk?.right || boss.sprites?.atk?.left)
+                                ? <img src={boss.sprites?.atk?.right || boss.sprites?.atk?.left} alt="Right ATK"
+                                    className="w-full h-full object-contain" style={!boss.sprites?.atk?.right && boss.sprites?.atk?.left ? { transform: 'scaleX(-1)' } : {}} />
+                                : <span className="text-gray-600 text-[9px]">—</span>}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] text-gray-400">Right →</p>
+                              {!boss.sprites?.atk?.right && boss.sprites?.atk?.left && (
+                                <p className="text-[8px] text-green-500">Auto (flip de Left ATK)</p>
+                              )}
+                            </div>
+                            {!boss.sprites?.atk?.left && (
+                              <>
+                                <input ref={el => spriteInputRefs.current['atk_right'] = el} type="file" accept="image/png,image/webp,image/jpeg" className="hidden"
+                                  onChange={e => { handleSpriteUpload(e.target.files[0], 'atk', 'right'); e.target.value = ''; }} />
+                                <button onClick={() => spriteInputRefs.current['atk_right']?.click()}
+                                  className="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-[10px] text-gray-300 flex-shrink-0">
+                                  <Upload size={10} />
+                                </button>
+                              </>
+                            )}
+                            {boss.sprites?.atk?.right && (
+                              <button onClick={() => updateSprite('atk', 'right', null)}
+                                className="p-1 rounded hover:bg-red-900/30 text-gray-600 hover:text-red-400 flex-shrink-0">
+                                <Trash2 size={10} />
+                              </button>
+                            )}
+                          </div>
+                          {!Object.values(boss.sprites?.atk || {}).some(v => v) && (
+                            <p className="text-[9px] text-gray-500 italic">Aucun sprite ATK → le moteur utilisera les sprites IDLE en combat</p>
+                          )}
+                        </div>
+                      )}
+                      {!showAtkSprites && (
+                        <p className="text-[9px] text-gray-500 italic">Cliquer pour ajouter des sprites d'attaque</p>
                       )}
                     </div>
                   </div>
+                </Panel>
+
+                <div className="grid grid-cols-1 gap-4 mt-4">
                   <div>
                     <Label>Map / Background (1600×1200, optionnel)</Label>
                     <div className="flex items-center gap-3">

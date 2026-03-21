@@ -46,6 +46,23 @@ function processConfigImages(config, bossId) {
     const url = saveBase64Image(cleaned.mapBg, bossId, 'map');
     cleaned.mapBg = url || null;
   }
+  // Process multi-sprite structure
+  if (cleaned.sprites) {
+    for (const state of ['idle', 'atk']) {
+      if (!cleaned.sprites[state]) continue;
+      for (const dir of ['down', 'up', 'left', 'right']) {
+        const val = cleaned.sprites[state][dir];
+        if (val?.startsWith('data:')) {
+          const url = saveBase64Image(val, bossId, `${state}_${dir}`);
+          cleaned.sprites[state][dir] = url || null;
+        }
+      }
+    }
+    // Keep spriteUrl in sync with idle.down for rétrocompat
+    if (cleaned.sprites.idle?.down && !cleaned.spriteUrl) {
+      cleaned.spriteUrl = cleaned.sprites.idle.down;
+    }
+  }
   return cleaned;
 }
 
