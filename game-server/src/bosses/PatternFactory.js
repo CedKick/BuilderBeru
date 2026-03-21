@@ -320,6 +320,7 @@ function buildLaser(def) {
         ttl: duration, active: true,
         damagePerTick: dmg, tickInterval: 0.2,
         color: def.laserColor || '#8b5cf6',
+        laserSprite: def.laserSprite || null,
       });
       gs.addEvent({ type: 'boss_message', text: `${boss.name} lance ${def.name} !` });
     },
@@ -343,6 +344,7 @@ function buildRotatingLaser(def) {
         damagePerTick: dmg, tickInterval: 0.15,
         _rotSpeed: rotSpeed * dir, _bossRef: boss,
         color: def.laserColor || '#ef4444',
+        laserSprite: def.laserSprite || null,
       });
       gs.addEvent({ type: 'boss_message', text: `${boss.name} lance un laser rotatif !` });
     },

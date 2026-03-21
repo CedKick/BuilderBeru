@@ -66,6 +66,16 @@ function processConfigImages(config, bossId) {
       cleaned.spriteUrl = cleaned.sprites.idle.down;
     }
   }
+  // Process laserSprite in patterns
+  if (cleaned.patterns) {
+    for (let i = 0; i < cleaned.patterns.length; i++) {
+      const p = cleaned.patterns[i];
+      if (p.laserSprite?.startsWith('data:')) {
+        const url = saveBase64Image(p.laserSprite, bossId, `laser_${p._uid || i}`);
+        cleaned.patterns[i] = { ...p, laserSprite: url || null };
+      }
+    }
+  }
   return cleaned;
 }
 

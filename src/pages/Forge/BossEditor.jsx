@@ -1406,6 +1406,39 @@ export default function BossEditor({ onBack, editBossId }) {
                       </Panel>
                     )}
 
+                    {/* Laser sprite (optional) */}
+                    {selPattern && (selPattern.type === 'laser' || selPattern.type === 'rotating_laser') && (
+                      <Panel title="Sprite Laser" subtitle="Optionnel — remplace le rendu par défaut du faisceau">
+                        <div className="flex items-center gap-3">
+                          <div className="w-20 h-12 rounded-lg border border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50 overflow-hidden">
+                            {selPattern.laserSprite
+                              ? <img src={selPattern.laserSprite} alt="laser" className="w-full h-full object-contain" />
+                              : <span className="text-gray-600 text-[9px]">Défaut</span>}
+                          </div>
+                          <input ref={el => spriteInputRefs.current['laser_sprite'] = el} type="file" accept="image/png,image/webp,image/jpeg" className="hidden"
+                            onChange={e => {
+                              const file = e.target.files[0]; e.target.value = '';
+                              if (!file) return;
+                              handleSpriteUpload(file, 'idle', 'down').then(() => {}).catch(() => {});
+                              // Read as base64 and set on pattern
+                              const reader = new FileReader();
+                              reader.onload = (ev) => updatePattern(selectedPatternIdx, 'laserSprite', ev.target.result);
+                              reader.readAsDataURL(file);
+                            }} />
+                          <button onClick={() => spriteInputRefs.current['laser_sprite']?.click()}
+                            className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm text-gray-300 flex items-center gap-2 transition-colors">
+                            <Upload size={14} /> Upload sprite
+                          </button>
+                          {selPattern.laserSprite && (
+                            <button onClick={() => updatePattern(selectedPatternIdx, 'laserSprite', null)}
+                              className="p-2 rounded-lg hover:bg-red-900/30 text-gray-600 hover:text-red-400 transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </Panel>
+                    )}
+
                     {/* Timing */}
                     <Panel title="Timing">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

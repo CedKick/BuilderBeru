@@ -824,6 +824,7 @@
     let autoAttackFlash = null; // { x, y, rotation, range, cone, timer }
     let _prevZoneIds = null;   // Set of zone IDs from last frame
     let _prevZoneData = {};    // Zone data cache for impact juice
+    const _laserSpriteCache = {}; // laser sprite Image cache
 
     function triggerScreenShake(intensity) {
       screenShake.intensity = Math.max(screenShake.intensity, intensity);
@@ -3250,13 +3251,25 @@
         }
         ctx.restore();
       } else if (zone.type === 'laser_telegraph') {
+        const lColor = zone.laserColor || zone.color || '#eab308';
         const endX = zone.x + Math.cos(zone.angle) * zone.radius;
         const endY = zone.y + Math.sin(zone.angle) * zone.radius;
-        ctx.strokeStyle = 'rgba(234,179,8,' + (0.2 + progress * 0.5) + ')';
-        ctx.lineWidth = (zone.lineWidth || 30) * 0.6;
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 200);
+        const lw = (zone.lineWidth || 30) * 0.6;
+        // Pulsing dashed outline
+        ctx.strokeStyle = lColor + Math.round((0.2 + progress * 0.5) * 255).toString(16).padStart(2, '0');
+        ctx.lineWidth = lw;
         ctx.setLineDash([15, 8]);
+        ctx.lineDashOffset = -Date.now() / 50; // Animated dash scroll
         ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
         ctx.setLineDash([]);
+        // Filling progress bar inside the telegraph
+        const fillLen = zone.radius * progress;
+        const fillEndX = zone.x + Math.cos(zone.angle) * fillLen;
+        const fillEndY = zone.y + Math.sin(zone.angle) * fillLen;
+        ctx.strokeStyle = lColor + Math.round(0.4 * pulse * 255).toString(16).padStart(2, '0');
+        ctx.lineWidth = lw * 0.4;
+        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(fillEndX, fillEndY); ctx.stroke();
       } else if (zone.type === 'menacing_wave_telegraph') {
         // Pulsing danger zone — boss is charging, run away!
         const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 200); // Fast pulse
@@ -3330,30 +3343,74 @@
         ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 20;
         ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
-      } else if (zone.type === 'laser') {
-        const endX = zone.x + Math.cos(zone.angle) * zone.radius;
-        const endY = zone.y + Math.sin(zone.angle) * zone.radius;
+      } else if (zone.type === 'laser' || zone.type === 'rotating_laser') {
+        const angle = zone.angle || 0;
+        const endX = zone.x + Math.cos(angle) * zone.radius;
+        const endY = zone.y + Math.sin(angle) * zone.radius;
         const lw = zone.lineWidth || 60;
-        const perp = zone.angle + Math.PI / 2;
+        const lColor = zone.color || (zone.type === 'rotating_laser' ? '#ef4444' : '#8b5cf6');
+        const pulse = 0.7 + 0.3 * Math.sin(Date.now() / 150); // Opacity pulse
+
         ctx.save();
-        ctx.shadowColor = '#eab308'; ctx.shadowBlur = 20;
-        // Multiple yellow beams with gaps (3 beams, 2 gaps)
-        const beamOffsets = [-lw * 0.4, 0, lw * 0.4];
-        const beamWidth = lw * 0.22;
-        for (const off of beamOffsets) {
-          const ox = Math.cos(perp) * off;
-          const oy = Math.sin(perp) * off;
-          // Outer glow
-          ctx.strokeStyle = 'rgba(234,179,8,0.2)'; ctx.lineWidth = beamWidth + 8;
-          ctx.beginPath(); ctx.moveTo(zone.x + ox, zone.y + oy); ctx.lineTo(endX + ox, endY + oy); ctx.stroke();
-          // Core beam
-          ctx.strokeStyle = zone.active ? 'rgba(250,204,21,0.9)' : 'rgba(234,179,8,0.4)';
-          ctx.lineWidth = beamWidth;
-          ctx.beginPath(); ctx.moveTo(zone.x + ox, zone.y + oy); ctx.lineTo(endX + ox, endY + oy); ctx.stroke();
-          // White hot center
-          ctx.strokeStyle = 'rgba(255,255,200,0.6)'; ctx.lineWidth = beamWidth * 0.3;
-          ctx.beginPath(); ctx.moveTo(zone.x + ox, zone.y + oy); ctx.lineTo(endX + ox, endY + oy); ctx.stroke();
+        ctx.translate(zone.x, zone.y);
+        ctx.rotate(angle);
+
+        // Check for sprite
+        const spriteKey = 'laser_sprite_' + (zone.id || zone.type);
+        if (zone.laserSprite && !_laserSpriteCache[spriteKey]) {
+          const img = new Image(); img.crossOrigin = 'anonymous';
+          img.onload = () => { img._loaded = true; };
+          img.src = zone.laserSprite;
+          _laserSpriteCache[spriteKey] = img;
         }
+        const spriteImg = _laserSpriteCache[spriteKey];
+
+        if (spriteImg?._loaded) {
+          // Sprite-based laser rendering
+          ctx.globalAlpha = pulse;
+          // Glow behind sprite
+          ctx.shadowColor = lColor; ctx.shadowBlur = 25;
+          // Stretch sprite along beam
+          ctx.drawImage(spriteImg, 0, -lw / 2, zone.radius, lw);
+          ctx.shadowBlur = 0;
+          // White core overlay
+          ctx.globalAlpha = 0.4 * pulse;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, -lw * 0.08, zone.radius, lw * 0.16);
+        } else {
+          // Default procedural laser rendering
+          const halfW = lw / 2;
+          // Outer glow
+          ctx.globalAlpha = 0.25 * pulse;
+          ctx.shadowColor = lColor; ctx.shadowBlur = 30;
+          ctx.fillStyle = lColor;
+          ctx.fillRect(0, -halfW * 1.3, zone.radius, halfW * 2.6);
+          ctx.shadowBlur = 0;
+          // Main beam gradient
+          ctx.globalAlpha = 0.7 * pulse;
+          const grad = ctx.createLinearGradient(0, 0, zone.radius, 0);
+          grad.addColorStop(0, lColor + 'ee');
+          grad.addColorStop(0.8, lColor + 'aa');
+          grad.addColorStop(1, lColor + '40');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, -halfW * 0.7, zone.radius, halfW * 1.4);
+          // Hot white core
+          ctx.globalAlpha = 0.6 * pulse;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, -halfW * 0.15, zone.radius, halfW * 0.3);
+        }
+
+        // Particle sparks along beam (both sprite and default)
+        ctx.globalAlpha = 1;
+        for (let i = 0; i < 3; i++) {
+          const px = Math.random() * zone.radius;
+          const py = (Math.random() - 0.5) * lw * 0.6;
+          const sz = 1.5 + Math.random() * 2;
+          ctx.fillStyle = '#ffffff';
+          ctx.globalAlpha = 0.3 + Math.random() * 0.5;
+          ctx.beginPath(); ctx.arc(px, py, sz, 0, Math.PI * 2); ctx.fill();
+        }
+
         ctx.restore();
       } else if (zone.type === 'poison_cloud') {
         const pulse = 0.1 + 0.05 * Math.sin(Date.now() / 500);
