@@ -559,10 +559,19 @@ export function buildPattern(def) {
     minPhase = Math.min(...def.phases) + 1;
   }
 
+  // Store phases array for exact phase filtering (not just minPhase)
+  const phases = Array.isArray(def.phases) && def.phases.length > 0
+    ? def.phases.map(p => p + 1) // Convert 0-indexed (editor) → 1-indexed (engine)
+    : undefined;
+
   return {
     name: def.name || def.type,
     type: def.type,
     phase: minPhase,
+    phases,                                    // Exact phases array (1-indexed) for precise filtering
+    _uid: def._uid || null,                    // Unique ID for chain references
+    chainTo: def.chainTo || null,              // UID of pattern to chain after this one
+    chainDelay: def.chainDelay || 0,           // Delay (seconds) before chained pattern starts
     weight: def.weight || 2,
     cooldown: def.cooldown || 10,
     globalCooldown: def.globalCooldown || 1.5,

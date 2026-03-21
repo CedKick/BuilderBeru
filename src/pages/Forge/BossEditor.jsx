@@ -5,7 +5,7 @@ import {
   Shield, Sword, Heart, Zap, Target, Settings, Plus, Trash2, Copy,
   ChevronDown, ChevronUp, Play, Pause, RotateCcw,
   Save, Upload, AlertTriangle, Info, GripVertical, Flame, Droplets, Globe,
-  Wind, Mountain, Sparkles, Crown, Clock, ArrowLeft, Link, Unlink, ArrowDown,
+  Wind, Mountain, Sparkles, Crown, Clock, ArrowLeft, Link, Unlink, ArrowDown, Eye,
 } from 'lucide-react';
 import {
   PATTERN_TYPES, PATTERN_CATEGORIES, TARGETING_MODES, TARGETING_CATEGORIES,
@@ -38,6 +38,7 @@ function createDefaultBoss() {
     enrageHpPercent: 5,
     // Auto-attack
     autoAttack: { power: 1.0, range: 120, interval: 2.0, coneAngle: 60 },
+    globalCooldown: 1.5,
     anchorCenter: true,
     // Phases
     phases: [
@@ -737,6 +738,7 @@ export default function BossEditor({ onBack, editBossId }) {
           { key: 'stats', label: 'Stats', icon: Sword },
           { key: 'phases', label: 'Phases', icon: Zap },
           { key: 'patterns', label: 'Patterns', icon: Target },
+          { key: 'preview', label: 'Preview', icon: Eye },
         ].map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
             className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
@@ -875,6 +877,11 @@ export default function BossEditor({ onBack, editBossId }) {
                     <Label>SPD</Label>
                     <Slider value={boss.spd} min={20} max={100} step={1}
                       onChange={v => update('spd', v)} />
+                  </div>
+                  <div>
+                    <Label>Cooldown global entre patterns (s)</Label>
+                    <Slider value={boss.globalCooldown ?? 1.5} min={0.3} max={5.0} step={0.1}
+                      onChange={v => update('globalCooldown', v)} unit="s" />
                   </div>
                 </div>
               </Panel>
@@ -1428,6 +1435,11 @@ export default function BossEditor({ onBack, editBossId }) {
               </div>
             </div>
           )}
+
+          {/* ═══ PREVIEW TAB ═══ */}
+          {activeTab === 'preview' && (
+            <PatternTimeline boss={boss} />
+          )}
         </motion.div>
       </AnimatePresence>
 
@@ -1876,6 +1888,360 @@ function PatternPreviewAnim({ pattern, bossRadius, bossColor, drawStatic }) {
       >
         {playing ? <><Pause size={14} /> Stop</> : <><Play size={14} /> Aperçu animé</>}
       </button>
+    </div>
+  );
+}
+
+// ── Pattern Timeline Simulator ──────────────────────────
+function PatternTimeline({ boss }) {
+  const [hpPercent, setHpPercent] = useState(100);
+  const [playing, setPlaying] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [simDuration, setSimDuration] = useState(60);
+  const [timeline, setTimeline] = useState([]);
+  const [speed, setSpeed] = useState(1);
+  const animRef = useRef(null);
+  const lastTimeRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  // Determine current phase from HP%
+  const currentPhase = useMemo(() => {
+    const sorted = [...boss.phases].sort((a, b) => a.hpPercent - b.hpPercent);
+    let phase = 0;
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      if (hpPercent <= sorted[i].hpPercent) { phase = boss.phases.indexOf(sorted[i]); }
+    }
+    // Find highest phase index where hpPercent <= threshold
+    let result = 0;
+    for (let i = 0; i < boss.phases.length; i++) {
+      if (hpPercent <= boss.phases[i].hpPercent) result = i;
+    }
+    return result;
+  }, [hpPercent, boss.phases]);
+
+  // Build available patterns for current phase
+  const availablePatterns = useMemo(() => {
+    return boss.patterns.filter(p => {
+      if (!p.phases || p.phases.length === 0) return true;
+      return p.phases.includes(currentPhase);
+    });
+  }, [boss.patterns, currentPhase]);
+
+  // Run simulation
+  const runSimulation = useCallback(() => {
+    const events = [];
+    let t = 0;
+    let globalCd = 0;
+    const cooldowns = {};
+    const phase1Idx = currentPhase + 1; // 1-indexed for engine
+
+    while (t < simDuration) {
+      // Tick cooldowns
+      globalCd = Math.max(0, globalCd - 0.016);
+      for (const uid in cooldowns) {
+        cooldowns[uid] = Math.max(0, cooldowns[uid] - 0.016);
+      }
+
+      if (globalCd > 0) { t += 0.016; continue; }
+
+      // Filter available patterns
+      const pool = availablePatterns.filter(p => {
+        if (cooldowns[p._uid] > 0) return false;
+        return true;
+      });
+
+      if (pool.length === 0) { t += 0.016; continue; }
+
+      // Weighted random
+      const totalW = pool.reduce((s, p) => s + (p.weight || 2), 0);
+      let roll = Math.random() * totalW;
+      let selected = pool[pool.length - 1];
+      for (const p of pool) {
+        roll -= (p.weight || 2);
+        if (roll <= 0) { selected = p; break; }
+      }
+
+      const telegraph = selected.telegraphTime || 1.5;
+      const cast = selected.castTime || 0.4;
+      const recovery = selected.recoveryTime || 1.0;
+      const totalTime = telegraph + cast + recovery;
+
+      events.push({
+        pattern: selected,
+        start: t,
+        telegraphEnd: t + telegraph,
+        castEnd: t + telegraph + cast,
+        end: t + totalTime,
+        type: 'pattern',
+      });
+
+      cooldowns[selected._uid] = selected.cooldown || 10;
+
+      // Handle chain
+      let chainT = t + totalTime;
+      let cur = selected;
+      while (cur.chainTo) {
+        const chained = boss.patterns.find(p => p._uid === cur.chainTo);
+        if (!chained) break;
+        const delay = cur.chainDelay || 0;
+        chainT += delay;
+        const cTel = chained.telegraphTime || 1.5;
+        const cCast = chained.castTime || 0.4;
+        const cRec = chained.recoveryTime || 1.0;
+        events.push({
+          pattern: chained,
+          start: chainT,
+          telegraphEnd: chainT + cTel,
+          castEnd: chainT + cTel + cCast,
+          end: chainT + cTel + cCast + cRec,
+          type: 'chain',
+          parentUid: cur._uid,
+        });
+        cooldowns[chained._uid] = chained.cooldown || 10;
+        chainT += cTel + cCast + cRec;
+        cur = chained;
+      }
+
+      globalCd = boss.globalCooldown || 1.5;
+      t = (events[events.length - 1]?.end || t) + 0.016;
+    }
+
+    setTimeline(events);
+  }, [availablePatterns, boss.patterns, boss.globalCooldown, currentPhase, simDuration]);
+
+  // Auto-run sim when config changes
+  useEffect(() => { runSimulation(); }, [runSimulation]);
+
+  // Play animation
+  useEffect(() => {
+    if (!playing) {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+      lastTimeRef.current = null;
+      return;
+    }
+    const tick = (timestamp) => {
+      if (lastTimeRef.current != null) {
+        const dt = ((timestamp - lastTimeRef.current) / 1000) * speed;
+        setElapsed(prev => {
+          const next = prev + dt;
+          if (next >= simDuration) { setPlaying(false); return simDuration; }
+          return next;
+        });
+      }
+      lastTimeRef.current = timestamp;
+      animRef.current = requestAnimationFrame(tick);
+    };
+    animRef.current = requestAnimationFrame(tick);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [playing, speed, simDuration]);
+
+  // Assign colors to patterns
+  const patternColors = useMemo(() => {
+    const colors = ['#3b82f6', '#f59e0b', '#ef4444', '#a855f7', '#22c55e', '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6'];
+    const map = {};
+    boss.patterns.forEach((p, i) => { map[p._uid] = colors[i % colors.length]; });
+    return map;
+  }, [boss.patterns]);
+
+  // Phase background zones
+  const phaseZones = useMemo(() => {
+    if (boss.phases.length <= 1) return [];
+    return boss.phases.map((p, i) => ({
+      label: p.label || `Phase ${i + 1}`,
+      idx: i,
+      color: PHASE_COLORS[i % PHASE_COLORS.length],
+    }));
+  }, [boss.phases]);
+
+  const pxPerSec = 800 / simDuration; // Rough scale
+
+  if (boss.patterns.length === 0) {
+    return (
+      <Panel title="Preview — Simulateur de Patterns">
+        <div className="text-center py-16 text-gray-500">
+          <Target size={40} className="mx-auto mb-3 opacity-30" />
+          <p className="text-sm">Aucun pattern configuré — ajoute des patterns dans l'onglet Patterns</p>
+        </div>
+      </Panel>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Controls */}
+      <Panel title="Preview — Simulateur de Patterns" subtitle="Visualise la séquence de patterns selon la phase et le HP du boss">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div>
+            <Label>HP du boss (%)</Label>
+            <div className="flex items-center gap-2">
+              <input type="range" min={1} max={100} value={hpPercent}
+                onChange={e => setHpPercent(Number(e.target.value))}
+                className="flex-1 accent-amber-500" />
+              <span className="text-white text-sm font-bold w-12 text-right">{hpPercent}%</span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Phase active : <span className="text-amber-400 font-medium">{boss.phases[currentPhase]?.label || `Phase ${currentPhase + 1}`}</span>
+            </p>
+          </div>
+          <div>
+            <Label>Durée simulation (s)</Label>
+            <div className="flex items-center gap-2">
+              <input type="range" min={15} max={180} step={5} value={simDuration}
+                onChange={e => setSimDuration(Number(e.target.value))}
+                className="flex-1 accent-amber-500" />
+              <span className="text-white text-sm font-bold w-12 text-right">{simDuration}s</span>
+            </div>
+          </div>
+          <div>
+            <Label>Vitesse</Label>
+            <div className="flex gap-1">
+              {[0.5, 1, 2, 4].map(s => (
+                <button key={s} onClick={() => setSpeed(s)}
+                  className={`px-2.5 py-1.5 rounded text-xs font-medium transition-all ${
+                    speed === s ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white'
+                  }`}>{s}×</button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-end gap-2">
+            <button onClick={() => { setPlaying(!playing); }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium transition-all">
+              {playing ? <><Pause size={14} /> Pause</> : <><Play size={14} /> Play</>}
+            </button>
+            <button onClick={() => { setElapsed(0); setPlaying(false); lastTimeRef.current = null; runSimulation(); }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium transition-all">
+              <RotateCcw size={14} />
+            </button>
+          </div>
+        </div>
+      </Panel>
+
+      {/* Timeline */}
+      <Panel title="Timeline">
+        <div className="relative overflow-x-auto">
+          {/* Time axis */}
+          <div className="relative h-8 mb-1 border-b border-gray-700">
+            {Array.from({ length: Math.ceil(simDuration / 5) + 1 }, (_, i) => i * 5).map(t => (
+              <span key={t} className="absolute text-[10px] text-gray-500 -translate-x-1/2"
+                style={{ left: `${(t / simDuration) * 100}%` }}>{t}s</span>
+            ))}
+          </div>
+
+          {/* Phase background */}
+          {phaseZones.length > 1 && (
+            <div className="relative h-5 mb-1 rounded overflow-hidden">
+              {phaseZones.map((pz, i) => {
+                // Phase spans from its hpPercent to the next phase's hpPercent
+                // For timeline display, show phase as band at top
+                const width = 100 / phaseZones.length;
+                return (
+                  <div key={i} className="absolute top-0 h-full flex items-center justify-center text-[9px] font-medium"
+                    style={{
+                      left: `${i * width}%`, width: `${width}%`,
+                      backgroundColor: `${pz.color}20`, borderRight: '1px solid rgba(255,255,255,0.1)',
+                      color: pz.color,
+                    }}>
+                    {pz.label}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Pattern rows */}
+          <div className="relative" style={{ minHeight: 60 }}>
+            {timeline.map((ev, i) => {
+              const left = (ev.start / simDuration) * 100;
+              const width = ((ev.end - ev.start) / simDuration) * 100;
+              const color = patternColors[ev.pattern._uid] || '#6b7280';
+              const telWidth = ((ev.telegraphEnd - ev.start) / (ev.end - ev.start)) * 100;
+              const castWidth = ((ev.castEnd - ev.telegraphEnd) / (ev.end - ev.start)) * 100;
+
+              return (
+                <div key={i} className="absolute group" title={`${ev.pattern.name} (${ev.start.toFixed(1)}s → ${ev.end.toFixed(1)}s)`}
+                  style={{
+                    left: `${left}%`, width: `${Math.max(width, 0.3)}%`,
+                    top: `${(i % 3) * 22}px`, height: 18,
+                  }}>
+                  <div className="w-full h-full rounded-sm overflow-hidden flex relative" style={{ backgroundColor: `${color}30`, border: `1px solid ${color}60` }}>
+                    {/* Telegraph zone */}
+                    <div style={{ width: `${telWidth}%`, backgroundColor: `${color}40` }} />
+                    {/* Cast zone */}
+                    <div style={{ width: `${castWidth}%`, backgroundColor: `${color}80` }} />
+                    {/* Recovery = remaining */}
+                  </div>
+                  {/* Label */}
+                  {width > 2 && (
+                    <span className="absolute inset-0 flex items-center justify-center text-[8px] text-white font-medium truncate px-0.5 pointer-events-none">
+                      {ev.pattern.name}
+                    </span>
+                  )}
+                  {/* Chain arrow */}
+                  {ev.type === 'chain' && (
+                    <div className="absolute -left-2.5 top-1/2 -translate-y-1/2">
+                      <Link size={8} className="text-amber-400" />
+                    </div>
+                  )}
+                  {/* Tooltip on hover */}
+                  <div className="hidden group-hover:block absolute z-50 bottom-full left-0 mb-1 bg-gray-900 border border-gray-700 rounded-lg p-2 text-xs whitespace-nowrap shadow-xl">
+                    <p className="text-white font-semibold">{ev.pattern.name}</p>
+                    <p className="text-gray-400">Type: {ev.pattern.type}</p>
+                    <p className="text-gray-400">
+                      <span className="text-blue-400">Tel {(ev.pattern.telegraphTime || 1.5).toFixed(1)}s</span>
+                      {' → '}
+                      <span className="text-amber-400">Cast {(ev.pattern.castTime || 0.4).toFixed(1)}s</span>
+                      {' → '}
+                      <span className="text-gray-300">Rec {(ev.pattern.recoveryTime || 1.0).toFixed(1)}s</span>
+                    </p>
+                    <p className="text-gray-400">Power: {ev.pattern.power || 1.5}× ATK</p>
+                    {ev.type === 'chain' && <p className="text-amber-400">Chaîné</p>}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Playhead */}
+            {elapsed > 0 && (
+              <div className="absolute top-0 bottom-0 w-0.5 bg-amber-400 z-10 pointer-events-none"
+                style={{ left: `${(elapsed / simDuration) * 100}%` }}>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] text-amber-400 font-bold whitespace-nowrap">
+                  {elapsed.toFixed(1)}s
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </Panel>
+
+      {/* Legend + Stats */}
+      <Panel title="Patterns disponibles" subtitle={`Phase : ${boss.phases[currentPhase]?.label || 'Phase 1'} — ${availablePatterns.length} patterns actifs`}>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          {availablePatterns.map(p => {
+            const color = patternColors[p._uid] || '#6b7280';
+            const totalTime = (p.telegraphTime || 1.5) + (p.castTime || 0.4) + (p.recoveryTime || 1.0);
+            const chainTarget = p.chainTo ? boss.patterns.find(pp => pp._uid === p.chainTo) : null;
+            const count = timeline.filter(ev => ev.pattern._uid === p._uid).length;
+            return (
+              <div key={p._uid} className="bg-gray-800/50 rounded-lg p-2.5 border border-gray-700/50">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: color }} />
+                  <span className="text-white text-xs font-medium truncate">{p.name}</span>
+                </div>
+                <div className="text-[10px] text-gray-400 space-y-0.5">
+                  <p>{p.type} — {totalTime.toFixed(1)}s total — {p.power || 1.5}× ATK</p>
+                  <p>Weight: {p.weight || 2} — CD: {p.cooldown || 10}s</p>
+                  <p>Déclenché <span className="text-amber-400 font-medium">{count}×</span> dans la sim</p>
+                  {chainTarget && (
+                    <p className="text-amber-400 flex items-center gap-1">
+                      <Link size={10} /> → {chainTarget.name} ({p.chainDelay || 0}s)
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Panel>
     </div>
   );
 }

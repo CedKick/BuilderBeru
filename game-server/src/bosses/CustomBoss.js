@@ -68,7 +68,12 @@ export class CustomBoss extends BossBase {
       }));
 
     // Build patterns from declarative definitions via PatternFactory
-    this.patterns = buildPatterns(config.patterns);
+    // Inject boss-level globalCooldown into each pattern definition
+    const patternDefs = (config.patterns || []).map(p => ({
+      ...p,
+      globalCooldown: p.globalCooldown || config.globalCooldown || 1.5,
+    }));
+    this.patterns = buildPatterns(patternDefs);
 
     console.log(`[CustomBoss] Created "${this.name}" (${stats.hp.toLocaleString()} HP, ${this.patterns.length} patterns, ${this.phaseThresholds.length + 1} phases, ${difficulty})`);
   }

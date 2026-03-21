@@ -153,6 +153,17 @@ export class BossBase {
       this.patternCooldown -= dt * spdMult;
     }
 
+    // Tick pending chain delay
+    if (this._pendingChain) {
+      this._pendingChain.timer -= dt * spdMult;
+      if (this._pendingChain.timer <= 0) {
+        const chained = this._pendingChain.pattern;
+        this._pendingChain = null;
+        this._startPattern(chained, gameState);
+        return;
+      }
+    }
+
     // If executing a pattern, continue it
     if (this.currentPattern) {
       this._updatePattern(dt * spdMult, gameState);
@@ -369,7 +380,12 @@ export class BossBase {
 
   _selectPattern(gameState) {
     const available = this.patterns.filter(p => {
-      if (p.phase && p.phase > this.phase) return false;
+      // Exact phase filtering: if phases array exists, pattern must include current phase
+      if (p.phases) {
+        if (!p.phases.includes(this.phase)) return false;
+      } else if (p.phase && p.phase > this.phase) {
+        return false;
+      }
       if (p._cooldownTimer > 0) return false;
       if (p.condition && !p.condition(this, gameState)) return false;
       return true;
@@ -457,6 +473,20 @@ export class BossBase {
           this.patternCooldown = p.globalCooldown || 1.5;
           this.currentPattern = null;
           this.casting = null;
+
+          // Chain: if pattern has chainTo, queue the chained pattern
+          if (p.chainTo) {
+            const chained = this.patterns.find(pat => pat._uid === p.chainTo);
+            if (chained) {
+              const delay = p.chainDelay || 0;
+              if (delay > 0) {
+                // Wait chainDelay then start chained pattern
+                this._pendingChain = { pattern: chained, timer: delay };
+              } else {
+                this._startPattern(chained, gameState);
+              }
+            }
+          }
         }
         break;
     }
@@ -509,7 +539,7 @@ export class BossBase {
 
       if (dist < 120) {
         const dmgMult = (this.enraged ? BOSS_CFG.ENRAGE_DMG_MULT : 1.0) * (this.rageBuff >= 3 ? 3.0 : 1.0);
-        const damage = this.atk * 0.8 * dmgMult;
+        const damage = this.atk * (this._autoAttackPower || 0.8) * dmgMult;
         const actual = target.takeDamage(damage, this);
 
         if (actual > 0) {
