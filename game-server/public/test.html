@@ -676,7 +676,8 @@
 
     // Get best sprite for current boss state
     function getBossSprite(boss) {
-      if (!bossSpritesUrls) return bossImgLoaded ? bossImg : null;
+      // No multi-directional sprites → use legacy single sprite
+      if (!bossSpritesUrls) return { img: bossImgLoaded ? bossImg : null, flipX: false };
 
       const isAttacking = !!boss.casting;
       const rot = boss.rotation || 0;

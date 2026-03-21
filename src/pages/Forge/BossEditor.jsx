@@ -33,7 +33,7 @@ function createDefaultBoss() {
     // Stats
     hp: 1_000_000_000,
     atk: 15000,
-    def: 250,
+    def: 50,
     spd: 50,
     // Enrage
     enrageTimer: 600,
@@ -1094,8 +1094,8 @@ export default function BossEditor({ onBack, editBossId }) {
                       onChange={v => update('atk', v)} format={v => v.toLocaleString()} />
                   </div>
                   <div>
-                    <Label>DEF</Label>
-                    <Slider value={boss.def} min={50} max={800} step={10}
+                    <Label>DEF <span className="text-gray-500 text-[9px]">(50 = Manaya, réduit les dégâts joueurs)</span></Label>
+                    <Slider value={boss.def} min={10} max={400} step={10}
                       onChange={v => update('def', v)} />
                   </div>
                   <div>
