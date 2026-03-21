@@ -650,6 +650,75 @@
     bossImg.src = '/manayaBoss.png'; // default, replaced by custom boss spriteUrl
     let bossImgLoaded = false;
     bossImg.onload = () => { bossImgLoaded = true; };
+
+    // Multi-directional sprite cache: { idle_down: Image, idle_left: Image, atk_down: Image, ... }
+    const bossSpritesCache = {};
+    let bossSpritesUrls = null; // tracks boss.sprites to detect changes
+
+    function loadBossSprites(sprites) {
+      if (!sprites) return;
+      for (const state of ['idle', 'atk']) {
+        if (!sprites[state]) continue;
+        for (const dir of ['down', 'up', 'left', 'right']) {
+          const url = sprites[state][dir];
+          const key = `${state}_${dir}`;
+          if (url && !bossSpritesCache[key]) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => { img._loaded = true; };
+            img.src = url;
+            bossSpritesCache[key] = img;
+          }
+        }
+      }
+    }
+
+    // Get best sprite for current boss state
+    function getBossSprite(boss) {
+      if (!bossSpritesUrls) return bossImgLoaded ? bossImg : null;
+
+      const isAttacking = !!boss.casting;
+      const rot = boss.rotation || 0;
+
+      // Determine direction from rotation: down=face players (default), up, left, right
+      const cos = Math.cos(rot), sin = Math.sin(rot);
+      let dir;
+      if (Math.abs(sin) > Math.abs(cos)) {
+        dir = sin > 0 ? 'down' : 'up';
+      } else {
+        dir = cos > 0 ? 'right' : 'left';
+      }
+
+      // Try sprites in priority order
+      const trySprite = (state, d) => {
+        const s = bossSpritesCache[`${state}_${d}`];
+        return s?._loaded ? s : null;
+      };
+
+      let sprite = null;
+      let flipX = false;
+
+      if (isAttacking) {
+        sprite = trySprite('atk', dir);
+        // If no atk sprite for this dir, try atk with flip for right↔left
+        if (!sprite && dir === 'right') { sprite = trySprite('atk', 'left'); flipX = true; }
+        if (!sprite && dir === 'left') { sprite = trySprite('atk', 'right'); flipX = true; }
+      }
+
+      // Fall back to idle
+      if (!sprite) {
+        flipX = false;
+        sprite = trySprite('idle', dir);
+        if (!sprite && dir === 'right') { sprite = trySprite('idle', 'left'); flipX = true; }
+        if (!sprite && dir === 'left') { sprite = trySprite('idle', 'right'); flipX = true; }
+      }
+
+      // Final fallbacks
+      if (!sprite) { sprite = trySprite('idle', 'down'); flipX = false; }
+      if (!sprite && bossImgLoaded) { sprite = bossImg; flipX = false; }
+
+      return { img: sprite, flipX };
+    }
     let _lastBossSpriteUrl = null; // track to avoid reloading same sprite
     const BOSS_SPRITE_SIZE = 210; // x1.5 bigger
 
@@ -1967,7 +2036,12 @@
 
         case 'state':
           gameState = msg;
-          // Dynamic boss sprite loading
+          // Dynamic boss sprite loading (multi-directional)
+          if (msg.boss?.sprites && JSON.stringify(msg.boss.sprites) !== JSON.stringify(bossSpritesUrls)) {
+            bossSpritesUrls = msg.boss.sprites;
+            loadBossSprites(msg.boss.sprites);
+          }
+          // Legacy single sprite fallback
           if (msg.boss?.spriteUrl && msg.boss.spriteUrl !== _lastBossSpriteUrl) {
             _lastBossSpriteUrl = msg.boss.spriteUrl;
             bossImgLoaded = false;
@@ -3273,14 +3347,15 @@
         ctx.restore();
       }
 
-      if (bossImgLoaded) {
+      const spriteResult = getBossSprite(boss);
+      if (spriteResult?.img) {
         ctx.save();
         ctx.translate(boss.x, boss.y);
-        ctx.rotate(boss.rotation + Math.PI / 2);
-        ctx.scale(-1, 1); // Flip sprite horizontally (Manaya faces correct direction)
+        // No rotation — sprite direction is handled by selecting the right sprite
+        if (spriteResult.flipX) ctx.scale(-1, 1);
         if (boss.enraged) { ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 25; }
         else { ctx.shadowColor = 'rgba(155,109,255,0.3)'; ctx.shadowBlur = 12; }
-        ctx.drawImage(bossImg, -halfSize, -halfSize, size, size);
+        ctx.drawImage(spriteResult.img, -halfSize, -halfSize, size, size);
         if (boss.enraged) {
           ctx.globalCompositeOperation = 'source-atop';
           ctx.fillStyle = 'rgba(255,0,0,' + (0.15 + 0.1 * Math.sin(Date.now() / 200)) + ')';

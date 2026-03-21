@@ -519,6 +519,7 @@ export class GameLoop {
         color: gs.boss.color || undefined,
         radius: gs.boss.radius,
         spriteUrl: gs.boss.spriteUrl || undefined,
+        sprites: gs.boss.sprites || undefined,
         mapBg: gs.boss.mapBg || undefined,
       },
       simulation: gs.simulation,
