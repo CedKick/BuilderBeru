@@ -31,7 +31,7 @@ function createDefaultBoss() {
     },
     mapBg: null,
     // Stats
-    hp: 1_000_000_000,
+    hp: 15_000_000,
     atk: 15000,
     def: 50,
     spd: 50,
@@ -1085,7 +1085,7 @@ export default function BossEditor({ onBack, editBossId }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                   <div>
                     <Label>HP <span className="text-gray-500">({formatBigNumber(boss.hp)})</span></Label>
-                    <Slider value={boss.hp} min={100_000_000} max={15_000_000_000} step={100_000_000}
+                    <Slider value={boss.hp} min={5_000_000} max={15_000_000_000} step={5_000_000}
                       onChange={v => update('hp', v)} format={formatBigNumber} />
                   </div>
                   <div>
@@ -1100,7 +1100,7 @@ export default function BossEditor({ onBack, editBossId }) {
                   </div>
                   <div>
                     <Label>SPD</Label>
-                    <Slider value={boss.spd} min={20} max={100} step={1}
+                    <Slider value={boss.spd} min={20} max={200} step={5}
                       onChange={v => update('spd', v)} />
                   </div>
                   <div>
