@@ -532,25 +532,44 @@ export class BossBase {
     if (this._autoAttackTimer <= 0) {
       this._autoAttackTimer = this._autoAttackInterval;
 
-      // Basic melee attack on aggro target
       const dx = target.x - this.x;
       const dy = target.y - this.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
+      const range = this._autoAttackRange || 120;
 
-      if (dist < 120) {
-        const dmgMult = (this.enraged ? BOSS_CFG.ENRAGE_DMG_MULT : 1.0) * (this.rageBuff >= 3 ? 3.0 : 1.0);
-        const damage = this.atk * (this._autoAttackPower || 0.8) * dmgMult;
-        const actual = target.takeDamage(damage, this);
+      if (dist > range) return; // Out of range
 
-        if (actual > 0) {
-          gameState.addEvent({
-            type: 'damage',
-            source: this.id,
-            target: target.id,
-            amount: actual,
-            skill: 'Auto Attack',
-          });
-        }
+      // Cone angle check: target must be within boss facing cone
+      const coneAngleDeg = this._autoAttackConeAngle || 60;
+      const coneHalf = (coneAngleDeg * Math.PI / 180) / 2;
+      const angleToTarget = Math.atan2(dy, dx);
+      let angleDiff = angleToTarget - this.rotation;
+      // Normalize to [-PI, PI]
+      while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+      while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+      if (Math.abs(angleDiff) > coneHalf) return; // Outside cone
+
+      const dmgMult = (this.enraged ? BOSS_CFG.ENRAGE_DMG_MULT : 1.0) * (this.rageBuff >= 3 ? 3.0 : 1.0);
+      const damage = this.atk * (this._autoAttackPower || 0.8) * dmgMult;
+      const actual = target.takeDamage(damage, this);
+
+      if (actual > 0) {
+        gameState.addEvent({
+          type: 'damage',
+          source: this.id,
+          target: target.id,
+          amount: actual,
+          skill: 'Auto Attack',
+        });
+        // Broadcast auto-attack event for client visualization
+        gameState.addEvent({
+          type: 'boss_auto_attack',
+          x: this.x, y: this.y,
+          rotation: this.rotation,
+          range,
+          coneAngle: coneAngleDeg,
+          targetId: target.id,
+        });
       }
     }
   }

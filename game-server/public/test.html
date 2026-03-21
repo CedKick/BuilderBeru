@@ -817,6 +817,7 @@
 
     // ── Screen Shake ──
     let screenShake = { x: 0, y: 0, intensity: 0, decay: 0.92 };
+    let autoAttackFlash = null; // { x, y, rotation, range, cone, timer }
 
     function triggerScreenShake(intensity) {
       screenShake.intensity = Math.max(screenShake.intensity, intensity);
@@ -2123,6 +2124,16 @@
           }
           break;
         case 'boss_message': log(msg.text, 'event'); break;
+        case 'boss_auto_attack': {
+          // Flash the cone on hit
+          if (gameState?.boss) {
+            const b = gameState.boss;
+            const aaRange = msg.range || 120;
+            const aaCone = (msg.coneAngle || 60) * Math.PI / 180;
+            autoAttackFlash = { x: msg.x, y: msg.y, rotation: msg.rotation, range: aaRange, cone: aaCone, timer: 0.15 };
+          }
+          break;
+        }
         case 'boss_curl':
           log('⚠️ Manaya se met en boule !', 'error');
           screenShake.intensity = 3;
@@ -3379,6 +3390,49 @@
       ctx.lineTo(boss.x + Math.cos(a + 0.25) * (halfSize + 12), boss.y + Math.sin(a + 0.25) * (halfSize + 12));
       ctx.lineTo(boss.x + Math.cos(a - 0.25) * (halfSize + 12), boss.y + Math.sin(a - 0.25) * (halfSize + 12));
       ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+
+      // Auto-attack flash (bright cone flash on hit)
+      if (autoAttackFlash && autoAttackFlash.timer > 0) {
+        ctx.save();
+        const flashAlpha = autoAttackFlash.timer / 0.15 * 0.35;
+        ctx.globalAlpha = flashAlpha;
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.moveTo(autoAttackFlash.x, autoAttackFlash.y);
+        ctx.arc(autoAttackFlash.x, autoAttackFlash.y, autoAttackFlash.range,
+          autoAttackFlash.rotation - autoAttackFlash.cone / 2,
+          autoAttackFlash.rotation + autoAttackFlash.cone / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        autoAttackFlash.timer -= 1/60; // ~60fps
+        if (autoAttackFlash.timer <= 0) autoAttackFlash = null;
+      }
+
+      // Auto-attack cone indicator (subtle, always visible)
+      if (boss.autoAttack && !boss.casting) {
+        const aaRange = boss.autoAttack.range || 120;
+        const aaCone = (boss.autoAttack.coneAngle || 60) * Math.PI / 180;
+        const aaAngle = boss.rotation;
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(boss.x, boss.y);
+        ctx.arc(boss.x, boss.y, aaRange, aaAngle - aaCone / 2, aaAngle + aaCone / 2);
+        ctx.closePath();
+        ctx.fill();
+        // Cone border
+        ctx.globalAlpha = 0.15;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(boss.x, boss.y);
+        ctx.arc(boss.x, boss.y, aaRange, aaAngle - aaCone / 2, aaAngle + aaCone / 2);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+      }
 
       // Shield ring
       if (boss.shielded) {

@@ -521,6 +521,10 @@ export class GameLoop {
         spriteUrl: gs.boss.spriteUrl || undefined,
         sprites: gs.boss.sprites || undefined,
         mapBg: gs.boss.mapBg || undefined,
+        autoAttack: {
+          range: gs.boss._autoAttackRange || 120,
+          coneAngle: gs.boss._autoAttackConeAngle || 60,
+        },
       },
       simulation: gs.simulation,
       adds: gs.adds.filter(a => a.alive).map(a => ({
