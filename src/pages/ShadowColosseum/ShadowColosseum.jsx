@@ -31,6 +31,7 @@ import {
 } from './colosseumCore';
 import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, getAwakeningPassives, HUNTER_SKINS, rollSkinDrop, getHunterSprite, getHunterDropSources, rollUniversalHunterDrops, rollUniversalSetUltimeDrops, refreshHuntersFromDb } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
+import './colosseum-theme.css';
 import {
   ARTIFACT_SETS, ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
   ALL_ARTIFACT_SETS, RAID_ARTIFACT_SETS,
@@ -4609,7 +4610,7 @@ export default function ShadowColosseum() {
                           <span className="text-xs text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
                         </div>
                         {statTooltip === stat && m.detail && (
-                          <div className="absolute z-20 left-0 right-0 mt-0.5 p-2 rounded-lg bg-[#1a1a2e] border border-purple-500/30 text-normal-responsive text-purple-200 leading-relaxed shadow-xl">{m.detail}</div>
+                          <div className="absolute z-20 left-0 right-0 mt-0.5 p-2 rounded-lg bg-[--col-surface-alt] border border-purple-500/30 text-normal-responsive text-purple-200 leading-relaxed shadow-xl">{m.detail}</div>
                         )}
                       </div>
                     );
@@ -4687,7 +4688,7 @@ export default function ShadowColosseum() {
 
   if (cloudLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center">
+      <div className="col-page flex items-center justify-center">
         <div className="text-center">
           <div className="w-10 h-10 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-gray-400 text-sm">Synchronisation cloud...</p>
@@ -4697,7 +4698,7 @@ export default function ShadowColosseum() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a1a] text-white pb-20">
+    <div className="col-page pb-20">
       <BattleStyles />
 
       {/* Anti-cheat: Full-screen suspension overlay */}
@@ -4864,7 +4865,7 @@ export default function ShadowColosseum() {
 
               {/* Custom Boss Picker Panel */}
               {showCustomBossPicker && (
-                <div className="mt-2 rounded-xl border border-violet-500/20 bg-[#12121f] overflow-hidden">
+                <div className="mt-2 rounded-xl border border-violet-500/20 bg-[--col-surface] overflow-hidden">
                   {customBossLoading && (
                     <div className="flex items-center justify-center py-8">
                       <div className="w-6 h-6 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
@@ -4918,7 +4919,7 @@ export default function ShadowColosseum() {
                   )}
                   {/* Play button */}
                   {selectedCustomBoss && (
-                    <div className="p-3 border-t border-violet-500/20 bg-[#0e0e1a]">
+                    <div className="p-3 border-t border-violet-500/20 bg-[--col-surface-alt]">
                       <Link
                         to={`/shadow-colosseum/custom-boss?bossId=${encodeURIComponent(selectedCustomBoss.boss_id)}&name=${encodeURIComponent(selectedCustomBoss.name)}`}
                         className="block w-full text-center py-2.5 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold text-sm transition-all"
@@ -5448,17 +5449,19 @@ export default function ShadowColosseum() {
 
       {/* ═══ HUB VIEW ═══ */}
       {view === 'hub' && (
-        <div className="max-w-2xl mx-auto px-4 pt-4">
+        <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 pt-4">
           {/* Header */}
-          <div className="text-center mb-5">
-            <Link to="/" className="text-gray-500 text-xs hover:text-white transition-colors">&larr; Retour</Link>
-            <h1 className="text-2xl md:text-3xl font-black mt-1 bg-gradient-to-r from-purple-400 to-red-400 bg-clip-text text-transparent">
-              Shadow Colosseum
-            </h1>
-            <p className="text-xs text-gray-500 mt-1">Le Colisee des Ombres — Fais combattre tes chibis !</p>
-            <div className="flex justify-center gap-4 mt-2 text-xs text-gray-400">
-              <span>{data.stats.battles} combats</span>
-              <span>{data.stats.wins} victoires</span>
+          <div className="col-card mb-5">
+            <div className="col-card-header text-center">
+              <Link to="/" className="text-gray-500 text-xs hover:text-violet-400 transition-colors">&larr; Retour</Link>
+              <h1 className="col-h1 mt-1">
+                Shadow Colosseum
+              </h1>
+              <p className="text-xs text-gray-500 mt-1">Le Colisee des Ombres — Fais combattre tes chibis !</p>
+              <div className="flex justify-center gap-4 mt-2 text-xs text-gray-400">
+                <span className="col-badge">{data.stats.battles} combats</span>
+                <span className="col-badge">{data.stats.wins} victoires</span>
+              </div>
             </div>
           </div>
 
@@ -5471,7 +5474,7 @@ export default function ShadowColosseum() {
             const ab = data.accountBonuses || {};
             const hasAnyBonus = Object.values(ab).some(v => v > 0);
             return (
-              <div className="mb-4 p-2.5 rounded-xl bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border border-indigo-500/30">
+              <div className="col-card mb-4 p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm">{'\uD83C\uDFC5'}</span>
@@ -5552,7 +5555,7 @@ export default function ShadowColosseum() {
 
           {/* Expedition Button */}
           <Link to="/expedition"
-            className="block mb-4 p-3 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-900/30 to-yellow-900/30 hover:from-amber-900/50 hover:to-yellow-900/50 transition-all text-center group">
+            className="block mb-3 col-card col-card-hover col-glow-hover p-3 sm:p-4 text-center group">
             <div className="flex items-center justify-center gap-2">
               <span className="text-xl">{'\u2694\uFE0F'}</span>
               <span className="font-bold text-amber-400 group-hover:text-amber-300">EXPEDITION</span>
@@ -5564,7 +5567,7 @@ export default function ShadowColosseum() {
           {/* PVE Multi Button */}
           <button
             onClick={() => setView('pve_multi')}
-            className="block w-full mb-4 p-3 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/30 to-teal-900/30 hover:from-emerald-900/50 hover:to-teal-900/50 transition-all text-center group">
+            className="block w-full mb-4 p-3 col-card col-card-hover col-glow-hover p-3 sm:p-4 text-center group">
             <div className="flex items-center justify-center gap-2">
               <span className="text-xl">{'\uD83D\uDC09'}</span>
               <span className="font-bold text-emerald-400 group-hover:text-emerald-300">MODE PVE MULTI</span>
@@ -5576,7 +5579,7 @@ export default function ShadowColosseum() {
           {/* PVP Button */}
           {farmActive ? (
             <button onClick={() => confirmStopFarm(() => navigate('/shadow-colosseum/pvp'), 'Mode PvP')}
-              className="block w-full mb-4 p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 hover:from-cyan-900/50 hover:to-blue-900/50 transition-all text-center group">
+              className="block w-full mb-4 p-3 col-card col-card-hover col-glow-hover p-3 sm:p-4 text-center group">
               <div className="flex items-center justify-center gap-2">
                 <span className="text-xl">{'\u2694\uFE0F'}</span>
                 <span className="font-bold text-cyan-400 group-hover:text-cyan-300">MODE PVP</span>
@@ -5586,7 +5589,7 @@ export default function ShadowColosseum() {
             </button>
           ) : (
             <Link to="/shadow-colosseum/pvp"
-              className="block mb-4 p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 hover:from-cyan-900/50 hover:to-blue-900/50 transition-all text-center group">
+              className="block mb-4 p-3 col-card col-card-hover col-glow-hover p-3 sm:p-4 text-center group">
               <div className="flex items-center justify-center gap-2">
                 <span className="text-xl">{'\u2694\uFE0F'}</span>
                 <span className="font-bold text-cyan-400 group-hover:text-cyan-300">MODE PVP</span>
@@ -5599,7 +5602,7 @@ export default function ShadowColosseum() {
           {/* PVP Live Button */}
           {farmActive ? (
             <button onClick={() => confirmStopFarm(() => navigate('/shadow-colosseum/pvp-live'), 'Mode PvP Live')}
-              className="block w-full mb-4 p-3 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-900/30 to-fuchsia-900/30 hover:from-purple-900/50 hover:to-fuchsia-900/50 transition-all text-center group">
+              className="block w-full mb-4 p-3 col-card col-card-hover col-glow-hover p-3 sm:p-4 text-center group">
               <div className="flex items-center justify-center gap-2">
                 <span className="text-xl">{'\u2694\uFE0F'}</span>
                 <span className="font-bold text-purple-400 group-hover:text-purple-300">MODE PVP LIVE</span>
@@ -5609,7 +5612,7 @@ export default function ShadowColosseum() {
             </button>
           ) : (
             <Link to="/shadow-colosseum/pvp-live"
-              className="block mb-4 p-3 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-900/30 to-fuchsia-900/30 hover:from-purple-900/50 hover:to-fuchsia-900/50 transition-all text-center group">
+              className="block mb-4 p-3 col-card col-card-hover col-glow-hover p-3 sm:p-4 text-center group">
               <div className="flex items-center justify-center gap-2">
                 <span className="text-xl">{'\u2694\uFE0F'}</span>
                 <span className="font-bold text-purple-400 group-hover:text-purple-300">MODE PVP LIVE</span>
@@ -5621,7 +5624,7 @@ export default function ShadowColosseum() {
 
           {/* PVE Ranking Button */}
           <Link to="/shadow-colosseum/pve-ranking"
-            className="block mb-4 p-3 rounded-xl border border-yellow-500/30 bg-gradient-to-r from-yellow-900/30 to-amber-900/30 hover:from-yellow-900/50 hover:to-amber-900/50 transition-all text-center group">
+            className="block mb-4 p-3 col-card col-card-hover col-glow-hover p-3 sm:p-4 text-center group">
             <div className="flex items-center justify-center gap-2">
               <span className="text-xl">{'\uD83C\uDFC6'}</span>
               <span className="font-bold text-yellow-400 group-hover:text-yellow-300">RANK PVE</span>

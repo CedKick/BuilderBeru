@@ -1,0 +1,258 @@
+/* ── Colosseum Design System ──────────────────────────────
+   Aligned with slagate_v3 visual language.
+   Import in ShadowColosseum.jsx: import './colosseum-theme.css'
+*/
+
+/* ── CSS Variables (matching slagate_v3 tokens) ── */
+:root {
+  --col-bg: hsl(240, 17%, 8%);          /* Page background */
+  --col-surface: hsl(240, 17%, 11%);     /* Card/panel background (= sidebar) */
+  --col-surface-alt: hsl(240, 17%, 14%); /* Accent surface (= sidebar-accent) */
+  --col-border: hsl(240, 17%, 18%);      /* Border color */
+  --col-border-hover: hsl(260, 60%, 50%); /* Border hover (purple) */
+  --col-purple: #9b87f5;                 /* Primary accent */
+  --col-purple-dark: #7c6cd4;            /* Primary hover */
+  --col-purple-glow: rgba(155, 135, 245, 0.15); /* Subtle glow */
+  --col-text: #f8f8f8;                   /* Primary text */
+  --col-text-dim: #9ca3af;               /* Secondary text (gray-400) */
+  --col-text-muted: #6b7280;             /* Muted text (gray-500) */
+  --col-violet: #a78bfa;                 /* Violet accent (headings) */
+}
+
+/* ── Base container ── */
+.col-page {
+  min-height: 100vh;
+  background: var(--col-bg);
+  color: var(--col-text);
+}
+
+/* ── Card system ── */
+.col-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.col-card-hover {
+  transition: all 0.3s ease;
+}
+.col-card-hover:hover {
+  border-color: rgba(155, 135, 245, 0.5);
+}
+
+/* ── Card header ── */
+.col-card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--col-border);
+  background: var(--col-surface-alt);
+}
+
+/* ── Card content ── */
+.col-card-body {
+  padding: 1rem 1.25rem;
+}
+
+/* ── Headings ── */
+.col-h1 {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: var(--col-violet);
+  line-height: 1.2;
+}
+.col-h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+}
+.col-h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+}
+
+/* ── Buttons ── */
+.col-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+.col-btn-primary {
+  background: var(--col-purple);
+  color: white;
+}
+.col-btn-primary:hover {
+  background: var(--col-purple-dark);
+}
+.col-btn-secondary {
+  background: var(--col-surface-alt);
+  color: var(--col-text-dim);
+  border: 1px solid var(--col-border);
+}
+.col-btn-secondary:hover {
+  color: white;
+  background: hsl(240, 17%, 17%);
+}
+.col-btn-ghost {
+  background: transparent;
+  color: var(--col-text-dim);
+}
+.col-btn-ghost:hover {
+  color: white;
+  background: var(--col-surface-alt);
+}
+
+/* ── Input ── */
+.col-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--col-surface-alt);
+  border: 1px solid var(--col-border);
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 0.875rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.col-input::placeholder {
+  color: var(--col-text-muted);
+}
+.col-input:focus {
+  border-color: var(--col-purple);
+  box-shadow: 0 0 0 2px var(--col-purple-glow);
+}
+
+/* ── Badge ── */
+.col-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid rgba(155, 135, 245, 0.3);
+  color: var(--col-purple);
+}
+
+/* ── Tabs ── */
+.col-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--col-surface-alt);
+  border: 1px solid var(--col-border);
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+.col-tab {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--col-text-dim);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-align: center;
+  border: none;
+  background: none;
+}
+.col-tab:hover {
+  color: white;
+  background: rgba(255,255,255,0.05);
+}
+.col-tab-active {
+  background: var(--col-purple) !important;
+  color: white !important;
+}
+
+/* ── Separator ── */
+.col-sep {
+  height: 1px;
+  background: var(--col-border);
+  margin: 1rem 0;
+}
+
+/* ── Grid responsive ── */
+.col-grid-2 { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); }
+.col-grid-3 { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); }
+.col-grid-4 { display: grid; gap: 0.75rem; grid-template-columns: repeat(2, 1fr); }
+
+@media (min-width: 640px) {
+  .col-h1 { font-size: 2.25rem; }
+  .col-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .col-grid-4 { grid-template-columns: repeat(3, 1fr); }
+  .col-card-header { padding: 1.25rem 1.5rem; }
+  .col-card-body { padding: 1.25rem 1.5rem; }
+}
+@media (min-width: 768px) {
+  .col-grid-4 { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 1024px) {
+  .col-h1 { font-size: 2.5rem; }
+}
+
+/* ── Avatar ── */
+.col-avatar {
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 2px solid var(--col-border);
+  flex-shrink: 0;
+}
+.col-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.col-avatar-sm { width: 2rem; height: 2rem; }
+.col-avatar-md { width: 2.5rem; height: 2.5rem; }
+.col-avatar-lg { width: 3.5rem; height: 3.5rem; }
+.col-avatar-xl { width: 5rem; height: 5rem; }
+
+/* ── Hover glow ── */
+.col-glow-hover {
+  transition: all 0.3s ease;
+}
+.col-glow-hover:hover {
+  box-shadow: 0 0 20px var(--col-purple-glow);
+  border-color: rgba(155, 135, 245, 0.5);
+  transform: translateY(-2px);
+}
+
+/* ── Stat row ── */
+.col-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.375rem 0;
+}
+.col-stat-label { color: var(--col-text-dim); font-size: 0.8125rem; }
+.col-stat-value { color: white; font-weight: 600; font-size: 0.875rem; }
+
+/* ── Progress bar ── */
+.col-progress {
+  height: 0.375rem;
+  background: var(--col-surface-alt);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.col-progress-fill {
+  height: 100%;
+  background: var(--col-purple);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* ── Scrollbar ── */
+.col-page ::-webkit-scrollbar { width: 6px; }
+.col-page ::-webkit-scrollbar-track { background: var(--col-bg); }
+.col-page ::-webkit-scrollbar-thumb { background: var(--col-border); border-radius: 3px; }
+.col-page ::-webkit-scrollbar-thumb:hover { background: var(--col-text-muted); }
