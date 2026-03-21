@@ -3365,45 +3365,58 @@
         }
         const spriteImg = _laserSpriteCache[spriteKey];
 
+        const bossR = 80; // Offset to start beam from boss edge, not center
         if (spriteImg?._loaded) {
-          // Sprite-based laser rendering
+          // Sprite-based laser rendering — start from boss edge
           ctx.globalAlpha = pulse;
-          // Glow behind sprite
           ctx.shadowColor = lColor; ctx.shadowBlur = 25;
-          // Stretch sprite along beam
-          ctx.drawImage(spriteImg, 0, -lw / 2, zone.radius, lw);
+          const beamLen = zone.radius - bossR;
+          // Detect if sprite is portrait (vertical laser) → need rotation
+          const isPortrait = spriteImg.naturalHeight > spriteImg.naturalWidth * 1.3;
+          if (isPortrait) {
+            // Sprite is vertical — rotate 90° and stretch horizontally
+            ctx.save();
+            ctx.translate(bossR + beamLen / 2, 0);
+            ctx.rotate(-Math.PI / 2);
+            ctx.drawImage(spriteImg, -lw / 2, -beamLen / 2, lw, beamLen);
+            ctx.restore();
+          } else {
+            // Sprite is horizontal — stretch along beam directly
+            ctx.drawImage(spriteImg, bossR, -lw / 2, beamLen, lw);
+          }
           ctx.shadowBlur = 0;
           // White core overlay
           ctx.globalAlpha = 0.4 * pulse;
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, -lw * 0.08, zone.radius, lw * 0.16);
+          ctx.fillRect(bossR, -lw * 0.08, beamLen, lw * 0.16);
         } else {
-          // Default procedural laser rendering
+          // Default procedural laser rendering — start from boss edge
           const halfW = lw / 2;
+          const beamLen = zone.radius - bossR;
           // Outer glow
           ctx.globalAlpha = 0.25 * pulse;
           ctx.shadowColor = lColor; ctx.shadowBlur = 30;
           ctx.fillStyle = lColor;
-          ctx.fillRect(0, -halfW * 1.3, zone.radius, halfW * 2.6);
+          ctx.fillRect(bossR, -halfW * 1.3, beamLen, halfW * 2.6);
           ctx.shadowBlur = 0;
           // Main beam gradient
           ctx.globalAlpha = 0.7 * pulse;
-          const grad = ctx.createLinearGradient(0, 0, zone.radius, 0);
+          const grad = ctx.createLinearGradient(bossR, 0, zone.radius, 0);
           grad.addColorStop(0, lColor + 'ee');
           grad.addColorStop(0.8, lColor + 'aa');
           grad.addColorStop(1, lColor + '40');
           ctx.fillStyle = grad;
-          ctx.fillRect(0, -halfW * 0.7, zone.radius, halfW * 1.4);
+          ctx.fillRect(bossR, -halfW * 0.7, beamLen, halfW * 1.4);
           // Hot white core
           ctx.globalAlpha = 0.6 * pulse;
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, -halfW * 0.15, zone.radius, halfW * 0.3);
+          ctx.fillRect(bossR, -halfW * 0.15, beamLen, halfW * 0.3);
         }
 
         // Particle sparks along beam (both sprite and default)
         ctx.globalAlpha = 1;
         for (let i = 0; i < 3; i++) {
-          const px = Math.random() * zone.radius;
+          const px = bossR + Math.random() * (zone.radius - bossR);
           const py = (Math.random() - 0.5) * lw * 0.6;
           const sz = 1.5 + Math.random() * 2;
           ctx.fillStyle = '#ffffff';
