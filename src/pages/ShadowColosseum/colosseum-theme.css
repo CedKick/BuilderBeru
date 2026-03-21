@@ -251,6 +251,21 @@
   transition: width 0.3s ease;
 }
 
+/* ── Mobile helpers ── */
+@media (max-width: 639px) {
+  .col-card-header { padding: 0.75rem 1rem; }
+  .col-card-body { padding: 0.75rem 1rem; }
+  .col-h1 { font-size: 1.5rem; }
+  .col-btn { padding: 0.625rem 0.875rem; font-size: 0.8125rem; min-height: 44px; }
+  .col-input { padding: 0.625rem 0.75rem; min-height: 44px; font-size: 1rem; }
+  .col-tab { padding: 0.625rem 0.5rem; font-size: 0.75rem; min-height: 44px; }
+}
+
+/* Hide elevator on mobile */
+@media (max-width: 767px) {
+  .col-elevator { display: none !important; }
+}
+
 /* ── Scrollbar ── */
 .col-page ::-webkit-scrollbar { width: 6px; }
 .col-page ::-webkit-scrollbar-track { background: var(--col-bg); }

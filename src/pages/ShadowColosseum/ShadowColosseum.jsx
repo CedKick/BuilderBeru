@@ -4710,7 +4710,7 @@ export default function ShadowColosseum() {
             <div className="bg-red-950/50 border border-red-800/50 rounded-xl p-6 text-left space-y-3">
               <p className="text-red-300 whitespace-pre-line leading-relaxed">{accountSuspended.message}</p>
             </div>
-            <div className="bg-gray-900/80 rounded-xl p-4 space-y-2">
+            <div className="col-card p-4 space-y-2">
               <p className="text-gray-400 text-sm">
                 Si tu penses que c'est une erreur, contacte <span className="text-purple-400 font-semibold">Kly</span> sur Discord.
               </p>
@@ -4762,7 +4762,7 @@ export default function ShadowColosseum() {
 
       {/* ═══ PVE MULTI VIEW ═══ */}
       {view === 'pve_multi' && (
-        <div className="max-w-2xl mx-auto px-4 pt-4 pb-16">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-4 pb-16">
           <div className="flex items-center gap-3 mb-6">
             <button onClick={() => setView('hub')} className="text-gray-400 hover:text-white text-sm">&larr; Retour</button>
             <h2 className="text-lg font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
@@ -5097,7 +5097,7 @@ export default function ShadowColosseum() {
                   </div>
                   {/* Selected Class Description */}
                   {classInfo[preferredClass] && (
-                    <div className="mt-2 p-3 rounded-lg border bg-gray-900/40" style={{ borderColor: classInfo[preferredClass].color + '33' }}>
+                    <div className="mt-2 p-3 col-card" style={{ borderColor: classInfo[preferredClass].color + '33' }}>
                       <div className="text-normal-responsive text-gray-400 mb-2 italic">{classInfo[preferredClass].role}</div>
                       <div className="text-small-responsive text-gray-500 font-bold uppercase tracking-wider mb-1.5">Competences</div>
                       <div className="space-y-1">
@@ -5291,7 +5291,7 @@ export default function ShadowColosseum() {
                         <div className="text-tiny-responsive text-gray-500 mb-2">Equipe armes et artefacts obtenus en battant Manaya.</div>
 
                         {/* Weapon */}
-                        <div className="mb-1.5 p-1.5 rounded-lg border bg-gray-900/40 flex items-center gap-2" style={{ borderColor: eq.weapon ? (eq.weapon.tierColor || '#f59e0b') + '66' : '#333' }}>
+                        <div className="mb-1.5 p-1.5 col-card flex items-center gap-2" style={{ borderColor: eq.weapon ? (eq.weapon.tierColor || '#f59e0b') + '66' : '#333' }}>
                           <span className="text-sm">{eq.weapon?.icon || '\u2694\uFE0F'}</span>
                           <div className="flex-1 min-w-0">
                             {eq.weapon ? (
@@ -5354,7 +5354,7 @@ export default function ShadowColosseum() {
                                 const isW = item.type === 'weapon';
                                 const tierCol = item.tierColor || '#9ca3af';
                                 return (
-                                  <div key={item.id || idx} className="flex items-center gap-1.5 p-1 rounded border border-gray-700/30 bg-gray-900/30 text-tiny-responsive">
+                                  <div key={item.id || idx} className="flex items-center gap-1.5 p-1 rounded col-card text-tiny-responsive">
                                     <span className="text-xs">{isW ? (item.icon || '\u2694\uFE0F') : (SLOTS.find(s => s.id === item.slot)?.icon || '\uD83D\uDCE6')}</span>
                                     <div className="flex-1 min-w-0">
                                       <div className="font-bold truncate" style={{ color: tierCol }}>{item.name || `${item.tierLabel} ${item.slotName || ''}`}</div>
@@ -5370,7 +5370,7 @@ export default function ShadowColosseum() {
                       </div>
 
                       {/* ── Forge de Manaya ── */}
-                      <div className="mb-3 p-2.5 rounded-lg border bg-gray-900/30" style={{ borderColor: MANAYA_COL + '33' }}>
+                      <div className="mb-3 p-2.5 col-card" style={{ borderColor: MANAYA_COL + '33' }}>
                         <div className="flex items-center justify-between mb-1.5">
                           <div className="text-normal-responsive font-bold uppercase tracking-wider" style={{ color: MANAYA_COL }}>{'\uD83D\uDD25'} Forge de Manaya</div>
                           <div className="flex items-center gap-1 text-normal-responsive">
@@ -5449,7 +5449,7 @@ export default function ShadowColosseum() {
 
       {/* ═══ HUB VIEW ═══ */}
       {view === 'hub' && (
-        <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 pt-4">
+        <div className="w-full max-w-3xl mx-auto px-3 sm:px-4 lg:px-6 pt-4">
           {/* Header */}
           <div className="col-card mb-5">
             <div className="col-card-header text-center">
@@ -5700,7 +5700,7 @@ export default function ShadowColosseum() {
                 </Link>
               ) : (
                 <div
-                  className="p-3 rounded-xl border border-gray-700/50 bg-gradient-to-r from-gray-800/30 to-gray-900/30 text-center opacity-50 cursor-not-allowed relative group"
+                  className="p-3 col-card text-center opacity-50 cursor-not-allowed relative group"
                   title={`Niveau de compte requis : 5000 (actuel : ${accLvl})`}>
                   <div className="flex items-center justify-center gap-1.5">
                     <span className="text-lg grayscale">{'\u2694\uFE0F'}</span>
@@ -5726,7 +5726,7 @@ export default function ShadowColosseum() {
 
           {/* Filter / Sort Bar */}
           {(ownedIds.length > 0 || ownedHunterIds.length > 0) && (
-            <div className="mb-3 p-2 rounded-xl bg-gray-800/20 border border-gray-700/20">
+            <div className="mb-3 p-2 col-card p-3">
               {/* Search bar */}
               <div className="mb-2">
                 <input
@@ -5734,7 +5734,7 @@ export default function ShadowColosseum() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="🔍 Rechercher par nom..."
-                  className="w-full px-3 py-1.5 rounded-lg bg-gray-900/50 border border-gray-700/30 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30 transition-all"
+                  className="col-input"
                 />
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -5745,16 +5745,16 @@ export default function ShadowColosseum() {
                 ].map(s => (
                   <button key={s.key} onClick={() => setRosterSort(s.key)}
                     className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
-                      rosterSort === s.key ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                      rosterSort === s.key ? 'col-tab-active' : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'
                     }`}>{s.icon} {s.label}</button>
                 ))}
                 <button onClick={toggleFavFilter}
                   className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
-                    favFilterActive ? 'bg-yellow-500/30 text-yellow-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                    favFilterActive ? 'col-tab-active' : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'
                   }`} title="Filtrer les favoris">{'\u2B50'}</button>
                 <button onClick={() => setFiltersExpanded(!filtersExpanded)}
                   className={`ml-auto px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
-                    filtersExpanded || rosterFilterElem || rosterFilterClass ? 'bg-purple-500/30 text-purple-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                    filtersExpanded || rosterFilterElem || rosterFilterClass ? 'col-tab-active' : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'
                   }`}>
                   {'\u2699\uFE0F'} Filtres {(rosterFilterElem || rosterFilterClass) && !filtersExpanded ? '\u2022' : ''} {filtersExpanded ? '\u25B2' : '\u25BC'}
                 </button>
@@ -5764,22 +5764,22 @@ export default function ShadowColosseum() {
                   <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
                     <span className="text-small-responsive text-gray-500 font-bold uppercase">Element:</span>
                     <button onClick={() => setRosterFilterElem(null)}
-                      className={`px-1.5 py-0.5 rounded text-normal-responsive ${!rosterFilterElem ? 'bg-white/10 text-white font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'}`}>Tous</button>
+                      className={`px-1.5 py-0.5 rounded text-normal-responsive ${!rosterFilterElem ? 'bg-white/10 text-white font-bold' : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'}`}>Tous</button>
                     {Object.entries(ELEMENTS).map(([eId, e]) => (
                       <button key={eId} onClick={() => setRosterFilterElem(rosterFilterElem === eId ? null : eId)}
                         className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
-                          rosterFilterElem === eId ? `${e.color} ${e.bg || 'bg-white/10'} font-bold` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                          rosterFilterElem === eId ? `${e.color} ${e.bg || 'bg-white/10'} font-bold` : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'
                         }`}>{e.icon}</button>
                     ))}
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-small-responsive text-gray-500 font-bold uppercase">Classe:</span>
                     <button onClick={() => setRosterFilterClass(null)}
-                      className={`px-1.5 py-0.5 rounded text-normal-responsive ${!rosterFilterClass ? 'bg-white/10 text-white font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'}`}>Tous</button>
+                      className={`px-1.5 py-0.5 rounded text-normal-responsive ${!rosterFilterClass ? 'bg-white/10 text-white font-bold' : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'}`}>Tous</button>
                     {['fighter', 'assassin', 'mage', 'tank', 'support'].map(cls => (
                       <button key={cls} onClick={() => setRosterFilterClass(rosterFilterClass === cls ? null : cls)}
                         className={`px-1.5 py-0.5 rounded text-normal-responsive capitalize transition-all ${
-                          rosterFilterClass === cls ? 'bg-red-500/30 text-red-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                          rosterFilterClass === cls ? 'bg-red-500/30 text-red-300 font-bold' : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'
                         }`}>{cls}</button>
                     ))}
                   </div>
@@ -6626,7 +6626,7 @@ export default function ShadowColosseum() {
         };
 
         return (
-          <div className="max-w-2xl mx-auto px-4 pt-4 pb-24">
+          <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-4 pb-24">
             {/* Header */}
             <div className="text-center mb-4">
               <div className="text-normal-responsive text-purple-400/60 uppercase tracking-widest mb-1">Arc II — {ARC2_TIER_NAMES[stage.tier]}</div>
@@ -7703,7 +7703,7 @@ export default function ShadowColosseum() {
         const spent = getSpentStatPts(id);
 
         return (
-          <div className="max-w-2xl mx-auto px-4 pt-4">
+          <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-4">
 
             {/* Header */}
             <div className="text-center mb-5">
@@ -7898,7 +7898,7 @@ export default function ShadowColosseum() {
         const spentSP = getSpentSP(id);
 
         return (
-          <div className="max-w-2xl mx-auto px-4 pt-4">
+          <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-4">
 
             {/* Header */}
             <div className="text-center mb-5">
@@ -8032,7 +8032,7 @@ export default function ShadowColosseum() {
         const t2Unlocked = level >= TALENT2_UNLOCK_LEVEL;
 
         return (
-          <div className="max-w-2xl mx-auto px-4 pt-4">
+          <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-4">
 
             {/* Header */}
             <div className="text-center mb-3">
@@ -9017,7 +9017,7 @@ export default function ShadowColosseum() {
         };
 
         return (
-          <div className="max-w-2xl mx-auto px-4 pt-4">
+          <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-4">
 
             {/* Header */}
             <div className="text-center mb-4">
@@ -10202,7 +10202,7 @@ export default function ShadowColosseum() {
                     {Object.entries(SET_CATEGORIES).map(([catId, cat]) => (
                       <button key={catId} onClick={() => setEqInvFilter(prev => ({ ...prev, type: prev.type === catId ? null : catId, set: null }))}
                         className={`px-1.5 py-0.5 rounded-full text-normal-responsive font-bold transition-all ${
-                          eqInvFilter.type === catId ? `${cat.color} ${cat.bg} ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                          eqInvFilter.type === catId ? `${cat.color} ${cat.bg} ring-1 ring-current` : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'
                         }`}>{cat.label}</button>
                     ))}
                   </div>
@@ -10212,7 +10212,7 @@ export default function ShadowColosseum() {
                     {SLOT_ORDER.map(sId => (
                       <button key={sId} onClick={() => setEqInvFilter(prev => ({ ...prev, slot: prev.slot === sId ? null : sId }))}
                         className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
-                          eqInvFilter.slot === sId ? 'text-purple-300 bg-purple-500/15 ring-1 ring-purple-400/50' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                          eqInvFilter.slot === sId ? 'text-purple-300 bg-purple-500/15 ring-1 ring-purple-400/50' : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'
                         }`}>{ARTIFACT_SLOTS[sId]?.icon}</button>
                     ))}
                   </div>
@@ -10435,7 +10435,7 @@ export default function ShadowColosseum() {
         const ownedWeapons = data.weaponCollection;
 
         return (
-          <div className="max-w-2xl mx-auto px-4 pt-4">
+          <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-4">
 
             <div className="text-center mb-5">
               <h2 className="text-xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">Boutique</h2>
@@ -10443,7 +10443,7 @@ export default function ShadowColosseum() {
             </div>
 
             {/* Hammer Inventory */}
-            <div className="mb-4 p-2.5 rounded-xl bg-gray-800/20 border border-gray-700/20">
+            <div className="mb-4 p-2.5 col-card p-3">
               <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDD28'} Tes Marteaux</div>
               <div className="flex justify-center gap-4">
                 {HAMMER_ORDER.map(hId => {
@@ -11446,7 +11446,7 @@ export default function ShadowColosseum() {
         ) : null;
 
         return (
-          <div className="max-w-2xl mx-auto px-4 pt-4 pb-16">
+          <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-4 pb-16">
 
             {/* Header */}
             <div className="text-center mb-4">
@@ -11467,7 +11467,7 @@ export default function ShadowColosseum() {
                   return (
                     <button key={catId} onClick={() => setArtFilter(prev => ({ ...prev, type: prev.type === catId ? null : catId, set: null }))}
                       className={`px-2 py-0.5 rounded-full text-normal-responsive font-bold transition-all ${
-                        active ? `${cat.color} ${cat.bg} ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                        active ? `${cat.color} ${cat.bg} ring-1 ring-current` : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'
                       }`}>{cat.label}</button>
                   );
                 })}
@@ -11478,7 +11478,7 @@ export default function ShadowColosseum() {
                 {['rare', 'legendaire', 'mythique'].map(r => (
                   <button key={r} onClick={() => setArtFilter(prev => ({ ...prev, rarity: prev.rarity === r ? null : r }))}
                     className={`px-2 py-0.5 rounded-full text-normal-responsive font-bold transition-all ${
-                      artFilter.rarity === r ? `${RARITY[r]?.color || 'text-white'} bg-white/10 ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                      artFilter.rarity === r ? `${RARITY[r]?.color || 'text-white'} bg-white/10 ring-1 ring-current` : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'
                     }`}>{r.charAt(0).toUpperCase() + r.slice(1)}</button>
                 ))}
               </div>
@@ -11488,7 +11488,7 @@ export default function ShadowColosseum() {
                 {SLOT_ORDER.map(sId => (
                   <button key={sId} onClick={() => setArtFilter(prev => ({ ...prev, slot: prev.slot === sId ? null : sId }))}
                     className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
-                      artFilter.slot === sId ? 'text-purple-300 bg-purple-500/15 ring-1 ring-purple-400/50' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                      artFilter.slot === sId ? 'text-purple-300 bg-purple-500/15 ring-1 ring-purple-400/50' : 'text-gray-500 bg-[--col-surface-alt] hover:text-white'
                     }`}>{ARTIFACT_SLOTS[sId]?.icon}</button>
                 ))}
               </div>
@@ -12021,7 +12021,7 @@ export default function ShadowColosseum() {
                     { key: 'rarity', label: '\u2605' },
                   ].map(s => (
                     <button key={s.key} onClick={() => setArtSort(s.key)}
-                      className={`text-tiny-responsive px-1.5 py-0.5 rounded transition-all ${artSort === s.key ? 'bg-purple-500/30 text-purple-300 font-bold' : 'text-gray-500 hover:text-gray-300'}`}>
+                      className={`text-tiny-responsive px-1.5 py-0.5 rounded transition-all ${artSort === s.key ? 'col-tab-active' : 'text-gray-500 hover:text-gray-300'}`}>
                       {s.label}
                     </button>
                   ))}
@@ -12373,7 +12373,7 @@ export default function ShadowColosseum() {
 
       {/* ═══ RESULT VIEW ═══ */}
       {view === 'result' && result && (
-        <div className="max-w-xl mx-auto px-4 pt-12 text-center">
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-12 text-center">
           {result.won ? (
             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
               <img loading="lazy" src="https://api.builderberu.com/cdn/images/Victory_hcur2y.webp" alt="Victory" className="w-48 mx-auto mb-2 drop-shadow-[0_0_16px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }} />
@@ -12402,14 +12402,14 @@ export default function ShadowColosseum() {
               </div>
               {result.leveled && (
                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}
-                  className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/40 rounded-xl p-3 mb-4">
+                  className="col-card border-yellow-500/40 p-3 mb-4">
                   <div className="text-yellow-400 font-black text-lg">{'\u2B06\uFE0F'} LEVEL UP !</div>
                   <div className="text-white text-sm">Lv {result.oldLevel} {'\u2192'} Lv {result.newLevel}</div>
                 </motion.div>
               )}
               {(result.newStatPts > 0 || result.newSP > 0 || result.newTP > 0) && (
                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }}
-                  className="bg-gradient-to-r from-amber-600/15 to-purple-600/15 border border-amber-500/30 rounded-xl p-3 mb-6">
+                  className="col-card p-3 mb-6">
                   <div className="text-medium-responsive font-bold text-amber-300 mb-1">Nouveaux points !</div>
                   <div className="flex justify-center gap-4 text-xs">
                     {result.newStatPts > 0 && (
