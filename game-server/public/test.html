@@ -3368,27 +3368,26 @@
         const bossR = 80; // Offset to start beam from boss edge, not center
         if (spriteImg?._loaded) {
           // Sprite-based laser rendering — start from boss edge
-          ctx.globalAlpha = pulse;
-          ctx.shadowColor = lColor; ctx.shadowBlur = 25;
           const beamLen = zone.radius - bossR;
+          const spriteH = lw * 1.5; // Render slightly taller than lineWidth for glow
+          ctx.globalAlpha = pulse * 0.9;
+          ctx.shadowColor = lColor; ctx.shadowBlur = 15;
           // Detect if sprite is portrait (vertical laser) → need rotation
           const isPortrait = spriteImg.naturalHeight > spriteImg.naturalWidth * 1.3;
           if (isPortrait) {
-            // Sprite is vertical — rotate 90° and stretch horizontally
             ctx.save();
             ctx.translate(bossR + beamLen / 2, 0);
             ctx.rotate(-Math.PI / 2);
-            ctx.drawImage(spriteImg, -lw / 2, -beamLen / 2, lw, beamLen);
+            ctx.drawImage(spriteImg, -spriteH / 2, -beamLen / 2, spriteH, beamLen);
             ctx.restore();
           } else {
-            // Sprite is horizontal — stretch along beam directly
-            ctx.drawImage(spriteImg, bossR, -lw / 2, beamLen, lw);
+            ctx.drawImage(spriteImg, bossR, -spriteH / 2, beamLen, spriteH);
           }
           ctx.shadowBlur = 0;
-          // White core overlay
-          ctx.globalAlpha = 0.4 * pulse;
+          // Thin white core on top
+          ctx.globalAlpha = 0.35 * pulse;
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(bossR, -lw * 0.08, beamLen, lw * 0.16);
+          ctx.fillRect(bossR, -lw * 0.05, beamLen, lw * 0.1);
         } else {
           // Default procedural laser rendering — start from boss edge
           const halfW = lw / 2;
