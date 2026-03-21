@@ -1,10 +1,13 @@
 // api/boss-editor.js — Custom Boss CRUD ("Forge un Boss")
-// Actions: create, update, list, my-bosses, get, delete, init
+// Actions: create, update, list, my-bosses, get, delete, init, upload-sprite
 
 import { query } from './_db/neon.js';
 import { extractUser } from './_utils/auth.js';
 import fs from 'fs';
 import path from 'path';
+
+let sharp;
+try { sharp = (await import('sharp')).default; } catch { sharp = null; }
 
 const CDN_DIR = '/opt/manaya-raid/public/cdn/bosses';
 const CDN_URL = 'https://api.builderberu.com/cdn/bosses';
@@ -367,6 +370,81 @@ async function handlePublish(req, res) {
   return res.json({ success: true, bossId, status: newStatus });
 }
 
+// ── Sprite processing pipeline (sharp) ──────────────────
+async function processSprite(inputBuffer) {
+  if (!sharp) throw new Error('sharp not available');
+
+  let img = sharp(inputBuffer, { failOnError: false });
+  const meta = await img.metadata();
+
+  // 1. Ensure RGBA
+  img = img.ensureAlpha();
+
+  // 2. Get raw pixels to remove black background (tolerance ±30)
+  const { data, info } = await img.raw().toBuffer({ resolveWithObject: true });
+  const pixels = Buffer.from(data);
+  const threshold = 30;
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+    if (r <= threshold && g <= threshold && b <= threshold) {
+      pixels[i + 3] = 0; // Set alpha to 0 (transparent)
+    }
+  }
+
+  // 3. Reconstruct image from modified pixels, auto-trim transparent edges
+  img = sharp(pixels, { raw: { width: info.width, height: info.height, channels: 4 } });
+  img = img.trim(); // Auto-crop transparent borders
+
+  // 4. Resize to fit 256×256, centered, preserving aspect ratio
+  img = img.resize(256, 256, {
+    fit: 'contain',
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
+  });
+
+  // 5. Convert to WebP quality 85
+  return img.webp({ quality: 85 }).toBuffer();
+}
+
+async function handleUploadSprite(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
+
+  if (!sharp) return res.status(500).json({ error: 'Image processing unavailable (sharp not installed)' });
+
+  const { base64, state, dir } = req.body;
+  if (!base64 || !base64.startsWith('data:image/')) {
+    return res.status(400).json({ error: 'Image base64 requise' });
+  }
+  if (!['idle', 'atk'].includes(state) || !['down', 'up', 'left', 'right'].includes(dir)) {
+    return res.status(400).json({ error: 'state (idle/atk) et dir (down/up/left/right) requis' });
+  }
+
+  try {
+    // Decode base64
+    const match = base64.match(/^data:image\/\w+;base64,(.+)$/);
+    if (!match) return res.status(400).json({ error: 'Format base64 invalide' });
+    const inputBuffer = Buffer.from(match[1], 'base64');
+    if (inputBuffer.length > 2_000_000) return res.status(400).json({ error: 'Image trop lourde (max 2MB)' });
+
+    // Process with sharp pipeline
+    const processed = await processSprite(inputBuffer);
+
+    // Save to CDN
+    const filename = `${user.username}_${state}_${dir}_${Date.now().toString(36)}.webp`;
+    fs.mkdirSync(CDN_DIR, { recursive: true });
+    fs.writeFileSync(path.join(CDN_DIR, filename), processed);
+    const url = `${CDN_URL}/${filename}`;
+
+    console.log(`[BossEditor] Sprite processed: ${state}/${dir} by ${user.username} (${(inputBuffer.length/1024).toFixed(0)}KB → ${(processed.length/1024).toFixed(0)}KB)`);
+    return res.json({ success: true, url, size: processed.length });
+  } catch (err) {
+    console.error('[BossEditor] Sprite processing error:', err);
+    return res.status(500).json({ error: 'Erreur de traitement image' });
+  }
+}
+
 // ── Main router ─────────────────────────────────────────
 export default async function handler(req, res) {
   // CORS
@@ -389,6 +467,7 @@ export default async function handler(req, res) {
       case 'get':        return handleGet(req, res);
       case 'publish':    return handlePublish(req, res);
       case 'delete':     return handleDelete(req, res);
+      case 'upload-sprite': return handleUploadSprite(req, res);
       case 'init':
         await ensureTable();
         return res.json({ success: true, message: 'custom_bosses table ready' });

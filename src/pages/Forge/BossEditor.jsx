@@ -315,30 +315,51 @@ export default function BossEditor({ onBack, editBossId }) {
     }));
   }, []);
 
-  // Handle sprite file upload for a specific state+direction
-  const handleSpriteUpload = useCallback((file, state, dir) => {
+  // Track which sprites are being processed
+  const [processingSprites, setProcessingSprites] = useState({});
+
+  // Handle sprite file upload: send to API for sharp processing
+  const handleSpriteUpload = useCallback(async (file, state, dir) => {
     if (!file) return;
-    if (file.size > 512_000) { alert('Fichier trop lourd (max 500KB)'); return; }
-    if (!file.type.startsWith('image/')) { alert('Format image requis (PNG/WebP)'); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const maxW = 400, maxH = 400;
-        if (img.width > maxW || img.height > maxH) {
-          const canvas = document.createElement('canvas');
-          const scale = Math.min(maxW / img.width, maxH / img.height);
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          updateSprite(state, dir, canvas.toDataURL('image/webp', 0.85));
-        } else {
-          updateSprite(state, dir, e.target.result);
-        }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 2_000_000) { alert('Fichier trop lourd (max 2MB)'); return; }
+    if (!file.type.startsWith('image/')) { alert('Format image requis (PNG/WebP/JPEG)'); return; }
+
+    const key = `${state}_${dir}`;
+    setProcessingSprites(prev => ({ ...prev, [key]: true }));
+
+    try {
+      // Read file as base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Send to API for sharp processing
+      const token = localStorage.getItem('builderberu_auth_token');
+      const resp = await fetch(`${API_URL}/boss-editor?action=upload-sprite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ base64, state, dir }),
+      });
+      const data = await resp.json();
+
+      if (data.success && data.url) {
+        updateSprite(state, dir, data.url);
+      } else {
+        // Fallback: use base64 locally if API fails
+        updateSprite(state, dir, base64);
+        console.warn('[BossEditor] Sprite API failed, using local base64:', data.error);
+      }
+    } catch {
+      // Offline fallback: store base64 locally
+      const reader = new FileReader();
+      reader.onload = (e) => updateSprite(state, dir, e.target.result);
+      reader.readAsDataURL(file);
+    } finally {
+      setProcessingSprites(prev => ({ ...prev, [key]: false }));
+    }
   }, [updateSprite]);
 
   // ── Phase CRUD ──────────────────────────────────────────
@@ -887,8 +908,10 @@ export default function BossEditor({ onBack, editBossId }) {
                           const refKey = `idle_${dir}`;
                           return (
                             <div key={dir} className="flex items-center gap-2">
-                              <div className="w-12 h-12 rounded-lg border border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50 flex-shrink-0 overflow-hidden">
-                                {val ? <img src={val} alt={label} className="w-full h-full object-contain" /> : <span className="text-gray-600 text-[9px]">—</span>}
+                              <div className="w-12 h-12 rounded-lg border border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50 flex-shrink-0 overflow-hidden relative">
+                                {processingSprites[refKey]
+                                  ? <div className="flex flex-col items-center"><div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" /><span className="text-[7px] text-amber-400 mt-0.5">Opti...</span></div>
+                                  : val ? <img src={val} alt={label} className="w-full h-full object-contain" /> : <span className="text-gray-600 text-[9px]">—</span>}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-[10px] text-gray-400 flex items-center gap-1">
