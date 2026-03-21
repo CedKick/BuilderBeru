@@ -1411,19 +1411,32 @@ export default function BossEditor({ onBack, editBossId }) {
                       <Panel title="Sprite Laser" subtitle="Optionnel — remplace le rendu par défaut du faisceau">
                         <div className="flex items-center gap-3">
                           <div className="w-20 h-12 rounded-lg border border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50 overflow-hidden">
-                            {selPattern.laserSprite
-                              ? <img src={selPattern.laserSprite} alt="laser" className="w-full h-full object-contain" />
-                              : <span className="text-gray-600 text-[9px]">Défaut</span>}
+                            {selPattern._laserUploading
+                              ? <div className="flex flex-col items-center"><div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" /><span className="text-[7px] text-amber-400 mt-0.5">Opti...</span></div>
+                              : selPattern.laserSprite
+                                ? <img src={selPattern.laserSprite} alt="laser" className="w-full h-full object-contain" />
+                                : <span className="text-gray-600 text-[9px]">Défaut</span>}
                           </div>
                           <input ref={el => spriteInputRefs.current['laser_sprite'] = el} type="file" accept="image/png,image/webp,image/jpeg" className="hidden"
-                            onChange={e => {
+                            onChange={async (e) => {
                               const file = e.target.files[0]; e.target.value = '';
-                              if (!file) return;
-                              handleSpriteUpload(file, 'idle', 'down').then(() => {}).catch(() => {});
-                              // Read as base64 and set on pattern
-                              const reader = new FileReader();
-                              reader.onload = (ev) => updatePattern(selectedPatternIdx, 'laserSprite', ev.target.result);
-                              reader.readAsDataURL(file);
+                              if (!file || file.size > 2_000_000) { if (file) alert('Max 2MB'); return; }
+                              const patIdx = selectedPatternIdx;
+                              updatePattern(patIdx, '_laserUploading', true);
+                              try {
+                                const base64 = await new Promise((res, rej) => {
+                                  const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = rej; r.readAsDataURL(file);
+                                });
+                                const token = localStorage.getItem('builderberu_auth_token');
+                                const resp = await fetch(`${API_URL}/boss-editor?action=upload-sprite`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                  body: JSON.stringify({ base64, state: 'idle', dir: 'down' }),
+                                });
+                                const data = await resp.json();
+                                updatePattern(patIdx, 'laserSprite', data.success ? data.url : base64);
+                              } catch { /* fallback to base64 handled by processConfigImages on save */ }
+                              updatePattern(patIdx, '_laserUploading', false);
                             }} />
                           <button onClick={() => spriteInputRefs.current['laser_sprite']?.click()}
                             className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm text-gray-300 flex items-center gap-2 transition-colors">
