@@ -2230,6 +2230,7 @@
           break;
         case 'boss_message': log(msg.text, 'event'); break;
         case 'boss_auto_attack': {
+          AudioManager.play('auto_impact', 0.4);
           const aaRange = msg.range || 120;
           const aaCone = (msg.coneAngle || 60) * Math.PI / 180;
           // Cone pulse expanding outward
@@ -2880,6 +2881,7 @@
 
     // ── Input ──
     document.addEventListener('keydown', (e) => {
+      AudioManager.init();
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
       const key = e.key.toLowerCase();
       keys[key] = true;
@@ -2930,6 +2932,7 @@
     });
     canvas.addEventListener('mousedown', (e) => {
       e.preventDefault();
+      AudioManager.init(); // Init audio context on first user interaction
       if (e.button === 0) {
         // Hold left click = start auto-attack combo
         send({ type: 'input', input: { type: 'start_basic', angle: mouseAngle } });
@@ -3046,16 +3049,31 @@
               addJuice('shockwave', z.x, z.y, { radius: z.radius || 300, color: '#ef4444', duration: 0.4 });
               screenShake.intensity = Math.max(screenShake.intensity, 5);
               spawnParticles(z.x, z.y, '#ef4444', 8, 150, 4);
+              AudioManager.play('pattern_impact_wave', 0.5);
             } else if (z.type === 'boss_donut' || z.type === 'donut_telegraph') {
               addJuice('ring_burst', z.x, z.y, { innerRadius: z.innerSafe || 150, outerRadius: z.radius || 600, color: '#a855f7', duration: 0.4 });
               screenShake.intensity = Math.max(screenShake.intensity, 6);
               spawnParticles(z.x, z.y, '#a855f7', 12, 200, 4);
+              AudioManager.play('pattern_impact_donut', 0.5);
             } else if (z.type === 'cone_telegraph') {
               addJuice('shockwave', z.x, z.y, { radius: z.radius || 250, color: '#ef4444', duration: 0.3 });
               screenShake.intensity = Math.max(screenShake.intensity, 4);
+              AudioManager.play('pattern_impact_generic', 0.4);
             } else if (z.type === 'line_telegraph') {
               addJuice('line_flash', z.x, z.y, { rotation: z.angle || 0, range: z.radius || 800, width: (z.lineWidth || 80) / 2, duration: 0.2 });
               screenShake.intensity = Math.max(screenShake.intensity, 5);
+              AudioManager.play('pattern_impact_wave', 0.5);
+            }
+          }
+        }
+      }
+      // Detect NEW zones appearing → telegraph sound
+      if (_prevZoneIds) {
+        for (const zid of currentZoneIds) {
+          if (!_prevZoneIds.has(zid)) {
+            const z = (gameState.aoeZones || []).find(zo => zo.id === zid);
+            if (z && (z.type.includes('telegraph') || z.type === 'boss_donut' || z.type === 'boss_ring')) {
+              AudioManager.play('pattern_telegraph', 0.25);
             }
           }
         }
