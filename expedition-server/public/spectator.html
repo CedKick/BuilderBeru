@@ -3836,7 +3836,7 @@ function render() {
       else { ctx.shadowColor = '#ef444480'; ctx.shadowBlur = 15; }
 
       ctx.save();
-      ctx.rotate(b.rotation - Math.PI / 2); // sprite faces down, offset so it faces rotation direction
+      ctx.rotate(b.rotation + Math.PI / 2); // sprite faces up by default, rotate to face target
       const spriteW = bossSize * 0.9;
       const spriteH = bossSize * 0.9;
       ctx.drawImage(bossSprite, -spriteW / 2, -spriteH / 2, spriteW, spriteH);
