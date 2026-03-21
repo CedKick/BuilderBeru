@@ -58,11 +58,11 @@ export function BattleStyles() {
       @keyframes dmgFloatUp { 0%{opacity:1;transform:translateY(0) scale(0.6)} 20%{opacity:1;transform:translateY(-8px) scale(1.1)} 100%{opacity:0;transform:translateY(-40px) scale(0.9)} }
       @keyframes dmgFloatCrit { 0%{opacity:1;transform:translateY(0) scale(0.5)} 15%{opacity:1;transform:translateY(-10px) scale(1.5)} 100%{opacity:0;transform:translateY(-55px) scale(1)} }
       @keyframes arenaIdleChib { 0%,100%{transform:translateY(0) scaleX(-1)} 50%{transform:translateY(-4px) scaleX(-1)} }
-      @keyframes arenaIdleBoss { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+      @keyframes arenaIdleBoss { 0%,100%{transform:translateY(0) scaleX(-1)} 50%{transform:translateY(-6px) scaleX(-1)} }
       @keyframes arenaDashRight { 0%{transform:translateX(0) scaleX(-1)} 25%{transform:translateX(40px) scaleX(-1) scale(1.15)} 50%{transform:translateX(40px) scaleX(-1) scale(1.15)} 100%{transform:translateX(0) scaleX(-1)} }
-      @keyframes arenaDashLeft { 0%{transform:translateX(0)} 25%{transform:translateX(-30px) scale(1.2)} 50%{transform:translateX(-30px) scale(1.2)} 100%{transform:translateX(0)} }
+      @keyframes arenaDashLeft { 0%{transform:translateX(0) scaleX(-1)} 25%{transform:translateX(-30px) scaleX(-1) scale(1.2)} 50%{transform:translateX(-30px) scaleX(-1) scale(1.2)} 100%{transform:translateX(0) scaleX(-1)} }
       @keyframes arenaHitChib { 0%,100%{transform:translateX(0) scaleX(-1)} 15%{transform:translateX(-6px) scaleX(-1)} 30%{transform:translateX(6px) scaleX(-1)} 50%{transform:translateX(-3px) scaleX(-1)} 70%{transform:translateX(3px) scaleX(-1)} }
-      @keyframes arenaHitBoss { 0%,100%{transform:translateX(0)} 15%{transform:translateX(6px)} 30%{transform:translateX(-6px)} 50%{transform:translateX(3px)} 70%{transform:translateX(-3px)} }
+      @keyframes arenaHitBoss { 0%,100%{transform:translateX(0) scaleX(-1)} 15%{transform:translateX(6px) scaleX(-1)} 30%{transform:translateX(-6px) scaleX(-1)} 50%{transform:translateX(3px) scaleX(-1)} 70%{transform:translateX(-3px) scaleX(-1)} }
       @keyframes arenaKO { 0%{opacity:1;filter:brightness(1)} 30%{opacity:0.8;filter:brightness(2)} 100%{opacity:0.25;filter:brightness(0.4) grayscale(1)} }
       @keyframes arenaShadow { 0%,100%{transform:scaleX(1);opacity:0.25} 50%{transform:scaleX(0.85);opacity:0.15} }
       @keyframes projectileFly { 0%{transform:translateX(0) translateY(0) scale(0.6);opacity:0} 8%{opacity:1;transform:translateX(15px) translateY(-5px) scale(1)} 85%{opacity:1;transform:translateX(calc(var(--proj-dist,140px) - 20px)) translateY(-8px) scale(1)} 100%{opacity:0;transform:translateX(var(--proj-dist,140px)) translateY(0) scale(1.3)} }
