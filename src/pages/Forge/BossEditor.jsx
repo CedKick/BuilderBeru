@@ -108,6 +108,8 @@ export default function BossEditor({ onBack, editBossId }) {
   const [showMyBosses, setShowMyBosses] = useState(false);
   const [bossStatus, setBossStatus] = useState('draft');
   const [showAtkSprites, setShowAtkSprites] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const lastSavedRef = useRef(null);
   const spriteInputRef = useRef(null);
   const spriteInputRefs = useRef({});
   const mapInputRef = useRef(null);
@@ -126,6 +128,8 @@ export default function BossEditor({ onBack, editBossId }) {
         restoreUidCounter(config);
         migrateSprites(config);
         setBoss(config);
+        lastSavedRef.current = JSON.stringify(config);
+        setHasUnsavedChanges(false);
         setBossId(data.boss.boss_id);
         setBossStatus(data.boss.status || 'draft');
         localStorage.setItem(LS_KEY, JSON.stringify(config));
@@ -137,6 +141,11 @@ export default function BossEditor({ onBack, editBossId }) {
   // ── Auto-save to localStorage on changes ──────────────────
   useEffect(() => {
     try { localStorage.setItem(LS_KEY, JSON.stringify(boss)); } catch { /* */ }
+    // Track unsaved changes
+    const current = JSON.stringify(boss);
+    if (lastSavedRef.current && current !== lastSavedRef.current) {
+      setHasUnsavedChanges(true);
+    }
   }, [boss]);
 
   // ── Save to DB ────────────────────────────────────────────
@@ -169,6 +178,8 @@ export default function BossEditor({ onBack, editBossId }) {
           setBossId(result.bossId);
           localStorage.setItem(LS_BOSS_ID_KEY, result.bossId);
         }
+        lastSavedRef.current = JSON.stringify(boss);
+        setHasUnsavedChanges(false);
         setSaveFlash('saved');
       } else {
         console.warn('[BossEditor] Save failed:', result.error);
@@ -233,6 +244,8 @@ export default function BossEditor({ onBack, editBossId }) {
         restoreUidCounter(config);
         migrateSprites(config);
         setBoss(config);
+        lastSavedRef.current = JSON.stringify(config);
+        setHasUnsavedChanges(false);
         setBossId(data.boss.boss_id);
         setBossStatus(data.boss.status || 'draft');
         localStorage.setItem(LS_KEY, JSON.stringify(config));
@@ -741,16 +754,18 @@ export default function BossEditor({ onBack, editBossId }) {
             <Plus size={16} /> Nouveau
           </button>
           <button onClick={saveDraft}
-            className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors ${
-              saveFlash === 'saving' ? 'bg-amber-600 text-white' :
+            className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors font-bold ${
+              saveFlash === 'saving' ? 'bg-amber-600 text-white animate-pulse' :
               saveFlash === 'saved' ? 'bg-green-600 text-white' :
               saveFlash === 'error' ? 'bg-red-600 text-white' :
+              hasUnsavedChanges ? 'bg-amber-600 hover:bg-amber-500 text-white ring-2 ring-amber-400/50' :
               'bg-gray-800 hover:bg-gray-700 text-gray-300'
             }`}>
             <Save size={16} /> {
               saveFlash === 'saving' ? 'Sauvegarde...' :
               saveFlash === 'saved' ? 'Sauvegardé !' :
               saveFlash === 'error' ? 'Erreur !' :
+              hasUnsavedChanges ? '● Sauvegarder' :
               bossId ? 'Sauvegarder' : 'Créer'
             }
           </button>
@@ -759,13 +774,21 @@ export default function BossEditor({ onBack, editBossId }) {
             <Play size={16} /> Tester
           </button>
           {bossId && (
-            <button onClick={togglePublish}
+            <button
+              onClick={() => { if (!hasUnsavedChanges) togglePublish(); }}
+              disabled={hasUnsavedChanges}
+              title={hasUnsavedChanges ? 'Sauvegarde requise avant de publier' : ''}
               className={`px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors font-bold ${
-                bossStatus === 'published'
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-purple-600 hover:bg-purple-500 text-white'
+                hasUnsavedChanges
+                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
+                  : bossStatus === 'published'
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-amber-600 hover:bg-amber-500 text-white'
               }`}>
-              <Globe size={16} /> {bossStatus === 'published' ? 'Publié ✓' : 'Publier'}
+              <Globe size={16} /> {
+                hasUnsavedChanges ? 'Sauvegarder d\'abord' :
+                bossStatus === 'published' ? 'Publié ✓' : 'Publier'
+              }
             </button>
           )}
         </div>
