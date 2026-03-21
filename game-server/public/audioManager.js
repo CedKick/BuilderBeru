@@ -21,7 +21,11 @@ const AudioManager = (() => {
   let initialized = false;
 
   function init() {
-    if (initialized) return;
+    if (initialized) {
+      // Resume suspended context (browser policy)
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+      return;
+    }
     try {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       masterGain = ctx.createGain();
@@ -31,6 +35,9 @@ const AudioManager = (() => {
       masterGain.gain.value = masterVol;
       sfxGain.gain.value = sfxVol;
       initialized = true;
+      // Register procedural synths immediately
+      registerSynths();
+      if (ctx.state === 'suspended') ctx.resume();
     } catch (e) {
       console.warn('[AudioManager] Web Audio API unavailable:', e);
     }
@@ -274,6 +281,7 @@ const AudioManager = (() => {
     play(id, volume = 1.0, loop = false) {
       init();
       if (!ctx || muted) return null;
+      if (!Object.keys(synths).length) registerSynths();
 
       // File-based sound takes priority
       if (cache[id]) {
