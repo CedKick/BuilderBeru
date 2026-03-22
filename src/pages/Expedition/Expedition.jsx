@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Swords, Users, Play, Plus, Eye, Clock, Shield, Skull, Trophy, ChevronRight, ChevronDown, ChevronUp, Flame, X, RotateCcw, BookOpen, Star, Gem, Award, Package, ScrollText, Sparkles, Lock } from 'lucide-react';
+import ColosseumHeader from '../ShadowColosseum/SharedBattleComponents/ColosseumHeader';
 
 // ── Import real hunter data from Shadow Colosseum ──
 import { HUNTERS, RAID_SAVE_KEY, loadRaidData, getHunterPool, getHunterStars, computeSynergies, HUNTER_PASSIVE_EFFECTS, getAwakeningPassives } from '../ShadowColosseum/raidData';
@@ -666,20 +667,12 @@ export default function Expedition() {
   const isRegistration = status === 'registration';
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-gray-100 px-4 py-6 max-w-4xl mx-auto">
-      {/* Back to Colosseum */}
-      <Link to="/shadow-colosseum" className="text-sm text-gray-500 hover:text-purple-400 transition-colors mb-2 inline-block">&larr; Retour au Colisee</Link>
+    <div className="min-h-screen bg-[#0f0f1a] text-gray-100 flex flex-col">
+      <ColosseumHeader title="Expedition II" emoji={<Swords className="w-4 h-4 text-purple-400" />} titleColor="text-purple-400" />
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Swords className="w-8 h-8 text-purple-400" />
-          <div>
-            <h1 className="text-2xl font-bold text-purple-300">Expédition II</h1>
-            <p className="text-gray-500 text-sm">PvE Auto-Battler — 5 Boss, 30 Hunters</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="px-4 max-w-4xl mx-auto">
+      {/* Action buttons */}
+      <div className="flex items-center justify-end mb-6 gap-2">
           <button
             onClick={() => setShowRules(v => !v)}
             className={`${showRules ? 'bg-purple-600 text-white' : 'bg-[#1a1a2e] text-purple-300 hover:bg-purple-900/50'} px-3 py-2 rounded-lg flex items-center gap-1.5 text-sm font-medium border border-purple-500/30 transition-colors`}
@@ -712,7 +705,6 @@ export default function Expedition() {
               <RotateCcw className="w-4 h-4" /> Reset
             </button>
           )}
-        </div>
       </div>
 
       {/* ── Rules Panel ── */}
@@ -1351,6 +1343,7 @@ export default function Expedition() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isLoggedIn, authHeaders } from '../../utils/auth';
 import { API_URL } from '../../utils/api.js';
+import ColosseumHeader from './SharedBattleComponents/ColosseumHeader';
 import { isFarming, stopFarm } from '../../utils/offlineFarm';
 import AuthModal from '../../components/AuthModal';
 import { computeTalentBonuses } from './talentTreeData';
@@ -1673,8 +1674,8 @@ export default function PvpMode() {
                        transition-all shadow-lg shadow-purple-900/40">
             Se connecter / S'inscrire
           </button>
-          <Link to="/shadow-colosseum" className="block text-xs text-gray-500 mt-4 hover:text-gray-300 transition-colors">
-            &larr; Retour au Colosseum
+          <Link to="/shadow-colosseum" className="flex items-center gap-2 text-gray-400 hover:text-purple-400 transition-colors text-sm mt-4">
+            ← Retour
           </Link>
         </div>
         <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
@@ -1683,26 +1684,19 @@ export default function PvpMode() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white pb-20 select-none">
+    <div className="min-h-screen bg-[#0f0f1a] text-white pb-20 select-none flex flex-col">
       <BattleStyles />
 
-      {/* Header */}
-      <div className="max-w-2xl mx-auto px-4 pt-4">
-        <div className="flex items-center justify-between mb-4">
-          <Link to="/shadow-colosseum" className="text-gray-500 text-xs hover:text-white transition-colors">&larr; Colosseum</Link>
-          <h1 className="text-xl font-black bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-            {'\u2694\uFE0F'} Arene PVP
-          </h1>
-          <button onClick={() => { setPhase('rankings'); loadRankings(); }}
-            className="text-xs text-amber-400 hover:text-amber-300">{'\uD83C\uDFC6'} Rang</button>
-        </div>
+      <ColosseumHeader
+        title="Arene PVP" emoji="⚔️" titleColor="text-cyan-400"
+        rightElement={<button onClick={() => { setPhase('rankings'); loadRankings(); }} className="text-xs text-amber-400 hover:text-amber-300">{'\uD83C\uDFC6'} Rang</button>}
+      />
 
-        {/* Stats bar */}
-        <div className="flex justify-center gap-4 text-xs text-gray-400 mb-4">
-          <span>Rating: <span className="text-cyan-400 font-bold">{pvpData.pvpStats.rating}</span></span>
-          <span>{'\u2705'} {pvpData.pvpStats.wins}W</span>
-          <span>{'\u274C'} {pvpData.pvpStats.losses}L</span>
-        </div>
+      {/* Stats bar */}
+      <div className="flex justify-center gap-4 text-xs text-gray-400 mb-4">
+        <span>Rating: <span className="text-cyan-400 font-bold">{pvpData.pvpStats.rating}</span></span>
+        <span>{'\u2705'} {pvpData.pvpStats.wins}W</span>
+        <span>{'\u274C'} {pvpData.pvpStats.losses}L</span>
       </div>
 
       {/* ═══ SETUP PHASE ═══ */}

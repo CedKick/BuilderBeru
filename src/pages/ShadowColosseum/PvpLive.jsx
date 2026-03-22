@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isFarming, stopFarm } from '../../utils/offlineFarm';
+import ColosseumHeader from './SharedBattleComponents/ColosseumHeader';
 import { computeTalentBonuses } from './talentTreeData';
 import { computeTalentBonuses2 } from './talentTree2Data';
 import {
@@ -2490,9 +2491,6 @@ export default function PvpLive() {
         );
       })()}
 
-      <Link to="/shadow-colosseum" className="inline-block mt-6 text-xs text-gray-500 hover:text-gray-300 transition">
-        ← Retour au Colosseum
-      </Link>
     </motion.div>
   );
 
@@ -3429,10 +3427,6 @@ export default function PvpLive() {
           >
             🔄 Rejouer
           </motion.button>
-          <Link to="/shadow-colosseum"
-            className="px-6 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold text-sm transition-all">
-            ← Retour
-          </Link>
         </div>
       </motion.div>
     );
@@ -3443,12 +3437,15 @@ export default function PvpLive() {
   // ═══════════════════════════════════════════════════════════════
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-gray-100 px-3 py-4">
+    <div className="min-h-screen bg-[#0f0f1a] text-gray-100 flex flex-col">
+      <ColosseumHeader title="PVP Live" emoji="⚔️" titleColor="text-purple-400" />
+      <div className="px-3">
       {phase === 'lobby' && renderLobby()}
       {phase === 'draft' && renderDraft()}
       {phase === 'equip' && renderEquip()}
       {phase === 'battle' && renderBattle()}
       {phase === 'result' && renderResult()}
+      </div>
     </div>
   );
 }

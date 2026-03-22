@@ -32,6 +32,7 @@ import {
 import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, getAwakeningPassives, HUNTER_SKINS, rollSkinDrop, getHunterSprite, getHunterDropSources, rollUniversalHunterDrops, rollUniversalSetUltimeDrops, refreshHuntersFromDb } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
 import './colosseum-theme.css';
+import ColosseumHeader from './SharedBattleComponents/ColosseumHeader';
 import {
   ARTIFACT_SETS, ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
   ALL_ARTIFACT_SETS, RAID_ARTIFACT_SETS,
@@ -529,7 +530,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, mana: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], archDemonKills: 0, archDemonDropLog: [], lootBoostMs: 0, alkahest: 0, rerollCounts: {} });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, mana: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], archDemonKills: 0, archDemonDropLog: [], bossKills: {}, lootBoostMs: 0, alkahest: 0, rerollCounts: {} });
 
 // Migrations — apply to raw data from localStorage OR cloud
 const migrateData = (d) => {
@@ -562,6 +563,9 @@ const migrateData = (d) => {
   if (!d.zephyrDropLog) d.zephyrDropLog = [];
   if (d.monarchKills === undefined) d.monarchKills = 0;
   if (!d.monarchDropLog) d.monarchDropLog = [];
+  if (d.archDemonKills === undefined) d.archDemonKills = 0;
+  if (!d.archDemonDropLog) d.archDemonDropLog = [];
+  if (!d.bossKills) d.bossKills = {};
   if (d.lootBoostMs === undefined) d.lootBoostMs = 0;
   if (!d.fragments) d.fragments = { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 };
   if (d.fragments && d.fragments.fragment_guldan === undefined) d.fragments.fragment_guldan = 0;
@@ -1052,6 +1056,11 @@ export default function ShadowColosseum() {
       const killField = { ragnarok: 'ragnarokKills', zephyr: 'zephyrKills', supreme_monarch: 'monarchKills', archdemon: 'archDemonKills' }[result.stageId];
       const updated = { ...prev, weaponCollection: wc };
       if (killField) updated[killField] = (prev[killField] || 0) + result.maxBattles;
+      // Generic boss kill tracking for all stages
+      const stageObj = STAGES.find(s => s.id === result.stageId);
+      if (stageObj) {
+        updated.bossKills = { ...(prev.bossKills || {}), [result.stageId]: ((prev.bossKills || {})[result.stageId] || 0) + result.maxBattles };
+      }
       return updated;
     });
     rewards.pointsDeducted = result.pointsDeducted || result.actualMinutes || 0;
@@ -4056,21 +4065,29 @@ export default function ShadowColosseum() {
         const cost = sk.manaCost || 0;
         if (p.mana < cost) return;
       }
+      // Detect skill category from flags (skills use flags, not a .type field)
+      const isHeal = !!(sk.healSelf || sk.healTeam);
+      const isBuff = !!(sk.buffAtk || sk.buffDef);
       // manaScaling: estimate real power for AI scoring (sqrt curve)
-      let score = (sk.manaScaling ? getManaScaledPower(p.mana || 0, sk) : (sk.power || 100)) * (sk.hits || 1);
-      // Prefer finishing blows
-      const estDmg = Math.floor(p.atk * (sk.power || 100) / 100 * (sk.hits || 1));
-      if (estDmg >= e.hp) score += 5000;
-      // Prefer heals when low HP
-      if (sk.type === 'heal' && p.hp < p.maxHp * 0.4) score += 3000;
-      if (sk.type === 'heal' && p.hp >= p.maxHp * 0.7) score -= 2000;
+      // For pure support skills (power: 0), use 0 as base — not 100
+      let score = (sk.manaScaling ? getManaScaledPower(p.mana || 0, sk) : (sk.power || 0)) * (sk.hits || 1);
+      // Prefer finishing blows (only for damaging skills)
+      if (sk.power > 0) {
+        const estDmg = Math.floor(p.atk * sk.power / 100 * (sk.hits || 1));
+        if (estDmg >= e.hp) score += 5000;
+      }
+      // Prefer heals when low HP, penalize when healthy
+      if (isHeal && p.hp < p.maxHp * 0.4) score += 3000;
+      if (isHeal && p.hp >= p.maxHp * 0.7) score -= 2000;
+      // Pure heal at full/near-full HP is nearly useless
+      if (isHeal && !sk.power && p.hp >= p.maxHp * 0.9) score -= 5000;
       // Prefer buffs early
-      if (sk.type === 'buff' && battle.turn <= 2) score += 1500;
-      if (sk.type === 'buff' && battle.turn > 2) score -= 500;
+      if (isBuff && battle.turn <= 2) score += 1500;
+      if (isBuff && battle.turn > 2) score -= 500;
       // Prefer high damage skills when enemy is low
-      if (e.hp < e.maxHp * 0.3) score += (sk.power || 100) * 2;
+      if (e.hp < e.maxHp * 0.3) score += (sk.power || 0) * 2;
       // Penalize expensive mana skills when mana is low
-      if (p.mana < p.maxMana * 0.3 && cost > 0) score -= cost * 10;
+      if (p.mana < p.maxMana * 0.3 && (sk.manaCost || 0) > 0) score -= (sk.manaCost || 0) * 10;
       // Prefer skills off cooldown with high cooldown (use them when available)
       score += (sk.cdMax || 0) * 50;
       if (score > bestScore) { bestScore = score; bestIdx = i; }
@@ -4304,6 +4321,7 @@ export default function ShadowColosseum() {
         monarchDropLog: newMonarchLog,
         archDemonKills: newArchDemonKills,
         archDemonDropLog: newArchDemonLog,
+        bossKills: { ...(prev.bossKills || {}), [stage.id]: ((prev.bossKills || {})[stage.id] || 0) + 1 },
         alkahest: (prev.alkahest || 0) + alkahestDropped,
         weaponCollection: (() => {
           if (!weaponDrop) return prev.weaponCollection;
@@ -4529,153 +4547,177 @@ export default function ShadowColosseum() {
     const wId = data.weapons[id];
     const weapon = wId ? WEAPONS[wId] : null;
     const weaponAwk = wId ? (data.weaponCollection[wId] || 0) : 0;
+    const selData = getChibiData(id);
+    const alloc = data.statPoints[id] || {};
+    const tbDetail = getChibiTalentBonuses(id);
+    const eqBDetail = getChibiEquipBonuses(id);
+    const evStars = getChibiEveilStars(id);
+    const s = statsAtFull(selData.base, selData.growth, getChibiLevel(id).level, alloc, tbDetail, eqBDetail, evStars, data.accountBonuses);
+    const derived = { ...tbDetail };
+    for (const [k, v] of Object.entries(eqBDetail)) { if (v) derived[k] = (derived[k] || 0) + v; }
+    const totalCritDmg = 150 + (derived.critDamage || 0);
+    const derivedLines = [
+      { key: '_critDmgTotal', name: 'CRIT DMG', icon: '\uD83D\uDCA5', color: 'text-orange-400', suffix: '%', value: totalCritDmg },
+      { key: 'physicalDamage', name: 'DMG Physique', icon: '\u2694\uFE0F', color: 'text-red-300', suffix: '%' },
+      { key: 'elementalDamage', name: 'DMG Elem.', icon: '\uD83C\uDF00', color: 'text-purple-300', suffix: '%' },
+      { key: 'fireDamage', name: 'DMG Feu', icon: '\uD83D\uDD25', color: 'text-orange-400', suffix: '%' },
+      { key: 'waterDamage', name: 'DMG Eau', icon: '\uD83D\uDCA7', color: 'text-cyan-400', suffix: '%' },
+      { key: 'shadowDamage', name: 'DMG Ombre', icon: '\uD83C\uDF11', color: 'text-purple-400', suffix: '%' },
+      { key: 'allDamage', name: 'Tous DMG', icon: '\u2728', color: 'text-emerald-400', suffix: '%' },
+      { key: 'bossDamage', name: 'DMG Boss', icon: '\uD83D\uDC1C', color: 'text-red-400', suffix: '%' },
+      { key: 'defPen', name: 'DEF PEN', icon: '\uD83D\uDDE1\uFE0F', color: 'text-yellow-300', suffix: '%' },
+      { key: 'healBonus', name: 'Soins', icon: '\uD83D\uDC9A', color: 'text-green-400', suffix: '%' },
+      { key: 'cooldownReduction', name: 'Reduc. CD', icon: '\u231B', color: 'text-blue-300', suffix: '' },
+      { key: 'elementalAdvantageBonus', name: 'Avantage Elem.', icon: '\uD83C\uDF1F', color: 'text-yellow-400', suffix: '%' },
+    ].filter(d => d.value !== undefined || (derived[d.key] || 0) > 0);
+
     return (
       <motion.div
         key={`detail-${id}`}
         initial={{ height: 0, opacity: 0 }}
         animate={{ height: 'auto', opacity: 1 }}
         exit={{ height: 0, opacity: 0 }}
-        transition={{ duration: 0.25 }}
+        transition={{ duration: 0.3 }}
         className="col-span-2 overflow-hidden"
         ref={detailPanelRef}
       >
-        <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 mt-2">
-          <div className="flex items-center gap-3 mb-3">
-            <img loading="lazy" src={getSprite(id)} alt="" className="w-14 h-14 object-contain" style={{ filter: RARITY[cd.rarity].glow }} />
-            <div className="flex-1">
-              <div className="text-base font-bold">{cd.name}</div>
-              <div className="text-xs text-gray-400">
-                Lv{getChibiLevel(id).level} {RARITY[cd.rarity].stars} {ELEMENTS[cd.element].icon}
-                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter{HUNTERS[id].class ? ` - ${HUNTERS[id].class}` : ''}]</span>}
+        <div className="mt-2 rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/15 via-[#12122a] to-indigo-900/15 overflow-hidden shadow-xl shadow-purple-900/10">
+          <div className="flex items-stretch">
+            {/* Left: Big Sprite */}
+            <div className="w-32 flex-shrink-0 flex flex-col items-center justify-center py-4 px-2 bg-gradient-to-b from-purple-900/30 to-transparent border-r border-purple-500/10">
+              <img loading="lazy" src={getSprite(id)} alt="" className="w-20 h-20 object-contain drop-shadow-[0_0_16px_rgba(168,85,247,0.4)]" style={{ filter: RARITY[cd.rarity].glow }} />
+              <div className="text-center mt-2">
+                <div className="text-base font-black text-white leading-tight">{cd.name}</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">
+                  Lv{getChibiLevel(id).level} {RARITY[cd.rarity].stars} {ELEMENTS[cd.element].icon}
+                </div>
+                {HUNTERS[id] && (() => {
+                  const _es = getChibiEveilStars(id);
+                  return _es > 0 ? <div className="text-yellow-400 font-bold text-sm mt-0.5">A{_es}</div> : null;
+                })()}
               </div>
-              {HUNTERS[id] && (() => {
-                const _es = getChibiEveilStars(id);
-                return _es > 0 ? (
-                  <div className="text-normal-responsive mt-0.5">
-                    <span className="text-yellow-400 font-bold">A{_es}</span>
-                  </div>
-                ) : null;
-              })()}
+              {weapon && (
+                <div className="flex flex-col items-center gap-0.5 mt-2 px-2 py-1 rounded-lg bg-gray-800/50 border border-amber-500/20">
+                  {weapon.sprite ? (
+                    <img loading="lazy" src={weapon.sprite} alt={weapon.name} className="w-7 h-7 object-contain drop-shadow-[0_0_4px_rgba(251,191,36,0.3)]" draggable={false} />
+                  ) : (
+                    <span className="text-lg">{weapon.icon}</span>
+                  )}
+                  <div className="text-[8px] text-amber-400 font-bold">A{weaponAwk}</div>
+                </div>
+              )}
             </div>
-            {/* Equipped Weapon */}
-            {weapon && (
-              <div className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg bg-gray-800/40 border border-gray-700/30">
-                {weapon.sprite ? (
-                  <img loading="lazy" src={weapon.sprite} alt={weapon.name} className="w-10 h-10 object-contain drop-shadow-[0_0_4px_rgba(251,191,36,0.3)]" draggable={false} />
-                ) : (
-                  <span className="text-2xl">{weapon.icon}</span>
-                )}
-                <div className="text-small-responsive text-amber-400 font-bold">A{weaponAwk}</div>
-              </div>
-            )}
-          </div>
-          {/* 6 Stats + Derived */}
-          {(() => {
-            const selData = getChibiData(id);
-            const alloc = data.statPoints[id] || {};
-            const tbDetail = getChibiTalentBonuses(id);
-            const eqBDetail = getChibiEquipBonuses(id);
-            const evStars = getChibiEveilStars(id);
-            const s = statsAtFull(selData.base, selData.growth, getChibiLevel(id).level, alloc, tbDetail, eqBDetail, evStars, data.accountBonuses);
-            const derived = { ...tbDetail };
-            for (const [k, v] of Object.entries(eqBDetail)) { if (v) derived[k] = (derived[k] || 0) + v; }
-            const totalCritDmg = 150 + (derived.critDamage || 0);
-            const derivedLines = [
-              { key: '_critDmgTotal', name: 'CRIT DMG', icon: '\uD83D\uDCA5', color: 'text-orange-400', suffix: '%', value: totalCritDmg },
-              { key: 'physicalDamage', name: 'DMG Physique', icon: '\u2694\uFE0F', color: 'text-red-300', suffix: '%' },
-              { key: 'elementalDamage', name: 'DMG Elementaire', icon: '\uD83C\uDF00', color: 'text-purple-300', suffix: '%' },
-              { key: 'fireDamage', name: 'DMG Feu', icon: '\uD83D\uDD25', color: 'text-orange-400', suffix: '%' },
-              { key: 'waterDamage', name: 'DMG Eau', icon: '\uD83D\uDCA7', color: 'text-cyan-400', suffix: '%' },
-              { key: 'shadowDamage', name: 'DMG Ombre', icon: '\uD83C\uDF11', color: 'text-purple-400', suffix: '%' },
-              { key: 'allDamage', name: 'Tous DMG', icon: '\u2728', color: 'text-emerald-400', suffix: '%' },
-              { key: 'bossDamage', name: 'DMG Boss', icon: '\uD83D\uDC1C', color: 'text-red-400', suffix: '%' },
-              { key: 'defPen', name: 'DEF PEN', icon: '\uD83D\uDDE1\uFE0F', color: 'text-yellow-300', suffix: '%' },
-              { key: 'healBonus', name: 'Soins', icon: '\uD83D\uDC9A', color: 'text-green-400', suffix: '%' },
-              { key: 'cooldownReduction', name: 'Reduc. CD', icon: '\u231B', color: 'text-blue-300', suffix: '' },
-              { key: 'elementalAdvantageBonus', name: 'Avantage Elem.', icon: '\uD83C\uDF1F', color: 'text-yellow-400', suffix: '%' },
-            ].filter(d => d.value !== undefined || (derived[d.key] || 0) > 0);
-            return (
-              <>
-                <div className="grid grid-cols-3 gap-1.5 mb-2">
-                  {STAT_ORDER.map(stat => {
-                    const isPct = stat === 'crit' || stat === 'res';
-                    const m = STAT_META[stat];
-                    return (
-                      <div key={stat} className="relative">
-                        <div className="flex items-center gap-1.5 bg-gray-800/30 rounded-md px-2 py-1.5 cursor-pointer"
-                          onClick={() => setStatTooltip(statTooltip === stat ? null : stat)}>
-                          <span className="text-xs">{m.icon}</span>
-                          <span className={`text-medium-responsive font-bold ${m.color}`}>{m.name}</span>
-                          {m.detail && <span className="text-tiny-responsive text-gray-600 hover:text-purple-400">?</span>}
-                          <span className="text-xs text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
+
+            {/* Center: Stats + Info */}
+            <div className="flex-1 p-3 min-w-0">
+              {/* 6 Core Stats */}
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {STAT_ORDER.map(stat => {
+                  const isPct = stat === 'crit' || stat === 'res';
+                  const m = STAT_META[stat];
+                  return (
+                    <div key={stat} className="relative">
+                      <div className="flex items-center justify-between bg-gray-800/40 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-700/40 transition-colors border border-gray-700/20"
+                        onClick={() => setStatTooltip(statTooltip === stat ? null : stat)}>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">{m.icon}</span>
+                          <span className={`text-xs font-bold ${m.color}`}>{m.name}</span>
+                          {m.detail && <span className="text-[9px] text-gray-600">?</span>}
                         </div>
-                        {statTooltip === stat && m.detail && (
-                          <div className="absolute z-20 left-0 right-0 mt-0.5 p-2 rounded-lg bg-[--col-surface-alt] border border-purple-500/30 text-normal-responsive text-purple-200 leading-relaxed shadow-xl">{m.detail}</div>
-                        )}
+                        <span className="text-sm text-white font-black">{s[stat]}{isPct ? '%' : ''}</span>
                       </div>
-                    );
-                  })}
-                </div>
-                {/* MANA — read-only derived pool */}
-                <div className="flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/15 rounded-md px-2 py-1.5 mb-2">
-                  <span className="text-xs">{'\uD83D\uDD2E'}</span>
-                  <span className="text-medium-responsive font-bold text-blue-400">MANA</span>
-                  <span className="text-xs text-white ml-auto font-bold">{s.mana}</span>
-                </div>
-                {derivedLines.length > 0 && (
-                  <div className="grid grid-cols-2 gap-1 mb-3">
-                    {derivedLines.map(d => (
-                      <div key={d.key} className="flex items-center gap-1 bg-gray-800/20 rounded-md px-2 py-1">
-                        <span className="text-medium-responsive">{d.icon}</span>
-                        <span className={`text-normal-responsive ${d.color}`}>{d.name}</span>
-                        <span className={`text-medium-responsive ml-auto font-bold ${d.color}`}>{d.value !== undefined ? d.value : `+${derived[d.key]}`}{d.suffix}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            );
-          })()}
-          {/* Hunter Passive */}
-          {HUNTERS[id]?.passiveDesc && (
-            <div className="mb-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/15">
-              <div className="flex items-start gap-2">
-                <span className="text-sm mt-0.5">{'\u26A1'}</span>
-                <div className="flex-1">
-                  <div className="text-[10px] text-amber-400/80 font-bold uppercase tracking-wider mb-0.5">Passif</div>
-                  <div className="text-xs text-gray-300 leading-relaxed">{HUNTERS[id].passiveDesc}</div>
-                </div>
+                      {statTooltip === stat && m.detail && (
+                        <div className="absolute z-20 left-0 right-0 mt-0.5 p-2 rounded-lg bg-[--col-surface-alt] border border-purple-500/30 text-normal-responsive text-purple-200 leading-relaxed shadow-xl">{m.detail}</div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
+
+              {/* INT (mana stat) — visible if exists */}
+              {s.int > 0 && (
+                <div className="flex items-center justify-between bg-indigo-500/8 border border-indigo-500/15 rounded-lg px-3 py-2 mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">{'\uD83E\uDDE0'}</span>
+                    <span className="text-xs font-bold text-indigo-400">INT</span>
+                  </div>
+                  <span className="text-sm text-white font-black">{s.int}</span>
+                </div>
+              )}
+
+              {/* MANA bar */}
+              <div className="flex items-center justify-between bg-blue-500/8 border border-blue-500/15 rounded-lg px-3 py-2 mb-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">{'\uD83D\uDD2E'}</span>
+                  <span className="text-xs font-bold text-blue-400">MANA</span>
+                </div>
+                <div className="flex-1 mx-3 h-2.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full" style={{ width: '100%' }} />
+                </div>
+                <span className="text-sm text-white font-black">{s.mana}</span>
+              </div>
+
+              {/* Derived Stats */}
+              {derivedLines.length > 0 && (
+                <div className="grid grid-cols-2 gap-1.5 mb-3">
+                  {derivedLines.map(d => (
+                    <div key={d.key} className="flex items-center justify-between bg-gray-800/30 rounded-lg px-2.5 py-1.5 border border-gray-700/15">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs">{d.icon}</span>
+                        <span className={`text-[10px] ${d.color}`}>{d.name}</span>
+                      </div>
+                      <span className={`text-xs font-black ${d.color}`}>{d.value !== undefined ? d.value : `+${derived[d.key]}`}{d.suffix}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Hunter Passive */}
+              {HUNTERS[id]?.passiveDesc && (
+                <div className="mb-3 p-2.5 rounded-lg bg-gradient-to-r from-amber-500/8 to-orange-500/5 border border-amber-500/20">
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm mt-0.5">{'\u26A1'}</span>
+                    <div className="flex-1">
+                      <div className="text-[9px] text-amber-400/80 font-bold uppercase tracking-wider mb-0.5">Passif</div>
+                      <div className="text-xs text-gray-300 leading-relaxed">{HUNTERS[id].passiveDesc}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            <button
-              onClick={(e) => { e.stopPropagation(); goToSubView('stats', id); }}
-              className="flex-1 py-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 text-sm font-bold hover:bg-amber-500/20 transition-colors"
-            >
-              {'\uD83D\uDCCA'} Stats {getAvailStatPts(id) > 0 && <span className="ml-1 px-1 rounded bg-amber-500/30 text-normal-responsive">{getAvailStatPts(id)}</span>}
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); goToSubView('skilltree', id); }}
-              className="flex-1 py-2.5 rounded-lg border border-purple-500/40 bg-purple-500/10 text-purple-400 text-sm font-bold hover:bg-purple-500/20 transition-colors"
-            >
-              {'\uD83C\uDF33'} Skills {getAvailSP(id) > 0 && <span className="ml-1 px-1 rounded bg-purple-500/30 text-normal-responsive">{getAvailSP(id)}</span>}
-            </button>
-            {getChibiLevel(id).level >= 10 && (
+
+            {/* Right: Action Buttons — Vertical */}
+            <div className="w-24 flex-shrink-0 flex flex-col gap-1.5 p-2 bg-gray-900/30 border-l border-gray-700/20 justify-center">
               <button
-                onClick={(e) => { e.stopPropagation(); goToSubView('talents', id); }}
-                className="flex-1 py-2.5 rounded-lg border border-green-500/40 bg-green-500/10 text-green-400 text-sm font-bold hover:bg-green-500/20 transition-colors"
+                onClick={(e) => { e.stopPropagation(); goToSubView('stats', id); }}
+                className="py-2.5 rounded-lg border border-amber-500/30 bg-amber-500/8 text-amber-400 text-[10px] font-bold hover:bg-amber-500/20 transition-all text-center leading-tight"
               >
-                {'\u2728'} Talents {getAvailTalentPts(id) > 0 && <span className="ml-1 px-1 rounded bg-green-500/30 text-normal-responsive">{getAvailTalentPts(id)}</span>}
+                {'\uD83D\uDCCA'} Stats
+                {getAvailStatPts(id) > 0 && <div className="mt-0.5"><span className="px-1.5 py-0.5 rounded-full bg-amber-500/30 text-[9px]">{getAvailStatPts(id)}</span></div>}
               </button>
-            )}
-            <button
-              onClick={(e) => { e.stopPropagation(); goToSubView('equipment', id); }}
-              className="flex-1 py-2.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-400 text-sm font-bold hover:bg-cyan-500/20 transition-colors"
-            >
-              {'\uD83D\uDEE1\uFE0F'} Equip
-            </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); goToSubView('skilltree', id); }}
+                className="py-2.5 rounded-lg border border-purple-500/30 bg-purple-500/8 text-purple-400 text-[10px] font-bold hover:bg-purple-500/20 transition-all text-center leading-tight"
+              >
+                {'\uD83C\uDF33'} Skills
+                {getAvailSP(id) > 0 && <div className="mt-0.5"><span className="px-1.5 py-0.5 rounded-full bg-purple-500/30 text-[9px]">{getAvailSP(id)}</span></div>}
+              </button>
+              {getChibiLevel(id).level >= 10 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); goToSubView('talents', id); }}
+                  className="py-2.5 rounded-lg border border-green-500/30 bg-green-500/8 text-green-400 text-[10px] font-bold hover:bg-green-500/20 transition-all text-center leading-tight"
+                >
+                  {'\u2728'} Talents
+                  {getAvailTalentPts(id) > 0 && <div className="mt-0.5"><span className="px-1.5 py-0.5 rounded-full bg-green-500/30 text-[9px]">{getAvailTalentPts(id)}</span></div>}
+                </button>
+              )}
+              <button
+                onClick={(e) => { e.stopPropagation(); goToSubView('equipment', id); }}
+                className="py-2.5 rounded-lg border border-cyan-500/30 bg-cyan-500/8 text-cyan-400 text-[10px] font-bold hover:bg-cyan-500/20 transition-all text-center leading-tight"
+              >
+                {'\uD83D\uDEE1\uFE0F'} Equip
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -4762,13 +4804,9 @@ export default function ShadowColosseum() {
 
       {/* ═══ PVE MULTI VIEW ═══ */}
       {view === 'pve_multi' && (
-        <div className="max-w-3xl mx-auto px-3 sm:px-4 pt-4 pb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <button onClick={() => setView('hub')} className="text-gray-400 hover:text-white text-sm">&larr; Retour</button>
-            <h2 className="text-lg font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-              {'\uD83D\uDC09'} Mode PVE Multi
-            </h2>
-          </div>
+        <div>
+          <ColosseumHeader title="Mode PVE Multi" emoji={'\uD83D\uDC09'} titleColor="text-emerald-400" onBack={() => setView('hub')} />
+          <div className="max-w-3xl mx-auto px-3 sm:px-4 pb-16">
           <p className="text-sm text-gray-400 mb-6 text-center">
             Choisis un boss et rejoins ou cree une partie multijoueur en temps reel !
           </p>
@@ -4796,26 +4834,6 @@ export default function ShadowColosseum() {
                   </div>
                 </div>
                 <div className="text-gray-500 group-hover:text-emerald-400 text-xl transition-colors">{'\u2192'}</div>
-              </div>
-            </Link>
-
-            {/* Ragnaros — Boss 2 */}
-            <Link
-              to="/shadow-colosseum/ragnaros"
-              className="block p-4 rounded-xl border border-orange-500/30 bg-gradient-to-r from-orange-900/20 to-red-900/20 hover:from-orange-900/40 hover:to-red-900/40 transition-all group cursor-pointer"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-orange-900/40 to-red-900/40 border border-orange-500/30 flex items-center justify-center text-3xl flex-shrink-0">
-                  {'\uD83D\uDD25'}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-orange-400 text-base group-hover:text-orange-300">Ragnaros</span>
-                    <span className="text-small-responsive px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 font-bold">BETA</span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">By Fire Be Purged! — Jusqu'a 10 joueurs</p>
-                </div>
-                <div className="text-gray-500 group-hover:text-orange-400 text-xl transition-colors">{'\u2192'}</div>
               </div>
             </Link>
 
@@ -4886,7 +4904,6 @@ export default function ShadowColosseum() {
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedCustomBoss(boss);
-                            setShowCustomBossPicker(false);
                           }}
                           className={`w-full text-left px-4 py-3 hover:bg-violet-500/10 transition-colors flex items-center gap-3 ${
                             selectedCustomBoss?.boss_id === boss.boss_id ? 'bg-violet-500/15' : ''
@@ -5444,6 +5461,7 @@ export default function ShadowColosseum() {
               </div>
             );
           })()}
+          </div>
         </div>
       )}
 
@@ -5869,10 +5887,12 @@ export default function ShadowColosseum() {
                             </div>
                           )}
                         </div>
-                        <div className="mt-1.5 grid grid-cols-2 sm:grid-cols-3 gap-x-2 sm:gap-x-3 gap-y-0.5 text-normal-responsive text-gray-400">
-                          <span title={`PV: ${fmtExact(s.hp)}`}>PV:{fmtStat(s.hp)}</span><span title={`ATK: ${fmtExact(s.atk)}`}>ATK:{fmtStat(s.atk)}</span><span title={`DEF: ${fmtExact(s.def)}`}>DEF:{fmtStat(s.def)}</span>
-                          <span title={`SPD: ${fmtExact(s.spd)}`}>SPD:{fmtStat(s.spd)}</span><span title={`CRT: ${fmtExact(s.crit)}%`}>CRT:{fmtStat(s.crit)}%</span><span title={`RES: ${fmtExact(s.res)}%`}>RES:{fmtStat(s.res)}%</span>
-                        </div>
+                        {!selected && (
+                          <div className="mt-1.5 grid grid-cols-2 sm:grid-cols-3 gap-x-2 sm:gap-x-3 gap-y-0.5 text-normal-responsive text-gray-400">
+                            <span title={`PV: ${fmtExact(s.hp)}`}>PV:{fmtStat(s.hp)}</span><span title={`ATK: ${fmtExact(s.atk)}`}>ATK:{fmtStat(s.atk)}</span><span title={`DEF: ${fmtExact(s.def)}`}>DEF:{fmtStat(s.def)}</span>
+                            <span title={`SPD: ${fmtExact(s.spd)}`}>SPD:{fmtStat(s.spd)}</span><span title={`CRT: ${fmtExact(s.crit)}%`}>CRT:{fmtStat(s.crit)}%</span><span title={`RES: ${fmtExact(s.res)}%`}>RES:{fmtStat(s.res)}%</span>
+                          </div>
+                        )}
                         {level < MAX_LEVEL && (
                           <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
                             <div className="h-full bg-blue-500/60 rounded-full" style={{ width: `${(xp / xpForLevel(level)) * 100}%` }} />
@@ -6153,6 +6173,16 @@ export default function ShadowColosseum() {
                               <span className="text-normal-responsive bg-purple-500/20 text-purple-300 px-1.5 rounded cursor-pointer hover:bg-purple-500/40 transition-colors"
                                 onClick={(e) => { e.stopPropagation(); setMonarchHistoryOpen(true); }}>
                                 {'\u2620\uFE0F'}{data.monarchKills} kills
+                              </span>
+                            )}
+                            {stage.id === 'archdemon' && (data.archDemonKills || 0) > 0 && (
+                              <span className="text-normal-responsive bg-green-500/20 text-green-300 px-1.5 rounded">
+                                {'\u2620\uFE0F'}{data.archDemonKills} kills
+                              </span>
+                            )}
+                            {!['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'].includes(stage.id) && ((data.bossKills || {})[stage.id] || 0) > 0 && (
+                              <span className="text-normal-responsive bg-gray-500/20 text-gray-300 px-1.5 rounded">
+                                {'\u2620\uFE0F'}{(data.bossKills || {})[stage.id]} kills
                               </span>
                             )}
                             {data.lootBoostMs > 0 && LOOT_BOOST_BOSSES.includes(stage.id) && (
@@ -7683,9 +7713,9 @@ export default function ShadowColosseum() {
             )}
             <button
               onClick={() => { setView('hub'); setData(prev => { const d = { ...prev }; delete d._arc2Result; return d; }); setActiveArc(2); }}
-              className="mt-6 px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform"
+              className="mt-6 flex items-center gap-2 text-gray-400 hover:text-purple-400 transition-colors text-sm"
             >
-              {'\u2190'} Retour au Colisee
+              ← Retour
             </button>
           </div>
         );
@@ -7810,7 +7840,7 @@ export default function ShadowColosseum() {
                       )}
                       {/* Allocation bar */}
                       <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full transition-all duration-300 ${m.color.replace('text-', 'bg-')}`}
+                        <div className={`h-full rounded-full transition-all duration-300 ${m.bgColor}`}
                           style={{ width: `${Math.min(100, (allocated / 30) * 100)}%`, opacity: 0.6 }} />
                       </div>
                     </div>
@@ -9505,7 +9535,7 @@ export default function ShadowColosseum() {
                             </div>
                           );
                         })}
-                        {eqIsMilestone && <div className="text-small-responsive text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{eqArt.level + 1} — Boost sub-stat !</div>}
+                        <div className={`text-small-responsive mt-1 font-bold ${eqIsMilestone ? 'text-amber-400' : 'invisible'}`}>{'\u2B50'} Palier Lv{eqArt.level + 1} — Boost sub-stat !</div>
                       </div>
 
                       {/* Actions */}
@@ -11305,7 +11335,7 @@ export default function ShadowColosseum() {
                   </div>
                 );
               })}
-              {isMilestone && <div className="text-small-responsive text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{selArt.level + 1} — Boost sub-stat !</div>}
+              <div className={`text-small-responsive mt-1 font-bold ${isMilestone ? 'text-amber-400' : 'invisible'}`}>{'\u2B50'} Palier Lv{selArt.level + 1} — Boost sub-stat !</div>
             </div>
 
             {/* Actions */}
@@ -12654,9 +12684,9 @@ export default function ShadowColosseum() {
             )}
             <button
               onClick={() => { setAutoReplay(false); setView('hub'); setBattle(null); setResult(null); }}
-              className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform"
+              className="flex items-center gap-2 text-gray-400 hover:text-purple-400 transition-colors text-sm"
             >
-              Retour au Colisee
+              ← Retour
             </button>
           </div>
         </div>
@@ -13485,12 +13515,14 @@ export default function ShadowColosseum() {
         </div>
       )}
 
-      {/* ═══ TUTORIAL BUTTON (top-right) ═══ */}
-      <button
-        onClick={() => setShowTutorial(true)}
-        className="fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 border-2 border-indigo-400/50 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
-        title="Comment jouer ?"
-      >?</button>
+      {/* ═══ TUTORIAL BUTTON (top-right) — hidden when pve_multi has its own via ColosseumHeader ═══ */}
+      {view !== 'pve_multi' && (
+        <button
+          onClick={() => setShowTutorial(true)}
+          className="fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 border-2 border-indigo-400/50 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
+          title="Comment jouer ?"
+        >?</button>
+      )}
 
       {/* ═══ ADMIN BUTTON (Kly only) ═══ */}
       {getAuthUser()?.username?.toLowerCase() === 'kly' && (
@@ -13924,7 +13956,7 @@ export default function ShadowColosseum() {
 
       {/* Floating scroll arrows + shortcuts — only on hub view */}
       {view === 'hub' && createPortal(
-        <div className="col-elevator" style={{ position: 'fixed', right: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 99999, pointerEvents: 'auto' }}>
+        <div className="col-elevator" style={{ position: 'fixed', right: 'calc(50% - 530px)', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 99999, pointerEvents: 'auto' }}>
           {/* Up arrow */}
           <button
             onClick={() => { if (!scrollAtTop) { _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 20000); const isTroll = _shortcutClickCount >= 3 && Math.random() < 0.6; elevatorScroll(0, 900, isTroll); const p = isTroll ? randomPick(BERU_SHORTCUT_PHRASES.troll) : _shortcutClickCount >= 3 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SCROLL_PHRASES); beruSay(p.msg, p.mood); } }}

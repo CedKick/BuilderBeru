@@ -16,7 +16,6 @@ const AdminValidationPage = ({
   currentWeapon = {},
   characters = {},
   onNavigateToBuilder,
-  onShowHallOfFlame,
   adminToken
 }) => {
   const [pendingHunters, setPendingHunters] = useState([]);
@@ -876,13 +875,6 @@ const loadAdminStats = async () => {
             </div>
 
             <div className={`flex items-center gap-3 ${isMobileDevice ? 'mobile-stack' : ''}`}>
-              <button
-                onClick={() => onShowHallOfFlame && onShowHallOfFlame()}
-                className={`px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 rounded-lg transition-colors text-sm ${isMobileDevice ? 'mobile-full-width' : ''}`}
-              >
-                🏆 Hall Of Flame
-              </button>
-              
               <button
                 onClick={onClose}
                 className={`rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors ${isMobileDevice ? 'w-8 h-8' : 'w-10 h-10'}`}

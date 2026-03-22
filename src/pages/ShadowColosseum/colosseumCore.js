@@ -55,13 +55,13 @@ export const RARITY = {
 export const STAT_PER_POINT = { hp: 16, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8, mana: 1.5 };
 export const STAT_ORDER = ['hp', 'atk', 'def', 'spd', 'crit', 'res', 'mana'];
 export const STAT_META = {
-  hp:   { name: 'PV',   icon: '\u2764\uFE0F', color: 'text-green-400',   desc: 'Points de Vie', detail: 'Determine la survie du combattant. +16 PV par point investi (le stat defensif le plus fiable — pas de rendements degressifs ni de cap). A 0 PV, le combattant est K.O.' },
-  atk:  { name: 'ATK',  icon: '\u2694\uFE0F', color: 'text-red-400',     desc: "Puissance d'attaque", detail: 'Augmente les degats infliges. Formule : ATK x (Power du skill / 100). Multiplie par les bonus elementaires, crit, etc.' },
-  def:  { name: 'DEF',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-blue-400', desc: 'Resistance physique', detail: 'Reduit les degats recus. Formule : 100 / (100 + DEF). Ex: 100 DEF = -50% degats, 200 DEF = -66%.' },
-  spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse', detail: 'Determine l\'ordre des tours et la vitesse d\'attaque. Rendements degressifs : 0-100 plein effet, 100-200 demi-effet, 200+ quart. Tours bonus : SPD >= 2x ennemi = +1 tour, >= 3x = +2 (max). Regen mana : +1/15 SPD (cap +10).' },
-  crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique', detail: 'Chance en % d\'infliger un coup critique (x1.5 degats de base + bonus CRIT DMG). Rendements degressifs : 50→39%, 100→61%, 150→75%, 200→85%. La RES ennemie reduit le crit (aussi en degressif).' },
-  res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Resistance elementaire + anti-crit', detail: 'Double usage avec rendements degressifs : (1) Reduit les degats recus (50→35%, 100→55%, cap 70%). (2) Reduit le crit rate ennemi (50→18%, 100→29%, 200→41%). Stacker au-dela de ~100 est moins efficace — diversifier avec HP/DEF.' },
-  mana: { name: 'INT', icon: '\uD83E\uDDE0', color: 'text-violet-400',  desc: 'Intelligence', detail: 'Intelligence du combattant. Augmente le pool de Mana (+1.5 mana/pt). Les mages utilisent Mana x1.2 comme puissance d\'attaque, supports x0.8. Skills mana-scaling : bonus avec rendements degressifs (racine carree). Soins : +1% par 10 Mana. Regen : 5/tick + SPD/15 (cap +10).' },
+  hp:   { name: 'PV',   icon: '\u2764\uFE0F', color: 'text-green-400',   bgColor: 'bg-green-400',   desc: 'Points de Vie', detail: 'Determine la survie du combattant. +16 PV par point investi (le stat defensif le plus fiable — pas de rendements degressifs ni de cap). A 0 PV, le combattant est K.O.' },
+  atk:  { name: 'ATK',  icon: '\u2694\uFE0F', color: 'text-red-400',     bgColor: 'bg-red-400',     desc: "Puissance d'attaque", detail: 'Augmente les degats infliges. Formule : ATK x (Power du skill / 100). Multiplie par les bonus elementaires, crit, etc.' },
+  def:  { name: 'DEF',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-blue-400', bgColor: 'bg-blue-400', desc: 'Resistance physique', detail: 'Reduit les degats recus. Formule : 100 / (100 + DEF). Ex: 100 DEF = -50% degats, 200 DEF = -66%.' },
+  spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', bgColor: 'bg-emerald-400', desc: 'Vitesse', detail: 'Determine l\'ordre des tours et la vitesse d\'attaque. Rendements degressifs : 0-100 plein effet, 100-200 demi-effet, 200+ quart. Tours bonus : SPD >= 2x ennemi = +1 tour, >= 3x = +2 (max). Regen mana : +1/15 SPD (cap +10).' },
+  crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', bgColor: 'bg-yellow-400', desc: 'Chance de coup critique', detail: 'Chance en % d\'infliger un coup critique (x1.5 degats de base + bonus CRIT DMG). Rendements degressifs : 50→39%, 100→61%, 150→75%, 200→85%. La RES ennemie reduit le crit (aussi en degressif).' },
+  res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    bgColor: 'bg-cyan-400',    desc: 'Resistance elementaire + anti-crit', detail: 'Double usage avec rendements degressifs : (1) Reduit les degats recus (50→35%, 100→55%, cap 70%). (2) Reduit le crit rate ennemi (50→18%, 100→29%, 200→41%). Stacker au-dela de ~100 est moins efficace — diversifier avec HP/DEF.' },
+  mana: { name: 'INT', icon: '\uD83E\uDDE0', color: 'text-violet-400',  bgColor: 'bg-violet-400',  desc: 'Intelligence', detail: 'Intelligence du combattant. Augmente le pool de Mana (+1.5 mana/pt). Les mages utilisent Mana x1.2 comme puissance d\'attaque, supports x0.8. Skills mana-scaling : bonus avec rendements degressifs (racine carree). Soins : +1% par 10 Mana. Regen : 5/tick + SPD/15 (cap +10).' },
 };
 
 // ─── Mana System ────────────────────────────────────────────
@@ -599,6 +599,8 @@ export const aiPickSkill = (entity) => {
   }
   const attacks = avail.filter(s => s.power > 0).sort((a, b) => b.power - a.power);
   if (attacks.length > 0 && Math.random() < 0.7) return attacks[0];
+  // Fallback: prefer any attack over pure heals/buffs at high HP
+  if (attacks.length > 0) return attacks[Math.floor(Math.random() * attacks.length)];
   return avail[Math.floor(Math.random() * avail.length)] || entity.skills[0];
 };
 

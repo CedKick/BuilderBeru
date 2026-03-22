@@ -130,13 +130,6 @@ export default function BuilderMenu({ isOpen, onClose }) {
       title: 'Meta & Guides',
       items: [
         {
-          path: '/hall-of-flame',
-          label: t('home.menu.hallOfFlame'),
-          icon: Trophy,
-          color: 'yellow',
-          isSpecial: true
-        },
-        {
           path: '/theorycraft',
           label: 'Theorycraft',
           icon: Zap,

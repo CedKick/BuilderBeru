@@ -6,6 +6,9 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0f0f1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+    /* Hide all scrollbars */
+    ::-webkit-scrollbar { width: 0; height: 0; }
+    * { scrollbar-width: none; }
     #app { position: relative; height: 100vh; }
     #game { width: 100%; height: 100%; position: relative; }
 
@@ -18,10 +21,17 @@
     }
     .lobby-panel {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
-      border: 1px solid #2a2a4e; border-radius: 16px; padding: 24px 28px;
-      width: 780px; max-height: 90vh; overflow-y: auto;
+      border: 1px solid #2a2a4e; border-radius: 16px; padding: 20px 24px;
+      width: 860px; max-height: 95vh; overflow-y: auto;
       box-shadow: 0 0 60px rgba(124,58,237,0.15), 0 0 120px rgba(0,0,0,0.5);
     }
+    /* Lobby tab system */
+    .lobby-tabs { display: flex; gap: 2px; margin: 10px 0 8px; background: #111; border-radius: 8px; padding: 3px; }
+    .lobby-tab { flex: 1; padding: 8px 4px; text-align: center; font-size: 11px; font-weight: 700; color: #666; background: transparent; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+    .lobby-tab:hover { color: #aaa; background: rgba(255,255,255,0.05); }
+    .lobby-tab.active { color: #fff; background: #7c3aed; box-shadow: 0 0 12px rgba(124,58,237,0.4); }
+    .lobby-tab-content { display: none; }
+    .lobby-tab-content.active { display: block; }
     .lobby-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .lobby-grid-2col > .lobby-section { margin-bottom: 0; }
     .lobby-header { text-align: center; margin-bottom: 16px; }
@@ -392,116 +402,121 @@
         </div>
         <div id="roomPlayers" class="room-players" style="text-align:center;margin-bottom:8px"></div>
 
-        <!-- 2-column: Connection + Room -->
+        <!-- Connexion + Salle (always visible, compact) -->
         <div class="lobby-grid-2col">
-          <!-- Connection -->
           <div class="lobby-section" id="connectionSection">
             <h3><span class="section-icon">🌐</span> Connexion</h3>
-            <div class="lobby-hint">Choisis ton pseudo puis connecte-toi au serveur.</div>
             <input id="username" type="hidden" value="Player1" />
-            <input id="usernameVisible" placeholder="Ton pseudo..." value="Player1" oninput="document.getElementById('username').value=this.value" style="font-size:13px;padding:6px 10px" />
-            <button onclick="connect()" id="btnConnect" style="width:100%;padding:8px;font-size:12px;margin-top:4px">Se connecter</button>
+            <input id="usernameVisible" placeholder="Ton pseudo..." value="Player1" oninput="document.getElementById('username').value=this.value" style="font-size:13px;padding:8px 12px" />
+            <button onclick="connect()" id="btnConnect" style="width:100%;padding:10px;font-size:13px;margin-top:6px;font-weight:bold">Se connecter</button>
           </div>
-
-          <!-- Room -->
           <div class="lobby-section" id="roomSection">
             <h3><span class="section-icon">🚪</span> Salle</h3>
-            <div class="lobby-hint">Cree ou rejoins une salle. Partage le code a tes amis !</div>
             <div class="inline-row">
-              <button onclick="createRoom()" id="btnCreate" disabled style="flex:1;padding:6px">Creer</button>
-              <input id="roomCode" placeholder="Code..." style="width:90px;text-align:center;font-size:12px" />
-              <button onclick="joinRoom()" id="btnJoin" disabled style="flex:1;padding:6px">Rejoindre</button>
+              <button onclick="createRoom()" id="btnCreate" disabled style="flex:1;padding:8px;font-size:12px">Creer</button>
+              <input id="roomCode" placeholder="Code..." style="width:90px;text-align:center;font-size:12px;padding:8px" />
+              <button onclick="joinRoom()" id="btnJoin" disabled style="flex:1;padding:8px;font-size:12px">Rejoindre</button>
             </div>
-            <button onclick="refreshRoomList()" id="btnBrowse" disabled style="width:100%;margin-top:4px;background:#2563eb;padding:6px;font-size:11px">Salles disponibles</button>
-            <div id="roomList" style="margin-top:4px;max-height:100px;overflow-y:auto"></div>
-            <button onclick="startSpectatorMode()" id="btnSpectate" disabled style="width:100%;margin-top:6px;background:#7c3aed;padding:8px;font-size:12px;font-weight:bold;border-radius:6px;color:white;border:1px solid #a78bfa;cursor:pointer">👁️ Spectateur — 5 Bots Auto-Run</button>
+            <button onclick="refreshRoomList()" id="btnBrowse" disabled style="width:100%;margin-top:4px;background:#2563eb;padding:8px;font-size:12px">Salles disponibles</button>
+            <div id="roomList" style="margin-top:4px;max-height:80px;overflow-y:auto"></div>
+            <button onclick="startSpectatorMode()" id="btnSpectate" disabled style="width:100%;margin-top:6px;background:#7c3aed;padding:10px;font-size:13px;font-weight:bold;border-radius:6px;color:white;border:1px solid #a78bfa;cursor:pointer">👁 Spectateur — 5 Bots Auto-Run</button>
           </div>
         </div>
 
-        <!-- 2-column: Class/Difficulty + Hunters -->
-        <div class="lobby-grid-2col" style="margin-top:10px">
-          <!-- Class & Difficulty -->
-          <div class="lobby-section">
-            <h3><span class="section-icon">⚔️</span> Classe & Difficulte</h3>
-            <div class="lobby-hint">
-              <b>Tank</b> — Aggro + protection<br>
-              <b>Healer</b> — Soins + buffs<br>
-              <b>Warrior</b> — DPS corps a corps<br>
-              <b>Archer</b> — DPS a distance<br>
-              <b>Berserker</b> — DPS rage brutal
+        <!-- Tab system for preparation sections -->
+        <div class="lobby-tabs">
+          <button class="lobby-tab active" onclick="switchLobbyTab('combat')">⚔ Combat</button>
+          <button class="lobby-tab" onclick="switchLobbyTab('stats')">📊 Stats</button>
+          <button class="lobby-tab" onclick="switchLobbyTab('gear')">🛡 Equipement</button>
+          <button class="lobby-tab" onclick="switchLobbyTab('forge')">🔥 Forge</button>
+          <button class="lobby-tab" onclick="switchLobbyTab('controls')">🎮 Controles</button>
+        </div>
+
+        <!-- TAB: Combat (Class + Hunters) -->
+        <div id="lobbyTabCombat" class="lobby-tab-content active">
+          <div class="lobby-grid-2col">
+            <div class="lobby-section">
+              <h3><span class="section-icon">⚔️</span> Classe & Difficulte</h3>
+              <select id="classSelect" onchange="selectClass()" style="font-size:13px;padding:8px;width:100%">
+                <option value="">-- Choisis ta classe --</option>
+                <option value="tank">🛡️ Tank — Aggro + protection</option>
+                <option value="healer">💚 Healer — Soins + buffs</option>
+                <option value="dps_cac">🗡️ Warrior — DPS corps a corps</option>
+                <option value="dps_range">🏹 Archer — DPS a distance</option>
+                <option value="berserker">⚔️ Berserker — DPS rage brutal</option>
+                <option value="mage">🔮 Mage — DPS magique</option>
+              </select>
+              <select id="diffSelect" onchange="selectDifficulty()" style="font-size:13px;padding:8px;width:100%;margin-top:6px">
+                <option value="NORMAL">Normal</option>
+                <option value="HARD">Difficile</option>
+                <option value="NIGHTMARE">Cauchemar</option>
+                <option value="NIGHTMARE_PLUS">Cauchemar+</option>
+                <option value="NIGHTMARE_2">Cauchemar++</option>
+                <option value="NIGHTMARE_3">Cauchemar+++</option>
+              </select>
             </div>
-            <select id="classSelect" onchange="selectClass()" style="font-size:12px;padding:5px;width:100%">
-              <option value="">-- Classe --</option>
-              <option value="tank">🛡️ Tank</option>
-              <option value="healer">💚 Healer</option>
-              <option value="dps_cac">🗡️ Warrior</option>
-              <option value="dps_range">🏹 Archer</option>
-              <option value="berserker">⚔️ Berserker</option>
-              <option value="mage">🔮 Mage</option>
-            </select>
-            <select id="diffSelect" onchange="selectDifficulty()" style="font-size:12px;padding:5px;width:100%;margin-top:4px">
-              <option value="NORMAL">Normal</option>
-              <option value="HARD">Difficile</option>
-              <option value="NIGHTMARE">Cauchemar</option>
-              <option value="NIGHTMARE_PLUS">Cauchemar+</option>
-              <option value="NIGHTMARE_2">Cauchemar++</option>
-              <option value="NIGHTMARE_3">Cauchemar+++</option>
-            </select>
-          </div>
-
-          <!-- Hunters -->
-          <div class="lobby-section">
-            <h3><span class="section-icon">👥</span> Chasseurs (3 max)</h3>
-            <div class="lobby-hint">Invoque-les en combat avec <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></div>
-            <div id="hunterSelection" style="max-height:160px;overflow-y:auto;background:#111;border-radius:6px;padding:4px;margin-bottom:4px"></div>
-            <div id="hunterSelected" style="font-size:10px;color:#a78bfa"></div>
-            <input id="hunterLevel" type="hidden" value="30" />
+            <div class="lobby-section">
+              <h3><span class="section-icon">👥</span> Chasseurs (3 max)</h3>
+              <div class="lobby-hint">Invoque-les en combat avec <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></div>
+              <div id="hunterSelection" style="max-height:180px;overflow-y:auto;background:#111;border-radius:6px;padding:4px;margin-bottom:4px"></div>
+              <div id="hunterSelected" style="font-size:10px;color:#a78bfa"></div>
+              <input id="hunterLevel" type="hidden" value="30" />
+            </div>
           </div>
         </div>
 
-        <!-- Stats Panel -->
-        <div id="statsPanel" style="display:none;background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(30,30,60,0.4));border:1px solid #10b98144;border-radius:8px;padding:8px 10px;margin-bottom:6px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <h3 style="color:#10b981;font-size:11px;margin:0">📊 STATS RAID (3 pts/lvl)</h3>
-            <button onclick="resetStatPoints()" style="font-size:8px;padding:2px 6px;background:#ef4444;color:white;border:none;border-radius:3px;cursor:pointer">Reset</button>
+        <!-- TAB: Stats -->
+        <div id="lobbyTabStats" class="lobby-tab-content">
+          <div id="statsPanel" style="background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(30,30,60,0.4));border:1px solid #10b98144;border-radius:8px;padding:10px 12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <h3 style="color:#10b981;font-size:12px;margin:0">📊 STATS RAID (3 pts/lvl)</h3>
+              <button onclick="resetStatPoints()" style="font-size:9px;padding:4px 8px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer">Reset</button>
+            </div>
+            <div id="statPointsRemaining" style="font-size:10px;color:#94a3b8;margin-bottom:6px"></div>
+            <div id="statAllocUI"></div>
           </div>
-          <div id="statPointsRemaining" style="font-size:9px;color:#94a3b8;margin-bottom:4px"></div>
-          <div id="statAllocUI"></div>
         </div>
 
-        <!-- Gear Panel -->
-        <div id="gearPanel" style="display:none;background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(30,30,60,0.4));border:1px solid #3b82f644;border-radius:8px;padding:8px 10px;margin-bottom:6px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <h3 style="color:#3b82f6;font-size:11px;margin:0">🛡️ EQUIPEMENT RAID</h3>
-            <button onclick="openInventory('all')" style="font-size:8px;padding:2px 6px;background:#7c3aed;color:white;border:none;border-radius:3px;cursor:pointer">📦 Inventaire</button>
+        <!-- TAB: Gear -->
+        <div id="lobbyTabGear" class="lobby-tab-content">
+          <div id="gearPanel" style="background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(30,30,60,0.4));border:1px solid #3b82f644;border-radius:8px;padding:10px 12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <h3 style="color:#3b82f6;font-size:12px;margin:0">🛡️ EQUIPEMENT RAID</h3>
+              <button onclick="openInventory('all')" style="font-size:9px;padding:4px 8px;background:#7c3aed;color:white;border:none;border-radius:4px;cursor:pointer">📦 Inventaire</button>
+            </div>
+            <div style="font-size:9px;color:#64748b;margin-bottom:6px">Clique sur un slot pour equiper. Armes et artefacts obtenus en battant Manaya.</div>
+            <div class="gear-weapon" id="gearWeaponSlot" onclick="openInventory('weapon')" style="cursor:pointer"></div>
+            <div class="gear-slots" id="gearSlots"></div>
+            <div class="gear-summary" id="gearSummary"></div>
           </div>
-          <div style="font-size:8px;color:#64748b;margin-bottom:4px">Clique sur un slot pour equiper. Armes et artefacts obtenus en battant Manaya.</div>
-          <div class="gear-weapon" id="gearWeaponSlot" onclick="openInventory('weapon')" style="cursor:pointer"></div>
-          <div class="gear-slots" id="gearSlots"></div>
-          <div class="gear-summary" id="gearSummary"></div>
         </div>
 
-        <!-- Forge Panel -->
-        <div id="forgePanel" style="display:none;background:linear-gradient(135deg,rgba(255,45,85,0.1),rgba(30,30,60,0.4));border:1px solid #ff2d5544;border-radius:8px;padding:8px 10px;margin-bottom:6px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <h3 style="color:#ff2d55;font-size:11px;margin:0">🔥 FORGE DE MANAYA</h3>
-            <span style="font-size:10px;color:#f59e0b">🪶 <span class="feather-num" id="featherCount">0</span> Plumes</span>
+        <!-- TAB: Forge -->
+        <div id="lobbyTabForge" class="lobby-tab-content">
+          <div id="forgePanel" style="background:linear-gradient(135deg,rgba(255,45,85,0.1),rgba(30,30,60,0.4));border:1px solid #ff2d5544;border-radius:8px;padding:10px 12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <h3 style="color:#ff2d55;font-size:12px;margin:0">🔥 FORGE DE MANAYA</h3>
+              <span style="font-size:11px;color:#f59e0b">🪶 <span class="feather-num" id="featherCount">0</span> Plumes</span>
+            </div>
+            <div style="font-size:9px;color:#64748b;margin-bottom:6px">Forge les pieces du Set Legendaire avec des Plumes (drop rare du boss).</div>
+            <div class="forge-grid" id="forgeGrid"></div>
+            <div class="set-bonus-list" id="setBonusList"></div>
           </div>
-          <div style="font-size:8px;color:#64748b;margin-bottom:4px">Forge les pieces du Set Legendaire avec des Plumes (drop rare du boss).</div>
-          <div class="forge-grid" id="forgeGrid"></div>
-          <div class="set-bonus-list" id="setBonusList"></div>
         </div>
 
-        <div class="lobby-divider"></div>
-
-        <!-- Controls Help -->
-        <div class="lobby-controls">
-          <b style="color:#a78bfa;font-size:10px">CONTROLES</b><br>
-          <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> Deplacement &nbsp;|&nbsp; <kbd>Espace</kbd> Esquive &nbsp;|&nbsp; <kbd>Clic G</kbd> Attaque &nbsp;|&nbsp; <kbd>Clic D</kbd> Bloquer<br>
-          <kbd>A</kbd> Skill 1 &nbsp;|&nbsp; <kbd>E</kbd> Skill 2 &nbsp;|&nbsp; <kbd>R</kbd> Ultimate &nbsp;|&nbsp;
-          <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Invoquer Chasseur<br>
-          <span style="color:#10b981">🎮 Manette supportee : Sticks + Boutons</span><br>
-          <span style="color:#f59e0b">Astuce : ATK → Bloquer → ATK = + de DPS</span>
+        <!-- TAB: Controls -->
+        <div id="lobbyTabControls" class="lobby-tab-content">
+          <div class="lobby-section" style="text-align:center;line-height:1.8;font-size:11px">
+            <h3 style="margin-bottom:8px">🎮 Controles</h3>
+            <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> Deplacement &nbsp;|&nbsp; <kbd>Espace</kbd> Esquive<br>
+            <kbd>Clic G</kbd> Attaque &nbsp;|&nbsp; <kbd>Clic D</kbd> Bloquer<br>
+            <kbd>A</kbd> Skill 1 &nbsp;|&nbsp; <kbd>E</kbd> Skill 2 &nbsp;|&nbsp; <kbd>R</kbd> Ultimate<br>
+            <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Invoquer Chasseur<br>
+            <div style="margin-top:8px">
+              <span style="color:#10b981">🎮 Manette supportee</span> &nbsp;|&nbsp;
+              <span style="color:#f59e0b">ATK → Bloquer → ATK = + de DPS</span>
+            </div>
+          </div>
         </div>
 
         <!-- Log (collapsible) -->
@@ -617,6 +632,20 @@
   </div>
 
   <script>
+    // ── Lobby Tab Switcher ──
+    function switchLobbyTab(tab) {
+      const tabs = { combat: 'lobbyTabCombat', stats: 'lobbyTabStats', gear: 'lobbyTabGear', forge: 'lobbyTabForge', controls: 'lobbyTabControls' };
+      // Hide all tab contents
+      Object.values(tabs).forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('active'); });
+      // Deactivate all tab buttons
+      document.querySelectorAll('.lobby-tab').forEach(btn => btn.classList.remove('active'));
+      // Show selected tab
+      const targetEl = document.getElementById(tabs[tab]);
+      if (targetEl) targetEl.classList.add('active');
+      // Activate clicked button
+      event.target.classList.add('active');
+    }
+
     // ── AudioManager (inline) ──
     const AudioManager=((()=>{const cache={},synths={},sources={};let ctx=null,masterGain=null,sfxGain=null,masterVol=0.8,sfxVol=1.0,muted=false,initialized=false;function init(){if(initialized){if(ctx&&ctx.state==='suspended')ctx.resume();return}try{ctx=new(window.AudioContext||window.webkitAudioContext)();masterGain=ctx.createGain();sfxGain=ctx.createGain();sfxGain.connect(masterGain);masterGain.connect(ctx.destination);masterGain.gain.value=masterVol;sfxGain.gain.value=sfxVol;initialized=true;registerSynths();if(ctx.state==='suspended')ctx.resume()}catch(e){console.warn('[Audio] unavailable:',e)}}document.addEventListener('visibilitychange',()=>{if(!masterGain)return;muted=document.hidden;masterGain.gain.value=muted?0:masterVol});function makeGain(v,d){const g=ctx.createGain();g.gain.value=v;g.connect(d||sfxGain);return g}function noiseBuffer(dur){const len=Math.floor(ctx.sampleRate*dur),buf=ctx.createBuffer(1,len,ctx.sampleRate),d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;return buf}function registerSynths(){synths['auto_charge']=(vol)=>{const t=ctx.currentTime,o=ctx.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(80,t);o.frequency.exponentialRampToValueAtTime(400,t+0.15);const g=makeGain(0);g.gain.setValueAtTime(vol*0.3,t);g.gain.linearRampToValueAtTime(vol*0.6,t+0.1);g.gain.linearRampToValueAtTime(0,t+0.15);o.connect(g);o.start(t);o.stop(t+0.16);return{duration:0.16}};synths['auto_impact']=(vol)=>{const t=ctx.currentTime,n=ctx.createBufferSource();n.buffer=noiseBuffer(0.12);const ng=makeGain(0);ng.gain.setValueAtTime(vol*0.5,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.1);n.connect(ng);n.start(t);const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(200,t);o.frequency.exponentialRampToValueAtTime(50,t+0.1);const og=makeGain(0);og.gain.setValueAtTime(vol*0.7,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.12);o.connect(og);o.start(t);o.stop(t+0.13);return{duration:0.13}};synths['pattern_telegraph']=(vol)=>{const t=ctx.currentTime,o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(100,t);o.frequency.exponentialRampToValueAtTime(300,t+0.8);const g=makeGain(0);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol*0.25,t+0.6);g.gain.linearRampToValueAtTime(vol*0.35,t+0.75);g.gain.linearRampToValueAtTime(0,t+0.8);o.connect(g);o.start(t);o.stop(t+0.82);return{duration:0.82}};synths['pattern_impact_wave']=(vol)=>{const t=ctx.currentTime,n=ctx.createBufferSource();n.buffer=noiseBuffer(0.35);const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.setValueAtTime(2000,t);bp.frequency.exponentialRampToValueAtTime(200,t+0.3);bp.Q.value=2;const ng=makeGain(0);ng.gain.setValueAtTime(vol*0.5,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.3);n.connect(bp);bp.connect(ng);n.start(t);const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(80,t);o.frequency.exponentialRampToValueAtTime(30,t+0.3);const og=makeGain(0);og.gain.setValueAtTime(vol*0.6,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.35);o.connect(og);o.start(t);o.stop(t+0.36);return{duration:0.36}};synths['pattern_impact_donut']=(vol)=>{const t=ctx.currentTime,o1=ctx.createOscillator();o1.type='sine';o1.frequency.setValueAtTime(150,t);o1.frequency.exponentialRampToValueAtTime(60,t+0.4);const g1=makeGain(0);g1.gain.setValueAtTime(vol*0.6,t);g1.gain.exponentialRampToValueAtTime(0.001,t+0.4);o1.connect(g1);o1.start(t);o1.stop(t+0.42);const o2=ctx.createOscillator();o2.type='sine';o2.frequency.setValueAtTime(450,t);o2.frequency.exponentialRampToValueAtTime(180,t+0.35);const g2=makeGain(0);g2.gain.setValueAtTime(vol*0.2,t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.35);o2.connect(g2);o2.start(t);o2.stop(t+0.37);return{duration:0.42}};synths['pattern_impact_laser']=(vol)=>{const t=ctx.currentTime,n=ctx.createBufferSource();n.buffer=noiseBuffer(2.0);n.loop=true;const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=3000;hp.Q.value=3;const lfo=ctx.createOscillator();lfo.type='square';lfo.frequency.value=15+Math.random()*10;const lg=ctx.createGain();lg.gain.value=vol*0.15;lfo.connect(lg);const g=makeGain(vol*0.2);lg.connect(g.gain);n.connect(hp);hp.connect(g);n.start(t);lfo.start(t);sources['pattern_impact_laser']={source:n,gain:g,extra:[lfo]};return{loop:true}};synths['pattern_impact_zone']=(vol)=>{const t=ctx.currentTime,o=ctx.createOscillator();o.type='sine';o.frequency.value=60;const lfo=ctx.createOscillator();lfo.type='sine';lfo.frequency.value=2;const lg=ctx.createGain();lg.gain.value=5;lfo.connect(lg);lg.connect(o.frequency);const g=makeGain(vol*0.12);o.connect(g);o.start(t);lfo.start(t);sources['pattern_impact_zone']={source:o,gain:g,extra:[lfo]};return{loop:true}};synths['pattern_impact_generic']=(vol)=>{const t=ctx.currentTime,n=ctx.createBufferSource();n.buffer=noiseBuffer(0.2);const ng=makeGain(0);ng.gain.setValueAtTime(vol*0.35,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.18);n.connect(ng);n.start(t);const o=ctx.createOscillator();o.type='triangle';o.frequency.setValueAtTime(180,t);o.frequency.exponentialRampToValueAtTime(60,t+0.2);const og=makeGain(0);og.gain.setValueAtTime(vol*0.5,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.2);o.connect(og);o.start(t);o.stop(t+0.22);return{duration:0.22}}}return{async preload(id,url){if(cache[id])return;try{init();if(!ctx)return;const r=await fetch(url);const b=await r.arrayBuffer();cache[id]=await ctx.decodeAudioData(b)}catch(e){console.warn('[Audio] preload fail:',e.message)}},play(id,volume=1.0,loop=false){init();if(!ctx||muted)return null;if(!Object.keys(synths).length)registerSynths();if(cache[id]){const s=ctx.createBufferSource();s.buffer=cache[id];s.loop=loop;const g=ctx.createGain();g.gain.value=volume;s.connect(g);g.connect(sfxGain);s.start(0);if(loop)sources[id]={source:s,gain:g};s.onended=()=>{if(sources[id]?.source===s)delete sources[id]};return s}if(synths[id])return synths[id](volume);return null},stop(id){if(sources[id]){try{sources[id].source.stop()}catch{}if(sources[id].extra)sources[id].extra.forEach(n=>{try{n.stop()}catch{}});delete sources[id]}},setMasterVolume(v){masterVol=v;if(masterGain&&!muted)masterGain.gain.value=v},setSfxVolume(v){sfxVol=v;if(sfxGain)sfxGain.gain.value=v},has(id){return!!(cache[id]||synths[id])},init(){init();if(ctx&&!Object.keys(synths).length)registerSynths()}}})());
 

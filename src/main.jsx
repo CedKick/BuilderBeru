@@ -79,7 +79,6 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 // Lazy loaded routes
 const Builder = React.lazy(() => import('./BuilderBeru'));
 const GuideEditor = React.lazy(() => import('./pages/GuideEditor.jsx'));
-const HallOfFlameStandalone = React.lazy(() => import('./components/HallOfFlameStandalone.jsx'));
 const TrainingCenter = React.lazy(() => import('./components/Training/TrainingCenter.jsx'));
 const CraftSimulator = React.lazy(() => import('./components/CraftSimulator/CraftSimulator.jsx'));
 const DamageCalculatorStandalone = React.lazy(() => import('./DamageCalculatorStandalone.jsx'));
@@ -92,7 +91,6 @@ const PveRanking = React.lazy(() => import('./pages/ShadowColosseum/PveRanking.j
 const PvpLive = React.lazy(() => import('./pages/ShadowColosseum/PvpLive.jsx'));
 const TrainingDummy = React.lazy(() => import('./pages/ShadowColosseum/TrainingDummy.jsx'));
 const MultiPve = React.lazy(() => import('./pages/ShadowColosseum/MultiPve.jsx'));
-const RagnarosPve = React.lazy(() => import('./pages/ShadowColosseum/RagnarosPve.jsx'));
 const CustomBossPve = React.lazy(() => import('./pages/ShadowColosseum/CustomBossPve.jsx'));
 const Codex = React.lazy(() => import('./pages/Codex/Codex.jsx'));
 const MailInbox = React.lazy(() => import('./pages/MailInbox.jsx'));
@@ -125,7 +123,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/craft-simulator" element={<CraftSimulator />} />
               <Route path="/trainingCenter" element={<TrainingCenter />} />
               <Route path="/guide-editor" element={<GuideEditor />} />
-              <Route path="/hall-of-flame" element={<HallOfFlameStandalone />} />
               <Route path="/damage-calculator" element={<DamageCalculatorStandalone />} />
               <Route path="/theorycraft" element={<Theorycraft />} />
               <Route path="/theorycraft/:boss" element={<Theorycraft />} />
@@ -136,7 +133,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/shadow-colosseum/pve-ranking" element={<PveRanking />} />
               <Route path="/shadow-colosseum/pvp-live" element={<PvpLive />} />
               <Route path="/shadow-colosseum/multi-pve" element={<MultiPve />} />
-              <Route path="/shadow-colosseum/ragnaros" element={<RagnarosPve />} />
               <Route path="/shadow-colosseum/custom-boss" element={<CustomBossPve />} />
               <Route path="/codex" element={<Codex />} />
               <Route path="/mail" element={<MailInbox />} />

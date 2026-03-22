@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
 import { API_URL } from '../../utils/api.js';
+import ColosseumHeader from './SharedBattleComponents/ColosseumHeader';
 import AuthModal from '../../components/AuthModal';
 import { CHIBIS, SPRITES, ELEMENTS, MAX_LEVEL, statsAtFull, calculatePowerScore, mergeTalentBonuses } from './colosseumCore';
 import { HUNTERS, loadRaidData, getHunterStars, getHunterSprite } from './raidData';
@@ -332,7 +333,7 @@ export default function PveRanking() {
             Se connecter
           </button>
           <Link to="/shadow-colosseum" className="block mt-4 text-sm text-gray-500 hover:text-gray-300">
-            {'\u2190'} Retour au Colosseum
+            ← Retour
           </Link>
         </div>
         {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
@@ -344,21 +345,14 @@ export default function PveRanking() {
   // RENDER
   // ═══════════════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white">
-      <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-[#0f0f1a] text-white flex flex-col">
+      <ColosseumHeader title="Classement PVE" emoji="🏆" titleColor="text-yellow-400" />
+      <div className="max-w-2xl mx-auto px-4">
 
-        {/* Header */}
-        <div className="text-center mb-5">
-          <Link to="/shadow-colosseum" className="text-sm text-gray-500 hover:text-gray-300 mb-3 inline-block">
-            {'\u2190'} Retour au Colosseum
-          </Link>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-amber-500 bg-clip-text text-transparent">
-            {'\uD83C\uDFC6'} Classement PVE
-          </h1>
-          <p className="text-gray-500 text-xs mt-1">
-            Level 140 — Classe par Power Score
-          </p>
-        </div>
+        {/* Subtitle */}
+        <p className="text-gray-500 text-xs mt-2 mb-5 text-center">
+          Level 140 — Classe par Power Score
+        </p>
 
         {/* My hunters summary */}
         {allMaxHunters.length > 0 && (

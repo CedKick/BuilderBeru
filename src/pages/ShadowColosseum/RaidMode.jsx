@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from '../../utils/api.js';
+import ColosseumHeader from './SharedBattleComponents/ColosseumHeader';
 import shadowCoinManager from '../../components/ChibiSystem/ShadowCoinManager';
 import { computeTalentBonuses } from './talentTreeData';
 import { computeTalentBonuses2 } from './talentTree2Data';
@@ -2190,22 +2191,18 @@ export default function RaidMode() {
       {/* Launch bar — sticky top */}
       <div className="sticky top-0 z-20 bg-[#0f0f1a]/95 backdrop-blur-sm py-3 -mx-4 px-4 border-b border-white/5">
         <div className="flex items-center justify-center gap-3">
-          <Link to="/shadow-colosseum"
-            className="px-4 py-2 rounded-lg bg-white/10 text-gray-300 hover:bg-white/20 transition-all text-sm">
-            Retour
-          </Link>
           <button onClick={startRaid}
             disabled={selectedIds.length === 0}
             className="px-8 py-3 rounded-xl font-bold text-lg bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95">
             LANCER LE RAID
           </button>
           <button onClick={() => { setAutoRun(a => !a); }}
-            className={`px-3 py-2 rounded-lg text-sm font-bold border transition-all ${
+            className={`rounded-lg font-bold border-2 transition-all ${
               autoRun
-                ? 'bg-green-600/30 border-green-400/50 text-green-300'
-                : 'bg-white/5 border-white/15 text-gray-400 hover:bg-white/10'
+                ? 'px-5 py-3 text-base bg-red-600 border-red-400 text-white hover:bg-red-500 animate-pulse shadow-lg shadow-red-600/50'
+                : 'px-3 py-2 text-sm bg-white/5 border-white/15 text-gray-400 hover:bg-white/10'
             }`}>
-            {autoRun ? '🔄 Auto ON' : '🔄 Auto'}
+            {autoRun ? '⏹ STOP Auto' : '🔄 Auto'}
           </button>
         </div>
         {autoRun && (
@@ -2718,12 +2715,12 @@ export default function RaidMode() {
 
         {/* Auto-run indicator */}
         {autoRun && (
-          <div className="text-center p-3 rounded-xl bg-green-900/30 border border-green-500/30">
-            <div className="flex items-center justify-center gap-3">
+          <div className="text-center p-4 rounded-xl bg-red-900/40 border-2 border-red-500/60 shadow-lg shadow-red-600/30">
+            <div className="flex flex-col items-center gap-3">
               <span className="text-green-400 text-sm font-bold animate-pulse">🔄 Auto-Run actif — prochain raid dans 1.5s...</span>
               <button onClick={() => { setAutoRun(false); clearTimeout(autoRunTimerRef.current); }}
-                className="px-4 py-2 rounded-lg font-bold bg-red-600/40 border border-red-500/50 text-red-300 hover:bg-red-600/60 transition-all text-sm">
-                ⏹ STOP Auto
+                className="px-8 py-3 rounded-xl font-black text-lg bg-red-600 border-2 border-red-400 text-white hover:bg-red-500 transition-all animate-pulse shadow-lg shadow-red-600/50 tracking-wide">
+                ⏹ STOP Auto-Run
               </button>
             </div>
           </div>
@@ -2731,10 +2728,6 @@ export default function RaidMode() {
 
         {/* Actions */}
         <div className="flex justify-center gap-3 flex-wrap">
-          <Link to="/shadow-colosseum"
-            className="px-4 py-2 rounded-lg bg-white/10 text-gray-300 hover:bg-white/20 transition-all text-sm">
-            Retour au Colisee
-          </Link>
           <button onClick={() => { setAutoRun(false); clearTimeout(autoRunTimerRef.current); setPhase('setup'); setResultData(null); setBattleState(null); setCombatLog([]); }}
             className="px-6 py-2 rounded-xl font-bold bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 transition-all">
             Relancer le Raid
@@ -2839,13 +2832,12 @@ export default function RaidMode() {
   // ═══════════════════════════════════════════════════════════
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white p-4 max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#0f0f1a] text-white flex flex-col">
       <BattleStyles />
-      {/* Title + Boss Selector */}
+      <ColosseumHeader title="Mode Raid" emoji={boss.emoji} titleColor="text-red-400" />
+      <div className="max-w-2xl mx-auto px-4">
+      {/* Boss Selector */}
       <div className="text-center mb-4">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-          {boss.emoji} Mode Raid
-        </h1>
         {phase === 'setup' && (
           <div className="flex justify-center gap-2 mt-2">
             {Object.entries(RAID_BOSSES).map(([id, b]) => (
@@ -2877,7 +2869,7 @@ export default function RaidMode() {
               {autoRun && (
                 <div className="flex justify-center mb-3">
                   <button onClick={() => setAutoRun(false)}
-                    className="px-5 py-2 rounded-xl font-bold bg-red-600/40 border-2 border-red-500/50 text-red-300 hover:bg-red-600/60 transition-all text-sm flex items-center gap-2 animate-pulse">
+                    className="px-8 py-3 rounded-xl font-black text-lg bg-red-600 border-2 border-red-400 text-white hover:bg-red-500 transition-all flex items-center gap-2 animate-pulse shadow-lg shadow-red-600/50 tracking-wide">
                     ⏹ STOP Auto-Run
                   </button>
                 </div>
@@ -3057,6 +3049,7 @@ export default function RaidMode() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

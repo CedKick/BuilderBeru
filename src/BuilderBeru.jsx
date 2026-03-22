@@ -29,8 +29,6 @@ import SetSelectorPopup from "./components/SetSelectorPopup";
 import BeruInteractionMenu from './components/BeruInteractionMenu';
 import KaiselInteractionMenu from './components/KaiselInteractionMenu';
 import { BeruReportSystem, GoldenPapyrusIcon } from './components/BeruReportSystem';
-import HallOfFlameDebugPopup from './components/HallOfFlameDebugPopup';
-import HallOfFlamePage from './components/HallOfFlamePage';
 import AdminValidationPage from './components/AdminValidationPage';
 import TVDialogueSystem from './components/TVDialogueSystem';
 
@@ -498,11 +496,8 @@ const BuilderBeru = () => {
   const [hitboxPositions, setHitboxPositions] = useState({});
   const [showDebugButton, setShowDebugButton] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
-  const [showHallOfFlameDebug, setShowHallOfFlameDebug] = useState(false);
   const [showDamageCalculator, setShowDamageCalculator] = useState(false);
   const [showAdminPage, setShowAdminPage] = useState(false);
-  const [hallOfFlameData, setHallOfFlameData] = useState({ name: '', guild: '' });
-  const [showHallOfFlamePage, setShowHallOfFlamePage] = useState(false);
   const [tvDialogue, setTvDialogue] = useState(null);
 
   const showTvDialogue = (statType, statValue) => {
@@ -3490,112 +3485,6 @@ BobbyJones : "Allez l'Inter !"
 
   const currentLang = languages.find(lang => lang.code === i18n.language) || languages[0];
 
-  // 🔍 FONCTION DE VALIDATION COMPLÈTE DU HUNTER
-  const validateHunterForHallOfFame = (currentArtifacts, currentCores, currentGems) => {
-    const validation = {
-      isValid: true,
-      missing: [],
-      details: {}
-    };
-
-    // 🎨 VÉRIFICATION DES 8 ARTEFACTS
-    const requiredArtifactSlots = ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'];
-    const artifactCount = requiredArtifactSlots.filter(slot => {
-      const artifact = currentArtifacts[slot];
-      return artifact && (artifact.mainStat || artifact.set); // Au minimum un mainStat ou set défini
-    }).length;
-
-    validation.details.artifacts = {
-      current: artifactCount,
-      required: 8,
-      isComplete: artifactCount === 8
-    };
-
-    if (artifactCount < 8) {
-      validation.isValid = false;
-      validation.missing.push(`Artefacts manquants (${artifactCount}/8)`);
-    }
-
-    // 🔮 VÉRIFICATION DES CORES
-    const requiredCoreSlots = ['Offensif', 'Défensif', 'Endurance'];
-    const coreCount = requiredCoreSlots.filter(slot => {
-      const core = currentCores[slot];
-      return core && core.primary; // Au minimum un primary défini
-    }).length;
-
-    validation.details.cores = {
-      current: coreCount,
-      required: 3,
-      isComplete: coreCount === 3
-    };
-
-    if (coreCount < 3) {
-      validation.isValid = false;
-      validation.missing.push(`Cores manquants (${coreCount}/3)`);
-    }
-
-    // 💎 VÉRIFICATION DES GEMMES (optionnel mais recommandé)
-    const gemCount = Object.keys(currentGems || {}).filter(slot => {
-      const gem = currentGems[slot];
-      return gem && Object.values(gem).some(value => value > 0); // Au moins une valeur > 0
-    }).length;
-
-    validation.details.gems = {
-      current: gemCount,
-      recommended: 5,
-      isComplete: gemCount >= 3 // Au moins 3 types de gemmes
-    };
-
-    if (gemCount < 3) {
-      validation.missing.push(`Gemmes recommandées (${gemCount}/5)`);
-      // Pas bloquant mais warning
-    }
-
-    return validation;
-  };
-
-  // 🏆 FONCTION POUR LE BOUTON SUBMIT HALL OF FAME
-  const handleSubmitToHallOfFame = () => {
-    const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
-
-    if (!validation.isValid) {
-      // 🚫 HUNTER INCOMPLET - MESSAGE KAISEL
-      const missingItems = validation.missing.join(', ');
-      showTankMessage(
-        `🏆 t('validation.hallOfFame.rejected', { missing: missingItems })` +
-        `❌ Hunter incomplet détecté par Kaisel !\n\n` +
-        `**Éléments manquants :**\n${missingItems}\n\n` +
-        `📋 **Détails :**\n` +
-        `🎨 Artefacts: ${validation.details.artifacts.current}/8\n` +
-        `🔮 Cores: ${validation.details.cores.current}/3\n` +
-        `💎 Gemmes: ${validation.details.gems.current}/5\n\n` +
-        `⚡ Complète ton build avant de le soumettre !`,
-        true,
-        'kaisel'
-      );
-      return;
-    }
-
-    // ✅ HUNTER COMPLET - OUVRIR LA POPUP
-    showTankMessage(
-      `🏆 **HUNTER VALIDÉ PAR KAISEL !**\n\n` +
-      `✅ Build complet détecté :\n` +
-      `🎨 ${validation.details.artifacts.current}/8 Artefacts\n` +
-      `🔮 ${validation.details.cores.current}/3 Cores\n` +
-      `💎 ${validation.details.gems.current}/5 Gemmes\n\n` +
-      `🚀 Ouverture du système de soumission...`,
-      true,
-      'kaisel'
-    );
-
-    // Ouvrir la popup HallOfFlameDebug
-    if (typeof setShowHallOfFlameDebug === 'function') {
-      setShowHallOfFlameDebug(true);
-    } else {
-      showTankMessage("🤖 Erreur : système HallOfFlame non trouvé", true, 'kaisel');
-    }
-  };
-
 
 
   const updateArtifactFromOCR = (parsedData) => {
@@ -5308,10 +5197,7 @@ BobbyJones : "Allez l'Inter !"
           console.error("🐉 Kaisel: Erreur showKaiselMenu:", error);
         }
       },
-      getSelectedCharacter: () => selectedCharacter,
-      onShowHallOfFlame: () => {
-        setShowHallOfFlameDebug(true);
-      }
+      getSelectedCharacter: () => selectedCharacter
     };
 
     // 🎯 DELAY pour éviter les conflits de rendu
@@ -6573,7 +6459,6 @@ BobbyJones : "Allez l'Inter !"
                         currentGems={gemData}
                         currentWeapon={hunterWeapons[selectedCharacter] || {}}
                         characters={characters}
-                        onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
                         adminToken={adminToken}
                       />
                     </div>
@@ -6613,51 +6498,7 @@ BobbyJones : "Allez l'Inter !"
                     multiAccountsData={accounts}
                     substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                     existingScores={artifactScores}
-                    onShowHallOfFlameDebug={() => setShowHallOfFlameDebug(true)}
-                    onShowHallOfFlame={() => setShowHallOfFlamePage(true)}
                     showDebugButton={showDebugButton} // ← ET CETTE LIGNE AUSSI
-                  />
-                )}
-
-                {showHallOfFlameDebug && (
-                  <HallOfFlameDebugPopup
-                    isOpen={showHallOfFlameDebug}
-                    onClose={() => setShowHallOfFlameDebug(false)}
-                    selectedCharacter={selectedCharacter}
-                    characterData={characters[selectedCharacter]}
-                    currentStats={finalStats}
-                    currentArtifacts={artifactsData}
-                    statsFromArtifacts={statsFromArtifacts}
-                    currentCores={hunterCores[selectedCharacter] || {}}
-                    onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
-                    currentGems={gemData}
-                    currentWeapon={hunterWeapons[selectedCharacter] || {}}
-                    showTankMessage={showTankMessage}
-                    onSave={(hunterData) => {
-                      // Si tu veux naviguer après sauvegarde :
-                      // setShowHallOfFlamePage(true);
-                    }}
-                  />
-                )}
-
-
-
-                {showHallOfFlamePage && (
-                  <HallOfFlamePage
-                    onClose={() => setShowHallOfFlamePage(false)}
-                    showTankMessage={showTankMessage}
-                    characters={characters}
-                    onNavigateToBuilder={() => {
-                      setShowHallOfFlamePage(false);
-                      showTankMessage("🚀 Retour au Builder ! Créez un build légendaire !", true, 'kaisel');
-                    }}
-                    selectedCharacter={selectedCharacter}           // Pour le contexte du personnage actuel
-                    currentStats={finalStats}                    // Stats totales calculées
-                    currentArtifacts={artifactsData}            // Artefacts équipés
-                    statsFromArtifacts={statsFromArtifacts}         // Stats des artefacts uniquement
-                    currentCores={hunterCores[selectedCharacter] || {}}
-                    currentGems={gemData}
-                    currentWeapon={hunterWeapons[selectedCharacter] || {}}
                   />
                 )}
 
@@ -7841,8 +7682,7 @@ BobbyJones : "Allez l'Inter !"
                           currentGems={gemData}
                           currentWeapon={hunterWeapons[selectedCharacter] || {}}
                           characters={characters}
-                          onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
-                          adminToken={adminToken}
+                            adminToken={adminToken}
                         />
                       </div>
                     </div>
@@ -7883,51 +7723,7 @@ BobbyJones : "Allez l'Inter !"
                       multiAccountsData={accounts}
                       substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                       existingScores={artifactScores}
-                      onShowHallOfFlameDebug={() => setShowHallOfFlameDebug(true)}
-                      onShowHallOfFlame={() => setShowHallOfFlamePage(true)}
-                      showDebugButton={showDebugButton} // ← ET CETTE LIGNE AUSSI
-                    />
-                  )}
-
-
-                  {showHallOfFlameDebug && (
-                    <HallOfFlameDebugPopup
-                      isOpen={showHallOfFlameDebug}
-                      onClose={() => setShowHallOfFlameDebug(false)}
-                      selectedCharacter={selectedCharacter}
-                      characterData={characters[selectedCharacter]}
-                      currentStats={finalStats}
-                      currentArtifacts={artifactsData}
-                      statsFromArtifacts={statsFromArtifacts}
-                      currentCores={hunterCores[selectedCharacter] || {}}
-                      onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
-                      currentGems={gemData}
-                      currentWeapon={hunterWeapons[selectedCharacter] || {}}
-                      showTankMessage={showTankMessage}
-                      onSave={(hunterData) => {
-                        // Si tu veux naviguer après sauvegarde :
-                        // setShowHallOfFlamePage(true);
-                      }}
-                    />
-                  )}
-
-
-                  {showHallOfFlamePage && (
-                    <HallOfFlamePage
-                      onClose={() => setShowHallOfFlamePage(false)}
-                      showTankMessage={showTankMessage}
-                      characters={characters}
-                      onNavigateToBuilder={() => {
-                        setShowHallOfFlamePage(false);
-                        showTankMessage("🚀 Retour au Builder ! Créez un build légendaire !", true, 'kaisel');
-                      }}
-                      selectedCharacter={selectedCharacter}           // Pour le contexte du personnage actuel
-                      currentStats={finalStats}                    // Stats totales calculées
-                      currentArtifacts={artifactsData}            // Artefacts équipés
-                      statsFromArtifacts={statsFromArtifacts}         // Stats des artefacts uniquement
-                      currentCores={hunterCores[selectedCharacter] || {}}
-                      currentGems={gemData}
-                      currentWeapon={hunterWeapons[selectedCharacter] || {}}
+                      showDebugButton={showDebugButton}
                     />
                   )}
 

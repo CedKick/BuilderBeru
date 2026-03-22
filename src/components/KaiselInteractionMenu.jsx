@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { scanTwitchStreams } from '../utils/TwitchIntelligence';
 import '../i18n/i18n';
-import HallOfFlameDebugPopup from "./HallOfFlameDebugPopup";
 
 // 🟣 TWITCH CHECKER FUNCTION V2 - AVEC VIEWERS ET LINK
 const checkTwitchStreamer = async (streamerName) => {
@@ -75,8 +74,6 @@ const KaiselInteractionMenu = ({
   multiAccountsData = {},
   substatsMinMaxByIncrements,
   existingScores = {},
-  onShowHallOfFlameDebug,
-  onShowHallOfFlame,
   showDebugButton = false,
   onShowAdminValidation
 }) => {
@@ -273,21 +270,6 @@ const KaiselInteractionMenu = ({
       }
     };
 
-    // 🏆 AJOUTER HALLOFFLAME SI DEBUG BUTTON ET TOKEN ADMIN
-    if (showDebugButton && isValidAdmin()) {
-      baseMenu.hall_of_flame_debug = {
-        icon: "🏆",
-        label: t('kaisel.menu.labels.hallOfFlameDebug'),
-        action: "show_hall_debug"
-      };
-      
-      baseMenu.hall_of_flame_rankings = {
-        icon: "📊",
-        label: t('kaisel.menu.labels.hallOfFlameRankings'),
-        action: "show_hall_rankings"
-      };
-    }
-
     baseMenu.back = {
       icon: "↩️",
       label: t('kaisel.menu.labels.back'),
@@ -343,40 +325,6 @@ const KaiselInteractionMenu = ({
 
       case 'back_to_main':
         setCurrentSubMenu(null);
-        break;
-
-      case 'show_hall_rankings':
-        if (onShowHallOfFlame) {
-          onShowHallOfFlame();
-          showTankMessage(t('kaisel.messages.actions.openingRankings'), true, 'kaisel');
-        } else {
-          showTankMessage(t('kaisel.messages.actions.callbackNotFound', { feature: 'Classements' }), true, 'kaisel');
-        }
-        onClose();
-        break;
-
-      case 'show_hall_debug':
-        // 🔐 PROTECTION TOKEN + VALIDATION SERVEUR
-        if (!isValidAdmin()) {
-          showTankMessage(t('kaisel.messages.security.hallOfFlameReserved'), true, 'kaisel');
-          onClose();
-          return;
-        }
-        
-        const hallValidated = await validateAdminAction('hall_debug');
-        if (!hallValidated) {
-          showTankMessage(t('kaisel.messages.security.hallOfFlameUnauthorized'), true, 'kaisel');
-          onClose();
-          return;
-        }
-        
-        if (onShowHallOfFlameDebug) {
-          onShowHallOfFlameDebug();
-          showTankMessage(t('kaisel.messages.actions.openingHallOfFlame'), true, 'kaisel');
-        } else {
-          showTankMessage(t('kaisel.messages.actions.callbackNotFound', { feature: 'HallOfFlame' }), true, 'kaisel');
-        }
-        onClose();
         break;
 
       case 'show_twitch_streams':

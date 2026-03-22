@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Target, Play, Pause, RotateCcw, Zap, Crosshair } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ColosseumHeader from './SharedBattleComponents/ColosseumHeader';
 
 import {
   ELEMENTS, RARITY, CHIBIS, SPRITES,
@@ -1806,20 +1807,9 @@ export default function TrainingDummy() {
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#0f0f1a] text-white p-4">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            <span>Retour</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Target className="w-8 h-8 text-orange-400" />
-            <h1 className="text-3xl font-bold">Mannequin d'Entraînement</h1>
-          </div>
-          <div className="w-20" />
-        </div>
+      <div className="min-h-screen bg-[#0f0f1a] text-white flex flex-col">
+        <ColosseumHeader title="Mannequin d'Entrainement" emoji={<Target className="w-4 h-4 text-orange-400" />} titleColor="text-orange-400" />
+        <div className="max-w-4xl mx-auto px-4 space-y-6 w-full">
 
         {/* Content */}
         <AnimatePresence mode="wait">
