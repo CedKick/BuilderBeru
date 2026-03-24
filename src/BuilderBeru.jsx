@@ -5662,35 +5662,6 @@ BobbyJones : "Allez l'Inter !"
                             {t('buttons.save')}
                           </button>
 
-                          <button
-                            onClick={() => {
-                              const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
-                              if (validation.isValid) {
-                                handleSubmitToHallOfFame();
-                              } else {
-                                showTankMessage(
-                                  `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
-                                  true,
-                                  'kaisel'
-                                );
-                              }
-                            }}
-                            className={`
-          flex-1
-          ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                                ? 'bg-purple-800/30 text-purple-300 border-purple-600/50'
-                                : 'bg-gray-800/30 text-gray-500 border-gray-700/50'
-                              } 
-          font-semibold px-3 py-2 text-xs rounded-lg border
-          transition-all duration-200 active:scale-95
-        `}
-                            disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
-                          >
-                            {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                              ? t('buttons.submit')
-                              : t('buttons.incomplete')
-                            }
-                          </button>
                         </div>
 
                         {/* Ligne 2 - Import et New */}
@@ -7225,40 +7196,6 @@ BobbyJones : "Allez l'Inter !"
                         {t('buttons.save')}
                       </button>
 
-                      {/* Submit/Incomplet */}
-                      <button
-                        onClick={() => {
-                          const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
-                          if (validation.isValid) {
-                            handleSubmitToHallOfFame();
-                          } else {
-                            showTankMessage(
-                              `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
-                              true,
-                              'kaisel'
-                            );
-                          }
-                        }}
-                        className={`
-        ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                            ? 'bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white border-purple-600/50 hover:border-purple-500'
-                            : 'bg-gray-800/30 text-gray-500 border-gray-700/50 cursor-not-allowed'
-                          } 
-        font-semibold px-4 py-2 text-sm rounded-lg border
-        transition-all duration-200 hover:scale-105
-      `}
-                        disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
-                        title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                          ? 'Soumettre au Hall of Fame'
-                          : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
-                        }
-                      >
-                        {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                          ? t('buttons.submit')
-                          : t('buttons.incomplete')
-                        }
-                      </button>
-
                       {/* Import */}
                       {/* Share/Partager */}
                       <button
@@ -7501,31 +7438,6 @@ BobbyJones : "Allez l'Inter !"
                           {t('buttons.save')}
                         </button>
 
-                        <button
-                          onClick={() => {
-                            const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
-                            if (validation.isValid) {
-                              handleSubmitToHallOfFame();
-                            } else {
-                              showTankMessage(`BUILD INCOMPLET`, true, 'kaisel');
-                            }
-                          }}
-                          className={`
-          flex-1
-          ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                              ? 'bg-purple-800/30 text-purple-300 border-purple-600/50'
-                              : 'bg-gray-800/30 text-gray-500 border-gray-700/50'
-                            } 
-          font-semibold px-3 py-2 text-xs rounded-lg border
-          transition-all duration-200 active:scale-95
-        `}
-                          disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
-                        >
-                          {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                            ? t('buttons.submit')
-                            : t('buttons.incomplete')
-                          }
-                        </button>
                       </div>
 
                       {/* Ligne 2: Import, New et Account */}
