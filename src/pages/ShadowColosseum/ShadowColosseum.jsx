@@ -692,11 +692,8 @@ export default function ShadowColosseum() {
   const [selectedCustomBoss, setSelectedCustomBoss] = useState(null); // { boss_id, name, creator_username, ... }
   const [showCustomBossPicker, setShowCustomBossPicker] = useState(false);
 
-  // Cloud-first load: wait for initialSync to merge cloud↔localStorage, then re-read
-  // initialSync() already fetches all cloud data, merges with localStorage, and handles
-  // login-pending (cloud wins) + corruption detection. A second loadCloud() is redundant
-  // and can overwrite fresh local data (e.g. raid XP) with stale cloud data if the
-  // async sync hadn't completed before refresh.
+  // Cloud-first load: wait for initialSync to restore cloud data into localStorage, then re-read.
+  // initialSync() always uses cloud as source of truth — localStorage is just a session cache.
   useEffect(() => {
     if (!isLoggedIn()) { setCloudLoading(false); skipSaveRef.current = false; return; }
     if (cloudLoadedRef.current || _cloudLoadedThisSession) {

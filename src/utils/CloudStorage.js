@@ -1,7 +1,8 @@
 /**
- * CloudStorage — Hybrid localStorage + Neon PostgreSQL backend
+ * CloudStorage — Cloud-first storage with localStorage cache
  *
- * NeonDB = source of truth. localStorage = optional cache.
+ * NeonDB = source of truth. localStorage = session cache only.
+ * On every page load, cloud data wins — localStorage never overwrites server data.
  * If localStorage is full (QuotaExceeded), data still reaches the cloud via _pendingData.
  *
  * Usage:
@@ -399,9 +400,9 @@ class CloudStorageManager {
 
   /**
    * Full sync on app startup:
-   * - Load all cloud data
-   * - For each key: use whichever is newer (cloud vs local)
-   * - Push any local-only data to cloud
+   * - Load all cloud data (server = source of truth)
+   * - Write cloud data into localStorage (cache)
+   * - Push any local-only keys (not on server yet) to cloud
    */
   async initialSync() {
     if (this._initialized) return;
@@ -428,7 +429,9 @@ class CloudStorageManager {
       return;
     }
 
-    // Merge cloud data into localStorage (allow writes through interceptor)
+    // Restore cloud data into localStorage — CLOUD IS ALWAYS THE SOURCE OF TRUTH.
+    // localStorage is only a session cache. On every page load, cloud data wins.
+    // This prevents corrupted/empty localStorage from overwriting good server data.
     this._restoring = true;
     for (const [key, entry] of Object.entries(cloudEntries)) {
       // Track cloud sizes + timestamps for anti-corruption checks
@@ -441,78 +444,14 @@ class CloudStorageManager {
       this._lastSyncHash[key] = cloudHash;
       try { localStorage.setItem(HASH_PREFIX + key, cloudHash); } catch {}
 
-      const localRaw = localStorage.getItem(key);
-      if (loginPending || !localRaw) {
-        // Login pending: cloud ALWAYS wins (cross-device sync)
-        // No local data: cloud fills the gap
+      if (this._forceKeys.has(key)) {
+        // Key was force-saved (e.g. inventory cleanup) — local wins, don't restore from cloud
+        console.log(`[CloudStorage] Skipping cloud restore for "${key}" — recently force-saved`);
+      } else {
+        // Cloud wins — write cloud data to localStorage cache
         try {
           localStorage.setItem(key, cloudJson);
         } catch { /* ignore quota errors during sync */ }
-      } else if (this._forceKeys.has(key)) {
-        // Key was force-saved (e.g. inventory cleanup) — local wins, don't restore from cloud
-        console.log(`[CloudStorage] Skipping cloud restore for "${key}" — recently force-saved`);
-      } else if (key === 'shadow_colosseum_data') {
-          // Normal reload: LOCAL wins. Only merge server-deposited fields from cloud
-          // (expedition deposits, admin scripts) using MAX strategy — never overwrite local bulk data.
-          try {
-            const localData = JSON.parse(localRaw);
-            const cloudData = entry.data;
-            let patched = false;
-
-            // Server-deposited scalar fields: take MAX (cloud may have received deposits while offline)
-            for (const field of ['alkahest', 'accountXp', 'ultimateScrolls']) {
-              if ((cloudData[field] || 0) > (localData[field] || 0)) {
-                localData[field] = cloudData[field];
-                patched = true;
-              }
-            }
-
-            // Hammers: MAX each
-            const cloudH = cloudData.hammers || {};
-            const localH = localData.hammers || {};
-            for (const [hId, count] of Object.entries(cloudH)) {
-              if ((count || 0) > (localH[hId] || 0)) {
-                localH[hId] = count;
-                patched = true;
-              }
-            }
-            if (patched) localData.hammers = localH;
-
-            // WeaponCollection: add missing weapons from cloud (expedition deposits), MAX awakening
-            const cloudWC = cloudData.weaponCollection || {};
-            const localWC = localData.weaponCollection || {};
-            for (const [wId, aw] of Object.entries(cloudWC)) {
-              if (localWC[wId] === undefined) {
-                localWC[wId] = aw;
-                patched = true;
-              } else if ((aw || 0) > (localWC[wId] || 0)) {
-                localWC[wId] = aw;
-                patched = true;
-              }
-            }
-            localData.weaponCollection = localWC;
-
-            // ArtifactInventory: ONLY add cloud artifacts missing from local (expedition deposits)
-            // Never remove local artifacts. Never restore deleted artifacts.
-            const cloudInv = cloudData.artifactInventory || [];
-            const localInv = localData.artifactInventory || [];
-            const localUids = new Set(localInv.map(a => a.uid).filter(Boolean));
-            const missingFromCloud = cloudInv.filter(a => a.uid && !localUids.has(a.uid) && a.source === 'expedition');
-            if (missingFromCloud.length > 0) {
-              localData.artifactInventory = [...localInv, ...missingFromCloud];
-              if (localData.artifactInventory.length > 1500) {
-                localData.artifactInventory.sort((a, b) => (a.locked ? -1 : b.locked ? 1 : 0));
-                localData.artifactInventory.length = 1500;
-              }
-              patched = true;
-              console.log(`[CloudStorage] Merged ${missingFromCloud.length} expedition artifacts from cloud into local`);
-            }
-
-            if (patched) {
-              localStorage.setItem(key, JSON.stringify(localData));
-              console.log(`[CloudStorage] Patched server fields for "${key}": alkahest=${localData.alkahest}, weapons=${Object.keys(localData.weaponCollection || {}).length}, arts=${(localData.artifactInventory || []).length}`);
-            }
-          } catch { /* ignore parse errors */ }
       }
     }
 
@@ -536,7 +475,7 @@ class CloudStorageManager {
 
     this._initialized = true;
     if (this._readyResolve) this._readyResolve();
-    console.log('[CloudStorage] Initial sync complete', loginPending ? '(login mode — cloud wins)' : '(normal)');
+    console.log('[CloudStorage] Initial sync complete (cloud-first — server is source of truth)');
 
     // Notify React components that cloud data has been restored to localStorage
     try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
