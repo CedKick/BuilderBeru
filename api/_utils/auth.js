@@ -4,7 +4,10 @@
 import crypto from 'crypto';
 import { query } from '../_db/neon.js';
 
-const AUTH_SECRET = process.env.AUTH_SECRET || 'dev-secret-change-in-production';
+const AUTH_SECRET = process.env.AUTH_SECRET;
+if (!AUTH_SECRET) {
+  throw new Error('[FATAL] AUTH_SECRET env variable is required. Set it in .env or environment.');
+}
 const PBKDF2_ITERATIONS = 100000;
 const PBKDF2_KEY_LEN = 64;
 const PBKDF2_DIGEST = 'sha512';

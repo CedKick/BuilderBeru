@@ -7,7 +7,10 @@
 
 import crypto from 'node:crypto';
 
-const ANTICHEAT_SECRET = process.env.ANTICHEAT_SECRET || process.env.AUTH_SECRET || 'beru-anticheat-v1';
+const ANTICHEAT_SECRET = process.env.ANTICHEAT_SECRET || process.env.AUTH_SECRET;
+if (!ANTICHEAT_SECRET) {
+  throw new Error('[FATAL] ANTICHEAT_SECRET or AUTH_SECRET env variable is required.');
+}
 
 // ─── Constants (from equipmentData.js lines 261-315) ─────────
 

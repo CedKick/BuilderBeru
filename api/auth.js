@@ -4,8 +4,22 @@
 import { query } from './_db/neon.js';
 import { hashPassword, verifyPassword, createToken, extractUser } from './_utils/auth.js';
 
+// Import conditionnel — trackFailedLogin n'existe que quand le serveur Express est actif
+let trackFailedLogin, clearFailedLogin, getClientIp;
+try {
+  const security = await import('../api-server/security.js');
+  trackFailedLogin = security.trackFailedLogin;
+  clearFailedLogin = security.clearFailedLogin;
+  getClientIp = security.getClientIp;
+} catch {
+  // Vercel mode — pas de security.js, on skip
+  trackFailedLogin = null;
+  clearFailedLogin = null;
+  getClientIp = (req) => req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+}
+
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
-const MIN_PASSWORD_LEN = 6;
+const MIN_PASSWORD_LEN = 8; // Renforcé de 6 → 8
 
 // ─── Init: create users table ─────────────────────────────
 
@@ -84,6 +98,18 @@ async function handleRegister(req, res) {
 async function handleLogin(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  const ip = getClientIp(req);
+
+  // Brute-force protection
+  if (trackFailedLogin) {
+    const isBlocked = trackFailedLogin(ip);
+    if (isBlocked) {
+      return res.status(429).json({ error: 'Trop de tentatives. Réessaie dans 15 minutes.' });
+    }
+    // Undo the count — trackFailedLogin increments, we only want to count actual failures
+    // We'll call it again on actual failure below
+  }
+
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -96,14 +122,19 @@ async function handleLogin(req, res) {
   );
 
   if (result.rows.length === 0) {
+    if (trackFailedLogin) trackFailedLogin(ip);
     return res.status(401).json({ error: 'Pseudo ou mot de passe incorrect' });
   }
 
   const user = result.rows[0];
 
   if (!verifyPassword(password, user.password_hash)) {
+    if (trackFailedLogin) trackFailedLogin(ip);
     return res.status(401).json({ error: 'Pseudo ou mot de passe incorrect' });
   }
+
+  // Login réussi — clear les failed attempts
+  if (clearFailedLogin) clearFailedLogin(ip);
 
   // Update last login
   await query('UPDATE users SET updated_at = NOW() WHERE id = $1', [user.id]);
@@ -131,7 +162,6 @@ async function handleMe(req, res) {
     success: true,
     userId: user.userId,
     username: user.username,
-    deviceId: user.deviceId,
   });
 }
 

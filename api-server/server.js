@@ -7,6 +7,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cron from 'node-cron';
+import { securityMiddleware, securityStatus } from './security.js';
 
 // ─── Import all Vercel handlers (zero refactoring — same req/res interface) ───
 import authHandler from '../api/auth.js';
@@ -58,13 +59,21 @@ const PORT = process.env.PORT || 3005;
 // ─── Middleware ───────────────────────────────────────────
 app.use(express.json({ limit: '5mb' }));
 
+const IS_PROD = process.env.NODE_ENV === 'production';
+const ALLOWED_ORIGINS = IS_PROD
+  ? ['https://slagate.com', 'https://www.slagate.com', 'https://builderberu.com', 'https://www.builderberu.com']
+  : ['https://slagate.com', 'https://www.slagate.com', 'https://builderberu.com', 'https://www.builderberu.com', 'http://localhost:5173'];
+
 app.use(cors({
-  origin: ['https://builderberu.com', 'https://www.builderberu.com', 'http://localhost:5173'],
+  origin: ALLOWED_ORIGINS,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'If-None-Match', 'X-Server-Secret'],
   exposedHeaders: ['ETag'],
 }));
+
+// ─── Security (rate limiting, abuse monitoring, headers) ──
+securityMiddleware(app);
 
 // ─── Routes — action-based handlers use app.all() ────────
 
@@ -138,6 +147,9 @@ app.get('/api/kaisel/get-videos', kaiselGetVideos);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', server: 'builderberu-api', port: PORT, uptime: process.uptime() });
 });
+
+// ─── Security status (admin only) ────────────────────────
+app.get('/api/security/status', adminHandler, securityStatus);
 
 // ─── Cron: VACUUM daily at 4 AM UTC ─────────────────────
 cron.schedule('0 4 * * *', () => {
