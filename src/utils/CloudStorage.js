@@ -1,29 +1,30 @@
 /**
- * CloudStorage — Cloud-first storage with localStorage cache
+ * CloudStorage v4 — Cloud-ONLY storage. localStorage is DEAD for game data.
  *
- * NeonDB = source of truth. localStorage = session cache only.
- * On every page load, cloud data wins — localStorage never overwrites server data.
- * If localStorage is full (QuotaExceeded), data still reaches the cloud via _pendingData.
+ * NeonDB = the ONLY source of truth. Game data never touches localStorage.
+ * All reads/writes for CLOUD_KEYS go through an in-memory cache + cloud sync.
+ * localStorage.getItem/setItem are intercepted so existing components work unchanged.
  *
  * Usage:
  *   import { cloudStorage } from '../utils/CloudStorage';
- *   cloudStorage.save('my_key', data);        // saves to localStorage + queues cloud sync
- *   const data = cloudStorage.loadLocal('my_key');  // instant from localStorage
- *   await cloudStorage.loadCloud('my_key');    // fetch from cloud
- *   await cloudStorage.syncAll();              // push all tracked keys to cloud
+ *   cloudStorage.save('my_key', data);
+ *   const data = cloudStorage.loadLocal('my_key');
+ *   await cloudStorage.loadCloud('my_key');
+ *   await cloudStorage.syncAll();
  */
 
 import { API_URL } from './api.js';
 
 const API_BASE = `${API_URL}/storage`;
-const CLIENT_VERSION = 3; // Bump when deploying network-critical changes (track old vs new clients)
+const CLIENT_VERSION = 4;
 const DEVICE_ID_KEY = 'builderberu_device_id';
 const AUTH_TOKEN_KEY = 'builderberu_auth_token';
-const TRACKED_KEYS_KEY = 'builderberu_cloud_keys';
-const HASH_PREFIX = '_cs_h_'; // localStorage prefix for persisted sync hashes
-const ETAG_PREFIX = '_cs_etag_'; // localStorage prefix for ETag cache
+const HASH_PREFIX = '_cs_h_';
+const ETAG_PREFIX = '_cs_etag_';
 
-// Fast sampled hash — O(500) regardless of string size, good enough for dirty detection
+// ─── In-memory cache — replaces localStorage for all game data ───
+const _memoryCache = new Map();
+
 function _computeHash(str) {
   let h = str.length;
   const step = Math.max(1, (str.length / 500) | 0);
@@ -33,14 +34,12 @@ function _computeHash(str) {
   return str.length + '_' + (h >>> 0).toString(36);
 }
 
-// Gzip compress string → base64 (uses native CompressionStream, returns null if unavailable)
 async function _gzipBase64(str) {
   if (typeof CompressionStream === 'undefined') return null;
   try {
     const blob = new Blob([new TextEncoder().encode(str)]);
     const stream = blob.stream().pipeThrough(new CompressionStream('gzip'));
     const compressed = new Uint8Array(await new Response(stream).arrayBuffer());
-    // Convert to base64 in chunks (avoid stack overflow)
     let binary = '';
     for (let i = 0; i < compressed.length; i += 8192) {
       binary += String.fromCharCode.apply(null, compressed.subarray(i, i + 8192));
@@ -49,27 +48,24 @@ async function _gzipBase64(str) {
   } catch { return null; }
 }
 
-// Trim bloated fields to keep data under size limits
 const MAX_DROP_LOG = 100;
 function _trimData(key, data) {
   if (key !== 'shadow_colosseum_data' || !data || typeof data !== 'object') return data;
   const d = { ...data };
-  // Cap drop logs to last N entries
   for (const logKey of ['ragnarokDropLog', 'zephyrDropLog', 'monarchDropLog', 'archDemonDropLog']) {
     if (Array.isArray(d[logKey]) && d[logKey].length > MAX_DROP_LOG) {
       d[logKey] = d[logKey].slice(-MAX_DROP_LOG);
     }
   }
-  // Clean rerollCounts: only keep UIDs that exist in inventory or equipped
   if (d.rerollCounts && typeof d.rerollCounts === 'object') {
     const liveUids = new Set();
     if (Array.isArray(d.artifactInventory)) {
-      for (const a of d.artifactInventory) { if (a?.uid) liveUids.add(a.uid); }
+      for (const a of d.artifactInventory) { if (a && a.uid) liveUids.add(a.uid); }
     }
     if (d.artifacts && typeof d.artifacts === 'object') {
       for (const slots of Object.values(d.artifacts)) {
         if (slots && typeof slots === 'object') {
-          for (const a of Object.values(slots)) { if (a?.uid) liveUids.add(a.uid); }
+          for (const a of Object.values(slots)) { if (a && a.uid) liveUids.add(a.uid); }
         }
       }
     }
@@ -82,13 +78,13 @@ function _trimData(key, data) {
   return d;
 }
 
-// Get auth headers if user is logged in (reads directly from localStorage to avoid circular imports)
 function _getAuthHeaders() {
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
+  const proto = Storage.prototype;
+  const token = proto.getItem.call(localStorage, AUTH_TOKEN_KEY);
+  return token ? { 'Authorization': 'Bearer ' + token } : {};
 }
 
-// Keys that should be synced to the cloud
+// Keys that live ONLY in cloud + RAM. Never in localStorage.
 export const CLOUD_KEYS = [
   'builderberu_users',
   'shadow_colosseum_data',
@@ -107,45 +103,44 @@ export const CLOUD_KEYS = [
 ];
 
 function getDeviceId() {
-  let id = localStorage.getItem(DEVICE_ID_KEY);
+  const proto = Storage.prototype;
+  let id = proto.getItem.call(localStorage, DEVICE_ID_KEY);
   if (!id) {
     id = 'dev_' + crypto.randomUUID();
-    localStorage.setItem(DEVICE_ID_KEY, id);
+    proto.setItem.call(localStorage, DEVICE_ID_KEY, id);
   }
   return id;
 }
 
-// Debounce map: key -> timeout
 const _syncTimers = {};
-const SYNC_DELAY = 30000; // 30s debounce (was 3s — reduced to save network transfer)
-const SYNC_THROTTLE = 120000; // 2 min minimum between syncs per key (auto-farming protection)
-const SYNC_DEADLINE = 60000; // 60s max — sync MUST fire within this window even if debounce keeps resetting
-const SAVE_SYNC_THROTTLE = 15000; // 15s smart throttle for saveAndSync — if synced recently, schedule instead of force
-const _lastSyncTime = {}; // key → timestamp of last successful sync
+const SYNC_DELAY = 30000;
+const SYNC_THROTTLE = 120000;
+const SYNC_DEADLINE = 60000;
+const SAVE_SYNC_THROTTLE = 15000;
+const _lastSyncTime = {};
 
 class CloudStorageManager {
   constructor() {
     this._initialized = false;
     this._online = true;
     this._syncQueue = new Set();
-    this._cloudSizes = {}; // Track cloud data sizes to prevent corruption
-    this._cloudTimestamps = {}; // Track cloud updated_at timestamps for concurrency
+    this._cloudSizes = {};
+    this._cloudTimestamps = {};
     this._readyPromise = null;
     this._readyResolve = null;
-    this._pendingData = new Map(); // key → fresh data (backup when localStorage fails)
-    this._restoring = false;       // true during initialSync cloud restore (allows writes through interceptor)
-    this._forceKeys = new Set(); // keys recently force-saved (bypass initialSync restore)
-    this._lastSyncHash = {};       // key → hash of last synced data (dirty detection)
-    // Restore persisted hashes from localStorage (survive page reload)
+    this._pendingData = new Map();
+    this._restoring = false;
+    this._forceKeys = new Set();
+    this._lastSyncHash = {};
+    const proto = Storage.prototype;
     for (const key of CLOUD_KEYS) {
-      try { const h = localStorage.getItem(HASH_PREFIX + key); if (h) this._lastSyncHash[key] = h; } catch {}
+      try { const h = proto.getItem.call(localStorage, HASH_PREFIX + key); if (h) this._lastSyncHash[key] = h; } catch {}
     }
-    this._syncStatus = {};         // key → 'synced' | 'syncing' | 'error' | 'pending'
+    this._syncStatus = {};
     this._statusListeners = new Set();
     this._crossTabListeners = new Set();
   }
 
-  /** Returns a promise that resolves when initialSync is complete */
   whenReady() {
     if (this._initialized) return Promise.resolve();
     if (!this._readyPromise) {
@@ -156,57 +151,30 @@ class CloudStorageManager {
     return this._readyPromise;
   }
 
-  /** Save data to localStorage (cache) + schedule cloud sync. Cloud sync works even if localStorage is full. */
+  /** Save data to RAM cache + schedule cloud sync. Zero localStorage. */
   save(key, data) {
-    const json = JSON.stringify(data);
-
     if (CLOUD_KEYS.includes(key)) {
-      // Before initialSync completes, don't write cloud keys at all.
-      // (initialSync will restore correct data — writing now contaminates _pendingData)
-      if (!this._initialized) {
-        return;
-      }
-
-      // All safety checks passed — store in pendingData
+      if (!this._initialized) return;
+      _memoryCache.set(key, data);
       this._pendingData.set(key, data);
-    }
-
-    // Try localStorage (optional cache)
-    try {
-      localStorage.setItem(key, json);
-    } catch (e) {
-      if (e.name === 'QuotaExceededError') {
-        console.warn('[CloudStorage] Quota exceeded for', key, '— freeing space');
-        this._freeSpace(key);
-        try { localStorage.setItem(key, json); } catch {}
-      }
-    }
-
-    // Schedule cloud sync — ALWAYS, even if localStorage failed
-    if (CLOUD_KEYS.includes(key)) {
       this._scheduleSync(key);
+      return;
     }
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
   }
 
-  /** Force save — marks key so initialSync won't overwrite on next F5.
-   *  Use for intentional mass deletions (inventory cleanup, etc.) where data legitimately shrinks.
-   *  Updates cloudSize tracking to match new data. */
   forceSave(key, data) {
     const json = JSON.stringify(data);
     this._cloudSizes[key] = json.length;
+    _memoryCache.set(key, data);
     this._pendingData.set(key, data);
-    this._forceKeys.add(key); // protect from initialSync restore until cloud confirms
-    try { localStorage.setItem(key, json); } catch {}
-    // Invalidate sync hash so syncKey pushes to cloud
+    this._forceKeys.add(key);
     delete this._lastSyncHash[key];
-    try { localStorage.removeItem(HASH_PREFIX + key); } catch {}
-    // Invalidate ETags so F5 fetches fresh from cloud (not stale 304)
-    try { localStorage.removeItem(ETAG_PREFIX + key); localStorage.removeItem(ETAG_PREFIX + '_all'); } catch {}
+    const proto = Storage.prototype;
+    try { proto.removeItem.call(localStorage, HASH_PREFIX + key); } catch {}
+    try { proto.removeItem.call(localStorage, ETAG_PREFIX + key); proto.removeItem.call(localStorage, ETAG_PREFIX + '_all'); } catch {}
   }
 
-  /** Force save + immediate sync to cloud (no debounce, no throttle).
-   *  Sends forceOverwrite to server — skips server-side merge/union (CHECK 2 + CHECK 3).
-   *  Use for intentional bulk operations (inventory cleanup). */
   async forceSaveAndSync(key, data) {
     this.forceSave(key, data);
     try {
@@ -219,21 +187,20 @@ class CloudStorageManager {
       if (jsonStr.length > 5000) {
         const compressed = await _gzipBase64(jsonStr);
         if (compressed && compressed.length < jsonStr.length * 0.9) {
-          body = JSON.stringify({ deviceId, key, compressed: 'gzip', payload: compressed, forceOverwrite: true, clientVersion: CLIENT_VERSION });
+          body = JSON.stringify({ deviceId: deviceId, key: key, compressed: 'gzip', payload: compressed, forceOverwrite: true, clientVersion: CLIENT_VERSION });
         }
       }
       if (!body) {
-        body = JSON.stringify({ deviceId, key, data: trimmed, forceOverwrite: true, clientVersion: CLIENT_VERSION });
+        body = JSON.stringify({ deviceId: deviceId, key: key, data: trimmed, forceOverwrite: true, clientVersion: CLIENT_VERSION });
       }
 
-      const resp = await fetch(`${API_BASE}/save`, {
+      const resp = await fetch(API_BASE + '/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
-        body,
+        headers: Object.assign({ 'Content-Type': 'application/json' }, _getAuthHeaders()),
+        body: body,
       });
 
       if (!resp.ok) {
-        console.warn('[CloudStorage] Force sync failed:', resp.status);
         this._setSyncStatus(key, 'error');
         return false;
       }
@@ -244,28 +211,24 @@ class CloudStorageManager {
       this._pendingData.delete(key);
       const dataHash = _computeHash(jsonStr);
       this._lastSyncHash[key] = dataHash;
-      try { localStorage.setItem(HASH_PREFIX + key, dataHash); } catch {}
-      try { localStorage.removeItem(ETAG_PREFIX + key); localStorage.removeItem(ETAG_PREFIX + '_all'); } catch {}
+      const proto = Storage.prototype;
+      try { proto.setItem.call(localStorage, HASH_PREFIX + key, dataHash); } catch {}
+      try { proto.removeItem.call(localStorage, ETAG_PREFIX + key); proto.removeItem.call(localStorage, ETAG_PREFIX + '_all'); } catch {}
       _lastSyncTime[key] = Date.now();
       this._setSyncStatus(key, 'synced');
-      console.log(`[CloudStorage] Force sync OK for "${key}" (${jsonStr.length}B)`);
+      console.log('[CloudStorage v4] Force sync OK for "' + key + '" (' + jsonStr.length + 'B)');
       return true;
     } catch (err) {
-      console.warn('[CloudStorage] Force sync error:', err.message);
       this._setSyncStatus(key, 'error');
       return false;
     }
   }
 
-  /** Save + sync to cloud. Uses smart throttle: if synced <15s ago, schedules instead of forcing.
-   *  localStorage is ALWAYS saved instantly. Cloud sync is the only thing throttled.
-   *  beforeunload catches any pending syncs on tab close — zero data loss. */
   async saveAndSync(key, data) {
     this.save(key, data);
     if (CLOUD_KEYS.includes(key)) {
       const lastSync = _lastSyncTime[key] || 0;
       if (Date.now() - lastSync < SAVE_SYNC_THROTTLE) {
-        // Synced recently — schedule instead of forcing (localStorage has the data)
         this._scheduleSync(key);
         return;
       }
@@ -273,8 +236,15 @@ class CloudStorageManager {
     }
   }
 
-  /** Load from localStorage (synchronous, instant) */
+  /** Load from RAM cache (synchronous). */
   loadLocal(key) {
+    if (CLOUD_KEYS.includes(key)) {
+      const pending = this._pendingData.get(key);
+      if (pending !== undefined) return pending;
+      const cached = _memoryCache.get(key);
+      if (cached !== undefined) return cached;
+      return null;
+    }
     try {
       const raw = localStorage.getItem(key);
       return raw ? JSON.parse(raw) : null;
@@ -283,322 +253,230 @@ class CloudStorageManager {
     }
   }
 
-  /** Load freshest data: pendingData (in-memory) > localStorage > cloud. Always returns the most up-to-date version. */
   async loadFresh(key) {
-    // 1. In-memory pending data (most recent, not yet synced)
     const pending = this._pendingData.get(key);
     if (pending) return pending;
-
-    // 2. localStorage cache
-    const local = this.loadLocal(key);
-    if (local) return local;
-
-    // 3. Cloud (last resort — async fetch)
+    const cached = _memoryCache.get(key);
+    if (cached !== undefined) return cached;
     return this.loadCloud(key);
   }
 
-  /** Load from cloud backend (uses ETag for conditional requests — 304 = zero transfer) */
   async loadCloud(key) {
     try {
       const deviceId = getDeviceId();
-      const headers = { ..._getAuthHeaders() };
+      const headers = Object.assign({}, _getAuthHeaders());
+      const proto = Storage.prototype;
+      const cachedEtag = proto.getItem.call(localStorage, ETAG_PREFIX + key);
+      if (cachedEtag) headers['If-None-Match'] = cachedEtag;
 
-      // Send cached ETag for conditional request
-      const cachedEtag = localStorage.getItem(ETAG_PREFIX + key);
-      if (cachedEtag) {
-        headers['If-None-Match'] = cachedEtag;
-      }
+      const resp = await fetch(API_BASE + '/load?deviceId=' + encodeURIComponent(deviceId) + '&key=' + encodeURIComponent(key), { headers: headers });
 
-      const resp = await fetch(`${API_BASE}/load?deviceId=${encodeURIComponent(deviceId)}&key=${encodeURIComponent(key)}`, {
-        headers,
-      });
-
-      // 304 Not Modified — data hasn't changed, use localStorage cache
       if (resp.status === 304) {
         this._online = true;
-        return this.loadLocal(key);
+        return _memoryCache.get(key) || null;
       }
-
       if (!resp.ok) return null;
 
-      // Store ETag from response for next request
       const etag = resp.headers.get('ETag');
-      if (etag) {
-        try { localStorage.setItem(ETAG_PREFIX + key, etag); } catch {}
-      }
+      if (etag) { try { proto.setItem.call(localStorage, ETAG_PREFIX + key, etag); } catch {} }
 
       const json = await resp.json();
-      // Anti-cheat: detect suspension from server
       if (json.suspended) {
-        try {
-          window.dispatchEvent(new CustomEvent('beru-react', {
-            detail: { type: 'suspended', message: json.beruMessage || json.suspendedReason, reason: json.suspendedReason },
-          }));
-        } catch {}
+        try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'suspended', message: json.beruMessage || json.suspendedReason, reason: json.suspendedReason } })); } catch {}
       }
       if (json.success && json.data !== null) {
+        _memoryCache.set(key, json.data);
         return json.data;
       }
       return null;
     } catch (err) {
-      console.warn('[CloudStorage] Cloud load failed for', key, err.message);
+      console.warn('[CloudStorage v4] Cloud load failed for', key, err.message);
       this._online = false;
       return null;
     }
   }
 
-  /** Load all keys from cloud for this device (uses ETag — 304 = zero transfer) */
   async loadAllCloud() {
     try {
       const deviceId = getDeviceId();
-      const headers = { ..._getAuthHeaders() };
+      const headers = Object.assign({}, _getAuthHeaders());
+      const proto = Storage.prototype;
+      const cachedEtag = proto.getItem.call(localStorage, ETAG_PREFIX + '_all');
+      if (cachedEtag) headers['If-None-Match'] = cachedEtag;
 
-      // Send cached ETag for conditional request
-      const cachedEtag = localStorage.getItem(ETAG_PREFIX + '_all');
-      if (cachedEtag) {
-        headers['If-None-Match'] = cachedEtag;
-      }
+      const resp = await fetch(API_BASE + '/load?deviceId=' + encodeURIComponent(deviceId), { headers: headers });
 
-      const resp = await fetch(`${API_BASE}/load?deviceId=${encodeURIComponent(deviceId)}`, {
-        headers,
-      });
-
-      // 304 Not Modified — nothing changed, return null to skip merge
       if (resp.status === 304) {
         this._online = true;
         return '_not_modified_';
       }
-
       if (!resp.ok) return null;
 
-      // Store ETag from response
       const etag = resp.headers.get('ETag');
-      if (etag) {
-        try { localStorage.setItem(ETAG_PREFIX + '_all', etag); } catch {}
-      }
+      if (etag) { try { proto.setItem.call(localStorage, ETAG_PREFIX + '_all', etag); } catch {} }
 
       const json = await resp.json();
       if (json.success) {
         this._online = true;
-        // Anti-cheat: detect suspension from server
         if (json.suspended) {
-          try {
-            window.dispatchEvent(new CustomEvent('beru-react', {
-              detail: { type: 'suspended', message: json.beruMessage || json.suspendedReason, reason: json.suspendedReason },
-            }));
-          } catch {}
+          try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'suspended', message: json.beruMessage || json.suspendedReason, reason: json.suspendedReason } })); } catch {}
         }
         return json.entries || {};
       }
       return null;
     } catch (err) {
-      console.warn('[CloudStorage] Cloud loadAll failed:', err.message);
+      console.warn('[CloudStorage v4] Cloud loadAll failed:', err.message);
       this._online = false;
       return null;
     }
   }
 
   /**
-   * Full sync on app startup:
-   * - Load all cloud data (server = source of truth)
-   * - Write cloud data into localStorage (cache)
-   * - Push any local-only keys (not on server yet) to cloud
+   * Initial sync: Load cloud data into RAM cache.
+   * Purges any leftover game data from localStorage (migration).
    */
   async initialSync() {
     if (this._initialized) return;
 
-    // Check if this reload comes from a login — cloud should ALWAYS win
-    const loginPending = localStorage.getItem('builderberu_login_pending');
+    const proto = Storage.prototype;
+    const loginPending = proto.getItem.call(localStorage, 'builderberu_login_pending');
     if (loginPending) {
-      localStorage.removeItem('builderberu_login_pending');
+      proto.removeItem.call(localStorage, 'builderberu_login_pending');
+    }
+
+    // Purge leftover game data from localStorage (migration from v3)
+    for (const key of CLOUD_KEYS) {
+      try { proto.removeItem.call(localStorage, key); } catch {}
     }
 
     const cloudEntries = await this.loadAllCloud();
     if (!cloudEntries) {
-      // Offline — just use localStorage
+      console.warn('[CloudStorage v4] Offline — no cloud data available');
       this._initialized = true;
       if (this._readyResolve) this._readyResolve();
       return;
     }
     if (cloudEntries === '_not_modified_') {
-      // 304 Not Modified — cloud data hasn't changed, skip merge
       this._initialized = true;
       if (this._readyResolve) this._readyResolve();
-      console.log('[CloudStorage] Initial sync: 304 Not Modified — zero transfer');
+      console.log('[CloudStorage v4] Initial sync: 304 Not Modified');
       try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
       return;
     }
 
-    // Restore cloud data into localStorage — CLOUD IS ALWAYS THE SOURCE OF TRUTH.
-    // localStorage is only a session cache. On every page load, cloud data wins.
-    // This prevents corrupted/empty localStorage from overwriting good server data.
+    // Cloud data → RAM cache ONLY
     this._restoring = true;
     for (const [key, entry] of Object.entries(cloudEntries)) {
-      // Track cloud sizes + timestamps for anti-corruption checks
       const cloudJson = JSON.stringify(entry.data);
       this._cloudSizes[key] = cloudJson.length;
       if (entry.updatedAt) this._cloudTimestamps[key] = new Date(entry.updatedAt).getTime();
 
-      // Compute hash of cloud data so we don't re-sync unchanged data after page reload
       const cloudHash = _computeHash(cloudJson);
       this._lastSyncHash[key] = cloudHash;
-      try { localStorage.setItem(HASH_PREFIX + key, cloudHash); } catch {}
+      try { proto.setItem.call(localStorage, HASH_PREFIX + key, cloudHash); } catch {}
 
       if (this._forceKeys.has(key)) {
-        // Key was force-saved (e.g. inventory cleanup) — local wins, don't restore from cloud
-        console.log(`[CloudStorage] Skipping cloud restore for "${key}" — recently force-saved`);
+        console.log('[CloudStorage v4] Skipping cloud restore for "' + key + '" — recently force-saved');
       } else {
-        // Cloud wins — write cloud data to localStorage cache
-        try {
-          localStorage.setItem(key, cloudJson);
-        } catch { /* ignore quota errors during sync */ }
+        _memoryCache.set(key, entry.data);
       }
     }
-
     this._restoring = false;
-
-    // Push all tracked local keys to cloud (in case cloud is behind)
-    // But NOT during a login — we just pulled cloud data, don't push back stale local
-    if (!loginPending) {
-      for (const key of CLOUD_KEYS) {
-        const localRaw = localStorage.getItem(key);
-        if (localRaw && !cloudEntries[key]) {
-          this._syncQueue.add(key);
-        }
-      }
-
-      // Flush queue
-      if (this._syncQueue.size > 0) {
-        this._flushQueue();
-      }
-    }
 
     this._initialized = true;
     if (this._readyResolve) this._readyResolve();
-    console.log('[CloudStorage] Initial sync complete (cloud-first — server is source of truth)');
-
-    // Notify React components that cloud data has been restored to localStorage
+    console.log('[CloudStorage v4] Initial sync complete — cloud data in RAM only, localStorage purged');
     try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
   }
 
-  /**
-   * Force re-sync after login (new deviceId).
-   * Pulls all cloud data for the canonical deviceId into localStorage.
-   */
   async resync() {
     this._initialized = false;
+    _memoryCache.clear();
     await this.initialSync();
   }
 
-  /** Initialize the database schema (call once on first deploy) */
   async initSchema() {
     try {
-      const resp = await fetch(`${API_BASE}/init`, { method: 'POST' });
+      const resp = await fetch(API_BASE + '/init', { method: 'POST' });
       const json = await resp.json();
       return json.success;
-    } catch (err) {
-      console.error('[CloudStorage] Schema init failed:', err);
-      return false;
-    }
+    } catch { return false; }
   }
 
-  /** Push a specific key to cloud NOW. Uses _pendingData (freshest) or falls back to localStorage. */
+  /** Push key to cloud. Reads from RAM only. */
   async syncKey(key) {
     try {
       this._setSyncStatus(key, 'syncing');
-
-      // Prefer pending data (freshest), fall back to localStorage
-      const rawData = this._pendingData.get(key) ?? this.loadLocal(key);
+      const rawData = this._pendingData.get(key) || _memoryCache.get(key) || null;
       if (rawData === null) {
         this._setSyncStatus(key, 'synced');
         return false;
       }
 
-      // Trim bloated fields before sync (drop logs capped to 100, orphan rerollCounts removed)
       const data = _trimData(key, rawData);
-
-      // Dirty check: skip sync if data hasn't changed since last successful sync
       const jsonStr = JSON.stringify(data);
       const dataHash = _computeHash(jsonStr);
       if (this._lastSyncHash[key] === dataHash) {
         this._pendingData.delete(key);
         this._setSyncStatus(key, 'synced');
-        return true; // Already synced, skip
+        return true;
       }
 
       const deviceId = getDeviceId();
       const clientTimestamp = this._cloudTimestamps[key] || null;
 
-      // Try gzip compression for large payloads (>5KB) — reduces 1.9MB to ~200KB
       let body;
       if (jsonStr.length > 5000) {
         const compressed = await _gzipBase64(jsonStr);
         if (compressed && compressed.length < jsonStr.length * 0.9) {
-          body = JSON.stringify({ deviceId, key, compressed: 'gzip', payload: compressed, clientTimestamp, clientVersion: CLIENT_VERSION });
+          body = JSON.stringify({ deviceId: deviceId, key: key, compressed: 'gzip', payload: compressed, clientTimestamp: clientTimestamp, clientVersion: CLIENT_VERSION });
         }
       }
       if (!body) {
-        body = JSON.stringify({ deviceId, key, data, clientTimestamp, clientVersion: CLIENT_VERSION });
+        body = JSON.stringify({ deviceId: deviceId, key: key, data: data, clientTimestamp: clientTimestamp, clientVersion: CLIENT_VERSION });
       }
 
-      const resp = await fetch(`${API_BASE}/save`, {
+      const resp = await fetch(API_BASE + '/save', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
-        body,
+        headers: Object.assign({ 'Content-Type': 'application/json' }, _getAuthHeaders()),
+        body: body,
       });
 
       if (resp.status === 403) {
-        // Anti-cheat: account suspended
-        const errJson = await resp.json().catch(() => ({}));
+        const errJson = await resp.json().catch(function() { return {}; });
         if (errJson.suspended) {
-          console.error(`[CloudStorage] ⚠️ ACCOUNT SUSPENDED — ${errJson.reason || 'cheat detected'}`);
-          try {
-            window.dispatchEvent(new CustomEvent('beru-react', {
-              detail: { type: 'suspended', message: errJson.beruMessage || errJson.reason, reason: errJson.reason },
-            }));
-          } catch {}
+          try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'suspended', message: errJson.beruMessage || errJson.reason, reason: errJson.reason } })); } catch {}
           this._setSyncStatus(key, 'error');
           return false;
         }
       }
-
       if (resp.status === 409) {
-        const errJson = await resp.json().catch(() => ({}));
-        console.warn(`[CloudStorage] Server rejected sync for "${key}":`, errJson.reason || errJson.error);
+        const errJson = await resp.json().catch(function() { return {}; });
+        console.warn('[CloudStorage v4] Server rejected sync for "' + key + '":', errJson.reason || errJson.error);
         this._setSyncStatus(key, 'error');
         return false;
       }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const json = await resp.json();
       this._online = true;
-      // Update tracked cloud size + timestamp after successful sync
       this._cloudSizes[key] = json.size || jsonStr.length;
       if (json.serverTimestamp) this._cloudTimestamps[key] = json.serverTimestamp;
-      // If server merged our data with another session's, log it
-      if (json.merged) {
-        console.log(`[CloudStorage] Server MERGED "${key}" — concurrent session detected`);
-      }
-      // Anti-cheat warning (save succeeded but flagged as suspicious)
+      if (json.merged) console.log('[CloudStorage v4] Server MERGED "' + key + '"');
       if (json.cheatWarning) {
-        console.warn(`[CloudStorage] ⚠️ CHEAT WARNING — score: ${json.cheatWarning.score}`);
-        try {
-          window.dispatchEvent(new CustomEvent('beru-react', {
-            detail: { type: 'cheat-warning', message: json.cheatWarning.beruMessage, score: json.cheatWarning.score },
-          }));
-        } catch {}
+        try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'cheat-warning', message: json.cheatWarning.beruMessage, score: json.cheatWarning.score } })); } catch {}
       }
-      // Clear pending data + update dirty hash + throttle timestamp after successful sync
+
       this._pendingData.delete(key);
       this._lastSyncHash[key] = dataHash;
-      try { localStorage.setItem(HASH_PREFIX + key, dataHash); } catch {} // Persist hash across page reloads
-      // Invalidate ETags — data changed, next load should fetch fresh
-      try { localStorage.removeItem(ETAG_PREFIX + key); localStorage.removeItem(ETAG_PREFIX + '_all'); } catch {}
+      const proto = Storage.prototype;
+      try { proto.setItem.call(localStorage, HASH_PREFIX + key, dataHash); } catch {}
+      try { proto.removeItem.call(localStorage, ETAG_PREFIX + key); proto.removeItem.call(localStorage, ETAG_PREFIX + '_all'); } catch {}
       _lastSyncTime[key] = Date.now();
       this._setSyncStatus(key, 'synced');
       return json.success;
     } catch (err) {
-      console.warn('[CloudStorage] Sync failed for', key, err.message);
+      console.warn('[CloudStorage v4] Sync failed for', key, err.message);
       this._online = false;
       this._syncQueue.add(key);
       this._setSyncStatus(key, 'error');
@@ -606,200 +484,164 @@ class CloudStorageManager {
     }
   }
 
-  /** Push all tracked keys to cloud */
   async syncAll() {
-    const promises = CLOUD_KEYS.map(key => {
-      const hasPending = this._pendingData.has(key);
-      const raw = localStorage.getItem(key);
-      if (hasPending || raw) return this.syncKey(key);
+    const promises = CLOUD_KEYS.map(function(key) {
+      if (this._pendingData.has(key) || _memoryCache.has(key)) return this.syncKey(key);
       return Promise.resolve(false);
-    });
+    }.bind(this));
     await Promise.allSettled(promises);
   }
-
-  // ─── Sync Status ──────────────────────────────────────────
 
   _setSyncStatus(key, status) {
     if (this._syncStatus[key] === status) return;
     this._syncStatus[key] = status;
-    for (const cb of this._statusListeners) {
-      try { cb(key, status); } catch {}
-    }
+    for (const cb of this._statusListeners) { try { cb(key, status); } catch {} }
   }
 
-  /** Subscribe to sync status changes. Returns unsubscribe function. */
   onSyncStatus(callback) {
     this._statusListeners.add(callback);
-    return () => this._statusListeners.delete(callback);
+    return function() { this._statusListeners.delete(callback); }.bind(this);
   }
 
-  /** Get current sync status for a key */
-  getSyncStatus(key) {
-    return this._syncStatus[key] || 'synced';
-  }
+  getSyncStatus(key) { return this._syncStatus[key] || 'synced'; }
 
-  /** Subscribe to cross-tab data changes. Returns unsubscribe function. */
   onCrossTabUpdate(callback) {
     this._crossTabListeners.add(callback);
-    return () => this._crossTabListeners.delete(callback);
+    return function() { this._crossTabListeners.delete(callback); }.bind(this);
   }
-
-  // ─── Private ─────────────────────────────────────────────
 
   _scheduleSync(key) {
     this._syncQueue.add(key);
-
-    // Track when first change happened (for deadline enforcement)
     if (!this._firstDirtyTime) this._firstDirtyTime = {};
     if (!this._firstDirtyTime[key]) this._firstDirtyTime[key] = Date.now();
 
     if (_syncTimers[key]) clearTimeout(_syncTimers[key]);
 
-    // Throttle: if we synced this key recently, delay until throttle period expires
     const lastSync = _lastSyncTime[key] || 0;
     const elapsed = Date.now() - lastSync;
     let delay = elapsed < SYNC_THROTTLE
-      ? Math.max(SYNC_DELAY, SYNC_THROTTLE - elapsed) // Wait until throttle expires
-      : SYNC_DELAY; // Normal debounce
+      ? Math.max(SYNC_DELAY, SYNC_THROTTLE - elapsed)
+      : SYNC_DELAY;
 
-    // Deadline: if data has been dirty for too long, force sync NOW
     const dirtyDuration = Date.now() - this._firstDirtyTime[key];
     if (dirtyDuration >= SYNC_DEADLINE) {
-      delay = 0; // Fire immediately
+      delay = 0;
     } else {
-      // Cap delay so it doesn't exceed deadline
       delay = Math.min(delay, SYNC_DEADLINE - dirtyDuration);
     }
 
-    _syncTimers[key] = setTimeout(() => {
+    const self = this;
+    _syncTimers[key] = setTimeout(function() {
       delete _syncTimers[key];
-      delete this._firstDirtyTime[key];
-      this.syncKey(key);
+      delete self._firstDirtyTime[key];
+      self.syncKey(key);
     }, delay);
   }
 
   async _flushQueue() {
     const keys = [...this._syncQueue];
     this._syncQueue.clear();
-    await Promise.allSettled(keys.map(k => this.syncKey(k)));
-  }
-
-  _freeSpace(priorityKey) {
-    // Remove non-critical keys to free space
-    const expendable = [
-      'hallofflame_cache',
-      'beruvianbeta_users',
-      'builderberu_easter_progress',
-      'builderberu_easter_eggs',
-    ];
-    for (const key of expendable) {
-      if (key !== priorityKey) {
-        localStorage.removeItem(key);
-      }
-    }
+    const self = this;
+    await Promise.allSettled(keys.map(function(k) { return self.syncKey(k); }));
   }
 
   /**
-   * Intercept localStorage.setItem for tracked keys.
-   * Any save to a CLOUD_KEYS key automatically schedules a cloud sync.
-   * Stores data in _pendingData so cloud sync works even if localStorage is full.
+   * Intercept localStorage for CLOUD_KEYS → RAM cache.
+   * All existing components that do localStorage.getItem('shadow_colosseum_data')
+   * transparently get data from RAM. All writes go to RAM + cloud. Zero disk.
    */
   installAutoSync() {
     if (this._autoSyncInstalled) return;
     this._autoSyncInstalled = true;
 
-    const original = localStorage.setItem.bind(localStorage);
+    const originalSet = Storage.prototype.setItem;
+    const originalGet = Storage.prototype.getItem;
+    const originalRemove = Storage.prototype.removeItem;
     const self = this;
 
-    localStorage.setItem = function (key, value) {
-      // Block cloud key writes before initialSync completes — prevents stale defaults
-      // from overwriting cloud-restored data. Exception: writes during restore phase.
-      if (CLOUD_KEYS.includes(key) && !self._initialized && !self._restoring) {
-        return;
-      }
-
-      // Store in pendingData for reliable cloud sync (before localStorage attempt)
-      if (CLOUD_KEYS.includes(key) && self._initialized) {
-        try { self._pendingData.set(key, JSON.parse(value)); } catch {}
-      }
-
-      // Try localStorage (cache)
-      try {
-        original(key, value);
-      } catch (e) {
-        if (e.name === 'QuotaExceededError') {
-          console.warn('[CloudStorage] QuotaExceeded on', key, '— freeing space');
-          self._freeSpace(key);
-          try { original(key, value); } catch {}
+    // ─── Intercept setItem ────────────────────────────────
+    Storage.prototype.setItem = function(key, value) {
+      if (CLOUD_KEYS.includes(key)) {
+        // Block writes before cloud data loaded
+        if (!self._initialized && !self._restoring) return;
+        if (self._initialized) {
+          try {
+            var parsed = JSON.parse(value);
+            _memoryCache.set(key, parsed);
+            self._pendingData.set(key, parsed);
+            self._scheduleSync(key);
+          } catch {}
         }
+        return; // NEVER falls through to real localStorage
       }
-
-      // Schedule cloud sync for tracked keys — ONLY after initialSync is done
-      if (CLOUD_KEYS.includes(key) && self._initialized) {
-        self._scheduleSync(key);
-      }
+      return originalSet.call(this, key, value);
     };
 
-    // ─── Safety nets: never lose progression ─────────────────
+    // ─── Intercept getItem ────────────────────────────────
+    Storage.prototype.getItem = function(key) {
+      if (CLOUD_KEYS.includes(key)) {
+        var pending = self._pendingData.get(key);
+        if (pending !== undefined) return JSON.stringify(pending);
+        var cached = _memoryCache.get(key);
+        if (cached !== undefined) return JSON.stringify(cached);
+        return null;
+      }
+      return originalGet.call(this, key);
+    };
 
-    // 1. beforeunload — flush pending syncs when closing browser/tab
-    //    Uses sendBeacon or keepalive fetch for reliability
-    window.addEventListener('beforeunload', () => {
-      const keysToSync = new Set([...self._syncQueue, ...self._pendingData.keys()]);
+    // ─── Intercept removeItem ─────────────────────────────
+    Storage.prototype.removeItem = function(key) {
+      if (CLOUD_KEYS.includes(key)) {
+        _memoryCache.delete(key);
+        self._pendingData.delete(key);
+        return;
+      }
+      return originalRemove.call(this, key);
+    };
+
+    // ─── Safety nets ─────────────────────────────────────
+
+    // beforeunload — flush pending syncs
+    window.addEventListener('beforeunload', function() {
+      var keysToSync = new Set([...self._syncQueue, ...self._pendingData.keys()]);
       if (keysToSync.size === 0) return;
-      const deviceId = getDeviceId();
+      var deviceId = getDeviceId();
 
-      for (const key of keysToSync) {
-        // Prefer pending data (freshest), fall back to localStorage
-        const rawData = self._pendingData.get(key) ?? self.loadLocal(key);
-        if (rawData === null) continue;
-
-        // Trim bloated fields before sending
-        const data = _trimData(key, rawData);
-
-        const clientTimestamp = self._cloudTimestamps[key] || null;
-        const blob = new Blob([JSON.stringify({ deviceId, key, data, clientTimestamp, clientVersion: CLIENT_VERSION })], { type: 'application/json' });
+      for (var key of keysToSync) {
+        var rawData = self._pendingData.get(key) || _memoryCache.get(key);
+        if (rawData === null || rawData === undefined) continue;
+        var data = _trimData(key, rawData);
+        var clientTimestamp = self._cloudTimestamps[key] || null;
+        var payload = JSON.stringify({ deviceId: deviceId, key: key, data: data, clientTimestamp: clientTimestamp, clientVersion: CLIENT_VERSION });
+        var blob = new Blob([payload], { type: 'application/json' });
         if (blob.size > 60000) {
-          // Too large for sendBeacon (~64KB limit) → use keepalive fetch
-          fetch(`${API_BASE}/save`, {
+          fetch(API_BASE + '/save', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
+            headers: Object.assign({ 'Content-Type': 'application/json' }, _getAuthHeaders()),
             body: blob,
             keepalive: true,
-          }).catch(() => {});
+          }).catch(function() {});
         } else {
-          navigator.sendBeacon(`${API_BASE}/save`, blob);
+          navigator.sendBeacon(API_BASE + '/save', blob);
         }
       }
       self._syncQueue.clear();
       self._pendingData.clear();
     });
 
-    // 2. visibilitychange — sync when user switches tab or minimizes mobile browser
-    document.addEventListener('visibilitychange', () => {
+    // visibilitychange — sync when switching tab
+    document.addEventListener('visibilitychange', function() {
       if (document.hidden && self._initialized && (self._syncQueue.size > 0 || self._pendingData.size > 0)) {
         self._flushQueue();
       }
     });
 
-    // 3. Periodic sync every 5 min — safety net (was 60s)
-    setInterval(() => {
+    // Periodic sync every 5 min
+    setInterval(function() {
       if (self._initialized && (self._syncQueue.size > 0 || self._pendingData.size > 0)) {
         self._flushQueue();
       }
-    }, 300000); // 5 min periodic safety net
-
-    // 4. Cross-tab sync — detect when another tab writes to localStorage
-    //    (storage event only fires in OTHER tabs, not the one that wrote)
-    window.addEventListener('storage', (e) => {
-      if (!e.key || !CLOUD_KEYS.includes(e.key) || !self._initialized) return;
-      // Another tab just wrote to a tracked key — update our in-memory state
-      // Notify listeners so UI can react (e.g. show "data updated from another tab")
-      self._setSyncStatus(e.key, 'synced');
-      for (const cb of self._crossTabListeners) {
-        try { cb(e.key, e.newValue); } catch {}
-      }
-    });
+    }, 300000);
   }
 
   get isOnline() { return this._online; }
@@ -808,8 +650,8 @@ class CloudStorageManager {
 
 export const cloudStorage = new CloudStorageManager();
 
-// Install auto-sync interceptor immediately
+// Install interceptors immediately — before any component mounts
 cloudStorage.installAutoSync();
 
-// Expose for console debugging (e.g. cloudStorage.syncKey('shadow_colosseum_data'))
+// Debug console access
 window.cloudStorage = cloudStorage;

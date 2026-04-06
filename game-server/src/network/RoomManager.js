@@ -473,7 +473,7 @@ export class RoomManager {
       }
       if (deposits.length === 0) return;
 
-      const API_URL = process.env.VERCEL_API_URL || 'https://builderberu.com';
+      const API_URL = process.env.VERCEL_API_URL || 'https://api.builderberu.com';
       const SECRET = process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key';
 
       const resp = await fetch(`${API_URL}/api/storage/deposit-alkahest`, {
@@ -495,7 +495,7 @@ export class RoomManager {
   async depositRaidData(client, data) {
     try {
       if (!data || !client.username) return;
-      const API_URL = process.env.VERCEL_API_URL || 'https://builderberu.com';
+      const API_URL = process.env.VERCEL_API_URL || 'https://api.builderberu.com';
       const SECRET = process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key';
 
       const resp = await fetch(`${API_URL}/api/storage/deposit-raid`, {
