@@ -11287,15 +11287,14 @@ export default function ShadowColosseum() {
                 // Force-sync fresh data BEFORE reroll so server reads latest milestone bonuses on locked subs
                 await cloudStorage.forceSaveAndSync(SAVE_KEY, data);
                 const token = localStorage.getItem('builderberu_auth_token');
+                const isEqSel = artSelected && typeof artSelected === 'string' && artSelected.startsWith('eq:');
+                let invChId = null, invSlId = null;
+                if (isEqSel) { const parts = artSelected.split(':'); invChId = parts[1]; invSlId = parts[2]; }
+                const rerollBody = JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0, clientLockedSubs: (selArt.subs || []).filter(s => lockedStats.has(s.id)).map(s => ({ id: s.id, value: s.value })), targetChibiId: invChId, targetSlotId: invSlId });
                 const resp = await fetch(`${API_URL}/storage/reroll`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-                  (() => {
-                  const isEqSel = artSelected && typeof artSelected === 'string' && artSelected.startsWith('eq:');
-                  let chId = null, slId = null;
-                  if (isEqSel) { const parts = artSelected.split(':'); chId = parts[1]; slId = parts[2]; }
-                  return JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0, clientLockedSubs: (selArt.subs || []).filter(s => lockedStats.has(s.id)).map(s => ({ id: s.id, value: s.value })), targetChibiId: chId, targetSlotId: slId });
-                })(),
+                  body: rerollBody,
                 });
                 const result = await resp.json();
                 if (!result.success) {
