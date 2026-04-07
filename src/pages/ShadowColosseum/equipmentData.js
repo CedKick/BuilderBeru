@@ -182,7 +182,7 @@ export function generateRaidArtifact(rarity) {
     const pick = candidates[Math.floor(Math.random() * candidates.length)];
     usedIds.add(pick.id);
     const value = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
-    subs.push({ id: pick.id, value });
+    subs.push({ id: pick.id, value, baseValue: value });
   }
 
   return {
@@ -219,7 +219,7 @@ export function generateRaidArtifactFromTier(rarity, tier = 1) {
     // Higher tiers get slightly better sub-stat rolls
     const tierBonus = Math.min(tier - 1, 3);
     const value = pick.range[0] + tierBonus + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
-    subs.push({ id: pick.id, value });
+    subs.push({ id: pick.id, value, baseValue: value });
   }
 
   return {
@@ -427,7 +427,7 @@ export function generateArtifact(rarity, slotId = null) {
     const pick = candidates[Math.floor(Math.random() * candidates.length)];
     usedIds.add(pick.id);
     const value = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
-    subs.push({ id: pick.id, value });
+    subs.push({ id: pick.id, value, baseValue: value });
   }
 
   return {
@@ -467,7 +467,17 @@ export function enhanceArtifact(artifact) {
       const r = subDef.range;
       const baseRoll = r[0] + Math.floor(Math.random() * (r[1] - r[0] + 1));
       const roll = Math.ceil(baseRoll * bonusMult * expMult);
-      newSubs[idx] = { ...newSubs[idx], value: newSubs[idx].value + roll };
+      // Lazy-init baseValue: capture the pre-milestone value so reroll can restore it
+      const cur = newSubs[idx];
+      const baseValue = (typeof cur.baseValue === 'number') ? cur.baseValue : cur.value;
+      newSubs[idx] = { ...cur, value: cur.value + roll, baseValue };
+    }
+  }
+
+  // Ensure all subs have baseValue (lazy-init for legacy artifacts)
+  for (let i = 0; i < newSubs.length; i++) {
+    if (typeof newSubs[i].baseValue !== 'number') {
+      newSubs[i] = { ...newSubs[i], baseValue: newSubs[i].value };
     }
   }
 
@@ -500,7 +510,7 @@ export function rerollArtifact(artifact) {
     const pick = cands[Math.floor(Math.random() * cands.length)];
     used.add(pick.id);
     const baseVal = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
-    subs.push({ id: pick.id, value: Math.ceil(baseVal * expMult) });
+    (() => { const v = Math.ceil(baseVal * expMult); subs.push({ id: pick.id, value: v, baseValue: v }); })();
   }
   const mainBase = MAIN_STAT_VALUES[artifact.mainStat].base;
   return { ...artifact, level: 0, mainValue: +(mainBase * expMult).toFixed(1), subs };
@@ -609,7 +619,7 @@ export function rerollArtifactFull(artifact, lockedStats = new Set()) {
     const pick = cands[Math.floor(Math.random() * cands.length)];
     usedIds.add(pick.id);
     const baseVal = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
-    newRerolled.push({ id: pick.id, value: Math.ceil(baseVal * expMult) });
+    (() => { const v = Math.ceil(baseVal * expMult); newRerolled.push({ id: pick.id, value: v, baseValue: v }); })();
   }
   const subs = [...lockedSubs, ...newRerolled];
 
@@ -1871,7 +1881,7 @@ export function generateUltimeArtifact(rc) {
     if (pool.length === 0) break;
     const pick = pool[Math.floor(Math.random() * pool.length)];
     usedIds.add(pick.id);
-    subs.push({ id: pick.id, value: pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)) });
+    (() => { const v = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)); subs.push({ id: pick.id, value: v, baseValue: v }); })();
   }
   return { set, slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `ult_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
 }
@@ -1891,7 +1901,7 @@ export function generateSetArtifact(setId) {
     if (pool.length === 0) break;
     const pick = pool[Math.floor(Math.random() * pool.length)];
     usedIds.add(pick.id);
-    subs.push({ id: pick.id, value: pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)) });
+    (() => { const v = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)); subs.push({ id: pick.id, value: v, baseValue: v }); })();
   }
   return { set: setId, slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `pact_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
 }
@@ -2536,7 +2546,7 @@ export function generateArc2Artifact(rarity) {
     usedIds.add(pick.id);
     // ARC II artifacts roll +30% better sub-stats
     const value = Math.floor((pick.range[0] + Math.random() * (pick.range[1] - pick.range[0] + 1)) * 1.3);
-    subs.push({ id: pick.id, value });
+    subs.push({ id: pick.id, value, baseValue: value });
   }
 
   return {

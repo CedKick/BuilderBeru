@@ -74,7 +74,7 @@ function generateNewSubs(rarity, mainStatId, lockedSubs = [], expMult = 1) {
     const pick = candidates[Math.floor(Math.random() * candidates.length)];
     used.add(pick.id);
     const value = Math.ceil((pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1))) * expMult);
-    subs.push({ id: pick.id, value });
+    subs.push({ id: pick.id, value, baseValue: value });
   }
   return subs;
 }
@@ -163,16 +163,31 @@ export default async function handler(req, res) {
     for (const cs of clientLockedSubs) {
       if (cs && cs.id && typeof cs.value === 'number') clientSubsMap.set(cs.id, cs.value);
     }
-    // For each locked sub, take MAX(db value, client value). Legitimate operations only INCREASE values
-    // (level milestones add to sub.value). Taking MAX preserves the freshest version without anti-cheat regression.
+    // For each locked sub on a FULL REROLL, reset value to baseValue (the original
+    // level-0 roll value). Milestone bonuses applied during leveling (+5/+10/+15/+20)
+    // mutate sub.value, but a full reroll resets level to 0 - so the bonus values are
+    // no longer legitimate. We restore the base. Legacy artifacts without baseValue
+    // get clamped to range[1] (best estimate of original roll).
     const lockedSubs = (artifact.subs || [])
       .filter(s => lockedSet.has(s.id))
       .map(s => {
         const clientVal = clientSubsMap.get(s.id);
-        if (typeof clientVal === 'number' && clientVal > (s.value || 0)) {
-          return { ...s, value: clientVal };
+        const freshSub = (typeof clientVal === 'number' && clientVal > (s.value || 0))
+          ? { ...s, value: clientVal }
+          : { ...s };
+        if (fullReroll) {
+          if (typeof freshSub.baseValue === 'number') {
+            freshSub.value = freshSub.baseValue;
+          } else {
+            const subDef = SUB_STAT_POOL.find(p => p.id === freshSub.id);
+            if (subDef) {
+              const cap = Math.ceil(subDef.range[1] * (artifact.source === 'expedition' ? 1.3 : 1));
+              if (freshSub.value > cap) freshSub.value = cap;
+              freshSub.baseValue = freshSub.value;
+            }
+          }
         }
-        return s;
+        return freshSub;
       });
     const oldEnchants = artifact.enchants || { main: 0, subs: {} };
     const expMult = artifact.source === 'expedition' ? EXPEDITION_BONUS : 1;
