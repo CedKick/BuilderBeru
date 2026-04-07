@@ -676,6 +676,130 @@ export default function ShadowColosseum() {
   const dataRef = useRef(data); // Always-fresh ref for sync callbacks
   useEffect(() => { dataRef.current = data; }, [data]);
 
+  // ═══ AUTO-REROLL LOOP ═══════════════════════════════════════════════
+  // Loops the reroll endpoint until all target sub-stats appear with min values,
+  // OR resources run out, OR user manually stops. 3sec delay between rolls.
+  const startAutoReroll = async ({ artifactUid, isEquipped, chibiId, slotId, targets, minValues }) => {
+    let stopped = false;
+    autoRerollStopRef.current = () => { stopped = true; };
+    let rolls = 0;
+    let alkahestSpent = 0;
+    let coinsSpent = 0;
+    setAutoRerollProgress({ running: true, rolls, alkahestSpent, coinsSpent, targets, minValues, matched: false });
+
+    while (!stopped) {
+      const currentData = dataRef.current;
+      let currentArtifact = null;
+      if (isEquipped) {
+        currentArtifact = currentData.artifacts?.[chibiId]?.[slotId];
+      } else {
+        currentArtifact = currentData.artifactInventory?.find(a => a?.uid === artifactUid);
+      }
+      if (!currentArtifact || currentArtifact.uid !== artifactUid) {
+        beruSay("Artefact introuvable, auto-reroll arrete apres " + rolls + " rolls.", "shocked");
+        break;
+      }
+
+      const lockedStats = new Set();
+      if (currentArtifact.statLocks?.main) lockedStats.add("main");
+      (currentArtifact.subs || []).forEach(s => { if (currentArtifact.statLocks?.subs?.[s.id]) lockedStats.add(s.id); });
+      const lockCount = [...lockedStats].length;
+      const alkCost = REROLL_LOCK_COSTS[Math.min(lockCount, REROLL_LOCK_COSTS.length - 1)];
+      const rerollCount = currentData.rerollCounts?.[artifactUid] || 0;
+      const coinCost = getRerollCoinCost(rerollCount);
+
+      if ((currentData.alkahest || 0) < alkCost) {
+        beruSay("Plus assez d Alkahest ! Auto-reroll arrete apres " + rolls + " rolls.", "sad");
+        break;
+      }
+      if (shadowCoinManager.getBalance() < coinCost) {
+        beruSay("Plus assez de coins ! Auto-reroll arrete apres " + rolls + " rolls.", "sad");
+        break;
+      }
+
+      shadowCoinManager.spendCoins(coinCost);
+
+      try {
+        await cloudStorage.forceSaveAndSync(SAVE_KEY, currentData);
+        const token = localStorage.getItem("builderberu_auth_token");
+        const lockedSubsData = (currentArtifact.subs || [])
+          .filter(s => lockedStats.has(s.id))
+          .map(s => ({ id: s.id, value: s.value }));
+        const resp = await fetch(`${API_URL}/storage/reroll`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": token ? `Bearer ${token}` : "" },
+          body: JSON.stringify({
+            artifactUid: artifactUid,
+            fullReroll: true,
+            lockedStats: [...lockedStats],
+            clientAlkahest: currentData.alkahest || 0,
+            clientLockedSubs: lockedSubsData,
+          }),
+        });
+        const result = await resp.json();
+        if (!result.success) {
+          shadowCoinManager.addCoins(coinCost, "auto_reroll_refund");
+          beruSay(result.error || "Reroll echoue, auto-reroll arrete.", "shocked");
+          break;
+        }
+        const rerolled = result.rerolledArtifact;
+        alkahestSpent += alkCost;
+        coinsSpent += coinCost;
+        rolls++;
+
+        setData(prev => {
+          const nd = { ...prev, alkahest: result.alkahestRemaining };
+          if (!nd.rerollCounts) nd.rerollCounts = {};
+          nd.rerollCounts[artifactUid] = result.rerollCount;
+          if (isEquipped) {
+            nd.artifacts = { ...prev.artifacts, [chibiId]: { ...prev.artifacts[chibiId], [slotId]: rerolled } };
+          } else {
+            nd.artifactInventory = [...prev.artifactInventory];
+            const idx = nd.artifactInventory.findIndex(a => a?.uid === artifactUid);
+            if (idx >= 0) nd.artifactInventory[idx] = rerolled;
+          }
+          return nd;
+        });
+
+        setAutoRerollProgress({ running: true, rolls, alkahestSpent, coinsSpent, targets, minValues, matched: false });
+
+        // Match check: each target must be in rerolled (unlocked) subs with value >= min
+        const unlockedRerolledSubs = (rerolled.subs || []).filter(s => !lockedStats.has(s.id));
+        const subMap = new Map(unlockedRerolledSubs.map(s => [s.id, s.value]));
+        const allMatched = targets.every(tid => {
+          const val = subMap.get(tid);
+          if (val === undefined) return false;
+          const minVal = minValues[tid] || 0;
+          return val >= minVal;
+        });
+
+        if (allMatched) {
+          beruSay("MATCH ! Trouve apres " + rolls + " rolls ! Tous les targets sont la !", "excited");
+          try { const a = new Audio("/sounds/success.mp3"); a.volume = 0.5; a.play().catch(() => {}); } catch {}
+          setAutoRerollProgress({ running: false, rolls, alkahestSpent, coinsSpent, targets, minValues, matched: true });
+          setTimeout(() => setAutoRerollProgress(null), 6000);
+          autoRerollStopRef.current = null;
+          return;
+        }
+      } catch (err) {
+        shadowCoinManager.addCoins(coinCost, "auto_reroll_error");
+        beruSay("Erreur reseau, auto-reroll arrete.", "shocked");
+        break;
+      }
+
+      // Wait 3sec, chunked 100ms for interruptibility
+      for (let i = 0; i < 30 && !stopped; i++) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+    }
+
+    if (stopped) {
+      beruSay("Auto-reroll arrete manuellement apres " + rolls + " rolls.", "thinking");
+    }
+    setAutoRerollProgress(null);
+    autoRerollStopRef.current = null;
+  };
+
   // ─── Sync HUNTERS from DB (mutates raidData.js HUNTERS in place) ──
   const [huntersReady, setHuntersReady] = useState(false);
   useEffect(() => {
@@ -788,6 +912,11 @@ export default function ShadowColosseum() {
   const [farmLoading, setFarmLoading] = useState(false);
   const [farmConfirm, setFarmConfirm] = useState(null); // { action: fn, label: string } — confirmation before stopping farm
   const [rerollConfirm, setRerollConfirm] = useState(null); // { action: fn, lockCount, alkCost, coinCost }
+  // Auto-Reroll state — loops reroll until target sub-stats match (with min values)
+  const [autoRerollModal, setAutoRerollModal] = useState(null); // { artifactUid, isEquipped, chibiId, slotId, artifact }
+  const [autoRerollProgress, setAutoRerollProgress] = useState(null); // { running, rolls, alkahestSpent, coinsSpent, targets, minValues, matched }
+  const [autoRerollSelections, setAutoRerollSelections] = useState({}); // { stat_id: minValue }
+  const autoRerollStopRef = useRef(null);
   const [factionPointsAvailable, setFactionPointsAvailable] = useState(null);
   const [weaponReveal, setWeaponReveal] = useState(null); // weapon data for epic reveal
   const [artFilter, setArtFilter] = useState({ set: null, rarity: null, slot: null, type: null });
@@ -9586,6 +9715,19 @@ export default function ShadowColosseum() {
                         </button>
                       </div>
 
+                      {/* Auto-Reroll button */}
+                      <button
+                        onClick={() => {
+                          if (eqArt.locked) { beruSay("Deverrouille l'artefact d'abord !", 'angry'); return; }
+                          if (eqLockCount >= (eqArt.subs || []).length + 1) { beruSay("Tous les slots sont lockes, rien a auto-reroll !", 'thinking'); return; }
+                          setAutoRerollSelections({});
+                          setAutoRerollModal({ artifactUid: eqArt.uid, isEquipped: true, chibiId: id, slotId: equipDetailSlot, artifact: eqArt });
+                        }}
+                        className={`mt-1.5 w-full py-1.5 rounded-lg text-normal-responsive font-bold transition-colors cursor-pointer ${
+                          eqArt.locked ? 'bg-gray-700/20 text-gray-600' : 'bg-purple-600/25 text-purple-200 hover:bg-purple-600/40'
+                        }`}>
+                        {'\\u{1F916}'} Auto-Reroll (cibles auto)
+                      </button>
                       {/* Reroll button */}
                       <div className="mt-1.5 relative group/eqreroll">
                         <button onClick={doEqReroll}
@@ -11412,6 +11554,22 @@ export default function ShadowColosseum() {
                 </button>
               )}
             </div>
+            {/* Auto-Reroll button */}
+            <button
+              onClick={() => {
+                if (selArt.locked) { beruSay("Deverrouille l'artefact d'abord !", 'angry'); return; }
+                if (invLockCount >= (selArt.subs || []).length + 1) { beruSay("Tous les slots sont lockes, rien a auto-reroll !", 'thinking'); return; }
+                setAutoRerollSelections({});
+                const isEq = artSelected && artSelected.startsWith('eq:');
+                let chibiId = null, slotId = null;
+                if (isEq) { const parts = artSelected.split(':'); chibiId = parts[1]; slotId = parts[2]; }
+                setAutoRerollModal({ artifactUid: selArt.uid, isEquipped: isEq, chibiId, slotId, artifact: selArt });
+              }}
+              className={`mt-1.5 w-full py-1.5 rounded-lg text-normal-responsive font-bold transition-colors cursor-pointer ${
+                selArt.locked ? 'bg-gray-700/20 text-gray-600' : 'bg-purple-600/25 text-purple-200 hover:bg-purple-600/40'
+              }`}>
+              {'\\u{1F916}'} Auto-Reroll (cibles auto)
+            </button>
             {/* Reroll button (Alkahest) */}
             <div className="mt-1.5 relative group/reroll">
               <button onClick={doReroll}
@@ -13860,6 +14018,141 @@ export default function ShadowColosseum() {
                 </button>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ AUTO-REROLL SELECTION MODAL ═══ */}
+      <AnimatePresence>
+        {autoRerollModal && (() => {
+          const art = autoRerollModal.artifact;
+          const lockedSubIds = new Set((art.subs || []).filter(s => art.statLocks?.subs?.[s.id]).map(s => s.id));
+          const unlockedCount = (art.subs || []).length - lockedSubIds.size;
+          const availableStats = SUB_STAT_POOL.filter(s => s.id !== art.mainStat && !lockedSubIds.has(s.id));
+          const selectedKeys = Object.keys(autoRerollSelections);
+          const selectedCount = selectedKeys.length;
+          const canStart = selectedCount > 0 && selectedCount <= unlockedCount;
+          return (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[75] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+              onClick={() => setAutoRerollModal(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-gray-900 border border-purple-500/40 rounded-2xl p-5 max-w-md mx-4 shadow-2xl shadow-purple-900/30 max-h-[85vh] overflow-y-auto"
+              >
+                <div className="text-center mb-3">
+                  <div className="text-3xl mb-1">{'\\u{1F916}'}</div>
+                  <h3 className="text-lg font-bold text-purple-300">Auto-Reroll</h3>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Slots libres : <span className="text-purple-300 font-bold">{unlockedCount}</span> | Selectionnes : <span className={selectedCount > unlockedCount ? "text-red-400 font-bold" : "text-purple-300 font-bold"}>{selectedCount}/{unlockedCount}</span>
+                  </p>
+                  <p className="text-tiny-responsive text-gray-500 mt-1">Min value cap a 75% du max pour garder un challenge</p>
+                </div>
+                <div className="space-y-1.5 mb-4">
+                  {availableStats.map(stat => {
+                    const isSelected = stat.id in autoRerollSelections;
+                    const maxAllowed = Math.floor(stat.range[1] * 0.75 * 10) / 10;
+                    const minAllowed = stat.range[0];
+                    const disabled = !isSelected && selectedCount >= unlockedCount;
+                    return (
+                      <div key={stat.id} className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${isSelected ? 'border-purple-500/50 bg-purple-900/20' : 'border-gray-700/30 bg-gray-800/30'}`}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          disabled={disabled}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setAutoRerollSelections({ ...autoRerollSelections, [stat.id]: minAllowed });
+                            } else {
+                              const ns = { ...autoRerollSelections }; delete ns[stat.id];
+                              setAutoRerollSelections(ns);
+                            }
+                          }}
+                          className="w-4 h-4 cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <div className="flex-1 text-sm">
+                          <span className={isSelected ? "text-purple-200 font-bold" : "text-gray-300"}>{stat.name}</span>
+                          <span className="text-tiny-responsive text-gray-500 ml-2">[{stat.range[0]}-{stat.range[1]}]</span>
+                        </div>
+                        {isSelected && (
+                          <input
+                            type="number"
+                            value={autoRerollSelections[stat.id]}
+                            min={minAllowed}
+                            max={maxAllowed}
+                            step={stat.range[1] >= 100 ? 1 : 0.1}
+                            onChange={(e) => {
+                              const v = Math.max(minAllowed, Math.min(parseFloat(e.target.value) || 0, maxAllowed));
+                              setAutoRerollSelections({ ...autoRerollSelections, [stat.id]: v });
+                            }}
+                            className="w-20 px-2 py-1 rounded bg-gray-800 border border-purple-500/30 text-purple-200 text-xs"
+                          />
+                        )}
+                        {isSelected && <span className="text-tiny-responsive text-gray-500">/{maxAllowed}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAutoRerollModal(null)}
+                    className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-sm transition-colors"
+                  >Annuler</button>
+                  <button
+                    disabled={!canStart}
+                    onClick={() => {
+                      const ctx = autoRerollModal;
+                      const targets = Object.keys(autoRerollSelections);
+                      const minValues = { ...autoRerollSelections };
+                      setAutoRerollModal(null);
+                      startAutoReroll({ artifactUid: ctx.artifactUid, isEquipped: ctx.isEquipped, chibiId: ctx.chibiId, slotId: ctx.slotId, targets, minValues });
+                    }}
+                    className={`flex-1 px-4 py-2 rounded-xl font-bold text-sm transition-colors ${canStart ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white' : 'bg-gray-800 text-gray-600 cursor-not-allowed'}`}
+                  >Demarrer</button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* ═══ AUTO-REROLL PROGRESS OVERLAY ═══ */}
+      <AnimatePresence>
+        {autoRerollProgress && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+            className="fixed bottom-4 right-4 z-[80] bg-gray-900 border border-purple-500/50 rounded-2xl p-4 shadow-2xl shadow-purple-900/40 max-w-xs"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`text-2xl ${autoRerollProgress.matched ? 'animate-bounce' : 'animate-spin'}`}>
+                {autoRerollProgress.matched ? '\u{1F389}' : '\u{1F916}'}
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-bold text-purple-300">{autoRerollProgress.matched ? 'MATCH TROUVE !' : 'Auto-Reroll en cours'}</div>
+                <div className="text-tiny-responsive text-gray-400">Roll #{autoRerollProgress.rolls}</div>
+              </div>
+            </div>
+            <div className="text-tiny-responsive text-gray-400 space-y-0.5 mb-2">
+              <div>Alkahest depense : <span className="text-purple-300 font-bold">{autoRerollProgress.alkahestSpent}</span></div>
+              <div>Coins depenses : <span className="text-yellow-300 font-bold">{fmtNum(autoRerollProgress.coinsSpent)}</span></div>
+            </div>
+            <div className="text-tiny-responsive text-gray-500 mb-2">
+              Cibles :
+              {(autoRerollProgress.targets || []).map(tid => {
+                const def = SUB_STAT_POOL.find(s => s.id === tid);
+                const min = autoRerollProgress.minValues?.[tid] || 0;
+                return <div key={tid} className="text-purple-300">- {def?.name || tid} {min > 0 ? `>= ${min}` : ''}</div>;
+              })}
+            </div>
+            {autoRerollProgress.running && (
+              <button
+                onClick={() => { if (autoRerollStopRef.current) autoRerollStopRef.current(); }}
+                className="w-full px-3 py-1.5 bg-red-600/30 hover:bg-red-600/50 border border-red-500/40 rounded-lg text-red-300 font-bold text-xs transition-colors"
+              >{'\u{1F6D1}'} Stop</button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
