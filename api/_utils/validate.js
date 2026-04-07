@@ -621,12 +621,21 @@ export function sanitizeColoData(data, cloudData, deviceId) {
     }
   }
 
-  // 6. EQUIPPED ARTIFACTS: validate each slot
+  // 6. EQUIPPED ARTIFACTS: validate each slot + dedupe UIDs across chibis.
+  // An artifact UID must appear on AT MOST one chibi/slot. Duplicates cause
+  // the lock-loss bug because reroll rewrites the wrong copy.
   if (d.artifacts && typeof d.artifacts === 'object') {
+    const seenUids = new Map();
     for (const [chibiId, slots] of Object.entries(d.artifacts)) {
       if (!slots || typeof slots !== 'object') continue;
       for (const [slotId, art] of Object.entries(slots)) {
         if (!art) continue;
+        if (art.uid && seenUids.has(art.uid)) {
+          suspicious.push(`dup_equipped[${chibiId}][${slotId}]: ${art.uid} already on ${seenUids.get(art.uid)}, removed`);
+          d.artifacts[chibiId][slotId] = null;
+          continue;
+        }
+        if (art.uid) seenUids.set(art.uid, `${chibiId}/${slotId}`);
         const { errors, fixed } = validateArtifact(art);
         if (errors.length) {
           suspicious.push(...errors.map(e => `equipped[${chibiId}][${slotId}]: ${e}`));

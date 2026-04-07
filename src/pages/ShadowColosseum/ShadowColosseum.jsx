@@ -10021,8 +10021,18 @@ export default function ShadowColosseum() {
                 const hElement = c.element || 'fire';
                 const totalPieces = Object.values(autoEquipPopup.sets).reduce((s, n) => s + n, 0);
                 // Count available artifacts per set in pool
+                // Pool = inventory + equipment of CURRENT chibi only.
+                // Artifacts equipped on OTHER chibis are intentionally excluded — auto-equip
+                // will not steal them. This prevents the dup-UID bug where the same artifact
+                // ends up equipped on two chibis at once.
                 const prevEquipped = data.artifacts[id] || {};
-                const pool = [...data.artifactInventory];
+                // Build a Set of UIDs equipped on OTHER chibis to exclude from pool
+                const otherChibiEquippedUids = new Set();
+                Object.entries(data.artifacts || {}).forEach(([cId, slots]) => {
+                  if (cId === id || !slots) return;
+                  Object.values(slots).forEach(a => { if (a && a.uid) otherChibiEquippedUids.add(a.uid); });
+                });
+                const pool = data.artifactInventory.filter(a => a && a.uid && !otherChibiEquippedUids.has(a.uid));
                 SLOT_ORDER.forEach(slotId => { if (prevEquipped[slotId]) pool.push(prevEquipped[slotId]); });
                 const setAvailCount = {};
                 pool.forEach(a => { setAvailCount[a.set] = (setAvailCount[a.set] || 0) + 1; });
