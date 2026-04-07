@@ -461,7 +461,10 @@ export function enhanceArtifact(artifact) {
     if (subDef) {
       const milestone = Math.floor(newLevel / 5); // 1, 2, 3, 4
       const bonusMult = 1 + (milestone - 1) * 0.25; // 1x, 1.25x, 1.5x, 1.75x
-      const r = subDef.procRange || subDef.range;
+      // FIX 2026-04-07: use the full initial roll range. procRange was a tiny bonus
+      // range (e.g. [3,7] for atk_flat with main range [90,200]) that made milestones
+      // give nearly useless +3-12 increases instead of meaningful +90-350 boosts.
+      const r = subDef.range;
       const baseRoll = r[0] + Math.floor(Math.random() * (r[1] - r[0] + 1));
       const roll = Math.ceil(baseRoll * bonusMult * expMult);
       newSubs[idx] = { ...newSubs[idx], value: newSubs[idx].value + roll };
