@@ -748,6 +748,8 @@ export default function ShadowColosseum() {
             lockedStats: [...lockedStats],
             clientAlkahest: currentData.alkahest || 0,
             clientLockedSubs: lockedSubsData,
+            targetChibiId: isEquipped ? chibiId : null,
+            targetSlotId: isEquipped ? slotId : null,
           }),
         });
         const result = await resp.json();
@@ -9550,7 +9552,7 @@ export default function ShadowColosseum() {
                           const resp = await fetch(`${API_URL}/storage/reroll`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-                            body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0, clientLockedSubs: (eqArt.subs || []).filter(s => lockedStats.has(s.id)).map(s => ({ id: s.id, value: s.value })) }),
+                            body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0, clientLockedSubs: (eqArt.subs || []).filter(s => lockedStats.has(s.id)).map(s => ({ id: s.id, value: s.value })), targetChibiId: id, targetSlotId: equipDetailSlot }),
                           });
                           const result = await resp.json();
                           if (!result.success) {
@@ -11288,7 +11290,12 @@ export default function ShadowColosseum() {
                 const resp = await fetch(`${API_URL}/storage/reroll`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-                  body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0, clientLockedSubs: (selArt.subs || []).filter(s => lockedStats.has(s.id)).map(s => ({ id: s.id, value: s.value })) }),
+                  (() => {
+                  const isEqSel = artSelected && typeof artSelected === 'string' && artSelected.startsWith('eq:');
+                  let chId = null, slId = null;
+                  if (isEqSel) { const parts = artSelected.split(':'); chId = parts[1]; slId = parts[2]; }
+                  return JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0, clientLockedSubs: (selArt.subs || []).filter(s => lockedStats.has(s.id)).map(s => ({ id: s.id, value: s.value })), targetChibiId: chId, targetSlotId: slId });
+                })(),
                 });
                 const result = await resp.json();
                 if (!result.success) {

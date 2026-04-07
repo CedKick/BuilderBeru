@@ -94,7 +94,7 @@ export default async function handler(req, res) {
     const user = await extractUser(req);
     if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
-    const { artifactUid, fullReroll, lockedStats = [], clientAlkahest, clientLockedSubs = [] } = req.body;
+    const { artifactUid, fullReroll, lockedStats = [], clientAlkahest, clientLockedSubs = [], targetChibiId, targetSlotId } = req.body;
     if (!artifactUid) return res.status(400).json({ error: 'Missing artifactUid' });
 
     // Read current data from Neon (use FOR UPDATE to prevent race conditions)
@@ -128,12 +128,18 @@ export default async function handler(req, res) {
       });
     }
 
-    // Find the artifact — search EQUIPPED first (more likely to have latest leveled values)
-    // then fallback to inventory. This prevents stale duplicate copies from corrupting locked stats.
+    // Find the artifact. Priority order:
+    // 1. If client provides targetChibiId/targetSlotId, go straight there (handles dup UIDs)
+    // 2. Otherwise search EQUIPPED first, then inventory
     let artifact = null;
     let location = null;
 
-    if (data.artifacts) {
+    if (targetChibiId && targetSlotId && data.artifacts?.[targetChibiId]?.[targetSlotId]?.uid === artifactUid) {
+      artifact = data.artifacts[targetChibiId][targetSlotId];
+      location = { type: 'equipped', chibiId: targetChibiId, slotId: targetSlotId };
+    }
+
+    if (!artifact && data.artifacts) {
       for (const [chibiId, slots] of Object.entries(data.artifacts)) {
         for (const [slotId, art] of Object.entries(slots || {})) {
           if (art?.uid === artifactUid) {
