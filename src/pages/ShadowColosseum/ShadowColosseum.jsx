@@ -685,9 +685,22 @@ export default function ShadowColosseum() {
     let rolls = 0;
     let alkahestSpent = 0;
     let coinsSpent = 0;
-    setAutoRerollProgress({ running: true, rolls, alkahestSpent, coinsSpent, targets, minValues, matched: false });
+    // Smart lock: track which targets have been matched + auto-locked
+    const matchedTargets = new Set();
+    setAutoRerollProgress({ running: true, rolls, alkahestSpent, coinsSpent, targets, minValues, matched: false, matchedCount: 0, totalTargets: targets.length });
 
     while (!stopped) {
+      // Stop condition: all targets matched (and locked)
+      const remainingTargets = targets.filter(t => !matchedTargets.has(t));
+      if (remainingTargets.length === 0) {
+        beruSay("MATCH COMPLET ! Tous les " + targets.length + " targets locked apres " + rolls + " rolls !", "excited");
+        try { const a = new Audio("/sounds/success.mp3"); a.volume = 0.5; a.play().catch(() => {}); } catch {}
+        setAutoRerollProgress({ running: false, rolls, alkahestSpent, coinsSpent, targets, minValues, matched: true, matchedCount: targets.length, totalTargets: targets.length });
+        setTimeout(() => setAutoRerollProgress(null), 6000);
+        autoRerollStopRef.current = null;
+        return;
+      }
+
       const currentData = dataRef.current;
       let currentArtifact = null;
       if (isEquipped) {
@@ -700,6 +713,7 @@ export default function ShadowColosseum() {
         break;
       }
 
+      // Build current locked stats from artifact state (includes auto-locked from previous matches)
       const lockedStats = new Set();
       if (currentArtifact.statLocks?.main) lockedStats.add("main");
       (currentArtifact.subs || []).forEach(s => { if (currentArtifact.statLocks?.subs?.[s.id]) lockedStats.add(s.id); });
@@ -709,11 +723,11 @@ export default function ShadowColosseum() {
       const coinCost = getRerollCoinCost(rerollCount);
 
       if ((currentData.alkahest || 0) < alkCost) {
-        beruSay("Plus assez d Alkahest ! Auto-reroll arrete apres " + rolls + " rolls.", "sad");
+        beruSay("Plus assez d Alkahest ! Auto-reroll arrete apres " + rolls + " rolls (" + matchedTargets.size + "/" + targets.length + " targets).", "sad");
         break;
       }
       if (shadowCoinManager.getBalance() < coinCost) {
-        beruSay("Plus assez de coins ! Auto-reroll arrete apres " + rolls + " rolls.", "sad");
+        beruSay("Plus assez de coins ! Auto-reroll arrete apres " + rolls + " rolls (" + matchedTargets.size + "/" + targets.length + " targets).", "sad");
         break;
       }
 
@@ -747,39 +761,52 @@ export default function ShadowColosseum() {
         coinsSpent += coinCost;
         rolls++;
 
+        // Check rerolled (unlocked) subs against REMAINING targets
+        const unlockedRerolledSubs = (rerolled.subs || []).filter(s => !lockedStats.has(s.id));
+        const newlyMatched = [];
+        for (const sub of unlockedRerolledSubs) {
+          if (matchedTargets.has(sub.id)) continue;
+          if (!remainingTargets.includes(sub.id)) continue;
+          const minVal = minValues[sub.id] || 0;
+          if ((sub.value || 0) >= minVal) {
+            newlyMatched.push(sub.id);
+            matchedTargets.add(sub.id);
+          }
+        }
+
+        // Build updated artifact: apply rerolled + auto-lock newly matched stats
+        const updatedArtifact = { ...rerolled };
+        if (newlyMatched.length > 0) {
+          updatedArtifact.statLocks = {
+            main: rerolled.statLocks?.main || false,
+            subs: { ...(rerolled.statLocks?.subs || {}) }
+          };
+          newlyMatched.forEach(t => { updatedArtifact.statLocks.subs[t] = true; });
+        }
+
         setData(prev => {
           const nd = { ...prev, alkahest: result.alkahestRemaining };
           if (!nd.rerollCounts) nd.rerollCounts = {};
           nd.rerollCounts[artifactUid] = result.rerollCount;
           if (isEquipped) {
-            nd.artifacts = { ...prev.artifacts, [chibiId]: { ...prev.artifacts[chibiId], [slotId]: rerolled } };
+            nd.artifacts = { ...prev.artifacts, [chibiId]: { ...prev.artifacts[chibiId], [slotId]: updatedArtifact } };
           } else {
             nd.artifactInventory = [...prev.artifactInventory];
             const idx = nd.artifactInventory.findIndex(a => a?.uid === artifactUid);
-            if (idx >= 0) nd.artifactInventory[idx] = rerolled;
+            if (idx >= 0) nd.artifactInventory[idx] = updatedArtifact;
           }
           return nd;
         });
 
-        setAutoRerollProgress({ running: true, rolls, alkahestSpent, coinsSpent, targets, minValues, matched: false });
+        setAutoRerollProgress({ running: true, rolls, alkahestSpent, coinsSpent, targets, minValues, matched: false, matchedCount: matchedTargets.size, totalTargets: targets.length });
 
-        // Match check: each target must be in rerolled (unlocked) subs with value >= min
-        const unlockedRerolledSubs = (rerolled.subs || []).filter(s => !lockedStats.has(s.id));
-        const subMap = new Map(unlockedRerolledSubs.map(s => [s.id, s.value]));
-        const allMatched = targets.every(tid => {
-          const val = subMap.get(tid);
-          if (val === undefined) return false;
-          const minVal = minValues[tid] || 0;
-          return val >= minVal;
-        });
-
-        if (allMatched) {
-          beruSay("MATCH ! Trouve apres " + rolls + " rolls ! Tous les targets sont la !", "excited");
-          try { const a = new Audio("/sounds/success.mp3"); a.volume = 0.5; a.play().catch(() => {}); } catch {}
-          setAutoRerollProgress({ running: false, rolls, alkahestSpent, coinsSpent, targets, minValues, matched: true });
-          setTimeout(() => setAutoRerollProgress(null), 6000);
-          autoRerollStopRef.current = null;
-          return;
+        if (newlyMatched.length > 0) {
+          const namesList = newlyMatched.map(t => {
+            const def = SUB_STAT_POOL.find(s => s.id === t);
+            return def?.name || t;
+          }).join(", ");
+          beruSay("LOCK " + namesList + " ! " + matchedTargets.size + "/" + targets.length + " targets, on continue !", "excited");
+          try { const a = new Audio("/sounds/success.mp3"); a.volume = 0.3; a.play().catch(() => {}); } catch {}
         }
       } catch (err) {
         shadowCoinManager.addCoins(coinCost, "auto_reroll_error");
@@ -794,7 +821,7 @@ export default function ShadowColosseum() {
     }
 
     if (stopped) {
-      beruSay("Auto-reroll arrete manuellement apres " + rolls + " rolls.", "thinking");
+      beruSay("Auto-reroll arrete manuellement apres " + rolls + " rolls (" + matchedTargets.size + "/" + targets.length + " targets).", "thinking");
     }
     setAutoRerollProgress(null);
     autoRerollStopRef.current = null;
@@ -9726,7 +9753,7 @@ export default function ShadowColosseum() {
                         className={`mt-1.5 w-full py-1.5 rounded-lg text-normal-responsive font-bold transition-colors cursor-pointer ${
                           eqArt.locked ? 'bg-gray-700/20 text-gray-600' : 'bg-purple-600/25 text-purple-200 hover:bg-purple-600/40'
                         }`}>
-                        {'\\u{1F916}'} Auto-Reroll (cibles auto)
+                        {'\u{1F916}'} Auto-Reroll (cibles auto)
                       </button>
                       {/* Reroll button */}
                       <div className="mt-1.5 relative group/eqreroll">
@@ -11568,7 +11595,7 @@ export default function ShadowColosseum() {
               className={`mt-1.5 w-full py-1.5 rounded-lg text-normal-responsive font-bold transition-colors cursor-pointer ${
                 selArt.locked ? 'bg-gray-700/20 text-gray-600' : 'bg-purple-600/25 text-purple-200 hover:bg-purple-600/40'
               }`}>
-              {'\\u{1F916}'} Auto-Reroll (cibles auto)
+              {'\u{1F916}'} Auto-Reroll (cibles auto)
             </button>
             {/* Reroll button (Alkahest) */}
             <div className="mt-1.5 relative group/reroll">
@@ -14044,7 +14071,7 @@ export default function ShadowColosseum() {
                 className="bg-gray-900 border border-purple-500/40 rounded-2xl p-5 max-w-md mx-4 shadow-2xl shadow-purple-900/30 max-h-[85vh] overflow-y-auto"
               >
                 <div className="text-center mb-3">
-                  <div className="text-3xl mb-1">{'\\u{1F916}'}</div>
+                  <div className="text-3xl mb-1">{'\u{1F916}'}</div>
                   <h3 className="text-lg font-bold text-purple-300">Auto-Reroll</h3>
                   <p className="text-xs text-gray-400 mt-1">
                     Slots libres : <span className="text-purple-300 font-bold">{unlockedCount}</span> | Selectionnes : <span className={selectedCount > unlockedCount ? "text-red-400 font-bold" : "text-purple-300 font-bold"}>{selectedCount}/{unlockedCount}</span>
@@ -14132,7 +14159,7 @@ export default function ShadowColosseum() {
               </div>
               <div className="flex-1">
                 <div className="text-sm font-bold text-purple-300">{autoRerollProgress.matched ? 'MATCH TROUVE !' : 'Auto-Reroll en cours'}</div>
-                <div className="text-tiny-responsive text-gray-400">Roll #{autoRerollProgress.rolls}</div>
+                <div className="text-tiny-responsive text-gray-400">Roll #{autoRerollProgress.rolls}{autoRerollProgress.totalTargets ? " | Match " + (autoRerollProgress.matchedCount || 0) + "/" + autoRerollProgress.totalTargets : ""}</div>
               </div>
             </div>
             <div className="text-tiny-responsive text-gray-400 space-y-0.5 mb-2">
