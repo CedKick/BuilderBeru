@@ -41,18 +41,23 @@ const MAIN_STAT_VALUES = {
 
 // Sub-stat roll ranges [min, max] (from equipmentData.js lines 286-309)
 const SUB_STAT_RANGES = {
-  hp_flat: [15, 40], atk_flat: [2, 6], def_flat: [2, 5], spd_flat: [1, 4],
-  crit_rate: [1, 4], crit_dmg: [2, 6], res_flat: [1, 3],
+  // FIX 2026-04-07: previous values were procRange (milestone bonus) instead of actual
+  // SUB_STAT_POOL ranges. The sanitizer was truncating legitimate values like
+  // fire_dmg_flat=192 down to 30 on every save, destroying user progression.
+  hp_flat: [225, 500], atk_flat: [90, 200], def_flat: [90, 200], spd_flat: [1, 4],
+  crit_rate: [1, 4], crit_dmg: [2, 6], res_flat: [30, 50],
   hp_pct: [2, 5], atk_pct: [2, 5], def_pct: [2, 5],
-  int_flat: [1, 4], int_pct: [2, 5],
-  fire_dmg_flat: [1, 3], fire_dmg_pct: [2, 5],
-  water_dmg_flat: [1, 3], water_dmg_pct: [2, 5],
-  shadow_dmg_flat: [1, 3], shadow_dmg_pct: [2, 5],
-  light_dmg_flat: [1, 3], light_dmg_pct: [2, 5],
-  earth_dmg_flat: [1, 3], earth_dmg_pct: [2, 5],
+  int_flat: [90, 200], int_pct: [2, 5],
+  fire_dmg_flat: [90, 200], fire_dmg_pct: [2, 5],
+  water_dmg_flat: [90, 200], water_dmg_pct: [2, 5],
+  shadow_dmg_flat: [90, 200], shadow_dmg_pct: [2, 5],
+  light_dmg_flat: [90, 200], light_dmg_pct: [2, 5],
+  earth_dmg_flat: [90, 200], earth_dmg_pct: [2, 5],
 };
 
-const RARITY_MAX_SUBS = { rare: 2, legendaire: 3, mythique: 4 };
+// FIX 2026-04-07: all rarities have 4 initial subs in equipmentData.js RARITY_SUB_COUNT.
+// Previous values truncated legendaire from 4 to 3 subs on every save.
+const RARITY_MAX_SUBS = { rare: 4, legendaire: 4, mythique: 4 };
 const VALID_RARITIES = new Set(['rare', 'legendaire', 'mythique']);
 const VALID_SLOTS = new Set(['casque', 'plastron', 'gants', 'bottes', 'collier', 'bracelet', 'anneau', 'boucles']);
 
