@@ -557,9 +557,64 @@ export function sanitizeColoData(data, cloudData, deviceId) {
     const integrity = verifyIntegrity(cloudData);
     if (!integrity.valid && integrity.reason !== 'no_checksum') {
       suspicious.push(`INTEGRITY_TAMPERED: ${integrity.reason}`);
-      // Force critical fields from cloud (the last server-validated state)
-      // The cloudData's checksum was set by the server, so if it doesn't match,
-      // someone modified localStorage critical fields between saves
+    }
+  }
+
+  // 0b. ANTI-REGRESSION GUARD: refuse to let client wipe out progression fields.
+  // If the cloud has substantive content but the incoming save is empty/tiny for
+  // these fields, restore from cloud. This catches the bug where a fresh React
+  // mount with defaultData() overwrites a real save.
+  if (cloudData) {
+    // chibiLevels: never let it shrink from non-empty to empty
+    const cloudChibiCount = cloudData.chibiLevels ? Object.keys(cloudData.chibiLevels).length : 0;
+    const incomingChibiCount = d.chibiLevels ? Object.keys(d.chibiLevels).length : 0;
+    if (cloudChibiCount > 5 && incomingChibiCount < cloudChibiCount / 2) {
+      suspicious.push(`REGRESSION: chibiLevels ${incomingChibiCount}<${cloudChibiCount}, restored from cloud`);
+      d.chibiLevels = cloudData.chibiLevels;
+      // Also restore dependent fields
+      if (cloudData.statPoints) d.statPoints = { ...cloudData.statPoints, ...(d.statPoints || {}) };
+      if (cloudData.skillTree) d.skillTree = { ...cloudData.skillTree, ...(d.skillTree || {}) };
+      if (cloudData.talentTree) d.talentTree = { ...cloudData.talentTree, ...(d.talentTree || {}) };
+      if (cloudData.talentTree2) d.talentTree2 = { ...cloudData.talentTree2, ...(d.talentTree2 || {}) };
+    }
+    // weaponCollection: never let it shrink to empty/near-empty
+    const cloudWepCount = cloudData.weaponCollection ? Object.keys(cloudData.weaponCollection).length : 0;
+    const incomingWepCount = d.weaponCollection ? Object.keys(d.weaponCollection).length : 0;
+    if (cloudWepCount > 5 && incomingWepCount < cloudWepCount / 2) {
+      suspicious.push(`REGRESSION: weaponCollection ${incomingWepCount}<${cloudWepCount}, restored from cloud`);
+      d.weaponCollection = cloudData.weaponCollection;
+    }
+    // hammers: never let progression resources shrink
+    if (cloudData.hammers && typeof cloudData.hammers === 'object') {
+      const ih = d.hammers || {};
+      let restored = false;
+      const merged = { ...ih };
+      for (const [k, v] of Object.entries(cloudData.hammers)) {
+        if (typeof v === 'number' && (merged[k] || 0) < v / 2) {
+          merged[k] = v;
+          restored = true;
+        }
+      }
+      if (restored) {
+        suspicious.push(`REGRESSION: hammers shrunk, merged max from cloud`);
+        d.hammers = merged;
+      }
+    }
+    // fragments: same protection
+    if (cloudData.fragments && typeof cloudData.fragments === 'object') {
+      const ifr = d.fragments || {};
+      let restored = false;
+      const merged = { ...ifr };
+      for (const [k, v] of Object.entries(cloudData.fragments)) {
+        if (typeof v === 'number' && (merged[k] || 0) < v / 2) {
+          merged[k] = v;
+          restored = true;
+        }
+      }
+      if (restored) {
+        suspicious.push(`REGRESSION: fragments shrunk, merged max from cloud`);
+        d.fragments = merged;
+      }
     }
   }
 
