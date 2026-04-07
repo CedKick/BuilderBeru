@@ -9394,7 +9394,7 @@ export default function ShadowColosseum() {
                           const resp = await fetch(`${API_URL}/storage/reroll`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-                            body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0 }),
+                            body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0, clientLockedSubs: (eqArt.subs || []).filter(s => lockedStats.has(s.id)).map(s => ({ id: s.id, value: s.value })) }),
                           });
                           const result = await resp.json();
                           if (!result.success) {
@@ -11119,7 +11119,7 @@ export default function ShadowColosseum() {
                 const resp = await fetch(`${API_URL}/storage/reroll`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-                  body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0 }),
+                  body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats], clientAlkahest: data.alkahest || 0, clientLockedSubs: (selArt.subs || []).filter(s => lockedStats.has(s.id)).map(s => ({ id: s.id, value: s.value })) }),
                 });
                 const result = await resp.json();
                 if (!result.success) {

@@ -94,7 +94,7 @@ export default async function handler(req, res) {
     const user = await extractUser(req);
     if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
-    const { artifactUid, fullReroll, lockedStats = [], clientAlkahest } = req.body;
+    const { artifactUid, fullReroll, lockedStats = [], clientAlkahest, clientLockedSubs = [] } = req.body;
     if (!artifactUid) return res.status(400).json({ error: 'Missing artifactUid' });
 
     // Read current data from Neon (use FOR UPDATE to prevent race conditions)
@@ -128,17 +128,12 @@ export default async function handler(req, res) {
       });
     }
 
-    // Find the artifact (inventory or equipped)
+    // Find the artifact — search EQUIPPED first (more likely to have latest leveled values)
+    // then fallback to inventory. This prevents stale duplicate copies from corrupting locked stats.
     let artifact = null;
     let location = null;
 
-    const invIdx = (data.artifactInventory || []).findIndex(a => a?.uid === artifactUid);
-    if (invIdx >= 0) {
-      artifact = data.artifactInventory[invIdx];
-      location = { type: 'inventory', index: invIdx };
-    }
-
-    if (!artifact && data.artifacts) {
+    if (data.artifacts) {
       for (const [chibiId, slots] of Object.entries(data.artifacts)) {
         for (const [slotId, art] of Object.entries(slots || {})) {
           if (art?.uid === artifactUid) {
@@ -151,11 +146,34 @@ export default async function handler(req, res) {
       }
     }
 
+    if (!artifact) {
+      const invIdx = (data.artifactInventory || []).findIndex(a => a?.uid === artifactUid);
+      if (invIdx >= 0) {
+        artifact = data.artifactInventory[invIdx];
+        location = { type: 'inventory', index: invIdx };
+      }
+    }
+
     if (!artifact) return res.status(404).json({ error: 'Artifact not found' });
 
     const lockedSet = new Set(lockedStats);
     const mainLocked = lockedSet.has('main');
-    const lockedSubs = (artifact.subs || []).filter(s => lockedSet.has(s.id));
+    // Build clientSubs map for stale-cloud protection (client may have fresher leveled values)
+    const clientSubsMap = new Map();
+    for (const cs of clientLockedSubs) {
+      if (cs && cs.id && typeof cs.value === 'number') clientSubsMap.set(cs.id, cs.value);
+    }
+    // For each locked sub, take MAX(db value, client value). Legitimate operations only INCREASE values
+    // (level milestones add to sub.value). Taking MAX preserves the freshest version without anti-cheat regression.
+    const lockedSubs = (artifact.subs || [])
+      .filter(s => lockedSet.has(s.id))
+      .map(s => {
+        const clientVal = clientSubsMap.get(s.id);
+        if (typeof clientVal === 'number' && clientVal > (s.value || 0)) {
+          return { ...s, value: clientVal };
+        }
+        return s;
+      });
     const oldEnchants = artifact.enchants || { main: 0, subs: {} };
     const expMult = artifact.source === 'expedition' ? EXPEDITION_BONUS : 1;
 
