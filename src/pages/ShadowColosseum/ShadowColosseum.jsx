@@ -663,15 +663,22 @@ const debouncedSaveAndSync = (data) => {
 export default function ShadowColosseum() {
   const [view, setView] = useState('hub'); // hub, stats, skilltree, talents, battle, result
   const [data, setData] = useState(() => {
-    const d = loadData();
-    if (d._cheaterReset) {
-      delete d._cheaterReset;
-      saveData(d);
-      setTimeout(() => window.dispatchEvent(new CustomEvent('beru-react', {
-        detail: { message: "Hola ! Ton niveau de compte depassait la limite autorisee... J'ai du le remettre a 5000. Pas de triche ici !", mood: 'angry' },
-      })), 2000);
+    // If cloud is already loaded (RAM cache populated), read from it
+    // Otherwise return defaults — the useEffect below will reload after whenReady()
+    if (cloudStorage._initialized) {
+      const d = loadData();
+      if (d && Object.keys(d).length > 5) {
+        if (d._cheaterReset) {
+          delete d._cheaterReset;
+          saveData(d);
+          setTimeout(() => window.dispatchEvent(new CustomEvent('beru-react', {
+            detail: { message: "Hola ! Ton niveau de compte depassait la limite autorisee... J'ai du le remettre a 5000. Pas de triche ici !", mood: 'angry' },
+          })), 2000);
+        }
+        return d;
+      }
     }
-    return d;
+    return defaultData();
   });
   const dataRef = useRef(data); // Always-fresh ref for sync callbacks
   useEffect(() => { dataRef.current = data; }, [data]);
@@ -849,25 +856,37 @@ export default function ShadowColosseum() {
   // initialSync() always uses cloud as source of truth — localStorage is just a session cache.
   useEffect(() => {
     if (!isLoggedIn()) { setCloudLoading(false); skipSaveRef.current = false; return; }
-    if (cloudLoadedRef.current || _cloudLoadedThisSession) {
-      setCloudLoading(false); skipSaveRef.current = false; return;
-    }
     let cancelled = false;
     (async () => {
       try {
+        // ALWAYS wait for cloud to be ready and reload from RAM cache.
+        // Do NOT skip via session flag — that caused the data-loss-on-navigation bug
+        // where the same React mount got stuck with defaultData() forever.
         await cloudStorage.whenReady();
         if (cancelled) return;
-        // initialSync already merged cloud → localStorage — just re-read it
-        const freshData = loadData();
-        if (cancelled) return;
-        if (freshData._cheaterReset) {
-          delete freshData._cheaterReset;
-          saveData(freshData);
-          setTimeout(() => window.dispatchEvent(new CustomEvent('beru-react', {
-            detail: { message: "Hola ! Ton niveau de compte depassait la limite autorisee... J'ai du le remettre a 5000. Pas de triche ici !", mood: 'angry' },
-          })), 1500);
+
+        // Try RAM cache first via loadLocal (synchronous, populated by initialSync)
+        let freshData = cloudStorage.loadLocal(SAVE_KEY);
+
+        // If RAM cache is empty or stub, force a fresh fetch from cloud
+        if (!freshData || Object.keys(freshData).length < 5) {
+          freshData = await cloudStorage.loadCloud(SAVE_KEY);
         }
-        setData(freshData);
+
+        if (cancelled) return;
+
+        // If we got real data, migrate + sanitize + use it
+        if (freshData && Object.keys(freshData).length > 5) {
+          const migrated = sanitizeAccountXp(migrateData({ ...defaultData(), ...freshData }));
+          if (migrated._cheaterReset) {
+            delete migrated._cheaterReset;
+            saveData(migrated);
+            setTimeout(() => window.dispatchEvent(new CustomEvent('beru-react', {
+              detail: { message: "Hola ! Ton niveau de compte depassait la limite autorisee... J'ai du le remettre a 5000. Pas de triche ici !", mood: 'angry' },
+            })), 1500);
+          }
+          setData(migrated);
+        }
       } catch (err) {
         console.warn('[ShadowColosseum] Cloud load failed:', err);
       } finally {
@@ -885,8 +904,11 @@ export default function ShadowColosseum() {
   // Re-read data if cloud sync restores after initial mount (device change / cache clear)
   useEffect(() => {
     const onCloudReady = () => {
-      const fresh = loadData();
-      setData(fresh);
+      const fresh = cloudStorage.loadLocal(SAVE_KEY);
+      if (fresh && Object.keys(fresh).length > 5) {
+        const migrated = sanitizeAccountXp(migrateData({ ...defaultData(), ...fresh }));
+        setData(migrated);
+      }
     };
     window.addEventListener('cloud-sync-ready', onCloudReady);
     return () => window.removeEventListener('cloud-sync-ready', onCloudReady);
