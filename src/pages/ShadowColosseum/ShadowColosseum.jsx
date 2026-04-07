@@ -9388,6 +9388,8 @@ export default function ShadowColosseum() {
                         setRerollConfirm(null);
                         shadowCoinManager.spendCoins(eqRerollCoinCost);
                         try {
+                          // Force-sync fresh data BEFORE reroll so server reads latest milestone bonuses on locked subs
+                          await cloudStorage.forceSaveAndSync(SAVE_KEY, data);
                           const token = localStorage.getItem('builderberu_auth_token');
                           const resp = await fetch(`${API_URL}/storage/reroll`, {
                             method: 'POST',
@@ -11111,6 +11113,8 @@ export default function ShadowColosseum() {
               setRerollConfirm(null);
               shadowCoinManager.spendCoins(rerollCoinCost);
               try {
+                // Force-sync fresh data BEFORE reroll so server reads latest milestone bonuses on locked subs
+                await cloudStorage.forceSaveAndSync(SAVE_KEY, data);
                 const token = localStorage.getItem('builderberu_auth_token');
                 const resp = await fetch(`${API_URL}/storage/reroll`, {
                   method: 'POST',
